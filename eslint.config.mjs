@@ -1,35 +1,27 @@
-// @ts-check
-import eslint from '@eslint/js';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import globals from 'globals';
+// eslint.config.mjs (ESLint 9 - Flat Config)
 import tseslint from 'typescript-eslint';
+import prettierPlugin from 'eslint-plugin-prettier';
 
-export default tseslint.config(
+export default [
+  // قواعد TypeScript الموصى بها
+  ...tseslint.configs.recommended,
+
+  // طبقة مشروعك
   {
-    ignores: ['eslint.config.mjs'],
-  },
-  eslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
-  eslintPluginPrettierRecommended,
-  {
+    files: ['**/*.ts'],
+    ignores: ['dist/**', 'node_modules/**'],
     languageOptions: {
-      globals: {
-        ...globals.node,
-        ...globals.jest,
-      },
-      sourceType: 'commonjs',
+      parser: tseslint.parser,
       parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
+        sourceType: 'module',
+        ecmaVersion: 'latest',
       },
     },
-  },
-  {
+    plugins: {
+      prettier: prettierPlugin,
+    },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      'prettier/prettier': 'error',
     },
   },
-);
+];
