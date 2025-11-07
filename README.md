@@ -23,7 +23,15 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Quiz Backend API built with NestJS - A comprehensive quiz management system with authentication, questions, exams, and attempts tracking.
+
+### Features
+- 🔐 JWT Authentication (Access & Refresh Tokens)
+- 👥 User Management (Students, Teachers, Admins)
+- 📝 Questions Management
+- 📋 Exams Management
+- ✅ Attempts Tracking
+- 🛡️ Role-based Authorization
 
 ## Project setup
 
@@ -58,6 +66,27 @@ $ npm run test:cov
 ```
 
 ## Deployment
+
+### Railway Deployment
+
+This project is configured for deployment on [Railway](https://railway.app). 
+
+#### Quick Setup:
+1. Connect your GitHub repository to Railway
+2. Add the required environment variables (see [ENV_VARIABLES.md](./ENV_VARIABLES.md))
+3. Railway will automatically build and deploy your application
+
+#### Required Environment Variables:
+- `MONGO_URI` - MongoDB connection string
+- `JWT_ACCESS_SECRET` - Secret key for JWT access tokens
+- `JWT_REFRESH_SECRET` - Secret key for JWT refresh tokens
+- `CORS_ORIGIN` - Frontend URL(s) for CORS (optional)
+- `NODE_ENV` - Set to `production` (optional, defaults to development)
+- `PORT` - Railway sets this automatically (optional)
+
+For detailed instructions, see [ENV_VARIABLES.md](./ENV_VARIABLES.md).
+
+---
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
 

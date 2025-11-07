@@ -1,7 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Logger } from '@nestjs/common';
+import { InjectConnection } from '@nestjs/mongoose';
+import { Connection } from 'mongoose';
 
 import { UsersModule } from './users/users.module';
 import { QuestionsModule } from './questions/questions.module';
@@ -45,4 +48,27 @@ import { AppController } from './app.controller';
 
   controllers: [AppController, HealthController],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  private readonly logger = new Logger('MongoDB');
+
+  constructor(@InjectConnection() private connection: Connection) {}
+
+  onModuleInit() {
+    this.connection.on('connected', () => {
+      this.logger.log('✅ Connected to MongoDB successfully');
+    });
+
+    this.connection.on('error', (err: Error) => {
+      this.logger.error(`❌ MongoDB connection error: ${err.message}`);
+    });
+
+    this.connection.on('disconnected', () => {
+      this.logger.warn('⚠️ MongoDB disconnected');
+    });
+
+    // Check if already connected
+    if (this.connection.readyState === 1) {
+      this.logger.log('✅ Connected to MongoDB successfully');
+    }
+  }
+}
