@@ -1,9 +1,11 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -136,6 +138,7 @@ export class AuthController {
     return this.auth.checkUser(email);
   }
 
+  @HttpCode(HttpStatus.CREATED)
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     return this.auth.register(dto);
@@ -153,10 +156,11 @@ export class AuthController {
     return this.auth.refresh(dto.refreshToken);
   }
 
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('logout')
-  async logout() {
-    return this.auth.logout();
+  async logout(@CurrentUser('userId') userId: string) {
+    return this.auth.logout(userId);
   }
 }
 

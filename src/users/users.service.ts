@@ -19,6 +19,14 @@ export class UsersService {
     return this.userModel.findById(id).lean();
   }
 
+  async findByIdWithRefreshHash(id: string) {
+    return this.userModel.findById(id).select('+refreshTokenHash').exec();
+  }
+
+  async updateById(id: string, update: Partial<User>) {
+    return this.userModel.findByIdAndUpdate(id, update, { new: true }).exec();
+  }
+
   async createUser(dto: { email: string; password: string; role?: 'student' | 'teacher' | 'admin' }) {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const exists = await this.userModel.exists({ email: normalizedEmail });

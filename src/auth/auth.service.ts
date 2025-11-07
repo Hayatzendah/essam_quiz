@@ -1,6 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { UserDocument } from '../users/schemas/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -23,17 +25,24 @@ export class AuthService {
     } as any);
   }
 
+  private async generateTokens(user: { _id: string; email: string; role: string }) {
+    const payload = { sub: user._id, email: user.email, role: user.role };
+    const accessToken = await this.signAccessToken(payload);
+    const refreshToken = await this.signRefreshToken(payload);
+    return { accessToken, refreshToken };
+  }
+
+  private async setRefreshHash(userId: string, refreshToken: string) {
+    const hash = await bcrypt.hash(refreshToken, 10);
+    await this.users.updateById(userId, { refreshTokenHash: hash });
+  }
+
   async register(dto: { email: string; password: string; role?: 'student' | 'teacher' | 'admin' }) {
     const user = await this.users.createUser(dto);
     return { message: 'registered', user };
   }
 
   async login(dto: { email: string; password: string }) {
-    // للتحقق: اطبعي معلومات المستخدم
-    const userWithPassword = await this.users.findByEmail(dto.email, true);
-    console.log('[login] User found:', !!userWithPassword);
-    console.log('[login] Password starts with:', userWithPassword?.password?.slice(0, 4));
-    
     const user = await this.users.validateUser(dto.email, dto.password);
     if (!user) throw new UnauthorizedException('Invalid credentials');
     
@@ -41,34 +50,69 @@ export class AuthService {
     const userId = user._id ? (typeof user._id === 'string' ? user._id : user._id.toString()) : user.id;
     if (!userId) throw new UnauthorizedException('User ID not found');
     
-    const payload = { sub: userId, role: user.role || 'student' };
-    const [accessToken, refreshToken] = await Promise.all([
-      this.signAccessToken(payload),
-      this.signRefreshToken(payload),
-    ]);
+    const tokens = await this.generateTokens({
+      _id: userId,
+      email: user.email,
+      role: user.role || 'student',
+    });
+    
+    // تخزين هاش الريفرش
+    await this.setRefreshHash(userId, tokens.refreshToken);
+    
     return {
       user,
-      accessToken,
-      refreshToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
     };
   }
 
   async refresh(refreshToken: string) {
     try {
+      // 1) تحقق من توقيع التوكن
       const decoded = await this.jwt.verifyAsync(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET!,
       });
-      const payload = { sub: decoded.sub, role: decoded.role };
-      const accessToken = await this.signAccessToken(payload);
-      const newRefreshToken = await this.signRefreshToken(payload); // خيار: تحديدي
-      return { accessToken, refreshToken: newRefreshToken };
-    } catch {
+
+      // 2) هات المستخدم ومعاه refreshTokenHash
+      const user = await this.users.findByIdWithRefreshHash(decoded.sub);
+      if (!user || !user.refreshTokenHash) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // 3) قارن بالـ bcrypt
+      const ok = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+      if (!ok) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // 4) ROTATION: طلّع توكنات جديدة وخزّن هاش الريفرش الجديد
+      // Extract user ID - handle both _id (Mongoose) and id (plain object)
+      const userDoc = user as UserDocument;
+      const userId = userDoc._id ? (typeof userDoc._id === 'string' ? userDoc._id : userDoc._id.toString()) : (userDoc as any).id;
+      if (!userId) {
+        throw new UnauthorizedException('User ID not found');
+      }
+
+      const tokens = await this.generateTokens({
+        _id: userId,
+        email: user.email,
+        role: user.role || 'student',
+      });
+      
+      await this.setRefreshHash(userId, tokens.refreshToken);
+      
+      return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-  async logout(/* userId, deviceId … لو بتخزني ريفرش في DB */) {
-    // لو بتخزني refresh tokens في DB: علّميه invalid هنا.
+  async logout(userId: string) {
+    // ابطال الريفرش
+    await this.users.updateById(userId, { refreshTokenHash: null });
     return { message: 'logged out' };
   }
 
