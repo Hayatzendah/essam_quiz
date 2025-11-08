@@ -5,7 +5,7 @@ import { Injectable, ExecutionContext, Logger, UnauthorizedException } from '@ne
 export class JwtAuthGuard extends AuthGuard('jwt') {
   private readonly logger = new Logger(JwtAuthGuard.name);
 
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     try {
       const request = context.switchToHttp().getRequest();
       const authHeader = request.headers?.authorization;
@@ -16,20 +16,21 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         throw new UnauthorizedException('Authorization header is missing');
       }
 
-      return super.canActivate(context);
+      const result = await super.canActivate(context);
+      return result as boolean;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      this.logger.error(`Error in JwtAuthGuard.canActivate: ${error.message}`, error.stack);
+      this.logger.error(`Error in JwtAuthGuard.canActivate: ${error?.message || 'Unknown error'}`, error?.stack);
       throw new UnauthorizedException('Authentication failed');
     }
   }
 
   handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
     if (err) {
-      this.logger.error(`JWT authentication error: ${err.message}`, err.stack);
-      throw new UnauthorizedException(`Authentication failed: ${err.message}`);
+      this.logger.error(`JWT authentication error: ${err?.message || 'Unknown error'}`, err?.stack);
+      throw new UnauthorizedException(`Authentication failed: ${err?.message || 'Unknown error'}`);
     }
 
     if (!user) {
