@@ -85,6 +85,21 @@
 - **Headers:** `Authorization: Bearer <access-token>`
 - **Response:** Current user data (id, email, role)
 
+### 2. Update User Role - تحديث دور المستخدم (Admin Only)
+- **Method:** `PATCH`
+- **URL:** `http://api.deutsch-tests.com/users/role/:id`
+- **Headers:** `Authorization: Bearer <access-token>`
+- **Roles Required:** `admin`
+- **Body:**
+  ```json
+  {
+    "role": "teacher"
+  }
+  ```
+- **Valid Roles:** `student`, `teacher`, `admin`
+- **Response:** Updated user data (id, email, role)
+- **Example:** `PATCH http://api.deutsch-tests.com/users/role/690fa2f504a0c4b2253dc8f5`
+
 ---
 
 ## 📝 Questions Endpoints (`/questions`)
@@ -151,6 +166,7 @@
 ### Protected Endpoints (تحتاج authentication):
 - `POST http://api.deutsch-tests.com/auth/logout` - Logout
 - `GET http://api.deutsch-tests.com/users/me` - Get current user
+- `PATCH http://api.deutsch-tests.com/users/role/:id` - Update user role (admin only)
 - `GET http://api.deutsch-tests.com/protected` - Protected route (teacher/admin only)
 
 ---

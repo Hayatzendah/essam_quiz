@@ -148,16 +148,38 @@ export class UsersService {
 
   // تغيير الدور (لما الأدمن يعدّل رول المستخدم)
   async updateRole(id: string, role: User['role']) {
-    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('User not found');
-    const user = await this.userModel.findByIdAndUpdate(
-      id,
-      { role },
-      { new: true },
-    ).exec();
-    if (!user) throw new NotFoundException('User not found');
-    const obj = user.toObject();
-    delete (obj as any).password;
-    return obj;
+    try {
+      if (!Types.ObjectId.isValid(id)) {
+        throw new NotFoundException(`Invalid user ID format: ${id}`);
+      }
+
+      // Validate role
+      const validRoles: User['role'][] = ['student', 'teacher', 'admin'];
+      if (!validRoles.includes(role)) {
+        throw new NotFoundException(`Invalid role: ${role}. Must be one of: ${validRoles.join(', ')}`);
+      }
+
+      const user = await this.userModel.findByIdAndUpdate(
+        id,
+        { role },
+        { new: true },
+      ).exec();
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      const obj = user.toObject();
+      delete (obj as any).password;
+      return obj;
+    } catch (error) {
+      // Re-throw NotFoundException as-is
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      // Handle database errors
+      throw new NotFoundException(`Failed to update user role: ${error.message}`);
+    }
   }
 }
 
