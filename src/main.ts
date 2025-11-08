@@ -2,7 +2,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, HttpException } from '@nestjs/common';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -42,8 +43,26 @@ async function bootstrap() {
         whitelist: true,
         transform: true,
         forbidNonWhitelisted: true,
+        exceptionFactory: (errors) => {
+          const messages = errors.map((error) => {
+            const constraints = error.constraints || {};
+            return Object.values(constraints).join(', ');
+          });
+          return new HttpException(
+            {
+              status: 'error',
+              code: 400,
+              message: 'Validation failed',
+              errors: messages,
+            },
+            400,
+          );
+        },
       }),
     );
+
+    // Global exception filter
+    app.useGlobalFilters(new HttpExceptionFilter());
 
     const port = parseInt(process.env.PORT || '4000', 10);
     await app.listen(port, '0.0.0.0');
