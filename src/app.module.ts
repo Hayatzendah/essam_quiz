@@ -30,11 +30,27 @@ import { AppController } from './app.controller';
         JWT_REFRESH_SECRET: Joi.string().required(),
         JWT_ACCESS_EXPIRES_IN: Joi.string().default('15m'),
         JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
-        CORS_ORIGIN: Joi.string().default('http://localhost:5173'),
+        CORS_ORIGIN: Joi.string().default('http://api.deutsch-tests.com'),
       }),
     }),
 
-    MongooseModule.forRoot(process.env.MONGO_URI as string),
+    MongooseModule.forRootAsync({
+      useFactory: () => ({
+        uri: process.env.MONGO_URI as string,
+        retryWrites: true,
+        w: 'majority',
+        serverSelectionTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 10000,
+        maxPoolSize: 10,
+        minPoolSize: 1,
+        bufferCommands: true,
+        bufferMaxEntries: 0,
+        // Don't fail if connection fails initially
+        autoIndex: true,
+        autoCreate: true,
+      }),
+    }),
 
     ThrottlerModule.forRoot([{ ttl: 60, limit: 100 }]),
 
@@ -60,15 +76,25 @@ export class AppModule implements OnModuleInit {
 
     this.connection.on('error', (err: Error) => {
       this.logger.error(`❌ MongoDB connection error: ${err.message}`);
+      this.logger.error('Please check:');
+      this.logger.error('1. MONGO_URI is correct in Railway environment variables');
+      this.logger.error('2. MongoDB Atlas Network Access allows connections from Railway (0.0.0.0/0)');
+      this.logger.error('3. MongoDB username and password are correct');
     });
 
     this.connection.on('disconnected', () => {
       this.logger.warn('⚠️ MongoDB disconnected');
     });
 
+    this.connection.on('connecting', () => {
+      this.logger.log('🔄 Connecting to MongoDB...');
+    });
+
     // Check if already connected
     if (this.connection.readyState === 1) {
       this.logger.log('✅ Connected to MongoDB successfully');
+    } else if (this.connection.readyState === 0) {
+      this.logger.warn('⚠️ MongoDB connection not established yet');
     }
   }
 }

@@ -3,10 +3,60 @@
 ## Required Variables (يجب إضافتها في Railway)
 
 ### 1. MongoDB Connection
+
+لديك خياران لاستخدام MongoDB:
+
+#### الخيار 1: MongoDB على Railway (موصى به - أسهل) ✅
+
+إذا كان لديك MongoDB service على Railway (كما يظهر في الصورة):
+
+1. اذهب إلى MongoDB service في Railway
+2. اضغط على تبويب **Database** → **Credentials**
+3. انسخ **MONGO_URL** أو **Connection String**
+4. أضفه في Variables كـ `MONGO_URI`
+
+**مثال:**
+```
+MONGO_URI=mongodb://mongo:27017/quiz-db
+```
+أو
+```
+MONGO_URI=mongodb://username:password@mongo.railway.internal:27017/quiz-db
+```
+
+**✅ المميزات:**
+- لا تحتاج إعداد Network Access
+- الاتصال أسرع (داخل نفس الشبكة)
+- أسهل في الإعداد
+
+---
+
+#### الخيار 2: MongoDB Atlas (من cloud.mongodb.com)
+
+إذا كنت تستخدم MongoDB Atlas:
+
 ```
 MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/quiz-db?retryWrites=true&w=majority
 ```
-- احصل على رابط الاتصال من [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) أو مزود MongoDB الخاص بك
+
+**📝 مثال على MONGO_URI الصحيح:**
+```
+mongodb+srv://essamhammamlmu_db_user:zgCKwKYkXUkauilv@cluster0.z9puqka.mongodb.net/quiz-db?retryWrites=true&w=majority
+```
+
+**⚠️ ملاحظة مهمة:**
+- يجب إضافة اسم قاعدة البيانات بعد الـ `/` وقبل الـ `?`
+- في المثال أعلاه، اسم قاعدة البيانات هو: `quiz-db`
+- يمكنك استخدام أي اسم تريده مثل: `quiz-db`, `deutsch-tests-db`, `deutsch-quiz-db`
+- بدون اسم قاعدة البيانات، التطبيق قد لا يعمل بشكل صحيح!
+
+**⚠️ مهم جداً - MongoDB Atlas Network Access:**
+- يجب السماح بالاتصال من Railway في MongoDB Atlas
+- اذهب إلى **Network Access** في MongoDB Atlas
+- اضغط على **Add IP Address**
+- اختر **Allow Access from Anywhere** (0.0.0.0/0) للسماح من أي IP
+- أو أضف Railway IP addresses يدوياً
+- بدون هذا الإعداد، التطبيق لن يستطيع الاتصال بقاعدة البيانات!
 
 ### 2. JWT Secrets
 ```

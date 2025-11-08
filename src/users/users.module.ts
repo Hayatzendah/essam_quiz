@@ -4,7 +4,6 @@ import { PassportModule } from '@nestjs/passport';
 import { User, UserSchema } from './schemas/user.schema';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { JwtStrategy } from '../auth/jwt.strategy';
 
 @Module({
   imports: [
@@ -12,7 +11,7 @@ import { JwtStrategy } from '../auth/jwt.strategy';
     PassportModule,
   ],
   controllers: [UsersController],
-  providers: [UsersService, JwtStrategy],
+  providers: [UsersService],
   exports: [MongooseModule, UsersService],
 })
 export class UsersModule {}

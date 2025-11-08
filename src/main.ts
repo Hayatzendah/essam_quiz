@@ -2,25 +2,63 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
+  
+  try {
+    logger.log('🚀 Starting application...');
+    logger.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.log(`Port: ${process.env.PORT || 4000}`);
+    
+    // Check required environment variables
+    const requiredEnvVars = ['MONGO_URI', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+    
+    if (missingVars.length > 0) {
+      logger.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
+      logger.error('Please set these variables in Railway environment settings');
+      process.exit(1);
+    }
 
-  app.use(helmet());
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') ?? true,
-    credentials: true,
-  });
+    const app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+      abortOnError: false, // Don't abort on errors, let the app start
+    });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+    // Configure helmet - disable CSP for test page, enable for others
+    const helmetMiddleware = helmet({
+      contentSecurityPolicy: false, // Disable CSP globally for now
+    });
+    app.use(helmetMiddleware);
+    app.enableCors({
+      origin: process.env.CORS_ORIGIN?.split(',') ?? true,
+      credentials: true,
+    });
 
-  await app.listen(process.env.PORT || 4000);
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
+
+    const port = parseInt(process.env.PORT || '4000', 10);
+    await app.listen(port, '0.0.0.0');
+    
+    logger.log(`✅ Application is running on: http://0.0.0.0:${port}`);
+    logger.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
+    logger.log(`✅ All routes mapped successfully`);
+  } catch (error) {
+    logger.error('❌ Failed to start application:', error);
+    logger.error('Error details:', error instanceof Error ? error.stack : error);
+    process.exit(1);
+  }
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error('Fatal error during bootstrap:', error);
+  process.exit(1);
+});

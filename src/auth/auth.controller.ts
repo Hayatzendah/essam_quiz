@@ -34,74 +34,142 @@ export class AuthController {
     <h3>Register</h3>
     <input type="email" id="regEmail" placeholder="Email" value="test@example.com">
     <input type="password" id="regPassword" placeholder="Password" value="12345678">
-    <button onclick="register()">Register</button>
+    <button id="registerBtn" type="button">Register</button>
   </div>
 
   <div class="endpoint">
     <h3>Login</h3>
     <input type="email" id="loginEmail" placeholder="Email" value="test@example.com">
     <input type="password" id="loginPassword" placeholder="Password" value="12345678">
-    <button onclick="login()">Login</button>
+    <button id="loginBtn" type="button">Login</button>
   </div>
 
   <div class="endpoint">
     <h3>Refresh Token</h3>
     <input type="text" id="refreshToken" placeholder="Refresh Token">
-    <button onclick="refresh()">Refresh</button>
+    <button id="refreshBtn" type="button">Refresh</button>
   </div>
 
   <div class="result" id="result"></div>
 
   <script>
-    async function register() {
-      const email = document.getElementById('regEmail').value;
-      const password = document.getElementById('regPassword').value;
-      try {
-        const res = await fetch('/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-      } catch (e) {
-        document.getElementById('result').innerHTML = '<pre>Error: ' + e.message + '</pre>';
+    (function() {
+      const API_BASE_URL = window.location.protocol + '//' + window.location.host;
+      const resultDiv = document.getElementById('result');
+      
+      function showResult(message, isError = false) {
+        const color = isError ? 'red' : 'green';
+        resultDiv.innerHTML = '<pre style="color: ' + color + ';">' + message + '</pre>';
       }
-    }
-
-    async function login() {
-      const email = document.getElementById('loginEmail').value;
-      const password = document.getElementById('loginPassword').value;
-      try {
-        const res = await fetch('/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-        if (data.refreshToken) {
-          document.getElementById('refreshToken').value = data.refreshToken;
+      
+      async function register() {
+        try {
+          const email = document.getElementById('regEmail').value;
+          const password = document.getElementById('regPassword').value;
+          
+          if (!email || !password) {
+            showResult('Please fill in all fields', true);
+            return;
+          }
+          
+          showResult('Loading...', false);
+          
+          const res = await fetch(API_BASE_URL + '/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          
+          const data = await res.json();
+          
+          if (!res.ok) {
+            showResult('Error ' + res.status + ': ' + JSON.stringify(data, null, 2), true);
+          } else {
+            showResult('Success: ' + JSON.stringify(data, null, 2), false);
+          }
+        } catch (e) {
+          showResult('Error: ' + e.message, true);
+          console.error('Register error:', e);
         }
-      } catch (e) {
-        document.getElementById('result').innerHTML = '<pre>Error: ' + e.message + '</pre>';
       }
-    }
 
-    async function refresh() {
-      const refreshToken = document.getElementById('refreshToken').value;
-      try {
-        const res = await fetch('/auth/refresh', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken })
-        });
-        const data = await res.json();
-        document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-      } catch (e) {
-        document.getElementById('result').innerHTML = '<pre>Error: ' + e.message + '</pre>';
+      async function login() {
+        try {
+          const email = document.getElementById('loginEmail').value;
+          const password = document.getElementById('loginPassword').value;
+          
+          if (!email || !password) {
+            showResult('Please fill in all fields', true);
+            return;
+          }
+          
+          showResult('Loading...', false);
+          
+          const res = await fetch(API_BASE_URL + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          
+          const data = await res.json();
+          
+          if (!res.ok) {
+            showResult('Error ' + res.status + ': ' + JSON.stringify(data, null, 2), true);
+          } else {
+            showResult('Success: ' + JSON.stringify(data, null, 2), false);
+            if (data.refreshToken) {
+              document.getElementById('refreshToken').value = data.refreshToken;
+            }
+          }
+        } catch (e) {
+          showResult('Error: ' + e.message, true);
+          console.error('Login error:', e);
+        }
       }
-    }
+
+      async function refresh() {
+        try {
+          const refreshToken = document.getElementById('refreshToken').value;
+          
+          if (!refreshToken) {
+            showResult('Please enter a refresh token', true);
+            return;
+          }
+          
+          showResult('Loading...', false);
+          
+          const res = await fetch(API_BASE_URL + '/auth/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken })
+          });
+          
+          const data = await res.json();
+          
+          if (!res.ok) {
+            showResult('Error ' + res.status + ': ' + JSON.stringify(data, null, 2), true);
+          } else {
+            showResult('Success: ' + JSON.stringify(data, null, 2), false);
+          }
+        } catch (e) {
+          showResult('Error: ' + e.message, true);
+          console.error('Refresh error:', e);
+        }
+      }
+      
+      // Add event listeners when DOM is ready
+      function attachListeners() {
+        document.getElementById('registerBtn').addEventListener('click', register);
+        document.getElementById('loginBtn').addEventListener('click', login);
+        document.getElementById('refreshBtn').addEventListener('click', refresh);
+      }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attachListeners);
+      } else {
+        attachListeners();
+      }
+    })();
   </script>
 </body>
 </html>
@@ -112,13 +180,15 @@ export class AuthController {
 
   @Get()
   apiInfo() {
+    const baseUrl = process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
     return {
       message: 'Auth API Endpoints',
+      baseUrl,
       endpoints: {
-        register: { method: 'POST', path: '/auth/register', body: { email: 'string', password: 'string', role: 'student|teacher|admin (optional)' } },
-        login: { method: 'POST', path: '/auth/login', body: { email: 'string', password: 'string' } },
-        refresh: { method: 'POST', path: '/auth/refresh', body: { refreshToken: 'string' } },
-        logout: { method: 'POST', path: '/auth/logout' },
+        register: { method: 'POST', url: `${baseUrl}/auth/register`, path: '/auth/register', body: { email: 'string', password: 'string', role: 'student|teacher|admin (optional)' } },
+        login: { method: 'POST', url: `${baseUrl}/auth/login`, path: '/auth/login', body: { email: 'string', password: 'string' } },
+        refresh: { method: 'POST', url: `${baseUrl}/auth/refresh`, path: '/auth/refresh', body: { refreshToken: 'string' } },
+        logout: { method: 'POST', url: `${baseUrl}/auth/logout`, path: '/auth/logout' },
       },
     };
   }

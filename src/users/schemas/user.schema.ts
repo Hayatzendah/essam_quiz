@@ -7,13 +7,14 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: true, collection: 'users' })
 export class User {
-  @Prop({ trim: true, lowercase: true, index: true, unique: true, required: true })
+  @Prop({ trim: true })
+  name?: string;
+
+  @Prop({ required: true, unique: true, lowercase: true, trim: true, index: true })
   email: string;
 
-  @Prop({ trim: true })
-  username?: string;
-
-  @Prop({ required: true, select: false })
+  // مهم: select:false عشان كلمة السر ما ترجع في أي استعلام افتراضي
+  @Prop({ required: true, select: false, minlength: 6 })
   password: string;
 
   @Prop({ type: String, enum: ['student', 'teacher', 'admin'], default: 'student', index: true })

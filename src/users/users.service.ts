@@ -1,7 +1,8 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
+import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -15,8 +16,13 @@ export class UsersService {
     return q.exec();
   }
 
-  async findById(id: string) {
-    return this.userModel.findById(id).lean();
+  async findById(id: string): Promise<Omit<User, 'password'> & { _id: any }> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('User not found');
+    const user = await this.userModel.findById(id).exec();
+    if (!user) throw new NotFoundException('User not found');
+    const obj = user.toObject();
+    delete (obj as any).password;
+    return obj as any;
   }
 
   async findByIdWithRefreshHash(id: string) {
@@ -27,15 +33,31 @@ export class UsersService {
     return this.userModel.findByIdAndUpdate(id, update, { new: true }).exec();
   }
 
+  // تُستدعى من AuthService عند التسجيل - ترجع بدون password
+  async create(dto: CreateUserDto): Promise<Omit<User, 'password'> & { _id: any }> {
+    const normalizedEmail = dto.email.toLowerCase().trim();
+    const exists = await this.userModel.exists({ email: normalizedEmail });
+    if (exists) throw new ConflictException('Email already registered');
+    
+    const created = await this.userModel.create({
+      ...dto,
+      email: normalizedEmail,
+    });
+    
+    const obj = created.toObject();
+    delete (obj as any).password;
+    return obj as any;
+  }
+
+  // للحفاظ على التوافق مع الكود القديم
   async createUser(dto: { email: string; password: string; role?: 'student' | 'teacher' | 'admin' }) {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const exists = await this.userModel.exists({ email: normalizedEmail });
     if (exists) throw new ConflictException('Email already in use');
 
-    // لا نحتاج hash هنا - الـ pre-save hook في الـ schema سيقوم بذلك تلقائيًا
     const user = await this.userModel.create({
       email: normalizedEmail,
-      password: dto.password, // الـ pre-save hook سيقوم بـ hash تلقائيًا
+      password: dto.password,
       role: dto.role ?? 'student',
     });
 
@@ -122,6 +144,20 @@ export class UsersService {
         isValidBcrypt: user.password ? user.password.startsWith('$2b$') : false,
       },
     };
+  }
+
+  // تغيير الدور (لما الأدمن يعدّل رول المستخدم)
+  async updateRole(id: string, role: User['role']) {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('User not found');
+    const user = await this.userModel.findByIdAndUpdate(
+      id,
+      { role },
+      { new: true },
+    ).exec();
+    if (!user) throw new NotFoundException('User not found');
+    const obj = user.toObject();
+    delete (obj as any).password;
+    return obj;
   }
 }
 
