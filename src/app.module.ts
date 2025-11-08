@@ -44,8 +44,6 @@ import { AppController } from './app.controller';
         connectTimeoutMS: 10000,
         maxPoolSize: 10,
         minPoolSize: 1,
-        bufferCommands: true,
-        bufferMaxEntries: 0,
         // Don't fail if connection fails initially
         autoIndex: true,
         autoCreate: true,
