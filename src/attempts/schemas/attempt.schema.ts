@@ -1,48 +1,91 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, SchemaTypes, Types } from 'mongoose';
-import type { AttemptStatus, QuestionType } from '../../common/enums';
+import { Document, Types } from 'mongoose';
 
 export type AttemptDocument = Attempt & Document;
 
-class AttemptItem {
+export enum AttemptStatus {
+  IN_PROGRESS = 'in_progress',
+  SUBMITTED = 'submitted',
+  GRADED = 'graded',
+}
+
+@Schema({ _id: false })
+export class AttemptItem {
+  // تعاريف
   @Prop({ type: Types.ObjectId, ref: 'Question', required: true })
   questionId: Types.ObjectId;
 
-  @Prop({ type: String, required: true })
-  qType: QuestionType;
+  @Prop({ type: String, required: true }) // mcq | fill | true_false | ... (نخزن النوع snapshot)
+  qType: string;
 
-  @Prop({ type: Number, default: 1 })
+  @Prop({ type: Number, default: 1, min: 0 })
   points: number;
 
-  // لقطة للعرض وقت الامتحان
-  @Prop({ trim: true }) promptSnapshot?: string;
-  @Prop({ type: [String], default: [] }) optionsText?: string[]; // لـ mcq
-  @Prop({ type: [SchemaTypes.Mixed], default: [] }) optionOrder?: any[]; // احتفظي بالترتيب
-  @Prop({ type: SchemaTypes.Mixed }) answerKeySnapshot?: any; // فقط القدر اللازم للتصحيح
+  // Snapshot للعرض/التصحيح المستقر
+  @Prop() promptSnapshot?: string;
+  @Prop({ type: [String], default: undefined }) optionsText?: string[];
+  @Prop({ type: [Number], default: undefined }) optionOrder?: number[]; // لو عشوّتنا ترتيب الخيارات
+
+  // مفاتيح للتصحيح الآلي (لا تُرسل للطالب)
+  @Prop() answerKeyBoolean?: boolean;               // true_false
+  @Prop() fillExact?: string;                       // fill
+  @Prop({ type: [String], default: undefined }) regexList?: string[]; // fill
+  @Prop({ type: [Number], default: undefined }) correctOptionIndexes?: number[]; // mcq
+
+  // إجابة الطالب (حسب النوع)
+  @Prop() studentAnswerText?: string;               // fill / short
+  @Prop({ type: [Number], default: undefined }) studentAnswerIndexes?: number[]; // mcq (مؤشرات للخيارات)
+  @Prop() studentAnswerBoolean?: boolean;           // true_false
+
+  // نتيجة هذا السؤال
+  @Prop({ type: Number, default: 0 }) autoScore: number;
+  @Prop({ type: Number, default: 0 }) manualScore: number;
 }
+
 const AttemptItemSchema = SchemaFactory.createForClass(AttemptItem);
 
-@Schema({ timestamps: true, collection: 'attempts' })
+@Schema({ timestamps: true })
 export class Attempt {
-  @Prop({ type: Types.ObjectId, ref: 'Exam', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Exam', index: true, required: true })
   examId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  @Prop({ type: Types.ObjectId, ref: 'User', index: true, required: true })
   studentId: Types.ObjectId;
 
-  @Prop({ type: String, enum: ['in_progress', 'submitted', 'graded'], default: 'in_progress', index: true })
+  @Prop({ type: String, enum: Object.values(AttemptStatus), default: AttemptStatus.IN_PROGRESS })
   status: AttemptStatus;
 
-  @Prop() startedAt?: Date;
-  @Prop() submittedAt?: Date;
-  @Prop() expiresAt?: Date;
-  @Prop({ type: Number, default: 0 }) timeUsedSec?: number;
+  @Prop({ type: Number, default: 1, min: 1 })
+  attemptCount: number;
 
-  @Prop({ type: SchemaTypes.Mixed }) randomSeed?: string | number;
+  @Prop({ type: Number, default: 0 }) // رقمية مشتقة من SHA-256
+  randomSeed: number;
 
-  @Prop({ type: [AttemptItemSchema], default: [], _id: false })
+  @Prop({ type: Date, default: () => new Date() })
+  startedAt: Date;
+
+  @Prop({ type: Date }) submittedAt?: Date;
+
+  @Prop({ type: Number, default: 0 }) timeUsedSec: number;
+
+  @Prop({ type: Date }) expiresAt?: Date;
+
+  @Prop({ type: [AttemptItemSchema], default: [] })
   items: AttemptItem[];
+
+  @Prop({ type: Number, default: 0 }) totalAutoScore: number;
+
+  @Prop({ type: Number, default: 0 }) totalManualScore: number;
+
+  @Prop({ type: Number, default: 0 }) totalMaxScore: number;
+
+  @Prop({ type: Number, default: 0 }) finalScore: number;
+
+  // للإصدار/السياسات (تنقرأ من الامتحان عند العرض)
+  @Prop({ type: Boolean, default: false }) released?: boolean;
 }
 
 export const AttemptSchema = SchemaFactory.createForClass(Attempt);
+
+// فهارس مفيدة
 AttemptSchema.index({ examId: 1, studentId: 1, status: 1 });
