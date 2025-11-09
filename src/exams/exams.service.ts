@@ -1,0 +1,181 @@
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { CreateExamDto } from './dto/create-exam.dto';
+import { QueryExamDto } from './dto/query-exam.dto';
+import { UpdateExamDto } from './dto/update-exam.dto';
+import { AssignExamDto } from './dto/assign-exam.dto';
+import { Exam, ExamDocument, ExamStatus } from './schemas/exam.schema';
+
+type ReqUser = { userId: string; role: 'student'|'teacher'|'admin' };
+
+@Injectable()
+export class ExamsService {
+  constructor(@InjectModel(Exam.name) private readonly model: Model<ExamDocument>) {}
+
+  private assertTeacherOrAdmin(user: ReqUser) {
+    if (!user || (user.role !== 'teacher' && user.role !== 'admin')) {
+      throw new ForbiddenException('Only teachers/admins allowed');
+    }
+  }
+
+  async createExam(dto: CreateExamDto, user: ReqUser) {
+    this.assertTeacherOrAdmin(user);
+
+    // تحققات إضافية على مستوى الخدمة
+    for (const s of dto.sections) {
+      const hasItems = Array.isArray(s.items) && s.items.length > 0;
+      const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+      if (hasItems && hasQuota) {
+        throw new BadRequestException(`Section "${s.name}" cannot have both items and quota`);
+      }
+      if (!hasItems && !hasQuota) {
+        throw new BadRequestException(`Section "${s.name}" must have either items or quota`);
+      }
+      if (hasQuota && s.difficultyDistribution) {
+        const sum = (s.difficultyDistribution.easy || 0)
+                  + (s.difficultyDistribution.medium || 0)
+                  + (s.difficultyDistribution.hard || 0);
+        if (sum !== s.quota) {
+          throw new BadRequestException(`Section "${s.name}" difficultyDistribution must sum to quota`);
+        }
+      }
+    }
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const doc = await this.model.create({
+      ...dto,
+      status: dto.status ?? ExamStatus.DRAFT,
+      ownerId: new Types.ObjectId(userId),
+    });
+
+    return {
+      id: doc._id,
+      title: doc.title,
+      level: doc.level,
+      status: doc.status,
+      sections: doc.sections,
+      randomizeQuestions: doc.randomizeQuestions,
+      attemptLimit: doc.attemptLimit,
+      ownerId: doc.ownerId,
+      createdAt: (doc as any).createdAt,
+    };
+  }
+
+  async findAll(user: ReqUser, q: QueryExamDto) {
+    this.assertTeacherOrAdmin(user);
+
+    const filter: any = {};
+    if (user.role === 'teacher') {
+      const userId = user.userId || (user as any).sub || (user as any).id;
+      filter.ownerId = new Types.ObjectId(userId);
+    }
+    if (q?.status) filter.status = q.status;
+    if (q?.level) filter.level = q.level;
+
+    const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
+    return { items, count: items.length };
+  }
+
+  async findById(id: string, user?: ReqUser) {
+    const doc = await this.model.findById(id).lean().exec();
+    if (!doc) throw new NotFoundException('Exam not found');
+
+    // التحكم بالوصول
+    if (!user) throw new ForbiddenException();
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const isOwner = doc.ownerId?.toString() === userId;
+    const isAdmin = user.role === 'admin';
+
+    if (user.role === 'student') {
+      if (doc.status !== ExamStatus.PUBLISHED) {
+        throw new ForbiddenException('Students can view published exams only');
+      }
+      // إخفاء التفاصيل الحساسة لو كانت عشوائية
+      const safeSections = doc.sections.map((s: any) => {
+        const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+        if (hasQuota || doc.randomizeQuestions) {
+          return { name: s.name, quota: s.quota, difficultyDistribution: s.difficultyDistribution };
+        }
+        // لو ثابتة ومش عشوائية ممكن برضه نخفي الـ questionIds لو بتحبي (حسب سياستك)
+        return { ...s, items: undefined };
+      });
+      return { ...doc, sections: safeSections };
+    }
+
+    if (isOwner || isAdmin) return doc;
+
+    // مدرس غير مالك: ما نسمحش
+    if (user.role === 'teacher') {
+      throw new ForbiddenException('Only owner teacher or admin can view');
+    }
+
+    throw new ForbiddenException();
+  }
+
+  async updateExam(id: string, dto: UpdateExamDto, user: ReqUser) {
+    if (!user) throw new ForbiddenException();
+    const doc = await this.model.findById(id).exec();
+    if (!doc) throw new NotFoundException('Exam not found');
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const isOwner = doc.ownerId?.toString() === userId;
+    const isAdmin = user.role === 'admin';
+    if (!(isOwner || isAdmin)) throw new ForbiddenException('Only owner teacher or admin');
+
+    // قيود بعد النشر
+    const goingToPublish = dto.status === ExamStatus.PUBLISHED && doc.status !== ExamStatus.PUBLISHED;
+
+    if (doc.status === ExamStatus.PUBLISHED && !isAdmin) {
+      // بعد النشر نقيّد التعديلات الجذرية
+      const structuralChange = typeof dto.sections !== 'undefined';
+      if (structuralChange) {
+        throw new BadRequestException('Cannot change sections after publish (admin only if allowed)');
+      }
+    }
+
+    // تحققات قبل النشر: لكل سكشن بquota لازم quota>0، والتوزيع يساوي الكوتا
+    if (goingToPublish && dto.sections) {
+      for (const s of dto.sections) {
+        if (typeof s.quota === 'number' && s.quota > 0 && s.difficultyDistribution) {
+          const sum = (s.difficultyDistribution.easy || 0)
+                    + (s.difficultyDistribution.medium || 0)
+                    + (s.difficultyDistribution.hard || 0);
+          if (sum !== s.quota) {
+            throw new BadRequestException(`Section "${s.name}" difficultyDistribution must sum to quota`);
+          }
+        }
+      }
+    }
+
+    // تطبيق التحديث
+    Object.assign(doc, dto);
+
+    // لو في تعديل في البنية قبل النشر، عادي — سيؤثر على اختيار الأسئلة لاحقًا في attempts
+    await doc.save();
+    return doc.toObject();
+  }
+
+  async assignExam(id: string, dto: AssignExamDto, user: ReqUser) {
+    if (!user) throw new ForbiddenException();
+    const doc = await this.model.findById(id).exec();
+    if (!doc) throw new NotFoundException('Exam not found');
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const isOwner = doc.ownerId?.toString() === userId;
+    const isAdmin = user.role === 'admin';
+    if (!(isOwner || isAdmin)) throw new ForbiddenException('Only owner teacher or admin');
+
+    if (!dto.classId && !dto.studentIds) {
+      throw new BadRequestException('Provide classId or studentIds');
+    }
+
+    if (dto.classId) doc.assignedClassId = new Types.ObjectId(dto.classId);
+    if (dto.studentIds) doc.assignedStudentIds = dto.studentIds.map(id => new Types.ObjectId(id));
+    await doc.save();
+
+    return { assignedClassId: doc.assignedClassId, assignedStudentIds: doc.assignedStudentIds };
+  }
+}
+

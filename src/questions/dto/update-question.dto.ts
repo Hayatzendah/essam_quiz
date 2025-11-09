@@ -15,3 +15,4 @@ export class UpdateQuestionDto extends PartialType(CreateQuestionDto) {
   status?: QuestionStatus;
 }
 
+
