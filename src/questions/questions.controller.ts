@@ -8,12 +8,12 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('questions')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class QuestionsController {
   constructor(private readonly service: QuestionsService) {}
 
   // POST /questions  (admin/teacher فقط)
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
   create(@Body() dto: CreateQuestionDto, @Req() req: any) {
     const userId = req.user?.userId || req.user?.sub || req.user?.id;
@@ -22,6 +22,7 @@ export class QuestionsController {
 
   // GET /questions  (admin/teacher يقدروا يشوفوا ويعملوا فلترة)
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
   findMany(@Query() q: QueryQuestionDto) {
     return this.service.findQuestions(q);
@@ -29,6 +30,7 @@ export class QuestionsController {
 
   // PATCH /questions/:id  (admin/teacher فقط)
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
   update(@Param('id') id: string, @Body() dto: UpdateQuestionDto) {
     return this.service.updateQuestion(id, dto);
@@ -36,6 +38,7 @@ export class QuestionsController {
 
   // DELETE /questions/:id?hard=true  (admin/teacher فقط)
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
   async remove(@Param('id') id: string, @Query('hard') hard?: string) {
     const res = await this.service.removeQuestion(id, hard === 'true');
