@@ -9,12 +9,12 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('exams')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamsController {
   constructor(private readonly service: ExamsService) {}
 
   // إنشاء امتحان (admin/teacher)
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher')
   create(@Body() dto: CreateExamDto, @Req() req: any) {
     return this.service.createExam(dto, req.user);
@@ -22,6 +22,7 @@ export class ExamsController {
 
   // قائمة الامتحانات (المعلم: امتحاناته فقط | الأدمن: الكل)
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher')
   findAll(@Query() q: QueryExamDto, @Req() req: any) {
     return this.service.findAll(req.user, q);
@@ -29,6 +30,7 @@ export class ExamsController {
 
   // تفاصيل الامتحان
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher','student')
   findById(@Param('id') id: string, @Req() req: any) {
     return this.service.findById(id, req.user);
@@ -36,6 +38,7 @@ export class ExamsController {
 
   // تحديث الامتحان (المالك أو الأدمن)
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher')
   update(@Param('id') id: string, @Body() dto: UpdateExamDto, @Req() req: any) {
     return this.service.updateExam(id, dto, req.user);
@@ -43,6 +46,7 @@ export class ExamsController {
 
   // إسناد امتحان (اختياري)
   @Post(':id/assign')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher')
   assign(@Param('id') id: string, @Body() dto: AssignExamDto, @Req() req: any) {
     return this.service.assignExam(id, dto, req.user);
