@@ -1,219 +1,118 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema, SchemaTypes } from 'mongoose';
-import type {
-  QuestionDifficulty,
-  QuestionLevel,
-  QuestionProvider,
-  QuestionSection,
-  QuestionStatus,
-  QuestionType,
-} from '../../common/enums';
+import { Document, Types } from 'mongoose';
 
 export type QuestionDocument = Question & Document;
 
-class Media {
-  @Prop() audioUrl?: string;
-  @Prop() imageUrl?: string;
-  @Prop() videoUrl?: string;
-  @Prop() durationSec?: number;
+export enum QuestionType {
+  MCQ = 'mcq',
+  FILL = 'fill',
+  TRUE_FALSE = 'true_false',
 }
-const MediaSchema = SchemaFactory.createForClass(Media);
 
-class OptionItem {
-  @Prop({ trim: true }) text: string;
-  @Prop({ default: false }) isCorrect?: boolean;
-  @Prop() explanation?: string;
+export enum QuestionStatus {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived',
 }
-const OptionItemSchema = SchemaFactory.createForClass(OptionItem);
 
-// تعريفات answerKey حسب نوع السؤال
+@Schema({ _id: false })
+export class McqOption {
+  @Prop({ required: true, trim: true })
+  text: string;
 
-/**
- * true_false → answerKey: boolean
- */
-class TrueFalseAnswerKey {
-  @Prop({ type: SchemaTypes.Mixed })
-  value: boolean;
+  @Prop({ default: false })
+  isCorrect: boolean;
 }
-const TrueFalseAnswerKeySchema = SchemaFactory.createForClass(TrueFalseAnswerKey);
+const McqOptionSchema = SchemaFactory.createForClass(McqOption);
 
-/**
- * fill/short_answer → answerKey: {
- *   fillExact?: string[];      // إجابات مطابقة تمامًا
- *   regexList?: string[];      // Regex patterns
- * }
- */
-class FillAnswerKey {
-  @Prop({ type: [String], default: [] })
-  fillExact?: string[];
-
-  @Prop({ type: [String], default: [] })
-  regexList?: string[];
-}
-const FillAnswerKeySchema = SchemaFactory.createForClass(FillAnswerKey);
-
-/**
- * match → answerKey: {
- *   pairs: { left: string; right: string }[]
- * }
- */
-class MatchPair {
-  @Prop({ trim: true, required: true })
-  left: string;
-
-  @Prop({ trim: true, required: true })
-  right: string;
-}
-const MatchPairSchema = SchemaFactory.createForClass(MatchPair);
-
-class MatchAnswerKey {
-  @Prop({ type: [MatchPairSchema], required: true, _id: false })
-  pairs: MatchPair[];
-}
-const MatchAnswerKeySchema = SchemaFactory.createForClass(MatchAnswerKey);
-
-/**
- * reorder → answerKey: {
- *   order: (string | number)[]  // IDs أو نصوص
- * }
- */
-class ReorderAnswerKey {
-  @Prop({ type: [SchemaTypes.Mixed], required: true })
-  order: (string | number)[];
-}
-const ReorderAnswerKeySchema = SchemaFactory.createForClass(ReorderAnswerKey);
-
-/**
- * writing/speaking → answerKey: Rubric
- * {
- *   writingRubric?: {
- *     criteria: { name: string; max: number }[];
- *     total: number;
- *   };
- *   speakingRubric?: {
- *     criteria: { name: string; max: number }[];
- *     total: number;
- *   };
- * }
- */
-class RubricCriterion {
-  @Prop({ trim: true, required: true })
-  name: string;
-
-  @Prop({ type: Number, required: true, min: 0 })
-  max: number;
-}
-const RubricCriterionSchema = SchemaFactory.createForClass(RubricCriterion);
-
-class Rubric {
-  @Prop({ type: [RubricCriterionSchema], required: true, _id: false })
-  criteria: RubricCriterion[];
-
-  @Prop({ type: Number, required: true, min: 0 })
-  total: number;
-}
-const RubricSchema = SchemaFactory.createForClass(Rubric);
-
-class RubricAnswerKey {
-  @Prop({ type: RubricSchema, _id: false })
-  writingRubric?: Rubric;
-
-  @Prop({ type: RubricSchema, _id: false })
-  speakingRubric?: Rubric;
-}
-const RubricAnswerKeySchema = SchemaFactory.createForClass(RubricAnswerKey);
-
-@Schema({ timestamps: true, collection: 'questions' })
+@Schema({ timestamps: true })
 export class Question {
+  // معلومات أساسية
   @Prop({ required: true, trim: true })
   prompt: string;
 
-  @Prop({ type: MediaSchema, _id: false })
-  media?: Media;
-
-  @Prop({ type: [OptionItemSchema], default: [], _id: false })
-  options?: OptionItem[];
-
-  // تصنيفات
-  @Prop({ type: String, enum: ['A1', 'A2', 'B1', 'B2'], index: true })
-  level?: QuestionLevel;
-
-  @Prop({ type: String, enum: ['General', 'DTZ', 'Other'], index: true })
-  provider?: QuestionProvider;
-
-  @Prop({
-    type: String,
-    enum: ['LanguageBlocks', 'Listening', 'Reading', 'Writing', 'Speaking'],
-    index: true,
-  })
-  section?: QuestionSection;
-
-  @Prop({
-    type: String,
-    enum: ['mcq', 'true_false', 'fill', 'match', 'reorder', 'short_answer', 'writing', 'speaking'],
-    required: true,
-  })
+  @Prop({ type: String, enum: Object.values(QuestionType), required: true })
   qType: QuestionType;
 
-  @Prop({ type: String, enum: ['easy', 'med', 'hard'], default: 'med', index: true })
-  difficulty: QuestionDifficulty;
+  // MCQ
+  @Prop({ type: [McqOptionSchema], default: undefined })
+  options?: McqOption[];
 
-  @Prop({ type: [String], default: [], index: true })
+  // TRUE/FALSE
+  @Prop()
+  answerKeyBoolean?: boolean;
+
+  // FILL
+  @Prop()
+  fillExact?: string;
+
+  @Prop({ type: [String], default: undefined })
+  regexList?: string[];
+
+  // ميتاداتا وفلاتر
+  @Prop({ trim: true })
+  provider?: string;
+
+  @Prop({ trim: true })
+  section?: string;
+
+  @Prop({ trim: true })
+  level?: string;
+
+  @Prop({ trim: true })
+  difficulty?: 'easy' | 'medium' | 'hard';
+
+  @Prop({ type: [String], index: true, default: [] })
   tags: string[];
 
-  @Prop({ type: String, enum: ['draft', 'published', 'archived'], default: 'draft', index: true })
+  // حالة/نسخة
+  @Prop({ type: String, enum: Object.values(QuestionStatus), default: QuestionStatus.DRAFT })
   status: QuestionStatus;
 
-  /**
-   * answerKey مرن — يختلف حسب qType:
-   * 
-   * mcq → يتم التصحيح من options[].isCorrect
-   * 
-   * true_false → boolean
-   * 
-   * fill/short_answer → {
-   *   fillExact?: string[];      // إجابات مطابقة تمامًا
-   *   regexList?: string[];      // Regex patterns
-   * }
-   * 
-   * match → {
-   *   pairs: { left: string; right: string }[]
-   * }
-   * 
-   * reorder → {
-   *   order: (string | number)[]  // IDs أو نصوص
-   * }
-   * 
-   * writing/speaking → {
-   *   writingRubric?: {
-   *     criteria: { name: string; max: number }[];
-   *     total: number;
-   *   };
-   *   speakingRubric?: {
-   *     criteria: { name: string; max: number }[];
-   *     total: number;
-   *   };
-   * }
-   */
-  @Prop({ type: SchemaTypes.Mixed })
-  answerKey: any;
-
-  // رقم نسخة السؤال
-  @Prop({ type: Number, default: 1 })
+  @Prop({ default: 1 })
   version: number;
+
+  // مالك/منشئ
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  createdBy?: Types.ObjectId;
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);
 
-// حوكمة النسخ: زود النسخة لما يحصل تعديل جوهري
-QuestionSchema.pre<QuestionDocument>('save', function (next) {
-  if (this.isModified('prompt') || this.isModified('options') || this.isModified('answerKey')) {
-    this.version = (this.version || 1) + 1;
+// فهارس للأداء
+QuestionSchema.index({ provider: 1, level: 1 });
+QuestionSchema.index({ section: 1, level: 1 });
+QuestionSchema.index({ status: 1, qType: 1 });
+QuestionSchema.index({ prompt: 'text' }); // بحث نصي
+
+// تحققات على مستوى السكيمة (أمان إضافي)
+QuestionSchema.pre('validate', function (next) {
+  const q = this as QuestionDocument;
+
+  if (q.qType === QuestionType.MCQ) {
+    if (!Array.isArray(q.options) || q.options.length < 2) {
+      return next(new Error('MCQ requires at least 2 options'));
+    }
+    const correct = q.options.filter(o => !!o.isCorrect).length;
+    if (correct < 1) return next(new Error('MCQ must have at least one correct option'));
   }
+
+  if (q.qType === QuestionType.TRUE_FALSE) {
+    if (typeof q.answerKeyBoolean !== 'boolean') {
+      return next(new Error('TRUE_FALSE requires boolean answerKeyBoolean'));
+    }
+    if (q.options && q.options.length) {
+      return next(new Error('TRUE_FALSE should not include options'));
+    }
+  }
+
+  if (q.qType === QuestionType.FILL) {
+    const hasExact = typeof q.fillExact === 'string' && q.fillExact.trim().length > 0;
+    const hasRegex = Array.isArray(q.regexList) && q.regexList.length > 0;
+    if (!hasExact && !hasRegex) {
+      return next(new Error('FILL requires fillExact or regexList'));
+    }
+  }
+
   next();
 });
-
-// فهارس مركّبة + فهرس نصي
-QuestionSchema.index({ level: 1, provider: 1, section: 1, status: 1 });
-QuestionSchema.index({ tags: 1 });
-QuestionSchema.index({ prompt: 'text', 'options.text': 'text' });
