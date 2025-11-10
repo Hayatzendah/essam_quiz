@@ -10,32 +10,46 @@ export class MediaService {
   private bucket: string;
   private defaultExpires: number;
 
+  private useMockMode: boolean;
+
   constructor() {
     // التحقق من متغيرات البيئة
     const requiredEnvVars = ['S3_REGION', 'S3_ENDPOINT', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET'];
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
     
-    if (missingVars.length > 0) {
-      this.logger.error(`❌ Missing S3 environment variables: ${missingVars.join(', ')}`);
-      this.logger.error('Please set these variables in Railway environment settings');
+    // إذا لم تكن متغيرات S3 موجودة، نستخدم وضع Mock للاختبار
+    this.useMockMode = missingVars.length > 0 || process.env.MEDIA_USE_MOCK === 'true';
+    
+    if (this.useMockMode) {
+      this.logger.warn('⚠️ MediaService running in MOCK MODE (no S3). Files will not be actually stored.');
+      this.logger.warn('⚠️ This is for testing only. Set S3 environment variables for production.');
+    } else {
+      this.s3 = new S3Client({
+        region: process.env.S3_REGION,
+        endpoint: process.env.S3_ENDPOINT,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY!,
+          secretAccessKey: process.env.S3_SECRET_KEY!,
+        },
+        forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+      });
+      this.bucket = process.env.S3_BUCKET!;
     }
 
-    this.s3 = new S3Client({
-      region: process.env.S3_REGION,
-      endpoint: process.env.S3_ENDPOINT,
-      credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY!,
-        secretAccessKey: process.env.S3_SECRET_KEY!,
-      },
-      forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
-    });
-
-    this.bucket = process.env.S3_BUCKET!;
     this.defaultExpires = Number(process.env.MEDIA_DEFAULT_EXPIRES_SEC || 3600);
   }
 
   async uploadBuffer(opts: { buffer: Buffer; mime: string; ext?: string; prefix?: string }) {
     const key = `${opts.prefix || 'questions'}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${opts.ext ? '.' + opts.ext : ''}`;
+    
+    // وضع Mock للاختبار بدون S3
+    if (this.useMockMode) {
+      this.logger.warn(`⚠️ MOCK MODE: Simulating upload for ${key} (${opts.buffer.length} bytes)`);
+      const baseUrl = process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
+      const mockUrl = `${baseUrl}/media/mock/${key}`;
+      return { key, url: mockUrl, mime: opts.mime };
+    }
+
     try {
       // التحقق من وجود متغيرات البيئة
       if (!this.bucket || !process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY) {
@@ -84,6 +98,13 @@ export class MediaService {
   }
 
   async getPresignedUrl(key: string, expiresSec?: number) {
+    // وضع Mock للاختبار بدون S3
+    if (this.useMockMode) {
+      this.logger.warn(`⚠️ MOCK MODE: Generating mock presigned URL for ${key}`);
+      const baseUrl = process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
+      return `${baseUrl}/media/mock/${key}?expires=${Date.now() + (expiresSec ?? this.defaultExpires) * 1000}`;
+    }
+
     const cmd = new GetObjectCommand({ Bucket: this.bucket, Key: key });
     return await getSignedUrl(this.s3, cmd, { expiresIn: expiresSec ?? this.defaultExpires });
   }
