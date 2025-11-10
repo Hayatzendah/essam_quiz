@@ -25,7 +25,11 @@ export class AttemptItem {
   @Prop() promptSnapshot?: string;
   @Prop({ type: [String], default: undefined }) optionsText?: string[];
   @Prop({ type: [Number], default: undefined }) optionOrder?: number[]; // لو عشوّتنا ترتيب الخيارات
-  @Prop() explanationSnapshot?: string; // شرح السؤال (للسياسات)
+
+  // Media snapshot (روابط مؤقتة للطالب)
+  @Prop() mediaType?: 'audio' | 'image' | 'video';
+  @Prop() mediaUrl?: string; // presigned URL أو public URL
+  @Prop() mediaMime?: string;
 
   // مفاتيح للتصحيح الآلي (لا تُرسل للطالب)
   @Prop() answerKeyBoolean?: boolean;               // true_false
@@ -41,7 +45,6 @@ export class AttemptItem {
   // نتيجة هذا السؤال
   @Prop({ type: Number, default: 0 }) autoScore: number;
   @Prop({ type: Number, default: 0 }) manualScore: number;
-  @Prop({ trim: true }) feedback?: string; // ملاحظات المعلم (للتصحيح اليدوي)
 }
 
 const AttemptItemSchema = SchemaFactory.createForClass(AttemptItem);

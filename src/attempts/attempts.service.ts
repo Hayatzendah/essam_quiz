@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { Attempt, AttemptDocument, AttemptStatus } from './schemas/attempt.schema';
 import { Exam, ExamDocument, ExamStatus } from '../exams/schemas/exam.schema';
 import { Question, QuestionDocument, QuestionStatus } from '../questions/schemas/question.schema';
+import { MediaService } from '../modules/media/media.service';
 
 type ReqUser = { userId: string; role: 'student'|'teacher'|'admin' };
 
@@ -26,6 +27,7 @@ export class AttemptsService {
     @InjectModel(Attempt.name) private readonly AttemptModel: Model<AttemptDocument>,
     @InjectModel(Exam.name) private readonly ExamModel: Model<ExamDocument>,
     @InjectModel(Question.name) private readonly QuestionModel: Model<QuestionDocument>,
+    private readonly media: MediaService,
   ) {}
 
   private async computeAttemptCount(studentId: Types.ObjectId, examId: Types.ObjectId) {
@@ -131,7 +133,7 @@ export class AttemptsService {
     return selected;
   }
 
-  private buildSnapshotItem(q: QuestionDocument, points: number, rng?: () => number) {
+  private async buildSnapshotItem(q: QuestionDocument, points: number, rng?: () => number) {
     const item: any = {
       questionId: q._id,
       qType: q.qType,
@@ -140,11 +142,6 @@ export class AttemptsService {
       autoScore: 0,
       manualScore: 0,
     };
-
-    // حفظ explanation إذا موجود
-    if ((q as any).explanation) {
-      item.explanationSnapshot = (q as any).explanation;
-    }
 
     if (q.qType === 'mcq') {
       const options = [...(q.options || [])];
@@ -187,6 +184,20 @@ export class AttemptsService {
       if (q.regexList && q.regexList.length) item.regexList = q.regexList;
     }
 
+    // === Media snapshot ===
+    const m: any = (q as any).media;
+    if (m && m.key) {
+      // لو الملف private على S3: اعمل presigned URL صالح لساعة
+      item['mediaType'] = m.type;
+      item['mediaUrl'] = await this.media.getPresignedUrl(m.key);
+      item['mediaMime'] = m.mime;
+    } else if (m && m.url) {
+      // لو URL عام (مثلاً Cloudinary): استخدمه كما هو
+      item['mediaType'] = m.type;
+      item['mediaUrl'] = m.url;
+      item['mediaMime'] = m.mime;
+    }
+
     return item;
   }
 
@@ -219,7 +230,10 @@ export class AttemptsService {
     if (!picked.length) throw new BadRequestException('No questions available for this exam');
 
     // بناء items مع خلط الخيارات إذا كان السؤال MCQ
-    const items = picked.map(p => this.buildSnapshotItem(p.question, p.points, rng));
+    const items: any[] = [];
+    for (const p of picked) {
+      items.push(await this.buildSnapshotItem(p.question, p.points, rng));
+    }
 
     let expiresAt: Date | undefined = undefined;
     if (typeof (exam as any).timeLimitMin === 'number' && (exam as any).timeLimitMin > 0) {
@@ -250,6 +264,11 @@ export class AttemptsService {
         points: it.points,
         prompt: it.promptSnapshot,
         options: it.optionsText,
+        ...(it.mediaType && {
+          mediaType: it.mediaType,
+          mediaUrl: it.mediaUrl,
+          mediaMime: it.mediaMime,
+        }),
       })),
     };
   }
@@ -393,7 +412,7 @@ export class AttemptsService {
     };
   }
 
-  async gradeAttempt(user: ReqUser, attemptIdStr: string, items: { questionId: string; score: number; feedback?: string }[]) {
+  async gradeAttempt(user: ReqUser, attemptIdStr: string, items: { questionId: string; score: number }[]) {
     if (!user || (user.role !== 'teacher' && user.role !== 'admin')) throw new ForbiddenException();
 
     const attempt = await this.AttemptModel.findById(attemptIdStr).exec();
@@ -413,18 +432,10 @@ export class AttemptsService {
     }
 
     const scoreMap = new Map(items.map(i => [i.questionId, i.score] as [string, number]));
-    const feedbackMap = new Map(
-      items
-        .filter(i => i.feedback !== undefined)
-        .map(i => [i.questionId, i.feedback] as [string, string])
-    );
     
     for (const it of attempt.items as any[]) {
       if (scoreMap.has(String(it.questionId))) {
         it.manualScore = scoreMap.get(String(it.questionId)) || 0;
-      }
-      if (feedbackMap.has(String(it.questionId))) {
-        it.feedback = feedbackMap.get(String(it.questionId));
       }
     }
 
@@ -471,8 +482,6 @@ export class AttemptsService {
           regexList: it.regexList,
           autoScore: it.autoScore,
           manualScore: it.manualScore,
-          feedback: it.feedback,
-          explanation: it.explanationSnapshot,
         })),
       };
     }
@@ -501,7 +510,6 @@ export class AttemptsService {
           answerKeyBoolean: it.answerKeyBoolean,
           autoScore: it.autoScore,
           manualScore: it.manualScore,
-          feedback: it.feedback,
         })),
       };
     }
@@ -522,8 +530,6 @@ export class AttemptsService {
           answerKeyBoolean: it.answerKeyBoolean,
           autoScore: it.autoScore,
           manualScore: it.manualScore,
-          feedback: it.feedback,
-          explanation: it.explanationSnapshot,
         })),
       };
     }

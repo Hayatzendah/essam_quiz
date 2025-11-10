@@ -25,6 +25,25 @@ export class McqOption {
 }
 const McqOptionSchema = SchemaFactory.createForClass(McqOption);
 
+@Schema({ _id: false })
+export class QuestionMedia {
+  @Prop({ enum: ['audio', 'image', 'video'], required: true })
+  type: 'audio' | 'image' | 'video';
+
+  @Prop({ required: true })
+  key: string; // مفتاح S3
+
+  @Prop()
+  url?: string; // رابط بناءي (مش ضروري لو private)
+
+  @Prop()
+  mime?: string;
+
+  @Prop({ default: 's3' })
+  provider?: 's3' | 'cloudinary';
+}
+const QuestionMediaSchema = SchemaFactory.createForClass(QuestionMedia);
+
 @Schema({ timestamps: true })
 export class Question {
   // معلومات أساسية
@@ -76,9 +95,9 @@ export class Question {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy?: Types.ObjectId;
 
-  // شرح/توضيح للسؤال (للسياسات)
-  @Prop({ trim: true })
-  explanation?: string;
+  // وسائط
+  @Prop({ type: QuestionMediaSchema, required: false })
+  media?: QuestionMedia;
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);

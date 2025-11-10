@@ -12,6 +12,26 @@ class McqOptionDto {
   isCorrect?: boolean;
 }
 
+class QuestionMediaDto {
+  @IsEnum(['audio', 'image', 'video'])
+  type: 'audio' | 'image' | 'video';
+
+  @IsString()
+  key: string;
+
+  @IsOptional()
+  @IsString()
+  url?: string;
+
+  @IsOptional()
+  @IsString()
+  mime?: string;
+
+  @IsOptional()
+  @IsIn(['s3', 'cloudinary'])
+  provider?: 's3' | 'cloudinary';
+}
+
 export class CreateQuestionDto {
   @IsString() @MinLength(3)
   prompt: string;
@@ -46,6 +66,11 @@ export class CreateQuestionDto {
   // حالة ابتدائية اختيارية
   @IsOptional() @IsEnum(QuestionStatus)
   status?: QuestionStatus;
+
+  // وسائط
+  @IsOptional() @ValidateNested()
+  @Type(() => QuestionMediaDto)
+  media?: QuestionMediaDto;
 }
 
 

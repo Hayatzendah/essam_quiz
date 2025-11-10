@@ -6,6 +6,7 @@ import { Attempt, AttemptSchema } from './schemas/attempt.schema';
 import { Exam, ExamSchema } from '../exams/schemas/exam.schema';
 import { Question, QuestionSchema } from '../questions/schemas/question.schema';
 import { AuthModule } from '../auth/auth.module';
+import { MediaModule } from '../modules/media/media.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from '../auth/auth.module';
       { name: Question.name, schema: QuestionSchema },
     ]),
     AuthModule,
+    MediaModule,
   ],
   controllers: [AttemptsController],
   providers: [AttemptsService],

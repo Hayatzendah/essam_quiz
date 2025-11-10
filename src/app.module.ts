@@ -11,6 +11,7 @@ import { QuestionsModule } from './questions/questions.module';
 import { ExamsModule } from './exams/exams.module';
 import { AttemptsModule } from './attempts/attempts.module';
 import { AuthModule } from './auth/auth.module';
+import { MediaModule } from './modules/media/media.module';
 
 import { ThrottlerModule } from '@nestjs/throttler';
 import { HealthController } from './health/health.controller';
@@ -58,6 +59,7 @@ import { AppController } from './app.controller';
     ExamsModule,
     AttemptsModule,
     AuthModule,
+    MediaModule,
   ],
 
   controllers: [AppController, HealthController],
