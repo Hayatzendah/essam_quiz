@@ -1,10 +1,10 @@
-import { IsArray, IsMongoId, IsNumber, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsMongoId, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ManualItemGradeDto {
   @IsMongoId() questionId: string;
   @IsNumber() @Min(0) score: number;
-  // ممكن تضيف feedback لاحقًا
+  @IsOptional() @IsString() feedback?: string; // ملاحظات المعلم
 }
 
 export class GradeAttemptDto {

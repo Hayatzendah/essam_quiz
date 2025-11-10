@@ -80,10 +80,18 @@ export class AttemptsService {
           status: QuestionStatus.PUBLISHED,
         }).lean(false).exec();
 
+        let sectionItems: Array<{ question: QuestionDocument; points: number }> = [];
         for (const it of (sec as any).items) {
           const q = qDocs.find((d: any) => d._id.toString() === String(it.questionId));
-          if (q) selected.push({ question: q, points: it.points ?? 1 });
+          if (q) sectionItems.push({ question: q, points: it.points ?? 1 });
         }
+
+        // خلط ترتيب الأسئلة داخل القسم إذا كان randomize=true
+        if ((sec as any).randomize && sectionItems.length > 1) {
+          this.shuffleInPlace(sectionItems, rng);
+        }
+
+        selected.push(...sectionItems);
       } else if (hasQuota) {
         const filter: any = { status: QuestionStatus.PUBLISHED };
         if (exam.level) filter.level = exam.level;
@@ -123,7 +131,7 @@ export class AttemptsService {
     return selected;
   }
 
-  private buildSnapshotItem(q: QuestionDocument, points: number) {
+  private buildSnapshotItem(q: QuestionDocument, points: number, rng?: () => number) {
     const item: any = {
       questionId: q._id,
       qType: q.qType,
@@ -133,12 +141,41 @@ export class AttemptsService {
       manualScore: 0,
     };
 
+    // حفظ explanation إذا موجود
+    if ((q as any).explanation) {
+      item.explanationSnapshot = (q as any).explanation;
+    }
+
     if (q.qType === 'mcq') {
-      const optionsText = (q.options || []).map(o => o.text);
-      const correctIdxs: number[] = [];
-      (q.options || []).forEach((o, i) => { if (o.isCorrect) correctIdxs.push(i); });
-      item.optionsText = optionsText;
-      item.correctOptionIndexes = correctIdxs;
+      const options = [...(q.options || [])];
+      const originalCorrectIdxs: number[] = [];
+      options.forEach((o, i) => { if (o.isCorrect) originalCorrectIdxs.push(i); });
+
+      // خلط ترتيب الخيارات إذا كان rng متوفر
+      if (rng) {
+        const shuffled = [...options];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(rng() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        item.optionsText = shuffled.map(o => o.text);
+        // حساب correctOptionIndexes الجديدة بعد الخلط
+        const newCorrectIdxs: number[] = [];
+        shuffled.forEach((opt, newIdx) => {
+          const originalIdx = options.findIndex(o => o.text === opt.text && o.isCorrect === opt.isCorrect);
+          if (originalCorrectIdxs.includes(originalIdx)) {
+            newCorrectIdxs.push(newIdx);
+          }
+        });
+        item.correctOptionIndexes = newCorrectIdxs;
+        item.optionOrder = shuffled.map((_, newIdx) => {
+          const originalIdx = options.findIndex(o => o.text === shuffled[newIdx].text);
+          return originalIdx;
+        });
+      } else {
+        item.optionsText = options.map(o => o.text);
+        item.correctOptionIndexes = originalCorrectIdxs;
+      }
     }
 
     if (q.qType === 'true_false') {
@@ -181,7 +218,8 @@ export class AttemptsService {
     const picked = await this.generateQuestionListForAttempt(exam, rng);
     if (!picked.length) throw new BadRequestException('No questions available for this exam');
 
-    const items = picked.map(p => this.buildSnapshotItem(p.question, p.points));
+    // بناء items مع خلط الخيارات إذا كان السؤال MCQ
+    const items = picked.map(p => this.buildSnapshotItem(p.question, p.points, rng));
 
     let expiresAt: Date | undefined = undefined;
     if (typeof (exam as any).timeLimitMin === 'number' && (exam as any).timeLimitMin > 0) {
@@ -355,7 +393,7 @@ export class AttemptsService {
     };
   }
 
-  async gradeAttempt(user: ReqUser, attemptIdStr: string, items: { questionId: string; score: number }[]) {
+  async gradeAttempt(user: ReqUser, attemptIdStr: string, items: { questionId: string; score: number; feedback?: string }[]) {
     if (!user || (user.role !== 'teacher' && user.role !== 'admin')) throw new ForbiddenException();
 
     const attempt = await this.AttemptModel.findById(attemptIdStr).exec();
@@ -374,10 +412,19 @@ export class AttemptsService {
       throw new BadRequestException('Attempt must be submitted to grade');
     }
 
-    const map = new Map(items.map(i => [i.questionId, i.score]));
+    const scoreMap = new Map(items.map(i => [i.questionId, i.score] as [string, number]));
+    const feedbackMap = new Map(
+      items
+        .filter(i => i.feedback !== undefined)
+        .map(i => [i.questionId, i.feedback] as [string, string])
+    );
+    
     for (const it of attempt.items as any[]) {
-      if (map.has(String(it.questionId))) {
-        it.manualScore = map.get(String(it.questionId)) || 0;
+      if (scoreMap.has(String(it.questionId))) {
+        it.manualScore = scoreMap.get(String(it.questionId)) || 0;
+      }
+      if (feedbackMap.has(String(it.questionId))) {
+        it.feedback = feedbackMap.get(String(it.questionId));
       }
     }
 
@@ -424,6 +471,8 @@ export class AttemptsService {
           regexList: it.regexList,
           autoScore: it.autoScore,
           manualScore: it.manualScore,
+          feedback: it.feedback,
+          explanation: it.explanationSnapshot,
         })),
       };
     }
@@ -452,6 +501,7 @@ export class AttemptsService {
           answerKeyBoolean: it.answerKeyBoolean,
           autoScore: it.autoScore,
           manualScore: it.manualScore,
+          feedback: it.feedback,
         })),
       };
     }
@@ -472,6 +522,8 @@ export class AttemptsService {
           answerKeyBoolean: it.answerKeyBoolean,
           autoScore: it.autoScore,
           manualScore: it.manualScore,
+          feedback: it.feedback,
+          explanation: it.explanationSnapshot,
         })),
       };
     }

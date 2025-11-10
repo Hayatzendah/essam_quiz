@@ -75,6 +75,10 @@ export class Question {
   // مالك/منشئ
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy?: Types.ObjectId;
+
+  // شرح/توضيح للسؤال (للسياسات)
+  @Prop({ trim: true })
+  explanation?: string;
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);
