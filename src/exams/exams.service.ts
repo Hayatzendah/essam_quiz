@@ -113,15 +113,36 @@ export class ExamsService {
   async createExam(dto: CreateExamDto, user: ReqUser) {
     this.assertTeacherOrAdmin(user);
 
+    // تنظيف sections من null/undefined قبل التحقق
+    if (!dto.sections || !Array.isArray(dto.sections)) {
+      throw new BadRequestException('Exam must have at least one section');
+    }
+    
+    // إزالة null/undefined sections
+    const cleanedSections = dto.sections.filter((s: any) => s !== null && s !== undefined);
+    if (cleanedSections.length === 0) {
+      throw new BadRequestException('Exam must have at least one valid section (null sections are not allowed)');
+    }
+    
     // تحققات إضافية على مستوى الخدمة
-    for (const s of dto.sections) {
+    for (const s of cleanedSections) {
+      if (!s || typeof s !== 'object') {
+        throw new BadRequestException('Each section must be a valid object');
+      }
+      
+      // تنظيف items من null
+      if (s.items && Array.isArray(s.items)) {
+        s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
+      }
+      
       const hasItems = Array.isArray(s.items) && s.items.length > 0;
       const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+      
       if (hasItems && hasQuota) {
-        throw new BadRequestException(`Section "${s.name}" cannot have both items and quota`);
+        throw new BadRequestException(`Section "${s.name || 'unnamed'}" cannot have both items and quota`);
       }
       if (!hasItems && !hasQuota) {
-        throw new BadRequestException(`Section "${s.name}" must have either items or quota`);
+        throw new BadRequestException(`Section "${s.name || 'unnamed'}" must have either items or quota`);
       }
       if (hasQuota && s.difficultyDistribution) {
         const sum =
@@ -130,11 +151,14 @@ export class ExamsService {
           (s.difficultyDistribution.hard || 0);
         if (sum !== s.quota) {
           throw new BadRequestException(
-            `Section "${s.name}" difficultyDistribution must sum to quota`,
+            `Section "${s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
           );
         }
       }
     }
+    
+    // استبدال sections بالنسخة المنظفة
+    dto.sections = cleanedSections;
 
     // Validation خاص لـ "Deutschland-in-Leben" Test
     if (dto.provider === 'Deutschland-in-Leben') {
@@ -142,9 +166,43 @@ export class ExamsService {
     }
 
     const userId = user.userId || (user as any).sub || (user as any).id;
+    
+    // تحويل questionId في items إلى ObjectId إذا كان string
+    // وإزالة أي sections null أو undefined
+    const processedDto = { ...dto };
+    if (processedDto.sections && Array.isArray(processedDto.sections)) {
+      // إزالة null/undefined sections
+      processedDto.sections = processedDto.sections
+        .filter((section: any) => section !== null && section !== undefined)
+        .map((section: any) => {
+          if (section.items && Array.isArray(section.items)) {
+            // إزالة null/undefined items
+            section.items = section.items
+              .filter((item: any) => item !== null && item !== undefined)
+              .map((item: any) => {
+                if (item.questionId) {
+                  return {
+                    ...item,
+                    questionId: item.questionId instanceof Types.ObjectId 
+                      ? item.questionId 
+                      : new Types.ObjectId(item.questionId),
+                  };
+                }
+                return item;
+              });
+          }
+          return section;
+        });
+      
+      // التحقق من أن هناك sections صحيحة بعد التنظيف
+      if (processedDto.sections.length === 0) {
+        throw new BadRequestException('Exam must have at least one valid section');
+      }
+    }
+    
     const doc = await this.model.create({
-      ...dto,
-      status: dto.status ?? ExamStatusEnum.DRAFT,
+      ...processedDto,
+      status: processedDto.status ?? ExamStatusEnum.DRAFT,
       ownerId: new Types.ObjectId(userId),
     });
 
@@ -169,14 +227,35 @@ export class ExamsService {
    */
   async createPracticeExam(dto: CreatePracticeExamDto, user: ReqUser) {
     // التحقق من أن sections تحتوي على items (أسئلة محددة)
-    if (!dto.sections || dto.sections.length === 0) {
+    if (!dto.sections || !Array.isArray(dto.sections) || dto.sections.length === 0) {
       throw new BadRequestException('At least one section with items is required');
     }
 
-    for (const s of dto.sections) {
-      if (!s.items || !Array.isArray(s.items) || s.items.length === 0) {
-        throw new BadRequestException(`Section "${s.name}" must have items (questions)`);
+    // تنظيف sections من null/undefined
+    const cleanedSections = dto.sections.filter((s: any) => s !== null && s !== undefined);
+    if (cleanedSections.length === 0) {
+      throw new BadRequestException('At least one valid section is required (null sections are not allowed)');
+    }
+
+    for (const s of cleanedSections) {
+      if (!s || typeof s !== 'object') {
+        throw new BadRequestException('Each section must be a valid object');
       }
+      
+      // تنظيف items من null و items بدون questionId
+      if (s.items && Array.isArray(s.items)) {
+        s.items = s.items.filter((item: any) => 
+          item !== null && 
+          item !== undefined && 
+          item.questionId && 
+          item.questionId !== null
+        );
+      }
+      
+      if (!s.items || !Array.isArray(s.items) || s.items.length === 0) {
+        throw new BadRequestException(`Section "${s.name || 'unnamed'}" must have at least one valid item with questionId`);
+      }
+      
       // لا نسمح بـ quota للطلاب (فقط items)
       if (s.quota) {
         throw new BadRequestException(
@@ -184,18 +263,50 @@ export class ExamsService {
         );
       }
     }
+    
+    // استبدال sections بالنسخة المنظفة
+    dto.sections = cleanedSections;
 
     // إضافة title تلقائياً إذا كان مفقوداً
     const title = dto.title || `Practice Exam - ${new Date().toLocaleDateString()}`;
 
     const userId = user.userId || (user as any).sub || (user as any).id;
     
+    // تنظيف sections من null/undefined
+    const processedDto = { ...dto };
+    if (processedDto.sections && Array.isArray(processedDto.sections)) {
+      processedDto.sections = processedDto.sections
+        .filter((section: any) => section !== null && section !== undefined)
+        .map((section: any) => {
+          if (section.items && Array.isArray(section.items)) {
+            section.items = section.items
+              .filter((item: any) => item !== null && item !== undefined)
+              .map((item: any) => {
+                if (item.questionId) {
+                  return {
+                    ...item,
+                    questionId: item.questionId instanceof Types.ObjectId 
+                      ? item.questionId 
+                      : new Types.ObjectId(item.questionId),
+                  };
+                }
+                return item;
+              });
+          }
+          return section;
+        });
+      
+      if (processedDto.sections.length === 0) {
+        throw new BadRequestException('Exam must have at least one valid section');
+      }
+    }
+    
     this.logger.log(
-      `[createPracticeExam] Creating exam - title: ${title}, sections count: ${dto.sections?.length || 0}, sections: ${JSON.stringify(dto.sections?.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0 })))}`,
+      `[createPracticeExam] Creating exam - title: ${title}, sections count: ${processedDto.sections?.length || 0}, sections: ${JSON.stringify(processedDto.sections?.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0 })))}`,
     );
     
     const doc = await this.model.create({
-      ...dto,
+      ...processedDto,
       title,
       status: ExamStatusEnum.PUBLISHED, // دائماً published للطلاب
       ownerId: new Types.ObjectId(userId),
@@ -689,8 +800,42 @@ export class ExamsService {
       this.logger.log(
         `[updateExam] Updating sections - examId: ${id}, old sections: ${JSON.stringify(doc.sections)}, new sections: ${JSON.stringify((dto as any).sections)}`,
       );
+      
+      // تحويل questionId في items إلى ObjectId إذا كان string
+      // وإزالة أي sections null أو undefined
+      const processedSections = (dto as any).sections
+        .filter((section: any) => section !== null && section !== undefined)
+        .map((section: any) => {
+          if (section.items && Array.isArray(section.items)) {
+            // إزالة null/undefined items
+            section.items = section.items
+              .filter((item: any) => item !== null && item !== undefined)
+              .map((item: any) => {
+                if (item.questionId) {
+                  return {
+                    ...item,
+                    questionId: item.questionId instanceof Types.ObjectId 
+                      ? item.questionId 
+                      : new Types.ObjectId(item.questionId),
+                  };
+                }
+                return item;
+              });
+          }
+          return section;
+        });
+      
+      // التحقق من أن هناك sections صحيحة بعد التنظيف
+      if (processedSections.length === 0) {
+        throw new BadRequestException('Exam must have at least one valid section');
+      }
+      
+      this.logger.log(
+        `[updateExam] Processed sections with ObjectId conversion - sections: ${JSON.stringify(processedSections.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0, items: s.items?.map((i: any) => ({ questionId: String(i.questionId) })) || [] })))}`,
+      );
+      
       // استخدام set() و markModified لضمان أن Mongoose يحدث الحقل بشكل صحيح
-      doc.set('sections', (dto as any).sections);
+      doc.set('sections', processedSections);
       doc.markModified('sections');
     }
     
