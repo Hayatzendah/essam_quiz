@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { MSG } from '../constants/messages';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -58,6 +59,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     response.status(status).json(errorResponse);
   }
 }
+
 
 
 

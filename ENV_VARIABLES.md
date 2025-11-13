@@ -1,85 +1,128 @@
-# Environment Variables Required
+# 🔐 Environment Variables Reference
 
-## Required Variables (يجب إضافتها في Railway)
-
-### 1. MongoDB Connection
-
-لديك خياران لاستخدام MongoDB:
-
-#### الخيار 1: MongoDB على Railway (موصى به - أسهل) ✅
-
-إذا كان لديك MongoDB service على Railway (كما يظهر في الصورة):
-
-1. اذهب إلى MongoDB service في Railway
-2. اضغط على تبويب **Database** → **Credentials**
-3. انسخ **MONGO_URL** أو **Connection String**
-4. أضفه في Variables كـ `MONGO_URI`
-
-**مثال:**
-```
-MONGO_URI=mongodb://mongo:27017/quiz-db
-```
-أو
-```
-MONGO_URI=mongodb://username:password@mongo.railway.internal:27017/quiz-db
-```
-
-**✅ المميزات:**
-- لا تحتاج إعداد Network Access
-- الاتصال أسرع (داخل نفس الشبكة)
-- أسهل في الإعداد
+قائمة شاملة بجميع متغيرات البيئة المستخدمة في المشروع.
 
 ---
 
-#### الخيار 2: MongoDB Atlas (من cloud.mongodb.com)
+## 📋 Required Variables (إجبارية)
 
-إذا كنت تستخدم MongoDB Atlas:
-
-```
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/quiz-db?retryWrites=true&w=majority
-```
-
-**📝 مثال على MONGO_URI الصحيح:**
-```
-mongodb+srv://essamhammamlmu_db_user:zgCKwKYkXUkauilv@cluster0.z9puqka.mongodb.net/quiz-db?retryWrites=true&w=majority
+### Server Configuration
+```bash
+PORT=8080                    # Port number (Railway uses 8080 by default)
+NODE_ENV=production          # Environment: development | production | test
 ```
 
-**⚠️ ملاحظة مهمة:**
-- يجب إضافة اسم قاعدة البيانات بعد الـ `/` وقبل الـ `?`
-- في المثال أعلاه، اسم قاعدة البيانات هو: `quiz-db`
-- يمكنك استخدام أي اسم تريده مثل: `quiz-db`, `deutsch-tests-db`, `deutsch-quiz-db`
-- بدون اسم قاعدة البيانات، التطبيق قد لا يعمل بشكل صحيح!
-
-**⚠️ مهم جداً - MongoDB Atlas Network Access:**
-- يجب السماح بالاتصال من Railway في MongoDB Atlas
-- اذهب إلى **Network Access** في MongoDB Atlas
-- اضغط على **Add IP Address**
-- اختر **Allow Access from Anywhere** (0.0.0.0/0) للسماح من أي IP
-- أو أضف Railway IP addresses يدوياً
-- بدون هذا الإعداد، التطبيق لن يستطيع الاتصال بقاعدة البيانات!
-
-### 2. JWT Secrets
+### Database
+```bash
+MONGO_URI=mongodb+srv://...  # MongoDB connection string
 ```
-JWT_ACCESS_SECRET=your-super-secret-access-key-change-this
-JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-this
-```
-- يمكنك توليد مفاتيح آمنة باستخدام: `openssl rand -base64 32`
 
-### 3. Optional Variables (اختيارية - لها قيم افتراضية)
+### Authentication
+```bash
+JWT_ACCESS_SECRET=...        # Secret for access tokens (min 32 chars)
+JWT_REFRESH_SECRET=...       # Secret for refresh tokens (min 32 chars)
+JWT_ACCESS_EXPIRES_IN=15m    # Access token expiration (default: 15m)
+JWT_REFRESH_EXPIRES_IN=7d    # Refresh token expiration (default: 7d)
 ```
-PORT=4000
+
+### CORS
+```bash
+WEB_APP_ORIGIN=https://your-frontend.com  # Frontend origin (comma-separated for multiple)
+```
+
+---
+
+## 🔧 Optional Variables (اختيارية)
+
+### Swagger Documentation
+```bash
+ENABLE_SWAGGER=false         # Enable Swagger UI at /docs (default: false)
+```
+
+### Random Seed (for exam randomization)
+```bash
+SECRET_RANDOM_SERVER=...     # Secret for deterministic random number generation
+```
+
+### S3/Media Storage
+```bash
+# If not set, MediaService will use Mock Mode
+S3_REGION=us-east-1
+S3_ENDPOINT=https://s3.amazonaws.com
+S3_ACCESS_KEY=...
+S3_SECRET_KEY=...
+S3_BUCKET=...
+S3_FORCE_PATH_STYLE=false
+S3_USE_ACL=true
+MEDIA_USE_MOCK=false         # Force mock mode (default: auto-detect)
+MEDIA_DEFAULT_EXPIRES_SEC=3600  # Presigned URL expiration (default: 1 hour)
+```
+
+### API Base URL (for Mock Mode)
+```bash
+API_BASE_URL=https://api.your-domain.com  # Used for mock media URLs
+```
+
+### Backward Compatibility
+```bash
+CORS_ORIGIN=...              # Fallback for WEB_APP_ORIGIN (deprecated)
+```
+
+---
+
+## 🚀 Quick Setup for Railway
+
+### Minimum Required Variables:
+```bash
+PORT=8080
 NODE_ENV=production
-CORS_ORIGIN=https://your-frontend-domain.com
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
+MONGO_URI=mongodb+srv://...
+JWT_ACCESS_SECRET=your-secret-here
+JWT_REFRESH_SECRET=your-secret-here
+WEB_APP_ORIGIN=https://your-frontend.com
 ```
 
-## كيفية إضافة المتغيرات في Railway:
+### Recommended Additional Variables:
+```bash
+ENABLE_SWAGGER=false
+SECRET_RANDOM_SERVER=your-random-secret
+```
 
-1. اذهب إلى مشروعك في Railway
-2. اضغط على **Variables** tab
-3. أضف كل متغير من المتغيرات المطلوبة أعلاه
-4. احفظ التغييرات
+### For Media Uploads (S3):
+```bash
+S3_REGION=us-east-1
+S3_ENDPOINT=https://s3.amazonaws.com
+S3_ACCESS_KEY=...
+S3_SECRET_KEY=...
+S3_BUCKET=...
+```
 
-**ملاحظة:** Railway سيحدد `PORT` تلقائياً، لكن يمكنك إضافته يدوياً إذا أردت.
+---
+
+## 🔒 Security Notes
+
+1. **Never commit secrets to Git** - Use Railway environment variables
+2. **Use strong random values** for JWT secrets (32+ characters)
+3. **Keep `ENABLE_SWAGGER=false`** in production
+4. **Set `WEB_APP_ORIGIN`** correctly to prevent CORS issues
+
+---
+
+## 📝 Generating Secrets
+
+### Using Node.js:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### Using OpenSSL:
+```bash
+openssl rand -hex 32
+```
+
+---
+
+## ✅ Validation
+
+All environment variables are validated on startup using Joi schema. Missing required variables will cause the application to exit with an error message.
 

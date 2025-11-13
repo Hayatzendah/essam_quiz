@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AttemptsService } from './attempts.service';
 import { StartAttemptDto } from './dto/start-attempt.dto';
 import { AnswerOneDto } from './dto/answer.dto';
@@ -8,9 +9,19 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 
+@ApiTags('Attempts')
+@ApiBearerAuth('JWT-auth')
 @Controller('attempts')
 export class AttemptsController {
   constructor(private readonly service: AttemptsService) {}
+
+  // قائمة محاولات الطالب
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  findMyAttempts(@Query('examId') examId?: string, @Req() req: any) {
+    return this.service.findByStudent(req.user, examId);
+  }
 
   // بدء محاولة امتحان (طالب فقط)
   @Post()
@@ -31,6 +42,9 @@ export class AttemptsController {
       studentAnswerIndexes: dto.studentAnswerIndexes,
       studentAnswerText: dto.studentAnswerText,
       studentAnswerBoolean: dto.studentAnswerBoolean,
+      studentAnswerMatch: dto.studentAnswerMatch,
+      studentAnswerReorder: dto.studentAnswerReorder,
+      studentAnswerAudioKey: dto.studentAnswerAudioKey,
     });
   }
 
@@ -58,4 +72,6 @@ export class AttemptsController {
     return this.service.getAttempt(req.user, attemptId);
   }
 }
+
+
 

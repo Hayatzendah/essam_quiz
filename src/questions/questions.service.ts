@@ -51,9 +51,7 @@ export class QuestionsService {
       provider: doc.provider,
       level: doc.level,
       section: doc.section,
-      difficulty: doc.difficulty,
       tags: doc.tags,
-      version: doc.version,
       createdAt: (doc as any).createdAt,
     };
   }
@@ -63,10 +61,21 @@ export class QuestionsService {
     if (filters.provider) q.provider = filters.provider;
     if (filters.level) q.level = filters.level;
     if (filters.section) q.section = filters.section;
-    if (filters.difficulty) q.difficulty = filters.difficulty;
     if (filters.qType) q.qType = filters.qType;
     if (filters.status) q.status = filters.status;
-    if (filters.tags) q.tags = { $in: filters.tags.split(',').map(s => s.trim()).filter(Boolean) };
+    if (filters.tags) {
+      q.tags = { $in: filters.tags.split(',').map(s => s.trim()).filter(Boolean) };
+    }
+    // فلترة حسب الولاية (state) - يتم البحث في tags
+    if (filters.state) {
+      if (q.tags) {
+        // إذا كان tags موجود، نضيف state للقائمة
+        const existingTags = Array.isArray(q.tags.$in) ? q.tags.$in : [];
+        q.tags = { $in: [...existingTags, filters.state] };
+      } else {
+        q.tags = { $in: [filters.state] };
+      }
+    }
     if (filters.text) q.$text = { $search: filters.text };
     return q;
   }
@@ -93,15 +102,7 @@ export class QuestionsService {
       throw new BadRequestException('qType cannot be updated');
     }
 
-    // لو محتوى مهم اتغيّر نعدّل النسخة
-    const shouldIncrementVersion = (dto as any).prompt || (dto as any).options || (dto as any).fillExact || (dto as any).regexList || typeof (dto as any).answerKeyBoolean !== 'undefined';
-    const updateData: any = { ...dto };
-    
-    if (shouldIncrementVersion) {
-      updateData.$inc = { version: 1 };
-    }
-
-    const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    const updated = await this.model.findByIdAndUpdate(id, dto, { new: true }).exec();
     if (!updated) throw new NotFoundException('Question not found');
     return updated;
   }

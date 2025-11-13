@@ -20,6 +20,9 @@ export class User {
   @Prop({ type: String, enum: ['student', 'teacher', 'admin'], default: 'student', index: true })
   role: UserRole;
 
+  @Prop({ trim: true })
+  state?: string; // الولاية الألمانية (Bundesland): Bayern, Berlin, NRW, etc.
+
   @Prop({ type: String, select: false, default: null })
   refreshTokenHash?: string | null;
 }

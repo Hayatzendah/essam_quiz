@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Param,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -29,6 +30,19 @@ function fileFilter(_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 @Controller('media')
 export class MediaController {
   constructor(private readonly media: MediaService) {}
+
+  @Get('mock/:key(*)')
+  async getMockFile(@Param('key') key: string, @Res() res: Response) {
+    // في وضع Mock، نعيد رسالة توضيحية بدل الملف الفعلي
+    // لأن الملفات لا تُحفظ فعلياً في وضع Mock
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).json({
+      message: 'Mock mode: File not actually stored',
+      note: 'This is a mock URL. In production with S3, this would return the actual file.',
+      key: key,
+      info: 'To get real file URLs, configure S3 environment variables in Railway.',
+    });
+  }
 
   @Get('test')
   testPage(@Res() res: Response) {
@@ -261,6 +275,35 @@ export class MediaController {
       prefix: 'questions',
     });
     // من الأفضل حفظ الـ key في السؤال لاحقًا
+    return { key: saved.key, mime: saved.mime, url: saved.url, private: true };
+  }
+
+  // للطلاب: رفع تسجيل صوتي (Sprechen)
+  @Post('upload/student')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage,
+      fileFilter: (req, file, cb) => {
+        // للطلاب: فقط ملفات صوتية
+        if (!/^audio\//.test(file.mimetype)) {
+          return cb(new BadRequestException('Only audio files allowed for student uploads') as any);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB للطلاب
+    }),
+  )
+  async uploadStudentAudio(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file');
+    const ext = path.extname(file.originalname).replace(/^\./, '').toLowerCase();
+    const saved = await this.media.uploadBuffer({
+      buffer: file.buffer,
+      mime: file.mimetype,
+      ext,
+      prefix: 'student-recordings', // مجلد منفصل لتسجيلات الطلاب
+    });
     return { key: saved.key, mime: saved.mime, url: saved.url, private: true };
   }
 }

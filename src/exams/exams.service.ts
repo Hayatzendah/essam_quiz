@@ -72,9 +72,68 @@ export class ExamsService {
     }
     if (q?.status) filter.status = q.status;
     if (q?.level) filter.level = q.level;
+    if (q?.provider) filter.provider = q.provider;
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
     return { items, count: items.length };
+  }
+
+  async findAvailableForStudent(user: ReqUser, q: QueryExamDto) {
+    if (!user || user.role !== 'student') {
+      throw new ForbiddenException('Only students can access available exams');
+    }
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const studentId = new Types.ObjectId(userId);
+
+    const filter: any = {
+      status: ExamStatus.PUBLISHED,
+      $or: [
+        { assignedStudentIds: { $exists: false } }, // غير مخصص لأحد
+        { assignedStudentIds: { $size: 0 } }, // قائمة فارغة
+        { assignedStudentIds: studentId }, // مخصص لهذا الطالب
+      ],
+    };
+
+    if (q?.level) filter.level = q.level;
+    if (q?.provider) filter.provider = q.provider;
+
+    const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
+    
+    // فلترة حسب attemptLimit
+    const availableExams = [];
+    const examIds = items.map((e: any) => e._id);
+    
+    if (examIds.length > 0) {
+      const attemptCounts = await this.model.db.collection('attempts').aggregate([
+        {
+          $match: {
+            studentId,
+            examId: { $in: examIds },
+          },
+        },
+        {
+          $group: {
+            _id: '$examId',
+            count: { $sum: 1 },
+          },
+        },
+      ]).toArray();
+      
+      const attemptCountMap = new Map(attemptCounts.map((a: any) => [a._id.toString(), a.count]));
+      
+      for (const exam of items) {
+        const attemptCount = attemptCountMap.get(exam._id.toString()) || 0;
+        const attemptLimit = exam.attemptLimit || 0;
+        if (attemptLimit === 0 || attemptCount < attemptLimit) {
+          availableExams.push(exam);
+        }
+      }
+    } else {
+      availableExams.push(...items);
+    }
+
+    return { items: availableExams, count: availableExams.length };
   }
 
   async findById(id: string, user?: ReqUser) {

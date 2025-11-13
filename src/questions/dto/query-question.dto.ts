@@ -5,7 +5,7 @@ export class QueryQuestionDto {
   @IsOptional() @IsString() provider?: string;
   @IsOptional() @IsString() level?: string;
   @IsOptional() @IsString() section?: string;
-  @IsOptional() @IsString() difficulty?: string; // 'easy' | 'medium' | 'hard'
+  @IsOptional() @IsString() state?: string; // الولاية الألمانية (Bundesland) - للفلترة حسب tags
   @IsOptional() @IsEnum(QuestionType) qType?: QuestionType;
   @IsOptional() @IsEnum(QuestionStatus) status?: QuestionStatus;
   @IsOptional() @IsString() tags?: string; // comma-separated
@@ -14,5 +14,7 @@ export class QueryQuestionDto {
   @IsOptional() @IsNumberString() page?: string; // 1..n
   @IsOptional() @IsNumberString() limit?: string; // 10..n
 }
+
+
 
 

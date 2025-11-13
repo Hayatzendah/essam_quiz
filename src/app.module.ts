@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Logger } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
+import { CacheModule } from '@nestjs/cache-manager';
 
 import { UsersModule } from './users/users.module';
 import { QuestionsModule } from './questions/questions.module';
@@ -12,8 +13,10 @@ import { ExamsModule } from './exams/exams.module';
 import { AttemptsModule } from './attempts/attempts.module';
 import { AuthModule } from './auth/auth.module';
 import { MediaModule } from './modules/media/media.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { HealthController } from './health/health.controller';
 import { AppController } from './app.controller';
 
@@ -31,7 +34,19 @@ import { AppController } from './app.controller';
         JWT_REFRESH_SECRET: Joi.string().required(),
         JWT_ACCESS_EXPIRES_IN: Joi.string().default('15m'),
         JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
-        CORS_ORIGIN: Joi.string().default('http://api.deutsch-tests.com'),
+        WEB_APP_ORIGIN: Joi.string().optional(),
+        CORS_ORIGIN: Joi.string().optional(), // Fallback for backward compatibility
+        ENABLE_SWAGGER: Joi.string().valid('true', 'false').default('false'),
+        SWAGGER_USER: Joi.string().optional(),
+        SWAGGER_PASSWORD: Joi.string().optional(),
+        SECRET_RANDOM_SERVER: Joi.string().optional(),
+        // S3/Media configuration (optional - will use mock mode if not set)
+        S3_REGION: Joi.string().optional(),
+        S3_ENDPOINT: Joi.string().optional(),
+        S3_ACCESS_KEY: Joi.string().optional(),
+        S3_SECRET_KEY: Joi.string().optional(),
+        S3_BUCKET: Joi.string().optional(),
+        MEDIA_USE_MOCK: Joi.string().valid('true', 'false').optional(),
       }),
     }),
 
@@ -51,7 +66,14 @@ import { AppController } from './app.controller';
       }),
     }),
 
-    ThrottlerModule.forRoot([{ ttl: 60, limit: 100 }]),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]), // 100 requests per minute per IP
+
+    ScheduleModule.forRoot(), // Cron jobs
+
+    CacheModule.register({
+      ttl: 10_000, // 10 seconds
+      max: 100, // maximum number of items in cache
+    }),
 
     // 🟢 هذه كانت ناقصة
     UsersModule,
@@ -60,6 +82,7 @@ import { AppController } from './app.controller';
     AttemptsModule,
     AuthModule,
     MediaModule,
+    AnalyticsModule,
   ],
 
   controllers: [AppController, HealthController],

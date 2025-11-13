@@ -17,5 +17,14 @@ export class AnswerOneDto {
 
   @IsOptional() @IsBoolean()
   studentAnswerBoolean?: boolean;  // true_false
+
+  @IsOptional() @IsArray()
+  studentAnswerMatch?: [string, string][]; // match: أزواج [left, right]
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  studentAnswerReorder?: string[]; // reorder: ترتيب الطالب
+
+  @IsOptional() @IsString()
+  studentAnswerAudioKey?: string;  // Sprechen: مفتاح الملف الصوتي (من /media/upload/student)
 }
 

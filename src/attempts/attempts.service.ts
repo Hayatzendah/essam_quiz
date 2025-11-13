@@ -1,32 +1,25 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import * as crypto from 'crypto';
 import { Attempt, AttemptDocument, AttemptStatus } from './schemas/attempt.schema';
 import { Exam, ExamDocument, ExamStatus } from '../exams/schemas/exam.schema';
 import { Question, QuestionDocument, QuestionStatus } from '../questions/schemas/question.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
 import { MediaService } from '../modules/media/media.service';
+import { mulberry32, shuffleInPlace, pickRandom } from '../common/utils/random.util';
+import { seedFrom } from '../common/utils/seed.util';
+import { normalizeAnswer } from '../common/utils/normalize.util';
+import { MSG } from '../common/constants/messages';
 
 type ReqUser = { userId: string; role: 'student'|'teacher'|'admin' };
 
-function mulberry32(seed: number) {
-  let t = seed >>> 0;
-  return function() {
-    t += 0x6D2B79F5;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 @Injectable()
 export class AttemptsService {
-  private RANDOM_SECRET = process.env.RANDOM_SECRET || 'SECRET_RANDOM_SERVER';
-
   constructor(
     @InjectModel(Attempt.name) private readonly AttemptModel: Model<AttemptDocument>,
     @InjectModel(Exam.name) private readonly ExamModel: Model<ExamDocument>,
     @InjectModel(Question.name) private readonly QuestionModel: Model<QuestionDocument>,
+    @InjectModel(User.name) private readonly UserModel: Model<UserDocument>,
     private readonly media: MediaService,
   ) {}
 
@@ -36,39 +29,14 @@ export class AttemptsService {
   }
 
   private computeSeed(attemptCount: number, studentId: string, examId: string) {
-    const base = `${attemptCount}+${studentId}+${examId}+${this.RANDOM_SECRET}`;
-    const hash = crypto.createHash('sha256').update(base).digest('hex');
-    const first8 = hash.slice(0, 8);
-    return parseInt(first8, 16) >>> 0;
-  }
-
-  private pickRandom<T>(arr: T[], n: number, rng: () => number): T[] {
-    if (n <= 0) return [];
-    if (arr.length <= n) return [...arr];
-    const picked: T[] = [];
-    const used = new Set<number>();
-    while (picked.length < n && used.size < arr.length) {
-      const idx = Math.floor(rng() * arr.length);
-      if (!used.has(idx)) {
-        used.add(idx);
-        picked.push(arr[idx]);
-      }
-    }
-    return picked;
-  }
-
-  private shuffleInPlace<T>(arr: T[], rng: () => number) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
+    return seedFrom(examId, studentId, attemptCount);
   }
 
   private ensureStudent(user: ReqUser) {
     if (!user || user.role !== 'student') throw new ForbiddenException('Only student can perform this action');
   }
 
-  private async generateQuestionListForAttempt(exam: ExamDocument, rng: () => number) {
+  private async generateQuestionListForAttempt(exam: ExamDocument, rng: () => number, studentState?: string) {
     const selected: Array<{ question: QuestionDocument; points: number }> = [];
 
     for (const sec of exam.sections) {
@@ -90,37 +58,74 @@ export class AttemptsService {
 
         // خلط ترتيب الأسئلة داخل القسم إذا كان randomize=true
         if ((sec as any).randomize && sectionItems.length > 1) {
-          this.shuffleInPlace(sectionItems, rng);
+          shuffleInPlace(sectionItems, rng);
         }
 
         selected.push(...sectionItems);
       } else if (hasQuota) {
         const filter: any = { status: QuestionStatus.PUBLISHED };
         if (exam.level) filter.level = exam.level;
+        if ((exam as any).provider) filter.provider = (exam as any).provider;
         if (sec.name) filter.section = sec.name;
+        
+        // دعم tags من section
+        const sectionTags: string[] = [];
+        if ((sec as any).tags && Array.isArray((sec as any).tags) && (sec as any).tags.length > 0) {
+          sectionTags.push(...(sec as any).tags);
+        }
+        
+        // إذا كان provider = "Deutschland-in-Leben" و section يحتوي على tags للولاية
+        // و studentState موجود، نضيف الولاية للفلترة
+        if (studentState && (exam as any).provider === 'Deutschland-in-Leben') {
+          // إذا كان section يحتوي على tags للولاية (مثل ["Bayern"] أو ["300-Fragen"])
+          // نستخدم studentState فقط إذا كان section مخصص للولاية
+          const isStateSection = sectionTags.some(tag => 
+            ['Bayern', 'Berlin', 'NRW', 'Baden-Württemberg', 'Brandenburg', 'Bremen', 
+             'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen', 
+             'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen', 
+             'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'].includes(tag)
+          );
+          
+          if (isStateSection) {
+            // استبدال tags الولاية بـ studentState
+            const filteredTags = sectionTags.filter(tag => 
+              !['Bayern', 'Berlin', 'NRW', 'Baden-Württemberg', 'Brandenburg', 'Bremen', 
+                'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen', 
+                'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen', 
+                'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'].includes(tag)
+            );
+            sectionTags.length = 0;
+            sectionTags.push(...filteredTags, studentState);
+          }
+        }
+        
+        if (sectionTags.length > 0) {
+          filter.tags = { $in: sectionTags };
+        }
 
         const candidates = await this.QuestionModel.find(filter).lean(false).exec();
         let pickList: QuestionDocument[] = [];
 
         if ((sec as any).difficultyDistribution) {
+          // استخدام tags للصعوبة: ["easy"], ["medium"], ["hard"]
           const dd = (sec as any).difficultyDistribution as any;
-          const easy = candidates.filter(c => c.difficulty === 'easy');
-          const med  = candidates.filter(c => c.difficulty === 'medium');
-          const hard = candidates.filter(c => c.difficulty === 'hard');
+          const easy = candidates.filter((c: any) => c.tags && c.tags.includes('easy'));
+          const med  = candidates.filter((c: any) => c.tags && c.tags.includes('medium'));
+          const hard = candidates.filter((c: any) => c.tags && c.tags.includes('hard'));
 
           pickList = [
-            ...this.pickRandom(easy, dd.easy || 0, rng),
-            ...this.pickRandom(med,  dd.medium || 0, rng),
-            ...this.pickRandom(hard, dd.hard || 0, rng),
+            ...pickRandom(easy, dd.easy || 0, rng),
+            ...pickRandom(med,  dd.medium || 0, rng),
+            ...pickRandom(hard, dd.hard || 0, rng),
           ];
 
           const deficit = (sec as any).quota - pickList.length;
           if (deficit > 0) {
             const left = candidates.filter((c: any) => !pickList.some((p: any) => p._id.equals(c._id)));
-            pickList.push(...this.pickRandom(left, deficit, rng));
+            pickList.push(...pickRandom(left, deficit, rng));
           }
         } else {
-          pickList = this.pickRandom(candidates, (sec as any).quota, rng);
+          pickList = pickRandom(candidates, (sec as any).quota, rng);
         }
 
         for (const q of pickList) {
@@ -129,7 +134,7 @@ export class AttemptsService {
       }
     }
 
-    if (exam.randomizeQuestions) this.shuffleInPlace(selected, rng);
+    if (exam.randomizeQuestions) shuffleInPlace(selected, rng);
     return selected;
   }
 
@@ -151,10 +156,7 @@ export class AttemptsService {
       // خلط ترتيب الخيارات إذا كان rng متوفر
       if (rng) {
         const shuffled = [...options];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(rng() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
+        shuffleInPlace(shuffled, rng);
         item.optionsText = shuffled.map(o => o.text);
         // حساب correctOptionIndexes الجديدة بعد الخلط
         const newCorrectIdxs: number[] = [];
@@ -182,6 +184,22 @@ export class AttemptsService {
     if (q.qType === 'fill') {
       if (q.fillExact) item.fillExact = q.fillExact;
       if (q.regexList && q.regexList.length) item.regexList = q.regexList;
+    }
+
+    if (q.qType === 'match') {
+      // match: answerKey يحتوي على أزواج [left, right]
+      const matchKey = (q as any).answerKeyMatch;
+      if (Array.isArray(matchKey)) {
+        item.answerKeyMatch = matchKey;
+      }
+    }
+
+    if (q.qType === 'reorder') {
+      // reorder: answerKey يحتوي على ترتيب صحيح
+      const reorderKey = (q as any).answerKeyReorder;
+      if (Array.isArray(reorderKey)) {
+        item.answerKeyReorder = reorderKey;
+      }
     }
 
     // === Media snapshot ===
@@ -222,12 +240,16 @@ export class AttemptsService {
       }
     }
 
+    // جلب معلومات الطالب (بما فيها state)
+    const student = await this.UserModel.findById(userId).lean().exec();
+    const studentState = (student as any)?.state;
+
     const attemptCount = await this.computeAttemptCount(studentId, examId);
     const seedNum = this.computeSeed(attemptCount, String(studentId), String(examId));
     const rng = mulberry32(seedNum);
 
-    const picked = await this.generateQuestionListForAttempt(exam, rng);
-    if (!picked.length) throw new BadRequestException('No questions available for this exam');
+    const picked = await this.generateQuestionListForAttempt(exam, rng, studentState);
+    if (!picked.length) throw new BadRequestException(MSG.NO_QUESTIONS_AVAILABLE);
 
     // بناء items مع خلط الخيارات إذا كان السؤال MCQ
     const items: any[] = [];
@@ -236,8 +258,8 @@ export class AttemptsService {
     }
 
     let expiresAt: Date | undefined = undefined;
-    if (typeof (exam as any).timeLimitMin === 'number' && (exam as any).timeLimitMin > 0) {
-      expiresAt = new Date(Date.now() + (exam as any).timeLimitMin * 60 * 1000);
+    if (typeof exam.timeLimitMin === 'number' && exam.timeLimitMin > 0) {
+      expiresAt = new Date(Date.now() + exam.timeLimitMin * 60 * 1000);
     }
 
     const totalMaxScore = items.reduce((s, it) => s + (it.points || 0), 0);
@@ -293,6 +315,8 @@ export class AttemptsService {
   async saveAnswer(user: ReqUser, attemptIdStr: string, payload: {
     itemIndex?: number; questionId?: string;
     studentAnswerIndexes?: number[]; studentAnswerText?: string; studentAnswerBoolean?: boolean;
+    studentAnswerMatch?: [string, string][]; studentAnswerReorder?: string[];
+    studentAnswerAudioKey?: string;
   }) {
     this.ensureStudent(user);
 
@@ -322,8 +346,22 @@ export class AttemptsService {
         throw new BadRequestException('Provide studentAnswerBoolean for true_false');
       }
       it.studentAnswerBoolean = payload.studentAnswerBoolean;
-    } else {
-      throw new BadRequestException(`Unsupported qType ${it.qType}`);
+    } else if (it.qType === 'match') {
+      if (!Array.isArray(payload.studentAnswerMatch)) {
+        throw new BadRequestException('Provide studentAnswerMatch for MATCH');
+      }
+      it.studentAnswerMatch = payload.studentAnswerMatch;
+    } else if (it.qType === 'reorder') {
+      if (!Array.isArray(payload.studentAnswerReorder)) {
+        throw new BadRequestException('Provide studentAnswerReorder for REORDER');
+      }
+      it.studentAnswerReorder = payload.studentAnswerReorder;
+    } else if (it.qType === 'speak' || (it.qType === 'fill' && payload.studentAnswerAudioKey)) {
+      // Sprechen: حفظ مفتاح الملف الصوتي
+      if (payload.studentAnswerAudioKey) {
+        it.studentAnswerAudioKey = payload.studentAnswerAudioKey;
+        // يمكن إنشاء presigned URL هنا إذا لزم الأمر
+      }
     }
 
     await attempt.save();
@@ -331,7 +369,7 @@ export class AttemptsService {
   }
 
   private normalizeText(s: string) {
-    return s.trim().toLowerCase().replace(/\s+/g, ' ');
+    return normalizeAnswer(s);
   }
 
   private scoreItem(it: any) {
@@ -357,17 +395,75 @@ export class AttemptsService {
     }
 
     if (it.qType === 'fill') {
-      const ans = this.normalizeText(it.studentAnswerText || '');
-      if (it.fillExact && this.normalizeText(it.fillExact) === ans) {
-        auto = it.points;
-      } else if (Array.isArray(it.regexList)) {
-        const ok = it.regexList.some((rx: string) => {
-          try {
-            const reg = new RegExp(rx, 'i');
-            return reg.test(ans);
-          } catch { return false; }
+      const ans = normalizeAnswer(it.studentAnswerText || '');
+      // دعم fillExact كـ string أو array
+      const exactList = Array.isArray(it.fillExact)
+        ? it.fillExact.map((e: string) => normalizeAnswer(e))
+        : it.fillExact
+        ? [normalizeAnswer(it.fillExact)]
+        : [];
+      
+      const exactHit = exactList.length > 0 && exactList.includes(ans);
+      const regexHit = Array.isArray(it.regexList)
+        ? it.regexList.some((rx: string) => {
+            try {
+              const reg = new RegExp(rx, 'i');
+              return reg.test(ans);
+            } catch {
+              return false;
+            }
+          })
+        : false;
+
+      auto = exactHit || regexHit ? it.points : 0;
+    }
+
+    if (it.qType === 'match') {
+      // match: مقارنة أزواج [left, right]
+      const correct = new Map<string, string>();
+      const answerKeyMatch = it.answerKeyMatch || [];
+      answerKeyMatch.forEach((pair: [string, string]) => {
+        if (Array.isArray(pair) && pair.length === 2) {
+          correct.set(pair[0], pair[1]);
+        }
+      });
+
+      const studentMatch = it.studentAnswerMatch || [];
+      let correctPairs = 0;
+      let totalPairs = correct.size;
+
+      if (totalPairs > 0) {
+        studentMatch.forEach((pair: [string, string]) => {
+          if (Array.isArray(pair) && pair.length === 2) {
+            const [left, right] = pair;
+            if (correct.has(left) && correct.get(left) === right) {
+              correctPairs++;
+            }
+          }
         });
-        auto = ok ? it.points : 0;
+        const fraction = correctPairs / totalPairs;
+        auto = Math.round(it.points * fraction * 1000) / 1000;
+      } else {
+        auto = 0;
+      }
+    }
+
+    if (it.qType === 'reorder') {
+      // reorder: مقارنة الترتيب
+      const correct = it.answerKeyReorder || [];
+      const student = it.studentAnswerReorder || [];
+
+      if (correct.length === 0 || student.length === 0 || correct.length !== student.length) {
+        auto = 0;
+      } else {
+        let correctPositions = 0;
+        for (let i = 0; i < correct.length; i++) {
+          if (correct[i] === student[i]) {
+            correctPositions++;
+          }
+        }
+        const fraction = correctPositions / correct.length;
+        auto = Math.round(it.points * fraction * 1000) / 1000;
       }
     }
 
@@ -449,7 +545,7 @@ export class AttemptsService {
   }
 
   private buildViewForUser(attempt: AttemptDocument, exam: any, user: ReqUser) {
-    const policy = (exam && (exam as any).resultsPolicy) || 'only_scores';
+    const policy = (exam && exam.resultsPolicy) || 'only_scores';
 
     const base = {
       attemptId: attempt._id,
@@ -480,6 +576,10 @@ export class AttemptsService {
           answerKeyBoolean: it.answerKeyBoolean,
           fillExact: it.fillExact,
           regexList: it.regexList,
+          answerKeyMatch: it.answerKeyMatch,
+          answerKeyReorder: it.answerKeyReorder,
+          studentAnswerMatch: it.studentAnswerMatch,
+          studentAnswerReorder: it.studentAnswerReorder,
           autoScore: it.autoScore,
           manualScore: it.manualScore,
         })),
@@ -506,8 +606,12 @@ export class AttemptsService {
           studentAnswerIndexes: it.studentAnswerIndexes,
           studentAnswerText: it.studentAnswerText,
           studentAnswerBoolean: it.studentAnswerBoolean,
+          studentAnswerMatch: it.studentAnswerMatch,
+          studentAnswerReorder: it.studentAnswerReorder,
           correctOptionIndexes: it.correctOptionIndexes,
           answerKeyBoolean: it.answerKeyBoolean,
+          answerKeyMatch: it.answerKeyMatch,
+          answerKeyReorder: it.answerKeyReorder,
           autoScore: it.autoScore,
           manualScore: it.manualScore,
         })),
@@ -526,8 +630,12 @@ export class AttemptsService {
           studentAnswerIndexes: it.studentAnswerIndexes,
           studentAnswerText: it.studentAnswerText,
           studentAnswerBoolean: it.studentAnswerBoolean,
+          studentAnswerMatch: it.studentAnswerMatch,
+          studentAnswerReorder: it.studentAnswerReorder,
           correctOptionIndexes: it.correctOptionIndexes,
           answerKeyBoolean: it.answerKeyBoolean,
+          answerKeyMatch: it.answerKeyMatch,
+          answerKeyReorder: it.answerKeyReorder,
           autoScore: it.autoScore,
           manualScore: it.manualScore,
         })),
@@ -557,6 +665,47 @@ export class AttemptsService {
 
     const exam = await this.ExamModel.findById(attempt.examId).lean().exec();
     return this.buildViewForUser(attempt, exam, user);
+  }
+
+  async findByStudent(user: ReqUser, examId?: string) {
+    this.ensureStudent(user);
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const studentId = new Types.ObjectId(userId);
+
+    const filter: any = { studentId };
+    if (examId) {
+      filter.examId = new Types.ObjectId(examId);
+    }
+
+    const attempts = await this.AttemptModel.find(filter)
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+
+    // جلب معلومات الامتحانات
+    const examIds = [...new Set(attempts.map((a: any) => a.examId.toString()))];
+    const exams = await this.ExamModel.find({ _id: { $in: examIds } })
+      .lean()
+      .exec();
+    const examMap = new Map(exams.map((e: any) => [e._id.toString(), e]));
+
+    return attempts.map((attempt: any) => {
+      const exam = examMap.get(attempt.examId.toString());
+      return {
+        id: attempt._id,
+        examId: attempt.examId,
+        examTitle: exam?.title || 'Unknown',
+        examLevel: exam?.level,
+        examProvider: exam?.provider,
+        status: attempt.status,
+        score: attempt.totalScore || 0,
+        totalPoints: attempt.totalMaxScore || 0,
+        startedAt: attempt.startedAt,
+        submittedAt: attempt.submittedAt,
+        attemptCount: attempt.attemptCount,
+      };
+    });
   }
 }
 

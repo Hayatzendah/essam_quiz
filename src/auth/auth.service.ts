@@ -37,7 +37,7 @@ export class AuthService {
     await this.users.updateById(userId, { refreshTokenHash: hash });
   }
 
-  async register(dto: { email: string; password: string; role?: 'student' | 'teacher' | 'admin' }) {
+  async register(dto: { email: string; password: string; role?: 'student' | 'teacher' | 'admin'; state?: string }) {
     const user = await this.users.createUser(dto);
     return { message: 'registered', user };
   }

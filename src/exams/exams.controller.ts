@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
@@ -8,6 +9,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
+@ApiTags('Exams')
+@ApiBearerAuth('JWT-auth')
 @Controller('exams')
 export class ExamsController {
   constructor(private readonly service: ExamsService) {}
@@ -26,6 +29,14 @@ export class ExamsController {
   @Roles('admin','teacher')
   findAll(@Query() q: QueryExamDto, @Req() req: any) {
     return this.service.findAll(req.user, q);
+  }
+
+  // قائمة الامتحانات المتاحة للطلاب
+  @Get('available')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  findAvailable(@Query() q: QueryExamDto, @Req() req: any) {
+    return this.service.findAvailableForStudent(req.user, q);
   }
 
   // تفاصيل الامتحان

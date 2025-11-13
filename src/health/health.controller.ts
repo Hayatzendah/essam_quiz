@@ -4,7 +4,12 @@ import { Controller, Get } from '@nestjs/common';
 export class HealthController {
   @Get()
   ping() {
-    return { ok: true, time: new Date().toISOString() };
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+    };
   }
 }
 

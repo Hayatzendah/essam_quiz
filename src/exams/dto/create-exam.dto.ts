@@ -28,11 +28,15 @@ class ExamSectionDto {
 
   @IsOptional() @IsBoolean()
   randomize?: boolean;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  tags?: string[];
 }
 
 export class CreateExamDto {
   @IsString() @IsNotEmpty() title: string;
   @IsOptional() @IsString() level?: string;
+  @IsOptional() @IsString() provider?: string;
 
   @IsArray() @ArrayMinSize(1)
   @ValidateNested({ each: true }) @Type(() => ExamSectionDto)
@@ -44,8 +48,16 @@ export class CreateExamDto {
   @IsOptional() @IsNumber() @Min(0)
   attemptLimit?: number;
 
+  @IsOptional() @IsNumber() @Min(0)
+  timeLimitMin?: number;
+
+  @IsOptional() @IsString()
+  resultsPolicy?: 'only_scores' | 'correct_with_scores' | 'explanations_with_scores' | 'release_delayed';
+
   // اختياري: في حال أردت بدءًا بحالة غير الـ draft
   @IsOptional()
   status?: ExamStatus;
 }
+
+
 

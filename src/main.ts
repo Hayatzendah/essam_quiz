@@ -4,6 +4,10 @@ import { AppModule } from './app.module';
 import helmet from 'helmet';
 import { ValidationPipe, Logger, HttpException } from '@nestjs/common';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { json, urlencoded } from 'express';
+import basicAuth from 'express-basic-auth';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -33,9 +37,24 @@ async function bootstrap() {
       contentSecurityPolicy: false, // Disable CSP globally for now
     });
     app.use(helmetMiddleware);
+
+    // Body size limits (5MB for JSON and form data)
+    app.use(json({ limit: '5mb' }));
+    app.use(urlencoded({ limit: '5mb', extended: true }));
+
+    // CORS configuration
+    const webAppOrigin = process.env.WEB_APP_ORIGIN || process.env.CORS_ORIGIN;
+    const allowedOrigins = webAppOrigin
+      ? webAppOrigin.split(',').map((origin) => origin.trim())
+      : process.env.NODE_ENV === 'production'
+        ? []
+        : true; // Allow all in development, none in production if not set
+
     app.enableCors({
-      origin: process.env.CORS_ORIGIN?.split(',') ?? true,
+      origin: allowedOrigins,
       credentials: true,
+      methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
     });
 
     app.useGlobalPipes(
@@ -64,11 +83,65 @@ async function bootstrap() {
     // Global exception filter
     app.useGlobalFilters(new HttpExceptionFilter());
 
+    // Global logging interceptor
+    app.useGlobalInterceptors(new LoggingInterceptor());
+
     const port = parseInt(process.env.PORT || '4000', 10);
+
+    // Swagger documentation (optional, controlled by ENABLE_SWAGGER env var)
+    const enableSwagger = process.env.ENABLE_SWAGGER === 'true';
+    if (enableSwagger) {
+      // Basic Auth protection for Swagger in production
+      const swaggerUser = process.env.SWAGGER_USER || 'admin';
+      const swaggerPassword = process.env.SWAGGER_PASSWORD || 'admin123';
+      
+      if (process.env.NODE_ENV === 'production') {
+        app.use(
+          '/docs',
+          basicAuth({
+            users: { [swaggerUser]: swaggerPassword },
+            challenge: true,
+            realm: 'Swagger Documentation',
+          }),
+        );
+        logger.log(`🔒 Swagger protected with Basic Auth (user: ${swaggerUser})`);
+      }
+
+      const config = new DocumentBuilder()
+        .setTitle('Quiz API')
+        .setDescription('Quiz Backend API Documentation')
+        .setVersion('1.0')
+        .addBearerAuth(
+          {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            name: 'JWT',
+            description: 'Enter JWT token',
+            in: 'header',
+          },
+          'JWT-auth',
+        )
+        .build();
+
+      const document = SwaggerModule.createDocument(app, config);
+      SwaggerModule.setup('docs', app, document, {
+        swaggerOptions: {
+          persistAuthorization: true,
+        },
+      });
+      logger.log(`✅ Swagger documentation available at: http://0.0.0.0:${port}/docs`);
+    } else {
+      logger.log(`ℹ️  Swagger is disabled. Set ENABLE_SWAGGER=true to enable.`);
+    }
+
     await app.listen(port, '0.0.0.0');
     
     logger.log(`✅ Application is running on: http://0.0.0.0:${port}`);
     logger.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
+    if (webAppOrigin) {
+      logger.log(`✅ CORS enabled for: ${allowedOrigins}`);
+    }
     logger.log(`✅ All routes mapped successfully`);
   } catch (error) {
     logger.error('❌ Failed to start application:', error);

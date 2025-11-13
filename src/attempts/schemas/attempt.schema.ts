@@ -36,11 +36,17 @@ export class AttemptItem {
   @Prop() fillExact?: string;                       // fill
   @Prop({ type: [String], default: undefined }) regexList?: string[]; // fill
   @Prop({ type: [Number], default: undefined }) correctOptionIndexes?: number[]; // mcq
+  @Prop({ type: [[String, String]], default: undefined }) answerKeyMatch?: [string, string][]; // match: أزواج [left, right]
+  @Prop({ type: [String], default: undefined }) answerKeyReorder?: string[]; // reorder: ترتيب صحيح
 
   // إجابة الطالب (حسب النوع)
   @Prop() studentAnswerText?: string;               // fill / short
   @Prop({ type: [Number], default: undefined }) studentAnswerIndexes?: number[]; // mcq (مؤشرات للخيارات)
   @Prop() studentAnswerBoolean?: boolean;           // true_false
+  @Prop({ type: [[String, String]], default: undefined }) studentAnswerMatch?: [string, string][]; // match: أزواج [left, right]
+  @Prop({ type: [String], default: undefined }) studentAnswerReorder?: string[]; // reorder: ترتيب الطالب
+  @Prop() studentAnswerAudioKey?: string;           // Sprechen: مفتاح الملف الصوتي المسجل من الطالب
+  @Prop() studentAnswerAudioUrl?: string;           // Sprechen: رابط الملف الصوتي (presigned URL)
 
   // نتيجة هذا السؤال
   @Prop({ type: Number, default: 0 }) autoScore: number;

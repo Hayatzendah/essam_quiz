@@ -45,6 +45,10 @@ export class ExamSection {
   // عشوائية ترتيب الأسئلة داخل هذا السكشن (لما يكون فيه items)
   @Prop({ type: Boolean, default: false })
   randomize?: boolean;
+
+  // Tags للفلترة عند اختيار الأسئلة العشوائية (مثل: ["Bayern"], ["300-Fragen"], ["Hören", "Teil-1"])
+  @Prop({ type: [String], default: [] })
+  tags?: string[];
 }
 const ExamSectionSchema = SchemaFactory.createForClass(ExamSection);
 
@@ -52,6 +56,7 @@ const ExamSectionSchema = SchemaFactory.createForClass(ExamSection);
 export class Exam {
   @Prop({ required: true, trim: true }) title: string;
   @Prop({ trim: true }) level?: string;
+  @Prop({ trim: true }) provider?: string; // telc, Goethe, ÖSD, ECL, DTB, DTZ, Deutschland-in-Leben, Grammatik, Wortschatz
 
   @Prop({ type: String, enum: Object.values(ExamStatus), default: ExamStatus.DRAFT })
   status: ExamStatus;
@@ -66,6 +71,18 @@ export class Exam {
   // 0 أو undefined = غير محدود
   @Prop({ type: Number, default: 0, min: 0 })
   attemptLimit: number;
+
+  // زمن الامتحان بالدقائق (0 = غير محدود)
+  @Prop({ type: Number, default: 0, min: 0 })
+  timeLimitMin: number;
+
+  // سياسة عرض النتائج للطالب بعد التسليم
+  @Prop({ 
+    type: String, 
+    enum: ['only_scores', 'correct_with_scores', 'explanations_with_scores', 'release_delayed'],
+    default: 'only_scores'
+  })
+  resultsPolicy: 'only_scores' | 'correct_with_scores' | 'explanations_with_scores' | 'release_delayed';
 
   // مالك الامتحان (المعلم الذي أنشأه)
   @Prop({ type: Types.ObjectId, ref: 'User', index: true })

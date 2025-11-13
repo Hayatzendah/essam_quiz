@@ -7,5 +7,10 @@ export class QueryExamDto {
 
   @IsOptional() @IsString()
   level?: string;
+
+  @IsOptional() @IsString()
+  provider?: string;
 }
+
+
 

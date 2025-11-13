@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
@@ -7,11 +8,15 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
+@ApiTags('Questions')
+@ApiBearerAuth('JWT-auth')
 @Controller('questions')
 export class QuestionsController {
   constructor(private readonly service: QuestionsService) {}
 
-  // POST /questions  (admin/teacher فقط)
+  @ApiOperation({ summary: 'Create a new question (teacher/admin only)' })
+  @ApiResponse({ status: 201, description: 'Question created successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - only teachers and admins can create questions' })
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')

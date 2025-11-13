@@ -50,7 +50,7 @@ export class UsersService {
   }
 
   // للحفاظ على التوافق مع الكود القديم
-  async createUser(dto: { email: string; password: string; role?: 'student' | 'teacher' | 'admin' }) {
+  async createUser(dto: { email: string; password: string; role?: 'student' | 'teacher' | 'admin'; state?: string }) {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const exists = await this.userModel.exists({ email: normalizedEmail });
     if (exists) throw new ConflictException('Email already in use');
@@ -59,6 +59,7 @@ export class UsersService {
       email: normalizedEmail,
       password: dto.password,
       role: dto.role ?? 'student',
+      state: dto.state,
     });
 
     const plain = user.toObject();

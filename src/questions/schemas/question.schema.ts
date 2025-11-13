@@ -7,6 +7,8 @@ export enum QuestionType {
   MCQ = 'mcq',
   FILL = 'fill',
   TRUE_FALSE = 'true_false',
+  MATCH = 'match',
+  REORDER = 'reorder',
 }
 
 export enum QuestionStatus {
@@ -68,6 +70,14 @@ export class Question {
   @Prop({ type: [String], default: undefined })
   regexList?: string[];
 
+  // MATCH
+  @Prop({ type: [[String, String]], default: undefined })
+  answerKeyMatch?: [string, string][]; // أزواج [left, right]
+
+  // REORDER
+  @Prop({ type: [String], default: undefined })
+  answerKeyReorder?: string[]; // ترتيب صحيح
+
   // ميتاداتا وفلاتر
   @Prop({ trim: true })
   provider?: string;
@@ -78,20 +88,14 @@ export class Question {
   @Prop({ trim: true })
   level?: string;
 
-  @Prop({ trim: true })
-  difficulty?: 'easy' | 'medium' | 'hard';
-
   @Prop({ type: [String], index: true, default: [] })
-  tags: string[];
+  tags: string[]; // يمكن استخدام tags للصعوبة أيضاً: ["easy"], ["medium"], ["hard"]
 
-  // حالة/نسخة
+  // حالة
   @Prop({ type: String, enum: Object.values(QuestionStatus), default: QuestionStatus.DRAFT })
   status: QuestionStatus;
 
-  @Prop({ default: 1 })
-  version: number;
-
-  // مالك/منشئ
+  // مالك/منشئ (اختياري - للتحكم في الصلاحيات)
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy?: Types.ObjectId;
 

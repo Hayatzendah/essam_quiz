@@ -14,5 +14,9 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(['student', 'teacher', 'admin'])
   role?: UserRole;
+
+  @IsOptional()
+  @IsString()
+  state?: string; // الولاية الألمانية (Bundesland)
 }
 

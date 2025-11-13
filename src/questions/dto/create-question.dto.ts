@@ -56,11 +56,19 @@ export class CreateQuestionDto {
   @IsString({ each: true })
   regexList?: string[];
 
+  // MATCH
+  @IsOptional() @IsArray()
+  answerKeyMatch?: [string, string][];
+
+  // REORDER
+  @IsOptional() @IsArray()
+  @IsString({ each: true })
+  answerKeyReorder?: string[];
+
   // فلاتر
   @IsOptional() @IsString() provider?: string;
   @IsOptional() @IsString() section?: string;
   @IsOptional() @IsString() level?: string;
-  @IsOptional() @IsIn(['easy', 'medium', 'hard']) difficulty?: 'easy' | 'medium' | 'hard';
   @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
 
   // حالة ابتدائية اختيارية
