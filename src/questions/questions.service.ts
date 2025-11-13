@@ -63,19 +63,33 @@ export class QuestionsService {
     if (filters.section) q.section = filters.section;
     if (filters.qType) q.qType = filters.qType;
     if (filters.status) q.status = filters.status;
-    if (filters.tags) {
-      q.tags = { $in: filters.tags.split(',').map(s => s.trim()).filter(Boolean) };
-    }
-    // فلترة حسب الولاية (state) - يتم البحث في tags
+    
+    // قائمة جميع الولايات الألمانية
+    const allStates = [
+      'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen',
+      'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen',
+      'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen',
+      'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen', 'NRW'
+    ];
+    
+    // فلترة حسب الولاية (state) - للأسئلة العامة + أسئلة الولاية المحددة
     if (filters.state) {
-      if (q.tags) {
+      if (filters.tags) {
         // إذا كان tags موجود، نضيف state للقائمة
-        const existingTags = Array.isArray(q.tags.$in) ? q.tags.$in : [];
+        const existingTags = filters.tags.split(',').map(s => s.trim()).filter(Boolean);
         q.tags = { $in: [...existingTags, filters.state] };
       } else {
-        q.tags = { $in: [filters.state] };
+        // للأسئلة العامة (بدون tags للولايات) + أسئلة الولاية المحددة
+        q.$or = [
+          { tags: { $nin: allStates } }, // أسئلة عامة (ليس لها tag للولاية)
+          { tags: filters.state } // أسئلة الولاية المحددة
+        ];
       }
+    } else if (filters.tags) {
+      // فلترة حسب tags فقط (بدون state)
+      q.tags = { $in: filters.tags.split(',').map(s => s.trim()).filter(Boolean) };
     }
+    
     if (filters.text) q.$text = { $search: filters.text };
     return q;
   }
