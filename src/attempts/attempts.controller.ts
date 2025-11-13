@@ -19,7 +19,7 @@ export class AttemptsController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  findMyAttempts(@Query('examId') examId?: string, @Req() req: any) {
+  findMyAttempts(@Req() req: any, @Query('examId') examId?: string) {
     return this.service.findByStudent(req.user, examId);
   }
 

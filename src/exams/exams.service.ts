@@ -101,7 +101,7 @@ export class ExamsService {
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
     
     // فلترة حسب attemptLimit
-    const availableExams = [];
+    const availableExams: any[] = [];
     const examIds = items.map((e: any) => e._id);
     
     if (examIds.length > 0) {

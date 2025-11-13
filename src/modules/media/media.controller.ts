@@ -288,7 +288,7 @@ export class MediaController {
       fileFilter: (req, file, cb) => {
         // للطلاب: فقط ملفات صوتية
         if (!/^audio\//.test(file.mimetype)) {
-          return cb(new BadRequestException('Only audio files allowed for student uploads') as any);
+          return cb(new BadRequestException('Only audio files allowed for student uploads') as any, false);
         }
         cb(null, true);
       },
