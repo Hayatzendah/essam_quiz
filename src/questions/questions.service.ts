@@ -110,6 +110,32 @@ export class QuestionsService {
     };
   }
 
+  /**
+   * للطلاب: جلب الأسئلة المنشورة فقط
+   * - فلترة تلقائية: status = 'published'
+   * - دعم فلترة حسب الولاية (state): أسئلة عامة + أسئلة الولاية المحددة
+   */
+  async findPublishedForStudent(filters: QueryQuestionDto) {
+    const page = Math.max(parseInt(filters.page ?? '1', 10), 1);
+    const limit = Math.max(parseInt(filters.limit ?? '20', 10), 1);
+    const skip = (page - 1) * limit;
+
+    // بناء query مع فرض status = published
+    const query = this.buildQuery({
+      ...filters,
+      status: QuestionStatus.PUBLISHED, // فرض المنشور فقط
+    });
+
+    const [items, total] = await Promise.all([
+      this.model.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }).lean().exec(),
+      this.model.countDocuments(query),
+    ]);
+
+    return {
+      page, limit, total, items,
+    };
+  }
+
   async updateQuestion(id: string, dto: UpdateQuestionDto) {
     // لا نسمح بتغيير qType
     if (typeof (dto as any).qType !== 'undefined') {

@@ -19,6 +19,72 @@ export class ExamsService {
     }
   }
 
+  /**
+   * التحقق من هيكل "Deutschland-in-Leben" Test
+   * يجب أن يحتوي على قسمين:
+   * 1. قسم الولاية: quota = 3, tags = [اسم الولاية]
+   * 2. قسم الـ300: quota = 30, tags = ["300-Fragen"]
+   */
+  private validateDeutschlandInLebenStructure(dto: CreateExamDto) {
+    // التحقق من level
+    if (dto.level && dto.level !== 'B1') {
+      throw new BadRequestException('Deutschland-in-Leben Test must have level "B1"');
+    }
+
+    // التحقق من عدد الأقسام
+    if (!dto.sections || dto.sections.length !== 2) {
+      throw new BadRequestException(
+        'Deutschland-in-Leben Test must have exactly 2 sections: State section (3 questions) and 300 Fragen section (30 questions)'
+      );
+    }
+
+    const [firstSection, secondSection] = dto.sections;
+
+    // قائمة الولايات الألمانية المدعومة
+    const validStates = [
+      'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen',
+      'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen',
+      'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen',
+      'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen', 'NRW'
+    ];
+
+    // التحقق من القسم الأول (الولاية)
+    if (firstSection.quota !== 3) {
+      throw new BadRequestException(
+        `First section must have quota = 3 (State questions). Found: ${firstSection.quota}`
+      );
+    }
+
+    if (!firstSection.tags || firstSection.tags.length === 0) {
+      throw new BadRequestException('First section must have tags with state name (e.g., ["Bayern"])');
+    }
+
+    const stateTag = firstSection.tags.find(tag => validStates.includes(tag));
+    if (!stateTag) {
+      throw new BadRequestException(
+        `First section must have a valid German state in tags. Valid states: ${validStates.join(', ')}`
+      );
+    }
+
+    // التحقق من القسم الثاني (الـ300)
+    if (secondSection.quota !== 30) {
+      throw new BadRequestException(
+        `Second section must have quota = 30 (300 Fragen pool). Found: ${secondSection.quota}`
+      );
+    }
+
+    if (!secondSection.tags || !secondSection.tags.includes('300-Fragen')) {
+      throw new BadRequestException('Second section must have tags: ["300-Fragen"]');
+    }
+
+    // التحقق من اسم القسم الثاني
+    if (secondSection.name !== '300 Fragen Pool') {
+      throw new BadRequestException(
+        `Second section name must be "300 Fragen Pool". Found: "${secondSection.name}"`
+      );
+    }
+  }
+
   async createExam(dto: CreateExamDto, user: ReqUser) {
     this.assertTeacherOrAdmin(user);
 
@@ -40,6 +106,11 @@ export class ExamsService {
           throw new BadRequestException(`Section "${s.name}" difficultyDistribution must sum to quota`);
         }
       }
+    }
+
+    // Validation خاص لـ "Deutschland-in-Leben" Test
+    if (dto.provider === 'Deutschland-in-Leben') {
+      this.validateDeutschlandInLebenStructure(dto);
     }
 
     const userId = user.userId || (user as any).sub || (user as any).id;
@@ -206,6 +277,13 @@ export class ExamsService {
           }
         }
       }
+    }
+
+    // Validation خاص لـ "Deutschland-in-Leben" عند التحديث
+    const updatedProvider = dto.provider !== undefined ? dto.provider : doc.provider;
+    if (updatedProvider === 'Deutschland-in-Leben') {
+      const updatedDto = { ...dto, sections: dto.sections || doc.sections };
+      this.validateDeutschlandInLebenStructure(updatedDto as CreateExamDto);
     }
 
     // تطبيق التحديث

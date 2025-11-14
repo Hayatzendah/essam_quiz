@@ -7,6 +7,7 @@ import { QueryQuestionDto } from './dto/query-question.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('Questions')
 @ApiBearerAuth('JWT-auth')
@@ -25,11 +26,18 @@ export class QuestionsController {
     return this.service.createQuestion(dto, userId);
   }
 
-  // GET /questions  (admin/teacher يقدروا يشوفوا ويعملوا فلترة)
+  // GET /questions
+  // - admin/teacher: يشوفوا جميع الأسئلة (draft/published/archived)
+  // - student: يشوف الأسئلة المنشورة فقط (published)
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'teacher')
-  findMany(@Query() q: QueryQuestionDto) {
+  @Roles('admin', 'teacher', 'student')
+  findMany(@Query() q: QueryQuestionDto, @CurrentUser() user: any) {
+    // للطلاب: فرض المنشور فقط
+    if (user?.role === 'student') {
+      return this.service.findPublishedForStudent(q);
+    }
+    // للمعلمين والأدمن: جميع الأسئلة
     return this.service.findQuestions(q);
   }
 

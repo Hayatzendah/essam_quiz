@@ -6,6 +6,140 @@
 - 📖 Grammatik (القواعد النحوية)
 - 📚 Wortschatz (المفردات)
 
+---
+
+## 🌐 Base URL
+
+```
+https://api.deutsch-tests.com
+```
+
+**ملاحظة:** في التطوير المحلي، يمكن استخدام:
+```
+http://localhost:4000
+```
+
+---
+
+## 🔧 إعدادات مهمة للفرونت
+
+### 1. Headers المطلوبة
+
+جميع الطلبات المحمية تتطلب:
+```javascript
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer <accessToken>"
+}
+```
+
+### 2. CORS
+
+الـ API يدعم الطلبات من:
+- `http://localhost:5177` (التطوير المحلي)
+- `https://deutsch-tests.com` (الإنتاج)
+- `https://www.deutsch-tests.com` (الإنتاج مع www)
+
+### 3. Authentication Flow
+
+1. **تسجيل الدخول:** `POST /auth/login` → يحصل على `accessToken` و `refreshToken`
+2. **استخدام Token:** أضف `Authorization: Bearer <accessToken>` في جميع الطلبات
+3. **تجديد Token:** عند انتهاء `accessToken`، استخدم `POST /auth/refresh` مع `refreshToken`
+4. **تسجيل الخروج:** `POST /auth/logout` لمسح الـ tokens
+
+### 4. إعداد Axios (مهم جدًا)
+
+⚠️ **استخدمي `params` في Axios بدل التجميع اليدوي للـ URLs** لتجنب مشاكل URL breaking والترميز.
+
+**إعداد Axios Instance:**
+```javascript
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'https://api.deutsch-tests.com', // بدون /api (ما فيش global prefix)
+  headers: { 'Content-Type': 'application/json' },
+});
+
+// إضافة Authorization header تلقائيًا في جميع الطلبات
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// معالجة الأخطاء (اختياري)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // التوكن منتهي - إعادة توجيه للـ login
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+```
+
+**✅ استخدام صحيح (مع params):**
+```javascript
+// صحيح - Axios يرمّز الـ query parameters تلقائيًا
+api.get('/questions', {
+  params: {
+    provider: 'Deutschland-in-Leben',
+    state: 'Bayern',
+    page: 1,
+    limit: 20,
+  },
+});
+// النتيجة: /questions?provider=Deutschland-in-Leben&state=Bayern&page=1&limit=20
+```
+
+**❌ استخدام خاطئ (تجميع يدوي):**
+```javascript
+// خطأ - قد يسبب URL breaking ومشاكل في الترميز
+const url = `https://api.deutsch-tests.com/questions?provider=LiD&state=${state}`;
+axios.get(url); // ❌ قد ينتج: api.deutsch-tests.co_eben&state=Bayern
+```
+
+### 5. Error Handling
+
+جميع الأخطاء تعيد:
+```json
+{
+  "status": "error",
+  "code": 400,
+  "message": "Error message",
+  "errors": ["Detailed error 1", "Detailed error 2"]
+}
+```
+
+### 6. Response Format
+
+**نجاح:**
+```json
+{
+  "status": "success",
+  "data": { ... }
+}
+```
+
+**خطأ:**
+```json
+{
+  "status": "error",
+  "code": 400,
+  "message": "Error message"
+}
+```
+
+---
+
 ## 📋 جدول المحتويات
 
 1. [Authentication (المصادقة)](#authentication-المصادقة)
@@ -38,6 +172,12 @@
     "logout": { ... }
   }
 }
+```
+
+**مثال استخدام (JavaScript/Axios):**
+```javascript
+const response = await axios.get('https://api.deutsch-tests.com/auth');
+console.log(response.data);
 ```
 
 ---
@@ -127,6 +267,18 @@
 
 **الاستخدام:** عند تسجيل الدخول - احفظ `accessToken` و `refreshToken` للاستخدام لاحقاً
 
+**مثال استخدام (JavaScript/Axios):**
+```javascript
+const response = await axios.post('https://api.deutsch-tests.com/auth/login', {
+  email: 'user@example.com',
+  password: 'password123'
+});
+
+// احفظ tokens
+localStorage.setItem('accessToken', response.data.accessToken);
+localStorage.setItem('refreshToken', response.data.refreshToken);
+```
+
 ---
 
 ### `POST /auth/refresh`
@@ -149,6 +301,17 @@
 
 **الاستخدام:** عندما ينتهي صلاحية `accessToken`، استخدم `refreshToken` للحصول على token جديد
 
+**مثال استخدام (JavaScript/Axios):**
+```javascript
+const refreshToken = localStorage.getItem('refreshToken');
+const response = await axios.post('https://api.deutsch-tests.com/auth/refresh', {
+  refreshToken: refreshToken
+});
+
+// احفظ accessToken الجديد
+localStorage.setItem('accessToken', response.data.accessToken);
+```
+
 ---
 
 ### `POST /auth/logout`
@@ -169,6 +332,20 @@ Authorization: Bearer <accessToken>
 ```
 
 **الاستخدام:** عند تسجيل الخروج - احذف tokens من التخزين المحلي
+
+**مثال استخدام (JavaScript/Axios):**
+```javascript
+const accessToken = localStorage.getItem('accessToken');
+await axios.post('https://api.deutsch-tests.com/auth/logout', {}, {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+
+// احذف tokens
+localStorage.removeItem('accessToken');
+localStorage.removeItem('refreshToken');
+```
 
 ---
 
@@ -348,6 +525,46 @@ Authorization: Bearer <accessToken>
 
 ## 📝 Exams (الامتحانات)
 
+### 📋 هيكل Deutschland in Leben Test (مهم للفورم)
+
+**⚠️ كل امتحان "Deutschland in Leben Test" يجب أن يحتوي على قسمين إجباريين:**
+
+1. **قسم الولاية:** 3 أسئلة من الولاية المختارة
+   - `name`: `"{اسم الولاية} Fragen"` (مثال: "Bayern Fragen")
+   - `quota`: `3` (ثابت)
+   - `tags`: `["{اسم الولاية}"]` (مثال: `["Bayern"]`)
+   - `difficultyDistribution`: اختياري (easy, medium, hard)
+
+2. **قسم الـ300:** 30 سؤال من مجموعة الـ300 سؤال
+   - `name`: `"300 Fragen Pool"` (ثابت)
+   - `quota`: `30` (ثابت)
+   - `tags`: `["300-Fragen"]` (ثابت)
+
+**القيم الثابتة:**
+- `provider`: `"Deutschland-in-Leben"` (ثابت)
+- `level`: `"B1"` (ثابت)
+- `randomizeQuestions`: `true` (مفضل)
+
+**الولايات المدعومة (16 ولاية):**
+- Baden-Württemberg
+- Bayern
+- Berlin
+- Brandenburg
+- Bremen
+- Hamburg
+- Hessen
+- Mecklenburg-Vorpommern
+- Niedersachsen
+- Nordrhein-Westfalen (أو NRW)
+- Rheinland-Pfalz
+- Saarland
+- Sachsen
+- Sachsen-Anhalt
+- Schleswig-Holstein
+- Thüringen
+
+---
+
 ### `POST /exams`
 **الوصف:** إنشاء امتحان جديد  
 **المصادقة:** مطلوبة (Bearer Token)  
@@ -358,7 +575,7 @@ Authorization: Bearer <accessToken>
 Authorization: Bearer <accessToken>
 ```
 
-**Body:**
+**Body (مثال عام):**
 ```json
 {
   "title": "امتحان اللغة الألمانية",
@@ -374,17 +591,42 @@ Authorization: Bearer <accessToken>
         "medium": 1,
         "hard": 1
       }
-    },
-    {
-      "name": "Bayern Fragen",
-      "quota": 3,
-      "tags": ["Bayern"] // للفلترة حسب الولاية
     }
   ],
   "randomizeQuestions": true, // خلط ترتيب الأسئلة
   "attemptLimit": 3, // عدد المحاولات المسموحة (0 = غير محدود)
   "timeLimitMin": 60, // الوقت بالدقائق (0 = غير محدود)
   "status": "draft" // draft | published | archived
+}
+```
+
+**Body (مثال Deutschland in Leben Test - Bayern):**
+```json
+{
+  "title": "Deutschland in Leben - Bayern",
+  "provider": "Deutschland-in-Leben",
+  "level": "B1",
+  "sections": [
+    {
+      "name": "Bayern Fragen",
+      "quota": 3,
+      "tags": ["Bayern"],
+      "difficultyDistribution": {
+        "easy": 1,
+        "medium": 1,
+        "hard": 1
+      }
+    },
+    {
+      "name": "300 Fragen Pool",
+      "quota": 30,
+      "tags": ["300-Fragen"]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "timeLimitMin": 60,
+  "status": "published"
 }
 ```
 
@@ -671,7 +913,11 @@ Authorization: Bearer <accessToken>
 ### `GET /questions`
 **الوصف:** الحصول على قائمة الأسئلة  
 **المصادقة:** مطلوبة (Bearer Token)  
-**الأدوار المسموحة:** teacher, admin
+**الأدوار المسموحة:** teacher, admin, **student** ✅
+
+**ملاحظات مهمة:**
+- **للطلاب:** يتم فرض `status: 'published'` تلقائيًا - الطلاب يشوفون الأسئلة المنشورة فقط
+- **للمعلمين/الأدمن:** يمكنهم رؤية جميع الأسئلة (draft/published/archived) حسب `status` parameter
 
 **Headers:**
 ```
@@ -680,35 +926,96 @@ Authorization: Bearer <accessToken>
 
 **Query Parameters:**
 - `page`: رقم الصفحة (افتراضي: 1)
-- `limit`: عدد النتائج (افتراضي: 10)
+- `limit`: عدد النتائج (افتراضي: 10 للـ admin/teacher، 20 للطلاب)
 - `qType`: فلترة حسب نوع السؤال (mcq, true_false, fill, match, reorder)
-- `provider`: فلترة حسب المزود (telc, Goethe, ÖSD, etc.)
+- `provider`: فلترة حسب المزود (telc, Goethe, ÖSD, Deutschland-in-Leben, etc.)
 - `section`: فلترة حسب القسم (Hören, Lesen, Schreiben, Sprechen)
 - `level`: فلترة حسب المستوى (A1, A2, B1, B2, C1)
 - `state`: فلترة حسب الولاية الألمانية (Bayern, Berlin, etc.) - يتم البحث في tags
+  - عند تحديد `state`: يتم إرجاع الأسئلة العامة (بدون tags للولايات) + أسئلة الولاية المحددة
 - `tags`: فلترة حسب Tags (مفصولة بفواصل: "Bayern,Hören")
 - `text`: بحث نصي في نص السؤال
-- `status`: فلترة حسب الحالة (draft, published, archived)
+- `status`: فلترة حسب الحالة (draft, published, archived) - **للطلاب: يتم تجاهل هذا الحقل وفرض 'published'**
 
 **Response (200):**
 ```json
 {
-  "data": [
+  "page": 1,
+  "limit": 20,
+  "total": 100,
+  "items": [
     {
       "id": "...",
-      "text": "...",
-      "type": "multiple-choice",
-      "points": 10,
+      "prompt": "...",
+      "qType": "mcq",
+      "status": "published",
+      "provider": "Deutschland-in-Leben",
+      "level": "B1",
+      "tags": ["Bayern"],
       ...
     }
-  ],
-  "total": 100,
-  "page": 1,
-  "limit": 10
+  ]
 }
 ```
 
-**الاستخدام:** للمعلمين لتصفح وإدارة الأسئلة
+**مثال على الاستخدام في الفرونت إند (Axios):**
+
+⚠️ **مهم جدًا:** استخدمي `params` في Axios بدل التجميع اليدوي للـ URLs لتجنب مشاكل الترميز والـ URL breaking.
+
+```javascript
+import axios from 'axios';
+
+// إعداد Axios instance
+const api = axios.create({
+  baseURL: 'https://api.deutsch-tests.com', // بدون /api
+  headers: { 'Content-Type': 'application/json' },
+});
+
+// إضافة Authorization header تلقائيًا
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ✅ صحيح - استخدام params
+export function fetchLidQuestions({ state, page = 1, limit = 20 }) {
+  return api.get('/questions', {
+    params: {
+      provider: 'Deutschland-in-Leben',
+      state,               // مثال: 'Bayern'
+      status: 'published', // للطلاب: الـ backend يفرضها تلقائيًا
+      page,
+      limit,
+    },
+  });
+}
+
+// ❌ خطأ - تجميع يدوي (يسبب URL breaking)
+// const url = `https://api.deutsch-tests.com/questions?provider=LiD&state=${state}`;
+// axios.get(url) // ❌ قد يسبب مشاكل في الترميز
+```
+
+**مثال على الاستخدام في React/Vue:**
+```javascript
+useEffect(() => {
+  fetchLidQuestions({ state: 'Bayern' })
+    .then(res => {
+      console.log('Questions:', res.data);
+      setQuestions(res.data.items);
+    })
+    .catch(err => {
+      console.error('Error loading questions:', err);
+      // معالجة الخطأ (مثلاً: 403 = مشكلة صلاحيات، 401 = token منتهي)
+    });
+}, [selectedState]);
+```
+
+**الاستخدام:**
+- **للطلاب:** تصفح الأسئلة المنشورة فقط (مثلاً: أسئلة LiD لولاية معينة)
+- **للمعلمين/الأدمن:** تصفح وإدارة جميع الأسئلة
 
 ---
 
@@ -1376,6 +1683,10 @@ Authorization: Bearer <accessToken>
 
 ### مثال 1: Deutschland in Leben Test - Bayern
 
+**⚠️ مهم للفورم:** كل امتحان "Deutschland in Leben Test" يجب أن يحتوي على **قسمين إجباريين**:
+1. **قسم الولاية:** 3 أسئلة من الولاية المختارة
+2. **قسم الـ300:** 30 سؤال من مجموعة الـ300 سؤال
+
 **إنشاء Exam:**
 ```json
 POST /exams
@@ -1389,9 +1700,9 @@ POST /exams
       "quota": 3,
       "tags": ["Bayern"],
       "difficultyDistribution": {
-        "easy": 1,    // أسئلة مع tags: ["easy"]
-        "medium": 1,  // أسئلة مع tags: ["medium"]
-        "hard": 1     // أسئلة مع tags: ["hard"]
+        "easy": 1,    // أسئلة مع tags: ["Bayern", "easy"]
+        "medium": 1,  // أسئلة مع tags: ["Bayern", "medium"]
+        "hard": 1     // أسئلة مع tags: ["Bayern", "hard"]
       }
     },
     {
@@ -1406,6 +1717,63 @@ POST /exams
   "status": "published"
 }
 ```
+
+**📋 هيكل الفورم المطلوب:**
+
+```javascript
+// مثال على بيانات الفورم
+const formData = {
+  // معلومات أساسية
+  title: "Deutschland in Leben - Bayern",  // تلقائي: "Deutschland in Leben - {اسم الولاية}"
+  provider: "Deutschland-in-Leben",         // ثابت
+  level: "B1",                              // ثابت
+  
+  // القسم الأول: أسئلة الولاية (إجباري)
+  sections: [
+    {
+      name: "Bayern Fragen",                // تلقائي: "{اسم الولاية} Fragen"
+      quota: 3,                             // ثابت: 3
+      tags: ["Bayern"],                     // تلقائي: [اسم الولاية المختارة]
+      difficultyDistribution: {
+        easy: 1,                            // اختياري: توزيع الصعوبة
+        medium: 1,
+        hard: 1
+      }
+    },
+    // القسم الثاني: أسئلة الـ300 (إجباري)
+    {
+      name: "300 Fragen Pool",              // ثابت
+      quota: 30,                            // ثابت: 30
+      tags: ["300-Fragen"]                  // ثابت
+    }
+  ],
+  
+  // إعدادات عامة
+  randomizeQuestions: true,                 // مفضل: true
+  attemptLimit: 0,                          // 0 = غير محدود
+  timeLimitMin: 60,                         // بالدقائق
+  status: "published"                       // أو "draft"
+}
+```
+
+**🔧 القيم الافتراضية للفورم:**
+- `provider`: `"Deutschland-in-Leben"` (ثابت)
+- `level`: `"B1"` (ثابت)
+- `sections[0].quota`: `3` (ثابت - أسئلة الولاية)
+- `sections[1].quota`: `30` (ثابت - أسئلة الـ300)
+- `sections[1].name`: `"300 Fragen Pool"` (ثابت)
+- `sections[1].tags`: `["300-Fragen"]` (ثابت)
+- `randomizeQuestions`: `true` (مفضل)
+- `attemptLimit`: `0` (غير محدود)
+- `timeLimitMin`: `60` (دقيقة)
+
+**📝 الحقول التي يملأها المستخدم:**
+- `title`: اسم الامتحان (أو توليد تلقائي: "Deutschland in Leben - {الولاية}")
+- `sections[0].tags[0]`: اسم الولاية (Bayern, Berlin, Baden-Württemberg, إلخ)
+- `sections[0].difficultyDistribution`: توزيع الصعوبة (اختياري)
+- `timeLimitMin`: مدة الامتحان بالدقائق
+- `attemptLimit`: عدد المحاولات المسموحة (0 = غير محدود)
+- `status`: حالة الامتحان (draft/published)
 
 **إنشاء سؤال للولاية:**
 ```json
@@ -1624,5 +1992,575 @@ Authorization: Bearer <accessToken>
 
 ---
 
-**آخر تحديث:** 2024
+## 📊 أمثلة MongoDB Documents
+
+### 1️⃣ Deutschland in Leben Test
+
+#### مثال 1: Exam - Bayern (33 سؤال: 3 من الولاية + 30 من الـ300)
+
+```json
+{
+  "_id": ObjectId("6911013cedc6fd66631427cc"),
+  "title": "Deutschland in Leben - Bayern",
+  "provider": "Deutschland-in-Leben",
+  "level": "B1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Bayern Fragen",
+      "quota": 3,
+      "tags": ["Bayern"],
+      "difficultyDistribution": {
+        "easy": 1,
+        "medium": 1,
+        "hard": 1
+      }
+    },
+    {
+      "name": "300 Fragen Pool",
+      "quota": 30,
+      "tags": ["300-Fragen"]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "timeLimitMin": 60,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "__v": 0
+}
+```
+
+#### مثال 2: Exam - Berlin
+
+```json
+{
+  "_id": ObjectId("6911013cedc6fd66631427cd"),
+  "title": "Deutschland in Leben - Berlin",
+  "provider": "Deutschland-in-Leben",
+  "level": "B1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Berlin Fragen",
+      "quota": 3,
+      "tags": ["Berlin"]
+    },
+    {
+      "name": "300 Fragen Pool",
+      "quota": 30,
+      "tags": ["300-Fragen"]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "timeLimitMin": 60,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z")
+}
+```
+
+#### مثال 3: Question - سؤال من ولاية Bayern
+
+```json
+{
+  "_id": ObjectId("6912013cedc6fd66631427aa"),
+  "prompt": "ما هي عاصمة ولاية بايرن؟",
+  "qType": "mcq",
+  "options": [
+    { "text": "ميونخ", "isCorrect": true },
+    { "text": "برلين", "isCorrect": false },
+    { "text": "هامبورغ", "isCorrect": false },
+    { "text": "فرانكفورت", "isCorrect": false }
+  ],
+  "provider": "Deutschland-in-Leben",
+  "level": "B1",
+  "tags": ["Bayern", "easy"],
+  "status": "published",
+  "createdBy": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T20:00:00.000Z"),
+  "updatedAt": ISODate("2025-01-09T20:00:00.000Z")
+}
+```
+
+#### مثال 4: Question - سؤال من الـ300 Fragen
+
+```json
+{
+  "_id": ObjectId("6912013cedc6fd66631427bb"),
+  "prompt": "ما هي عاصمة ألمانيا؟",
+  "qType": "mcq",
+  "options": [
+    { "text": "برلين", "isCorrect": true },
+    { "text": "ميونخ", "isCorrect": false },
+    { "text": "هامبورغ", "isCorrect": false }
+  ],
+  "provider": "Deutschland-in-Leben",
+  "level": "B1",
+  "tags": ["300-Fragen", "medium"],
+  "status": "published",
+  "createdBy": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T20:00:00.000Z"),
+  "updatedAt": ISODate("2025-01-09T20:00:00.000Z")
+}
+```
+
+---
+
+### 2️⃣ Prüfungen - telc B1
+
+#### مثال 5: Exam - telc B1 (جميع الأقسام: Hören, Lesen, Schreiben, Sprechen)
+
+```json
+{
+  "_id": ObjectId("6913013cedc6fd66631427dd"),
+  "title": "telc B1 - Vollständiger Test",
+  "provider": "telc",
+  "level": "B1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Hören - Teil 1",
+      "quota": 3,
+      "tags": ["Hören", "Teil-1"]
+    },
+    {
+      "name": "Hören - Teil 2",
+      "quota": 4,
+      "tags": ["Hören", "Teil-2"]
+    },
+    {
+      "name": "Hören - Teil 3",
+      "quota": 3,
+      "tags": ["Hören", "Teil-3"]
+    },
+    {
+      "name": "Lesen - Teil 1",
+      "quota": 4,
+      "tags": ["Lesen", "Teil-1"]
+    },
+    {
+      "name": "Lesen - Teil 2",
+      "quota": 3,
+      "tags": ["Lesen", "Teil-2"]
+    },
+    {
+      "name": "Lesen - Teil 3",
+      "quota": 4,
+      "tags": ["Lesen", "Teil-3"]
+    },
+    {
+      "name": "Lesen - Teil 4",
+      "quota": 3,
+      "tags": ["Lesen", "Teil-4"]
+    },
+    {
+      "name": "Schreiben - Teil 1",
+      "quota": 1,
+      "tags": ["Schreiben", "Teil-1"]
+    },
+    {
+      "name": "Schreiben - Teil 2",
+      "quota": 1,
+      "tags": ["Schreiben", "Teil-2"]
+    },
+    {
+      "name": "Sprechen - Teil 1",
+      "quota": 1,
+      "tags": ["Sprechen", "Teil-1"]
+    },
+    {
+      "name": "Sprechen - Teil 2",
+      "quota": 1,
+      "tags": ["Sprechen", "Teil-2"]
+    },
+    {
+      "name": "Sprechen - Teil 3",
+      "quota": 1,
+      "tags": ["Sprechen", "Teil-3"]
+    }
+  ],
+  "randomizeQuestions": false,
+  "attemptLimit": 3,
+  "timeLimitMin": 150,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z")
+}
+```
+
+#### مثال 6: Exam - telc B1 Hören فقط
+
+```json
+{
+  "_id": ObjectId("6913013cedc6fd66631427ee"),
+  "title": "telc B1 - Hören",
+  "provider": "telc",
+  "level": "B1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Hören - Teil 1",
+      "quota": 3,
+      "tags": ["Hören", "Teil-1"]
+    },
+    {
+      "name": "Hören - Teil 2",
+      "quota": 4,
+      "tags": ["Hören", "Teil-2"]
+    },
+    {
+      "name": "Hören - Teil 3",
+      "quota": 3,
+      "tags": ["Hören", "Teil-3"]
+    }
+  ],
+  "randomizeQuestions": false,
+  "attemptLimit": 3,
+  "timeLimitMin": 30,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z")
+}
+```
+
+#### مثال 7: Question - telc B1 Hören Teil 1
+
+```json
+{
+  "_id": ObjectId("6914013cedc6fd66631427ff"),
+  "prompt": "استمع إلى المحادثة وأجب: ما هو موضوع المحادثة؟",
+  "qType": "mcq",
+  "options": [
+    { "text": "حجز فندق", "isCorrect": true },
+    { "text": "حجز رحلة", "isCorrect": false },
+    { "text": "حجز مطعم", "isCorrect": false }
+  ],
+  "provider": "telc",
+  "section": "Hören",
+  "level": "B1",
+  "tags": ["Hören", "Teil-1"],
+  "status": "published",
+  "media": {
+    "type": "audio",
+    "key": "questions/telc-b1-hoeren-teil1-001.mp3",
+    "mime": "audio/mpeg",
+    "provider": "s3"
+  },
+  "createdBy": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T20:00:00.000Z"),
+  "updatedAt": ISODate("2025-01-09T20:00:00.000Z")
+}
+```
+
+#### مثال 8: Exam - Goethe B2
+
+```json
+{
+  "_id": ObjectId("6915013cedc6fd6663142800"),
+  "title": "Goethe B2 - Lesen",
+  "provider": "Goethe",
+  "level": "B2",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Lesen - Teil 1",
+      "quota": 4,
+      "tags": ["Lesen", "Teil-1"]
+    },
+    {
+      "name": "Lesen - Teil 2",
+      "quota": 3,
+      "tags": ["Lesen", "Teil-2"]
+    },
+    {
+      "name": "Lesen - Teil 3",
+      "quota": 4,
+      "tags": ["Lesen", "Teil-3"]
+    },
+    {
+      "name": "Lesen - Teil 4",
+      "quota": 3,
+      "tags": ["Lesen", "Teil-4"]
+    }
+  ],
+  "randomizeQuestions": false,
+  "attemptLimit": 3,
+  "timeLimitMin": 60,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z")
+}
+```
+
+#### مثال 9: Exam - DTZ (Deutsch-Test für Zuwanderer) - B1 فقط
+
+```json
+{
+  "_id": ObjectId("6916013cedc6fd6663142801"),
+  "title": "DTZ - Deutsch-Test für Zuwanderer",
+  "provider": "DTZ",
+  "level": "B1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Hören - Teil 1",
+      "quota": 5,
+      "tags": ["Hören", "Teil-1"]
+    },
+    {
+      "name": "Hören - Teil 2",
+      "quota": 5,
+      "tags": ["Hören", "Teil-2"]
+    },
+    {
+      "name": "Lesen - Teil 1",
+      "quota": 5,
+      "tags": ["Lesen", "Teil-1"]
+    },
+    {
+      "name": "Lesen - Teil 2",
+      "quota": 5,
+      "tags": ["Lesen", "Teil-2"]
+    },
+    {
+      "name": "Schreiben",
+      "quota": 1,
+      "tags": ["Schreiben"]
+    },
+    {
+      "name": "Sprechen",
+      "quota": 1,
+      "tags": ["Sprechen"]
+    }
+  ],
+  "randomizeQuestions": false,
+  "attemptLimit": 3,
+  "timeLimitMin": 120,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z")
+}
+```
+
+---
+
+### 3️⃣ Grammatik (القواعد النحوية)
+
+#### مثال 10: Exam - Grammatik B1
+
+```json
+{
+  "_id": ObjectId("6917013cedc6fd6663142802"),
+  "title": "Grammatik B1 - Präsens und Perfekt",
+  "provider": "Grammatik",
+  "level": "B1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Präsens",
+      "quota": 10,
+      "tags": ["Präsens"]
+    },
+    {
+      "name": "Perfekt",
+      "quota": 10,
+      "tags": ["Perfekt"]
+    },
+    {
+      "name": "Präteritum",
+      "quota": 10,
+      "tags": ["Präteritum"]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "timeLimitMin": 45,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z")
+}
+```
+
+#### مثال 11: Question - Grammatik B1 Präsens
+
+```json
+{
+  "_id": ObjectId("6918013cedc6fd6663142803"),
+  "prompt": "Ergänzen Sie: Ich ___ jeden Tag Deutsch.",
+  "qType": "fill",
+  "fillExact": "lerne",
+  "regexList": ["lerne", "lernt", "lernen"],
+  "provider": "Grammatik",
+  "level": "B1",
+  "tags": ["Präsens", "Verbkonjugation"],
+  "status": "published",
+  "createdBy": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T20:00:00.000Z"),
+  "updatedAt": ISODate("2025-01-09T20:00:00.000Z")
+}
+```
+
+#### مثال 12: Question - Grammatik B1 Perfekt
+
+```json
+{
+  "_id": ObjectId("6918013cedc6fd6663142804"),
+  "prompt": "Ergänzen Sie: Ich ___ gestern nach Hause ___.",
+  "qType": "fill",
+  "fillExact": "bin gegangen",
+  "regexList": ["bin gegangen", "ist gegangen", "sind gegangen"],
+  "provider": "Grammatik",
+  "level": "B1",
+  "tags": ["Perfekt", "Hilfsverb", "Partizip II"],
+  "status": "published",
+  "createdBy": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T20:00:00.000Z"),
+  "updatedAt": ISODate("2025-01-09T20:00:00.000Z")
+}
+```
+
+#### مثال 13: Exam - Grammatik A1 - Satzbau
+
+```json
+{
+  "_id": ObjectId("6919013cedc6fd6663142805"),
+  "title": "Grammatik A1 - Satzbau",
+  "provider": "Grammatik",
+  "level": "A1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Satzbau - Grundlagen",
+      "quota": 15,
+      "tags": ["Satzbau"]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "timeLimitMin": 30,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z")
+}
+```
+
+---
+
+### 4️⃣ Wortschatz (المفردات)
+
+#### مثال 14: Exam - Wortschatz A1 - Leben
+
+```json
+{
+  "_id": ObjectId("6920013cedc6fd6663142806"),
+  "title": "Wortschatz A1 - Leben",
+  "provider": "Wortschatz",
+  "level": "A1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Leben - Grundlagen",
+      "quota": 20,
+      "tags": ["Leben", "Wohnen"]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "timeLimitMin": 30,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z")
+}
+```
+
+#### مثال 15: Question - Wortschatz A1 Leben
+
+```json
+{
+  "_id": ObjectId("6921013cedc6fd6663142807"),
+  "prompt": "ما معنى كلمة 'Haus'؟",
+  "qType": "mcq",
+  "options": [
+    { "text": "بيت", "isCorrect": true },
+    { "text": "سيارة", "isCorrect": false },
+    { "text": "كتاب", "isCorrect": false },
+    { "text": "شجرة", "isCorrect": false }
+  ],
+  "provider": "Wortschatz",
+  "level": "A1",
+  "tags": ["Leben", "Wohnen"],
+  "status": "published",
+  "createdBy": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T20:00:00.000Z"),
+  "updatedAt": ISODate("2025-01-09T20:00:00.000Z")
+}
+```
+
+#### مثال 16: Exam - Wortschatz B1 - Arbeit
+
+```json
+{
+  "_id": ObjectId("6922013cedc6fd6663142808"),
+  "title": "Wortschatz B1 - Arbeit",
+  "provider": "Wortschatz",
+  "level": "B1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Arbeit - Berufe",
+      "quota": 10,
+      "tags": ["Arbeit", "Berufe"]
+    },
+    {
+      "name": "Arbeit - Büro",
+      "quota": 10,
+      "tags": ["Arbeit", "Büro"]
+    },
+    {
+      "name": "Arbeit - Kommunikation",
+      "quota": 10,
+      "tags": ["Arbeit", "Kommunikation"]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "timeLimitMin": 45,
+  "ownerId": ObjectId("6910e7918d98cac22e8c8c4c"),
+  "createdAt": ISODate("2025-01-09T21:01:48.694Z"),
+  "updatedAt": ISODate("2025-01-09T21:01:48.694Z")
+}
+```
+
+---
+
+## 📋 ملخص الهيكل
+
+### Deutschland in Leben Test
+- **18 نافذة:** 300 Fragen + Tests + 16 ولاية
+- **كل اختبار:** 33 سؤال (3 من الولاية + 30 من الـ300)
+- **Tags للأسئلة:** `["Bayern"]` للولاية، `["300-Fragen"]` للـ300
+
+### Prüfungen (6 مزودين)
+- **telc, Goethe, ÖSD, ECL, DTB, DTZ**
+- **كل مزود:** مستويات مختلفة (A1-C1 حسب المزود)
+- **كل مستوى:** 4 أقسام (Hören, Lesen, Schreiben, Sprechen)
+- **كل قسم:** عدة Teil (مثل: Teil-1, Teil-2, Teil-3)
+- **Tags:** `["Hören", "Teil-1"]` أو `["Lesen", "Teil-2"]`
+
+### Grammatik
+- **مستويات:** A1, A2, B1, B2, C1
+- **مواضيع:** Präsens, Perfekt, Präteritum, Satzbau, Nebensätze, Passiv, Konjunktiv, Modalverben, Konjunktionen
+- **Tags:** `["Präsens"]`, `["Perfekt", "Hilfsverb"]`, إلخ
+
+### Wortschatz
+- **مستويات:** A1, A2, B1, B2, C1
+- **مجالات:** Leben, Arbeit, Reisen, Familie, Gesundheit, Umwelt, Politik, Gesellschaft
+- **Tags:** `["Leben", "Wohnen"]`, `["Arbeit", "Berufe"]`, إلخ
+
+---
+
+**آخر تحديث:** 2025
 
