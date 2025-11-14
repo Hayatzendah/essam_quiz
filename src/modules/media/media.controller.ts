@@ -31,15 +31,15 @@ function fileFilter(_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 export class MediaController {
   constructor(private readonly media: MediaService) {}
 
-  @Get('mock/:key*')
-  async getMockFile(@Param('key') key: string, @Res() res: Response) {
+  @Get('mock/*path')
+  async getMockFile(@Param('path') path: string, @Res() res: Response) {
     // في وضع Mock، نعيد رسالة توضيحية بدل الملف الفعلي
     // لأن الملفات لا تُحفظ فعلياً في وضع Mock
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({
       message: 'Mock mode: File not actually stored',
       note: 'This is a mock URL. In production with S3, this would return the actual file.',
-      key: key,
+      key: path,
       info: 'To get real file URLs, configure S3 environment variables in Railway.',
     });
   }
