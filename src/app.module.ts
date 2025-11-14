@@ -36,6 +36,7 @@ import { AppController } from './app.controller';
         JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
         WEB_APP_ORIGIN: Joi.string().optional(),
         CORS_ORIGIN: Joi.string().optional(), // Fallback for backward compatibility
+        CORS_ALLOW_ALL: Joi.string().valid('true', 'false').optional(), // Allow all origins (for development only)
         ENABLE_SWAGGER: Joi.string().valid('true', 'false').default('false'),
         SWAGGER_USER: Joi.string().optional(),
         SWAGGER_PASSWORD: Joi.string().optional(),

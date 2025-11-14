@@ -44,7 +44,7 @@ async function bootstrap() {
 
     // CORS configuration
     const webAppOrigin = process.env.WEB_APP_ORIGIN || process.env.CORS_ORIGIN;
-    let allowedOrigins: string[] | boolean | ((origin: string, callback: (err: Error | null, allow?: boolean) => void) => void);
+    const allowAllOrigins = process.env.CORS_ALLOW_ALL === 'true';
     
     // Default localhost origins for development
     const defaultLocalhostOrigins = [
@@ -61,7 +61,13 @@ async function bootstrap() {
       'http://127.0.0.1:5177',
     ];
     
-    if (webAppOrigin) {
+    let allowedOrigins: string[] | boolean | ((origin: string, callback: (err: Error | null, allow?: boolean) => void) => void);
+    
+    if (allowAllOrigins) {
+      // Allow all origins (for development/testing only)
+      allowedOrigins = true;
+      logger.warn('⚠️  CORS: Allowing all origins (CORS_ALLOW_ALL=true). Not recommended for production!');
+    } else if (webAppOrigin) {
       // Split by comma and trim each origin, then add localhost for development
       const productionOrigins = webAppOrigin.split(',').map((origin) => origin.trim());
       allowedOrigins = [...productionOrigins, ...defaultLocalhostOrigins];
