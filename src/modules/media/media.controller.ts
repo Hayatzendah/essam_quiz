@@ -31,7 +31,7 @@ function fileFilter(_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 export class MediaController {
   constructor(private readonly media: MediaService) {}
 
-  @Get('mock/:key(*)')
+  @Get('mock/:key*')
   async getMockFile(@Param('key') key: string, @Res() res: Response) {
     // في وضع Mock، نعيد رسالة توضيحية بدل الملف الفعلي
     // لأن الملفات لا تُحفظ فعلياً في وضع Mock
