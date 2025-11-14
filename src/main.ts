@@ -46,14 +46,16 @@ async function bootstrap() {
     const webAppOrigin = process.env.WEB_APP_ORIGIN || process.env.CORS_ORIGIN;
     const allowAllOrigins = process.env.CORS_ALLOW_ALL === 'true';
     
-    // Default localhost origins for development
-    const defaultLocalhostOrigins = [
+    // Default allowed origins (production domains + localhost for development)
+    const defaultAllowedOrigins = [
+      'http://localhost:5177', // Frontend local development
+      'https://deutsch-tests.com', // Production domain
+      'https://www.deutsch-tests.com', // Production domain with www
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:5175',
       'http://localhost:5176',
-      'http://localhost:5177',
       'http://localhost:5178',
       'http://localhost:8080',
       'http://127.0.0.1:3000',
@@ -68,15 +70,12 @@ async function bootstrap() {
       allowedOrigins = true;
       logger.warn('⚠️  CORS: Allowing all origins (CORS_ALLOW_ALL=true). Not recommended for production!');
     } else if (webAppOrigin) {
-      // Split by comma and trim each origin, then add localhost for development
-      const productionOrigins = webAppOrigin.split(',').map((origin) => origin.trim());
-      allowedOrigins = [...productionOrigins, ...defaultLocalhostOrigins];
-    } else if (process.env.NODE_ENV === 'production') {
-      // In production, if no origin is set, allow localhost for development
-      allowedOrigins = defaultLocalhostOrigins;
+      // Split by comma and trim each origin, then merge with default origins
+      const customOrigins = webAppOrigin.split(',').map((origin) => origin.trim());
+      allowedOrigins = [...new Set([...defaultAllowedOrigins, ...customOrigins])]; // Remove duplicates
     } else {
-      // In development, allow all origins
-      allowedOrigins = true;
+      // Use default allowed origins (includes production domains + localhost)
+      allowedOrigins = defaultAllowedOrigins;
     }
 
     app.enableCors({
