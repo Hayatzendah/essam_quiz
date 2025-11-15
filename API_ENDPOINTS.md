@@ -1138,9 +1138,14 @@ Authorization: Bearer <accessToken>
 **Body:**
 ```json
 {
-  "examId": "examId123"
+  "examId": "examId123"  // ⚠️ مهم: يجب أن يكون MongoId صحيح (24 حرف hex)
 }
 ```
+
+**⚠️ ملاحظات مهمة:**
+- `examId` **مطلوب** ويجب أن يكون MongoId صحيح (مثل: `"6759a0c0..."`)
+- إذا كان `examId` غير موجود أو غير صحيح، ستحصل على `400 Bad Request`
+- تأكد من أن الـ Frontend يرسل `examId` وليس `id` أو `exam` أو أي اسم آخر
 
 **Response (201):**
 ```json

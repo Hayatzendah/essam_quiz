@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AttemptsService } from './attempts.service';
 import { StartAttemptDto } from './dto/start-attempt.dto';
@@ -13,6 +13,8 @@ import { RolesGuard } from '../common/guards/roles.guard';
 @ApiBearerAuth('JWT-auth')
 @Controller('attempts')
 export class AttemptsController {
+  private readonly logger = new Logger(AttemptsController.name);
+
   constructor(private readonly service: AttemptsService) {}
 
   // قائمة محاولات الطالب
@@ -28,6 +30,10 @@ export class AttemptsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
   start(@Body() dto: StartAttemptDto, @Req() req: any) {
+    this.logger.debug(`Starting attempt - examId: ${dto?.examId}, user: ${req.user?.userId}, role: ${req.user?.role}`);
+    if (!dto?.examId) {
+      this.logger.warn(`Missing examId in request body. Received: ${JSON.stringify(dto)}`);
+    }
     return this.service.startAttempt(dto.examId, req.user);
   }
 
