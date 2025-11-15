@@ -388,7 +388,7 @@ export class ExamsService {
 
     // التحقق من وجود محاولات مرتبطة بالامتحان
     const AttemptModel = this.model.db.collection('attempts');
-    const attemptCount = await AttemptModel.countDocuments({ examId: new Types.ObjectId(id) }).exec();
+    const attemptCount = await AttemptModel.countDocuments({ examId: new Types.ObjectId(id) });
     
     if (attemptCount > 0 && !hard) {
       throw new BadRequestException({
