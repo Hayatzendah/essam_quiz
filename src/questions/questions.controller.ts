@@ -28,15 +28,10 @@ export class QuestionsController {
 
   // GET /questions
   // - admin/teacher: يشوفوا جميع الأسئلة (draft/published/archived)
-  // - student: يشوف الأسئلة المنشورة فقط (published)
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'teacher', 'student')
+  @Roles('admin', 'teacher')
   findMany(@Query() q: QueryQuestionDto, @CurrentUser() user: any) {
-    // للطلاب: فرض المنشور فقط
-    if (user?.role === 'student') {
-      return this.service.findPublishedForStudent(q);
-    }
     // للمعلمين والأدمن: جميع الأسئلة
     return this.service.findQuestions(q);
   }

@@ -913,10 +913,10 @@ Authorization: Bearer <accessToken>
 ### `GET /questions`
 **الوصف:** الحصول على قائمة الأسئلة  
 **المصادقة:** مطلوبة (Bearer Token)  
-**الأدوار المسموحة:** teacher, admin, **student** ✅
+**الأدوار المسموحة:** teacher, admin
 
 **ملاحظات مهمة:**
-- **للطلاب:** يتم فرض `status: 'published'` تلقائيًا - الطلاب يشوفون الأسئلة المنشورة فقط
+- **للطلاب:** يجب استخدام `POST /attempts` لبدء محاولة والحصول على الأسئلة من خلال المحاولة
 - **للمعلمين/الأدمن:** يمكنهم رؤية جميع الأسئلة (draft/published/archived) حسب `status` parameter
 
 **Headers:**
@@ -926,7 +926,7 @@ Authorization: Bearer <accessToken>
 
 **Query Parameters:**
 - `page`: رقم الصفحة (افتراضي: 1)
-- `limit`: عدد النتائج (افتراضي: 10 للـ admin/teacher، 20 للطلاب)
+- `limit`: عدد النتائج (افتراضي: 10)
 - `qType`: فلترة حسب نوع السؤال (mcq, true_false, fill, match, reorder)
 - `provider`: فلترة حسب المزود (telc, Goethe, ÖSD, Deutschland-in-Leben, etc.)
 - `section`: فلترة حسب القسم (Hören, Lesen, Schreiben, Sprechen)
@@ -935,7 +935,7 @@ Authorization: Bearer <accessToken>
   - عند تحديد `state`: يتم إرجاع الأسئلة العامة (بدون tags للولايات) + أسئلة الولاية المحددة
 - `tags`: فلترة حسب Tags (مفصولة بفواصل: "Bayern,Hören")
 - `text`: بحث نصي في نص السؤال
-- `status`: فلترة حسب الحالة (draft, published, archived) - **للطلاب: يتم تجاهل هذا الحقل وفرض 'published'**
+- `status`: فلترة حسب الحالة (draft, published, archived)
 
 **Response (200):**
 ```json

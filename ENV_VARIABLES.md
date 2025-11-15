@@ -126,3 +126,4 @@ openssl rand -hex 32
 
 All environment variables are validated on startup using Joi schema. Missing required variables will cause the application to exit with an error message.
 
+
