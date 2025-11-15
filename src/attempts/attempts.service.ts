@@ -78,9 +78,13 @@ export class AttemptsService {
         this.logger.debug(`Section "${sec.name}": Added ${sectionItems.length} questions from items`);
       } else if (hasQuota) {
         const filter: any = { status: QuestionStatus.PUBLISHED };
+        
+        // فلترة أساسية: provider و level (مطلوبة)
         if (exam.level) filter.level = exam.level;
         if ((exam as any).provider) filter.provider = (exam as any).provider;
-        if (sec.name) filter.section = sec.name;
+        
+        // ⚠️ لا نضيف section للفلترة لأن أسئلة Deutschland-in-Leben قد لا تحتوي على section
+        // بدلاً من ذلك، نستخدم tags فقط للفلترة
         
         // دعم tags من section
         const sectionTags: string[] = [];
@@ -118,12 +122,37 @@ export class AttemptsService {
           filter.tags = { $in: sectionTags };
         }
 
-        this.logger.debug(`Searching questions with filter: ${JSON.stringify(filter)}`);
+        this.logger.log(`[Section: ${sec.name}] Searching questions with filter: ${JSON.stringify(filter, null, 2)}`);
+        this.logger.log(`[Section: ${sec.name}] Exam provider: "${(exam as any).provider}", level: "${exam.level}", sectionTags: ${JSON.stringify(sectionTags)}`);
+        
         const candidates = await this.QuestionModel.find(filter).lean(false).exec();
-        this.logger.debug(`Found ${candidates.length} candidate questions for section "${sec.name}" (quota: ${(sec as any).quota})`);
+        this.logger.log(`[Section: ${sec.name}] Found ${candidates.length} candidate questions (quota required: ${(sec as any).quota})`);
+        
+        if (candidates.length > 0) {
+          this.logger.debug(`[Section: ${sec.name}] Sample candidates: ${JSON.stringify(candidates.slice(0, 3).map((q: any) => ({ 
+            id: q._id, 
+            provider: q.provider, 
+            level: q.level, 
+            tags: q.tags,
+            status: q.status 
+          })))}`);
+        }
 
         if (candidates.length === 0) {
-          this.logger.error(`No questions found for section - section: ${sec.name}, filter: ${JSON.stringify(filter)}`);
+          // محاولة البحث بدون tags أولاً لمعرفة ما إذا كانت المشكلة في tags
+          const filterWithoutTags: any = { status: QuestionStatus.PUBLISHED };
+          if (exam.level) filterWithoutTags.level = exam.level;
+          if ((exam as any).provider) filterWithoutTags.provider = (exam as any).provider;
+          
+          const candidatesWithoutTags = await this.QuestionModel.find(filterWithoutTags).lean(false).exec();
+          
+          this.logger.error(`No questions found for section - section: ${sec.name}`);
+          this.logger.error(`Filter used: ${JSON.stringify(filter)}`);
+          this.logger.error(`Questions found without tags filter: ${candidatesWithoutTags.length}`);
+          if (candidatesWithoutTags.length > 0) {
+            this.logger.error(`Sample question tags: ${JSON.stringify(candidatesWithoutTags.slice(0, 3).map((q: any) => ({ id: q._id, tags: q.tags, provider: q.provider, level: q.level })))}`);
+          }
+          
           throw new BadRequestException({
             code: 'NO_QUESTIONS_FOR_SECTION',
             message: `No questions found for section "${sec.name}"`,
@@ -131,9 +160,18 @@ export class AttemptsService {
             filter: {
               provider: (exam as any).provider,
               level: exam.level,
-              section: sec.name,
               tags: sectionTags,
               status: 'published',
+            },
+            diagnostic: {
+              questionsFoundWithoutTags: candidatesWithoutTags.length,
+              sampleQuestions: candidatesWithoutTags.slice(0, 3).map((q: any) => ({
+                id: q._id,
+                provider: q.provider,
+                level: q.level,
+                tags: q.tags,
+                status: q.status,
+              })),
             },
           });
         }
@@ -176,7 +214,6 @@ export class AttemptsService {
             filter: {
               provider: (exam as any).provider,
               level: exam.level,
-              section: sec.name,
               tags: sectionTags,
               status: 'published',
             },
