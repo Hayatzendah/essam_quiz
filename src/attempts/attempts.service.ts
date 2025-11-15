@@ -38,6 +38,28 @@ export class AttemptsService {
     if (!user || user.role !== 'student') throw new ForbiddenException('Only student can perform this action');
   }
 
+  /**
+   * تطبيع provider للبحث - يدعم "LiD" و "Deutschland-in-Leben"
+   */
+  private normalizeProvider(provider?: string): string[] {
+    if (!provider) return [];
+    
+    const normalized = provider.trim();
+    
+    // إذا كان "LiD" أو اختصارات أخرى، نبحث عن كلا القيمتين
+    if (normalized === 'LiD' || normalized === 'lid' || normalized === 'LID') {
+      return ['Deutschland-in-Leben', 'LiD', 'lid', 'LID'];
+    }
+    
+    // إذا كان "Deutschland-in-Leben"، نبحث عن كلا القيمتين أيضاً
+    if (normalized === 'Deutschland-in-Leben' || normalized === 'Deutschland in Leben') {
+      return ['Deutschland-in-Leben', 'LiD', 'lid', 'LID', 'Deutschland in Leben'];
+    }
+    
+    // للـ providers الأخرى، نرجع القيمة كما هي
+    return [normalized];
+  }
+
   private async generateQuestionListForAttempt(exam: ExamDocument, rng: () => number, studentState?: string) {
     const selected: Array<{ question: QuestionDocument; points: number }> = [];
 
@@ -81,7 +103,17 @@ export class AttemptsService {
         
         // فلترة أساسية: provider و level (مطلوبة)
         if (exam.level) filter.level = exam.level;
-        if ((exam as any).provider) filter.provider = (exam as any).provider;
+        
+        // تطبيع provider لدعم "LiD" و "Deutschland-in-Leben"
+        if ((exam as any).provider) {
+          const providerVariants = this.normalizeProvider((exam as any).provider);
+          if (providerVariants.length === 1) {
+            filter.provider = providerVariants[0];
+          } else {
+            filter.provider = { $in: providerVariants };
+          }
+          this.logger.debug(`Normalized provider: "${(exam as any).provider}" -> ${JSON.stringify(providerVariants)}`);
+        }
         
         // ⚠️ لا نضيف section للفلترة لأن أسئلة Deutschland-in-Leben قد لا تحتوي على section
         // بدلاً من ذلك، نستخدم tags فقط للفلترة
@@ -92,9 +124,10 @@ export class AttemptsService {
           sectionTags.push(...(sec as any).tags);
         }
         
-        // إذا كان provider = "Deutschland-in-Leben" و section يحتوي على tags للولاية
+        // إذا كان provider = "Deutschland-in-Leben" أو "LiD" و section يحتوي على tags للولاية
         // و studentState موجود، نضيف الولاية للفلترة
-        if (studentState && (exam as any).provider === 'Deutschland-in-Leben') {
+        const examProvider = (exam as any).provider?.toLowerCase();
+        if (studentState && (examProvider === 'deutschland-in-leben' || examProvider === 'lid')) {
           // إذا كان section يحتوي على tags للولاية (مثل ["Bayern"] أو ["300-Fragen"])
           // نستخدم studentState فقط إذا كان section مخصص للولاية
           const isStateSection = sectionTags.some(tag => 
@@ -142,15 +175,56 @@ export class AttemptsService {
           // محاولة البحث بدون tags أولاً لمعرفة ما إذا كانت المشكلة في tags
           const filterWithoutTags: any = { status: QuestionStatus.PUBLISHED };
           if (exam.level) filterWithoutTags.level = exam.level;
-          if ((exam as any).provider) filterWithoutTags.provider = (exam as any).provider;
+          if ((exam as any).provider) {
+            const providerVariants = this.normalizeProvider((exam as any).provider);
+            if (providerVariants.length === 1) {
+              filterWithoutTags.provider = providerVariants[0];
+            } else {
+              filterWithoutTags.provider = { $in: providerVariants };
+            }
+          }
           
           const candidatesWithoutTags = await this.QuestionModel.find(filterWithoutTags).lean(false).exec();
+          
+          // البحث عن جميع الأسئلة المنشورة لنفس المستوى (بدون provider) لمعرفة ما هو موجود
+          const allPublishedForLevel = await this.QuestionModel.find({ 
+            status: QuestionStatus.PUBLISHED,
+            level: exam.level 
+          }).lean(false).limit(10).exec();
+          
+          // البحث عن جميع الأسئلة المنشورة (بدون أي فلترة) لمعرفة ما هو موجود
+          const allPublished = await this.QuestionModel.find({ 
+            status: QuestionStatus.PUBLISHED 
+          }).lean(false).limit(10).exec();
           
           this.logger.error(`No questions found for section - section: ${sec.name}`);
           this.logger.error(`Filter used: ${JSON.stringify(filter)}`);
           this.logger.error(`Questions found without tags filter: ${candidatesWithoutTags.length}`);
+          this.logger.error(`Total published questions for level "${exam.level}": ${allPublishedForLevel.length}`);
+          this.logger.error(`Total published questions (any level): ${allPublished.length}`);
+          
           if (candidatesWithoutTags.length > 0) {
             this.logger.error(`Sample question tags: ${JSON.stringify(candidatesWithoutTags.slice(0, 3).map((q: any) => ({ id: q._id, tags: q.tags, provider: q.provider, level: q.level })))}`);
+          }
+          
+          if (allPublishedForLevel.length > 0) {
+            this.logger.error(`Sample questions for level "${exam.level}": ${JSON.stringify(allPublishedForLevel.slice(0, 5).map((q: any) => ({ 
+              id: q._id, 
+              provider: q.provider, 
+              level: q.level, 
+              tags: q.tags,
+              status: q.status 
+            })))}`);
+          }
+          
+          if (allPublished.length > 0) {
+            this.logger.error(`Sample published questions (any level): ${JSON.stringify(allPublished.slice(0, 5).map((q: any) => ({ 
+              id: q._id, 
+              provider: q.provider, 
+              level: q.level, 
+              tags: q.tags,
+              status: q.status 
+            })))}`);
           }
           
           throw new BadRequestException({
@@ -165,6 +239,15 @@ export class AttemptsService {
             },
             diagnostic: {
               questionsFoundWithoutTags: candidatesWithoutTags.length,
+              totalPublishedForLevel: allPublishedForLevel.length,
+              totalPublished: allPublished.length,
+              sampleQuestionsForLevel: allPublishedForLevel.slice(0, 5).map((q: any) => ({
+                id: q._id,
+                provider: q.provider,
+                level: q.level,
+                tags: q.tags,
+                status: q.status,
+              })),
               sampleQuestions: candidatesWithoutTags.slice(0, 3).map((q: any) => ({
                 id: q._id,
                 provider: q.provider,
