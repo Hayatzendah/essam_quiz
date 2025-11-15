@@ -48,18 +48,20 @@ async function bootstrap() {
     
     // Default allowed origins (production domains + localhost for development)
     const defaultAllowedOrigins = [
+      'http://localhost:5173', // Frontend local development (Vite default)
+      'http://localhost:5174', // Frontend local development
+      'http://localhost:5176', // Frontend local development
       'http://localhost:5177', // Frontend local development
       'https://deutsch-tests.com', // Production domain
       'https://www.deutsch-tests.com', // Production domain with www
       'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5174',
       'http://localhost:5175',
-      'http://localhost:5176',
       'http://localhost:5178',
       'http://localhost:8080',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
+      'http://127.0.0.1:5176',
       'http://127.0.0.1:5177',
     ];
     

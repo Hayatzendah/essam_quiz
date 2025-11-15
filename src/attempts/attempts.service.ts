@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Attempt, AttemptDocument, AttemptStatus } from './schemas/attempt.schema';
@@ -15,6 +15,8 @@ type ReqUser = { userId: string; role: 'student'|'teacher'|'admin' };
 
 @Injectable()
 export class AttemptsService {
+  private readonly logger = new Logger(AttemptsService.name);
+
   constructor(
     @InjectModel(Attempt.name) private readonly AttemptModel: Model<AttemptDocument>,
     @InjectModel(Exam.name) private readonly ExamModel: Model<ExamDocument>,
@@ -43,6 +45,8 @@ export class AttemptsService {
       const hasItems = Array.isArray((sec as any).items) && (sec as any).items.length > 0;
       const hasQuota = typeof (sec as any).quota === 'number' && (sec as any).quota > 0;
 
+      this.logger.debug(`Processing section: ${sec.name}, hasItems: ${hasItems}, hasQuota: ${hasQuota}, quota: ${(sec as any).quota}`);
+
       if (hasItems) {
         const itemIds = (sec as any).items.map((it: any) => new Types.ObjectId(it.questionId));
         const qDocs = await this.QuestionModel.find({
@@ -56,12 +60,22 @@ export class AttemptsService {
           if (q) sectionItems.push({ question: q, points: it.points ?? 1 });
         }
 
+        if (sectionItems.length === 0) {
+          this.logger.warn(`No published questions found for section with items - section: ${sec.name}`);
+          throw new BadRequestException({
+            code: 'NO_QUESTIONS_FOR_SECTION',
+            message: `No published questions found for section "${sec.name}"`,
+            sectionName: sec.name,
+          });
+        }
+
         // خلط ترتيب الأسئلة داخل القسم إذا كان randomize=true
         if ((sec as any).randomize && sectionItems.length > 1) {
           shuffleInPlace(sectionItems, rng);
         }
 
         selected.push(...sectionItems);
+        this.logger.debug(`Section "${sec.name}": Added ${sectionItems.length} questions from items`);
       } else if (hasQuota) {
         const filter: any = { status: QuestionStatus.PUBLISHED };
         if (exam.level) filter.level = exam.level;
@@ -96,6 +110,7 @@ export class AttemptsService {
             );
             sectionTags.length = 0;
             sectionTags.push(...filteredTags, studentState);
+            this.logger.debug(`State section detected - using studentState: ${studentState} for section: ${sec.name}`);
           }
         }
         
@@ -103,7 +118,26 @@ export class AttemptsService {
           filter.tags = { $in: sectionTags };
         }
 
+        this.logger.debug(`Searching questions with filter: ${JSON.stringify(filter)}`);
         const candidates = await this.QuestionModel.find(filter).lean(false).exec();
+        this.logger.debug(`Found ${candidates.length} candidate questions for section "${sec.name}" (quota: ${(sec as any).quota})`);
+
+        if (candidates.length === 0) {
+          this.logger.error(`No questions found for section - section: ${sec.name}, filter: ${JSON.stringify(filter)}`);
+          throw new BadRequestException({
+            code: 'NO_QUESTIONS_FOR_SECTION',
+            message: `No questions found for section "${sec.name}"`,
+            sectionName: sec.name,
+            filter: {
+              provider: (exam as any).provider,
+              level: exam.level,
+              section: sec.name,
+              tags: sectionTags,
+              status: 'published',
+            },
+          });
+        }
+
         let pickList: QuestionDocument[] = [];
 
         if ((sec as any).difficultyDistribution) {
@@ -112,6 +146,8 @@ export class AttemptsService {
           const easy = candidates.filter((c: any) => c.tags && c.tags.includes('easy'));
           const med  = candidates.filter((c: any) => c.tags && c.tags.includes('medium'));
           const hard = candidates.filter((c: any) => c.tags && c.tags.includes('hard'));
+
+          this.logger.debug(`Difficulty distribution - easy: ${easy.length}, medium: ${med.length}, hard: ${hard.length}, required: easy=${dd.easy || 0}, medium=${dd.medium || 0}, hard=${dd.hard || 0}`);
 
           pickList = [
             ...pickRandom(easy, dd.easy || 0, rng),
@@ -128,13 +164,34 @@ export class AttemptsService {
           pickList = pickRandom(candidates, (sec as any).quota, rng);
         }
 
+        if (pickList.length < (sec as any).quota) {
+          this.logger.warn(`Not enough questions for section - section: ${sec.name}, required: ${(sec as any).quota}, found: ${pickList.length}, available: ${candidates.length}`);
+          throw new BadRequestException({
+            code: 'NOT_ENOUGH_QUESTIONS_FOR_SECTION',
+            message: `Section "${sec.name}" requires ${(sec as any).quota} questions, but only ${pickList.length} are available (${candidates.length} total candidates)`,
+            sectionName: sec.name,
+            required: (sec as any).quota,
+            available: pickList.length,
+            totalCandidates: candidates.length,
+            filter: {
+              provider: (exam as any).provider,
+              level: exam.level,
+              section: sec.name,
+              tags: sectionTags,
+              status: 'published',
+            },
+          });
+        }
+
         for (const q of pickList) {
           selected.push({ question: q, points: 1 });
         }
+        this.logger.debug(`Section "${sec.name}": Selected ${pickList.length} questions`);
       }
     }
 
     if (exam.randomizeQuestions) shuffleInPlace(selected, rng);
+    this.logger.log(`Total questions selected: ${selected.length} for exam: ${exam.title}`);
     return selected;
   }
 
@@ -226,30 +283,68 @@ export class AttemptsService {
     const studentId = new Types.ObjectId(userId);
     const examId = new Types.ObjectId(examIdStr);
 
+    this.logger.log(`Starting attempt - examId: ${examIdStr}, userId: ${userId}, role: ${user.role}`);
+
     const exam = await this.ExamModel.findById(examId).lean(false).exec();
-    if (!exam) throw new NotFoundException('Exam not found');
+    if (!exam) {
+      this.logger.warn(`Exam not found - examId: ${examIdStr}`);
+      throw new BadRequestException({
+        code: 'EXAM_NOT_FOUND',
+        message: 'Exam not found',
+        examId: examIdStr,
+      });
+    }
+
+    this.logger.debug(`Exam found - title: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, status: ${exam.status}`);
+
+    // جلب معلومات الطالب (بما فيها state)
+    const student = await this.UserModel.findById(userId).lean().exec();
+    const studentState = (student as any)?.state;
+    this.logger.debug(`Student state: ${studentState || 'not set'}`);
 
     if (exam.status !== ExamStatus.PUBLISHED) {
-      throw new ForbiddenException('Exam is not published');
+      this.logger.warn(`Exam is not published - examId: ${examIdStr}, status: ${exam.status}`);
+      throw new BadRequestException({
+        code: 'EXAM_NOT_AVAILABLE',
+        message: 'Exam is not published or not found',
+        examId: examIdStr,
+        examStatus: exam.status,
+      });
     }
 
     if (typeof exam.attemptLimit === 'number' && exam.attemptLimit > 0) {
       const current = await this.AttemptModel.countDocuments({ examId, studentId }).exec();
       if (current >= exam.attemptLimit) {
-        throw new ForbiddenException('Attempt limit reached');
+        this.logger.warn(`Attempt limit reached - examId: ${examIdStr}, userId: ${userId}, current: ${current}, limit: ${exam.attemptLimit}`);
+        throw new BadRequestException({
+          code: 'ATTEMPT_LIMIT_REACHED',
+          message: 'Attempt limit reached',
+          examId: examIdStr,
+          currentAttempts: current,
+          attemptLimit: exam.attemptLimit,
+        });
       }
     }
-
-    // جلب معلومات الطالب (بما فيها state)
-    const student = await this.UserModel.findById(userId).lean().exec();
-    const studentState = (student as any)?.state;
 
     const attemptCount = await this.computeAttemptCount(studentId, examId);
     const seedNum = this.computeSeed(attemptCount, String(studentId), String(examId));
     const rng = mulberry32(seedNum);
 
     const picked = await this.generateQuestionListForAttempt(exam, rng, studentState);
-    if (!picked.length) throw new BadRequestException(MSG.NO_QUESTIONS_AVAILABLE);
+    if (!picked.length) {
+      this.logger.error(`No questions available - examId: ${examIdStr}, examTitle: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, studentState: ${studentState || 'not set'}`);
+      throw new BadRequestException({
+        code: 'NO_QUESTIONS_AVAILABLE',
+        message: 'No questions available for this exam',
+        examId: examIdStr,
+        examTitle: exam.title,
+        provider: (exam as any).provider,
+        level: exam.level,
+        studentState: studentState || null,
+      });
+    }
+
+    this.logger.log(`Successfully generated ${picked.length} questions for attempt - examId: ${examIdStr}, userId: ${userId}`);
 
     // بناء items مع خلط الخيارات إذا كان السؤال MCQ
     const items: any[] = [];
