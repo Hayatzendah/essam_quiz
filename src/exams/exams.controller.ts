@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Req, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ExamsService } from './exams.service';
 import { CreateExamDto } from './dto/create-exam.dto';
@@ -13,6 +13,8 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 @ApiBearerAuth('JWT-auth')
 @Controller('exams')
 export class ExamsController {
+  private readonly logger = new Logger(ExamsController.name);
+
   constructor(private readonly service: ExamsService) {}
 
   // إنشاء امتحان (admin/teacher)
@@ -63,6 +65,7 @@ export class ExamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher')
   remove(@Param('id') id: string, @Query('hard') hard?: string, @Req() req?: any) {
+    this.logger.log(`DELETE /exams/${id} - hard: ${hard}, user: ${req?.user?.userId}, role: ${req?.user?.role}`);
     return this.service.removeExam(id, req?.user, hard === 'true');
   }
 
