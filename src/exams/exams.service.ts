@@ -375,5 +375,39 @@ export class ExamsService {
 
     return { assignedClassId: doc.assignedClassId, assignedStudentIds: doc.assignedStudentIds };
   }
+
+  async removeExam(id: string, user: ReqUser, hard: boolean = false) {
+    if (!user) throw new ForbiddenException();
+    const doc = await this.model.findById(id).exec();
+    if (!doc) throw new NotFoundException('Exam not found');
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const isOwner = doc.ownerId?.toString() === userId;
+    const isAdmin = user.role === 'admin';
+    if (!(isOwner || isAdmin)) throw new ForbiddenException('Only owner teacher or admin can delete');
+
+    // التحقق من وجود محاولات مرتبطة بالامتحان
+    const AttemptModel = this.model.db.collection('attempts');
+    const attemptCount = await AttemptModel.countDocuments({ examId: new Types.ObjectId(id) }).exec();
+    
+    if (attemptCount > 0 && !hard) {
+      throw new BadRequestException({
+        code: 'EXAM_HAS_ATTEMPTS',
+        message: `Cannot delete exam with ${attemptCount} attempt(s). Use hard=true to force delete.`,
+        attemptCount,
+      });
+    }
+
+    if (hard) {
+      // Hard delete: حذف نهائي
+      await this.model.findByIdAndDelete(id).exec();
+      return { message: 'Exam deleted permanently', id };
+    } else {
+      // Soft delete: تغيير الحالة إلى archived
+      doc.status = ExamStatus.ARCHIVED;
+      await doc.save();
+      return { message: 'Exam archived successfully', id: doc._id, status: doc.status };
+    }
+  }
 }
 

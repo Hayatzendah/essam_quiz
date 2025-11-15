@@ -814,6 +814,61 @@ Authorization: Bearer <accessToken>
 
 ---
 
+### `DELETE /exams/:id`
+**الوصف:** حذف أو أرشفة امتحان  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** teacher, admin (المالك فقط أو الأدمن)
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Query Parameters:**
+- `hard`: إذا كان `true`، يحذف الامتحان نهائياً (افتراضي: `false` = soft delete/archive)
+
+**Response (200):**
+```json
+{
+  "message": "Exam archived successfully",
+  "id": "examId123",
+  "status": "archived"
+}
+```
+
+أو (إذا كان `hard=true`):
+```json
+{
+  "message": "Exam deleted permanently",
+  "id": "examId123"
+}
+```
+
+**Response (400):**
+```json
+{
+  "code": "EXAM_HAS_ATTEMPTS",
+  "message": "Cannot delete exam with 5 attempt(s). Use hard=true to force delete.",
+  "attemptCount": 5
+}
+```
+
+**الاستخدام:** 
+- **Soft delete (افتراضي):** يغير حالة الامتحان إلى `archived` - يحتفظ بالامتحان في قاعدة البيانات
+- **Hard delete:** يحذف الامتحان نهائياً (استخدم بحذر!)
+- إذا كان الامتحان يحتوي على محاولات، يجب استخدام `hard=true` للحذف النهائي
+
+**مثال:**
+```javascript
+// Soft delete (archive)
+await api.delete('/exams/examId123');
+
+// Hard delete (permanent)
+await api.delete('/exams/examId123?hard=true');
+```
+
+---
+
 ### `POST /exams/:id/assign`
 **الوصف:** إسناد امتحان لطلاب محددين  
 **المصادقة:** مطلوبة (Bearer Token)  
