@@ -58,20 +58,20 @@ export class ExamsController {
     return this.service.updateExam(id, dto, req.user);
   }
 
-  // إسناد امتحان (اختياري)
-  @Post(':id/assign')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin','teacher')
-  assign(@Param('id') id: string, @Body() dto: AssignExamDto, @Req() req: any) {
-    return this.service.assignExam(id, dto, req.user);
-  }
-
   // حذف امتحان (المالك أو الأدمن)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher')
   remove(@Param('id') id: string, @Query('hard') hard?: string, @Req() req?: any) {
     return this.service.removeExam(id, req?.user, hard === 'true');
+  }
+
+  // إسناد امتحان (اختياري) - يجب أن يكون بعد DELETE لتجنب التعارض
+  @Post(':id/assign')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin','teacher')
+  assign(@Param('id') id: string, @Body() dto: AssignExamDto, @Req() req: any) {
+    return this.service.assignExam(id, dto, req.user);
   }
 }
 
