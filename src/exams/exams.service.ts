@@ -134,18 +134,79 @@ export class ExamsService {
   }
 
   async findAll(user: ReqUser, q: QueryExamDto) {
-    this.assertTeacherOrAdmin(user);
-
     const filter: any = {};
-    if (user.role === 'teacher') {
+
+    // الطالب: يشوف فقط الامتحانات المنشورة
+    if (user.role === 'student') {
+      filter.status = ExamStatus.PUBLISHED;
+      
+      // فلترة حسب assignedStudentIds (غير مخصص أو مخصص له)
+      const userId = user.userId || (user as any).sub || (user as any).id;
+      const studentId = new Types.ObjectId(userId);
+      filter.$or = [
+        { assignedStudentIds: { $exists: false } },
+        { assignedStudentIds: { $size: 0 } },
+        { assignedStudentIds: studentId },
+      ];
+    }
+    // المدرس: يشوف امتحاناته فقط
+    else if (user.role === 'teacher') {
       const userId = user.userId || (user as any).sub || (user as any).id;
       filter.ownerId = new Types.ObjectId(userId);
+      if (q?.status) filter.status = q.status;
     }
-    if (q?.status) filter.status = q.status;
+    // الأدمن: يشوف الكل (يمكنه الفلترة حسب status)
+    else if (user.role === 'admin') {
+      if (q?.status) filter.status = q.status;
+    }
+
+    // فلترة مشتركة
     if (q?.level) filter.level = q.level;
     if (q?.provider) filter.provider = q.provider;
 
+    // فلترة حسب state (الولاية) - البحث في sections.tags
+    if (q?.state) {
+      filter['sections.tags'] = { $in: [q.state] };
+    }
+
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
+    
+    // للطلاب: فلترة حسب attemptLimit
+    if (user.role === 'student') {
+      const userId = user.userId || (user as any).sub || (user as any).id;
+      const studentId = new Types.ObjectId(userId);
+      const examIds = items.map((e: any) => e._id);
+      
+      if (examIds.length > 0) {
+        const attemptCounts = await this.model.db.collection('attempts').aggregate([
+          {
+            $match: {
+              studentId,
+              examId: { $in: examIds },
+            },
+          },
+          {
+            $group: {
+              _id: '$examId',
+              count: { $sum: 1 },
+            },
+          },
+        ]).toArray();
+        
+        const attemptCountMap = new Map(attemptCounts.map((a: any) => [a._id.toString(), a.count]));
+        
+        const availableExams: any[] = [];
+        for (const exam of items) {
+          const attemptCount = attemptCountMap.get(exam._id.toString()) || 0;
+          const attemptLimit = exam.attemptLimit || 0;
+          if (attemptLimit === 0 || attemptCount < attemptLimit) {
+            availableExams.push(exam);
+          }
+        }
+        return { items: availableExams, count: availableExams.length };
+      }
+    }
+
     return { items, count: items.length };
   }
 

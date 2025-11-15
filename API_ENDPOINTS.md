@@ -660,7 +660,7 @@ Authorization: Bearer <accessToken>
 ### `GET /exams`
 **الوصف:** الحصول على قائمة الامتحانات  
 **المصادقة:** مطلوبة (Bearer Token)  
-**الأدوار المسموحة:** teacher, admin
+**الأدوار المسموحة:** teacher, admin, **student**
 
 **Headers:**
 ```
@@ -668,9 +668,10 @@ Authorization: Bearer <accessToken>
 ```
 
 **Query Parameters:**
-- `status`: فلترة حسب الحالة (draft/published/archived)
+- `status`: فلترة حسب الحالة (draft/published/archived) - **للطلاب: يتم تجاهل هذا الحقل وفرض 'published'**
 - `level`: فلترة حسب المستوى (A1, A2, B1, B2, C1)
-- `provider`: فلترة حسب المزود (telc, Goethe, ÖSD, etc.)
+- `provider`: فلترة حسب المزود (telc, Goethe, ÖSD, Deutschland-in-Leben, etc.)
+- `state`: فلترة حسب الولاية الألمانية (Bayern, Berlin, etc.) - يتم البحث في sections.tags
 
 **Response (200):**
 ```json
@@ -690,6 +691,7 @@ Authorization: Bearer <accessToken>
 ```
 
 **الاستخدام:** 
+- **الطالب:** يرى الامتحانات المنشورة المتاحة له فقط (غير مخصصة أو مخصصة له، ولم يتجاوز حد المحاولات)
 - **المعلم:** يرى امتحاناته فقط
 - **الأدمن:** يرى جميع الامتحانات
 

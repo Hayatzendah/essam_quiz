@@ -10,6 +10,9 @@ export class QueryExamDto {
 
   @IsOptional() @IsString()
   provider?: string;
+
+  @IsOptional() @IsString()
+  state?: string; // الولاية الألمانية (Bundesland) - للفلترة حسب tags في sections
 }
 
 

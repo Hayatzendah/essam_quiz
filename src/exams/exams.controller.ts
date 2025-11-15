@@ -23,10 +23,13 @@ export class ExamsController {
     return this.service.createExam(dto, req.user);
   }
 
-  // قائمة الامتحانات (المعلم: امتحاناته فقط | الأدمن: الكل)
+  // قائمة الامتحانات
+  // - admin: جميع الامتحانات
+  // - teacher: امتحاناته فقط
+  // - student: الامتحانات المنشورة المتاحة
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin','teacher')
+  @Roles('admin','teacher','student')
   findAll(@Query() q: QueryExamDto, @Req() req: any) {
     return this.service.findAll(req.user, q);
   }
