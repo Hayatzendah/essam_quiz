@@ -145,12 +145,23 @@ export class QuestionsService {
   }
 
   async updateQuestion(id: string, dto: UpdateQuestionDto) {
-    // لا نسمح بتغيير qType
-    if (typeof (dto as any).qType !== 'undefined') {
-      throw new BadRequestException('qType cannot be updated');
+    // لا نسمح بتغيير qType - نتجاهله إذا كان موجوداً في الـ payload
+    const { qType, ...updateData } = dto as any;
+    
+    // إذا كان qType موجود في الـ payload، نتحقق من أنه نفس القيمة الحالية
+    if (typeof qType !== 'undefined') {
+      const existing = await this.model.findById(id).lean().exec();
+      if (!existing) throw new NotFoundException('Question not found');
+      
+      // إذا كان qType مختلف عن القيمة الحالية، نرفض التحديث
+      if (qType !== existing.qType) {
+        throw new BadRequestException('qType cannot be updated');
+      }
+      // إذا كان نفس القيمة، نتجاهله فقط (لا نحدثه في updateData)
     }
 
-    const updated = await this.model.findByIdAndUpdate(id, dto, { new: true }).exec();
+    // تطبيق التحديث (بدون qType)
+    const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updated) throw new NotFoundException('Question not found');
     return updated;
   }
