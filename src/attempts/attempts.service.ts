@@ -881,6 +881,25 @@ export class AttemptsService {
       return { ...base, message: 'سيتم إعلان النتائج لاحقًا.' };
     }
 
+    // إذا كانت المحاولة في حالة in_progress، يجب إرجاع items حتى يتمكن الطالب من الإجابة
+    if (attempt.status === AttemptStatus.IN_PROGRESS) {
+      return {
+        ...base,
+        items: (attempt.items as any[]).map(it => ({
+          questionId: it.questionId,
+          qType: it.qType,
+          points: it.points,
+          prompt: it.promptSnapshot,
+          options: it.optionsText,
+          ...(it.mediaType && {
+            mediaType: it.mediaType,
+            mediaUrl: it.mediaUrl,
+            mediaMime: it.mediaMime,
+          }),
+        })),
+      };
+    }
+
     if (policy === 'only_scores') {
       return { ...base };
     }
