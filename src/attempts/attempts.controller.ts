@@ -75,24 +75,56 @@ export class AttemptsController {
   // حفظ إجابة أثناء المحاولة (طالب فقط)
   // يدعم: PATCH /attempts/:attemptId/answer (مع itemIndex في body)
   // و: PATCH /attempts/:attemptId/answer/:itemIndex (مع itemIndex في URL)
-  @Patch(':attemptId/answer/:itemIndex?')
+  
+  // Route with itemIndex in URL (must come before the route without it)
+  @Patch(':attemptId/answer/:itemIndex')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  async answerWithIndex(
+    @Param('attemptId') attemptId: string,
+    @Param('itemIndex') itemIndexFromUrl: string,
+    @Body() dto: AnswerOneDto,
+    @Req() req: any
+  ) {
+    // Parse itemIndex from URL and use it
+    const parsedIndex = parseInt(itemIndexFromUrl, 10);
+    if (!isNaN(parsedIndex)) {
+      dto.itemIndex = parsedIndex;
+    }
+    
+    this.logger.log(`[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`);
+    this.logger.debug(`[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Request body: ${JSON.stringify(dto)}`);
+    
+    try {
+      const result = await this.service.saveAnswer(req.user, attemptId, {
+        itemIndex: dto.itemIndex,
+        questionId: dto.questionId,
+        studentAnswerIndexes: dto.studentAnswerIndexes,
+        studentAnswerText: dto.studentAnswerText,
+        studentAnswerBoolean: dto.studentAnswerBoolean,
+        studentAnswerMatch: dto.studentAnswerMatch,
+        studentAnswerReorder: dto.studentAnswerReorder,
+        studentAnswerAudioKey: dto.studentAnswerAudioKey,
+      });
+      
+      this.logger.log(`[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Answer saved successfully`);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Error saving answer - error: ${error.message}, stack: ${error.stack}`);
+      throw error;
+    }
+  }
+
+  // Route without itemIndex in URL (itemIndex must be in body)
+  @Patch(':attemptId/answer')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
   async answer(
     @Param('attemptId') attemptId: string,
-    @Param('itemIndex') itemIndexFromUrl: string | undefined,
     @Body() dto: AnswerOneDto,
     @Req() req: any
   ) {
-    // إذا كان itemIndex في URL، نستخدمه
-    if (itemIndexFromUrl !== undefined) {
-      const parsedIndex = parseInt(itemIndexFromUrl, 10);
-      if (!isNaN(parsedIndex)) {
-        dto.itemIndex = parsedIndex;
-      }
-    }
-    
-    this.logger.log(`[PATCH /attempts/${attemptId}/answer${itemIndexFromUrl ? `/${itemIndexFromUrl}` : ''}] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`);
+    this.logger.log(`[PATCH /attempts/${attemptId}/answer] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`);
     this.logger.debug(`[PATCH /attempts/${attemptId}/answer] Request body: ${JSON.stringify(dto)}`);
     
     try {

@@ -1238,8 +1238,8 @@ Authorization: Bearer <accessToken>
 
 ---
 
-### `PATCH /attempts/:attemptId/answer`
-**الوصف:** حفظ إجابة لسؤال أثناء المحاولة  
+### `PATCH /attempts/:attemptId/answer/:itemIndex`
+**الوصف:** حفظ إجابة لسؤال أثناء المحاولة (مع `itemIndex` في URL)  
 **المصادقة:** مطلوبة (Bearer Token)  
 **الأدوار المسموحة:** student فقط
 
@@ -1248,10 +1248,61 @@ Authorization: Bearer <accessToken>
 Authorization: Bearer <accessToken>
 ```
 
+**URL Parameters:**
+- `attemptId`: معرف المحاولة
+- `itemIndex`: رقم السؤال في الامتحان (0-based)
+
 **Body:**
 ```json
 {
-  "itemIndex": 0, // رقم السؤال في الامتحان (0-based)
+  "questionId": "questionId123",
+  "studentAnswerIndexes": [0, 2], // للإجابات المتعددة (multiple-choice)
+  "studentAnswerText": "إجابة نصية", // للأسئلة النصية (fill-blank)
+  "studentAnswerBoolean": true, // للأسئلة true/false
+  "studentAnswerMatch": { "0": "1", "1": "0" }, // للأسئلة matching
+  "studentAnswerReorder": [2, 0, 1] // للأسئلة reorder
+}
+```
+
+**ملاحظة:** `itemIndex` في URL سيتم استخدامه تلقائياً حتى لو كان موجوداً في Body.
+
+**Response (200):**
+```json
+{
+  "id": "attemptId123",
+  "answers": [
+    {
+      "itemIndex": 0,
+      "questionId": "questionId123",
+      "studentAnswerIndexes": [0, 2],
+      "answeredAt": "2024-01-01T10:05:00.000Z"
+    }
+  ],
+  ...
+}
+```
+
+**الاستخدام:** للطالب لحفظ إجابته أثناء المحاولة مع `itemIndex` في URL
+
+---
+
+### `PATCH /attempts/:attemptId/answer`
+**الوصف:** حفظ إجابة لسؤال أثناء المحاولة (مع `itemIndex` في Body)  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** student فقط
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**URL Parameters:**
+- `attemptId`: معرف المحاولة
+
+**Body:**
+```json
+{
+  "itemIndex": 0, // رقم السؤال في الامتحان (0-based) - مطلوب في هذا المسار
   "questionId": "questionId123",
   "studentAnswerIndexes": [0, 2], // للإجابات المتعددة (multiple-choice)
   "studentAnswerText": "إجابة نصية", // للأسئلة النصية (fill-blank)
