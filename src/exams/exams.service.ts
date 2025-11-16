@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateExamDto } from './dto/create-exam.dto';
@@ -11,6 +11,8 @@ type ReqUser = { userId: string; role: 'student'|'teacher'|'admin' };
 
 @Injectable()
 export class ExamsService {
+  private readonly logger = new Logger(ExamsService.name);
+
   constructor(@InjectModel(Exam.name) private readonly model: Model<ExamDocument>) {}
 
   private assertTeacherOrAdmin(user: ReqUser) {
@@ -165,8 +167,11 @@ export class ExamsService {
     if (q?.provider) filter.provider = q.provider;
 
     // فلترة حسب state (الولاية) - البحث في sections.tags
+    // يجب أن يكون هناك قسم واحد على الأقل يحتوي على الولاية المطلوبة
     if (q?.state) {
+      // البحث عن امتحانات تحتوي على قسم واحد على الأقل مع tags تحتوي على الولاية
       filter['sections.tags'] = { $in: [q.state] };
+      this.logger.debug(`Filtering exams by state: ${q.state}`);
     }
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();

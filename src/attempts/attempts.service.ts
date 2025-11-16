@@ -142,26 +142,28 @@ export class AttemptsService {
         }
         
         // إذا كان provider = "Deutschland-in-Leben" أو "LiD" و section يحتوي على tags للولاية
-        // و studentState موجود، نضيف الولاية للفلترة
+        // نستخدم الولاية من tags القسم نفسه (الامتحان محدد لولاية معينة)
         const examProvider = (exam as any).provider?.toLowerCase();
-        if (studentState && (examProvider === 'deutschland-in-leben' || examProvider === 'lid')) {
-          // إذا كان section يحتوي على tags للولاية (مثل ["Bayern"] أو ["300-Fragen"])
-          // نستخدم studentState فقط إذا كان section مخصص للولاية
-          const isStateSection = sectionTags.some(tag => 
-            ['Bayern', 'Berlin', 'NRW', 'Baden-Württemberg', 'Brandenburg', 'Bremen', 
-             'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen', 
-             'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen', 
-             'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'].includes(tag)
-          );
+        const germanStates = ['Bayern', 'Berlin', 'NRW', 'Baden-Württemberg', 'Brandenburg', 'Bremen', 
+          'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen', 
+          'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen', 
+          'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'];
+        
+        if (examProvider === 'deutschland-in-leben' || examProvider === 'lid') {
+          // إذا كان section يحتوي على tags للولاية، نستخدم الولاية من tags القسم
+          const stateInTags = sectionTags.find(tag => germanStates.includes(tag));
           
-          if (isStateSection) {
-            // استبدال tags الولاية بـ studentState
-            const filteredTags = sectionTags.filter(tag => 
-              !['Bayern', 'Berlin', 'NRW', 'Baden-Württemberg', 'Brandenburg', 'Bremen', 
-                'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen', 
-                'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen', 
-                'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'].includes(tag)
-            );
+          if (stateInTags) {
+            // القسم مخصص لولاية معينة - نستخدم الولاية من tags القسم
+            // نزيل جميع tags الولايات ونضع فقط الولاية المطلوبة
+            const filteredTags = sectionTags.filter(tag => !germanStates.includes(tag));
+            sectionTags.length = 0;
+            sectionTags.push(...filteredTags, stateInTags);
+            this.logger.debug(`State section detected - using state from section tags: ${stateInTags} for section: ${sec.name}`);
+          } else if (studentState && sectionTags.some(tag => germanStates.includes(tag))) {
+            // إذا كان section يحتوي على tags للولاية لكن ليس الولاية المحددة
+            // نستخدم studentState كبديل (للتوافق مع النظام القديم)
+            const filteredTags = sectionTags.filter(tag => !germanStates.includes(tag));
             sectionTags.length = 0;
             sectionTags.push(...filteredTags, studentState);
             this.logger.debug(`State section detected - using studentState: ${studentState} for section: ${sec.name}`);
