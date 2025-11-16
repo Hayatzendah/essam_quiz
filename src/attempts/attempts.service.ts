@@ -609,26 +609,50 @@ export class AttemptsService {
     studentAnswerMatch?: [string, string][]; studentAnswerReorder?: string[];
     studentAnswerAudioKey?: string;
   }) {
+    this.logger.log(`[saveAnswer] Starting - attemptId: ${attemptIdStr}, itemIndex: ${payload.itemIndex}, questionId: ${payload.questionId}`);
+    
     this.ensureStudent(user);
 
     const userId = user.userId || (user as any).sub || (user as any).id;
     const attempt = await this.AttemptModel.findById(attemptIdStr).exec();
-    if (!attempt) throw new NotFoundException('Attempt not found');
+    if (!attempt) {
+      this.logger.error(`[saveAnswer] Attempt not found - attemptId: ${attemptIdStr}`);
+      throw new NotFoundException('Attempt not found');
+    }
 
-    if (attempt.studentId.toString() !== userId) throw new ForbiddenException();
-    if (attempt.status !== AttemptStatus.IN_PROGRESS) throw new ForbiddenException('Attempt is not in progress');
+    if (attempt.studentId.toString() !== userId) {
+      this.logger.error(`[saveAnswer] Forbidden - attempt.studentId: ${attempt.studentId}, userId: ${userId}`);
+      throw new ForbiddenException('Not authorized to modify this attempt');
+    }
+    
+    if (attempt.status !== AttemptStatus.IN_PROGRESS) {
+      this.logger.error(`[saveAnswer] Attempt is not in progress - status: ${attempt.status}`);
+      throw new ForbiddenException('Attempt is not in progress');
+    }
 
     if (attempt.expiresAt && attempt.expiresAt.getTime() < Date.now()) {
+      this.logger.error(`[saveAnswer] Time is over - expiresAt: ${attempt.expiresAt}, now: ${new Date()}`);
       throw new ForbiddenException('Time is over');
     }
 
+    this.logger.debug(`[saveAnswer] Attempt found - items count: ${attempt.items.length}, status: ${attempt.status}`);
+    
     const idx = this.findItemIndex(attempt, payload);
+    this.logger.debug(`[saveAnswer] Item index found: ${idx}, qType: ${(attempt.items[idx] as any)?.qType}`);
+    
     const it: any = attempt.items[idx];
 
     if (it.qType === 'mcq') {
       if (!Array.isArray(payload.studentAnswerIndexes)) {
-        throw new BadRequestException('Provide studentAnswerIndexes for MCQ');
+        this.logger.error(`[saveAnswer] Invalid payload for MCQ - studentAnswerIndexes: ${JSON.stringify(payload.studentAnswerIndexes)}, type: ${typeof payload.studentAnswerIndexes}`);
+        throw new BadRequestException({
+          code: 'INVALID_MCQ_ANSWER',
+          message: 'Provide studentAnswerIndexes as array for MCQ',
+          received: payload.studentAnswerIndexes,
+          qType: it.qType,
+        });
       }
+      this.logger.debug(`[saveAnswer] Saving MCQ answer - itemIndex: ${idx}, studentAnswerIndexes: ${JSON.stringify(payload.studentAnswerIndexes)}`);
       it.studentAnswerIndexes = payload.studentAnswerIndexes;
     } else if (it.qType === 'fill') {
       it.studentAnswerText = (payload.studentAnswerText || '').trim();
@@ -656,6 +680,7 @@ export class AttemptsService {
     }
 
     await attempt.save();
+    this.logger.log(`[saveAnswer] Answer saved successfully - attemptId: ${attemptIdStr}, itemIndex: ${idx}, qType: ${it.qType}`);
     return { ok: true };
   }
 

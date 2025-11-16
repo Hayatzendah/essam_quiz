@@ -76,17 +76,28 @@ export class AttemptsController {
   @Patch(':attemptId/answer')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  answer(@Param('attemptId') attemptId: string, @Body() dto: AnswerOneDto, @Req() req: any) {
-    return this.service.saveAnswer(req.user, attemptId, {
-      itemIndex: dto.itemIndex,
-      questionId: dto.questionId,
-      studentAnswerIndexes: dto.studentAnswerIndexes,
-      studentAnswerText: dto.studentAnswerText,
-      studentAnswerBoolean: dto.studentAnswerBoolean,
-      studentAnswerMatch: dto.studentAnswerMatch,
-      studentAnswerReorder: dto.studentAnswerReorder,
-      studentAnswerAudioKey: dto.studentAnswerAudioKey,
-    });
+  async answer(@Param('attemptId') attemptId: string, @Body() dto: AnswerOneDto, @Req() req: any) {
+    this.logger.log(`[PATCH /attempts/${attemptId}/answer] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`);
+    this.logger.debug(`[PATCH /attempts/${attemptId}/answer] Request body: ${JSON.stringify(dto)}`);
+    
+    try {
+      const result = await this.service.saveAnswer(req.user, attemptId, {
+        itemIndex: dto.itemIndex,
+        questionId: dto.questionId,
+        studentAnswerIndexes: dto.studentAnswerIndexes,
+        studentAnswerText: dto.studentAnswerText,
+        studentAnswerBoolean: dto.studentAnswerBoolean,
+        studentAnswerMatch: dto.studentAnswerMatch,
+        studentAnswerReorder: dto.studentAnswerReorder,
+        studentAnswerAudioKey: dto.studentAnswerAudioKey,
+      });
+      
+      this.logger.log(`[PATCH /attempts/${attemptId}/answer] Answer saved successfully`);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`[PATCH /attempts/${attemptId}/answer] Error saving answer - error: ${error.message}, stack: ${error.stack}`);
+      throw error;
+    }
   }
 
   // تسليم المحاولة (طالب فقط)
