@@ -80,8 +80,8 @@ export class AttemptsController {
   @Roles('student')
   async answer(
     @Param('attemptId') attemptId: string,
-    @Param('itemIndex') itemIndexFromUrl?: string,
-    @Body() dto: AnswerOneDto = {},
+    @Param('itemIndex') itemIndexFromUrl: string | undefined,
+    @Body() dto: AnswerOneDto,
     @Req() req: any
   ) {
     // إذا كان itemIndex في URL، نستخدمه
