@@ -76,13 +76,15 @@ export class AttemptsService {
   }
 
   private async generateQuestionListForAttempt(exam: ExamDocument, rng: () => number, studentState?: string) {
+    this.logger.log(`[generateQuestionListForAttempt] Starting - exam: ${exam.title}, sections: ${exam.sections.length}, studentState: ${studentState || 'not set'}`);
     const selected: Array<{ question: QuestionDocument; points: number }> = [];
 
-    for (const sec of exam.sections) {
+    for (let secIndex = 0; secIndex < exam.sections.length; secIndex++) {
+      const sec = exam.sections[secIndex];
       const hasItems = Array.isArray((sec as any).items) && (sec as any).items.length > 0;
       const hasQuota = typeof (sec as any).quota === 'number' && (sec as any).quota > 0;
 
-      this.logger.debug(`Processing section: ${sec.name}, hasItems: ${hasItems}, hasQuota: ${hasQuota}, quota: ${(sec as any).quota}`);
+      this.logger.log(`[generateQuestionListForAttempt] Section ${secIndex + 1}/${exam.sections.length}: "${sec.name}", hasItems: ${hasItems}, hasQuota: ${hasQuota}, quota: ${(sec as any).quota}, tags: ${JSON.stringify((sec as any).tags || [])}`);
 
       if (hasItems) {
         const itemIds = (sec as any).items.map((it: any) => new Types.ObjectId(it.questionId));
@@ -325,8 +327,14 @@ export class AttemptsService {
       }
     }
 
-    if (exam.randomizeQuestions) shuffleInPlace(selected, rng);
-    this.logger.log(`Total questions selected: ${selected.length} for exam: ${exam.title}`);
+    if (exam.randomizeQuestions) {
+      this.logger.log(`[generateQuestionListForAttempt] Shuffling ${selected.length} questions (randomizeQuestions=true)`);
+      shuffleInPlace(selected, rng);
+    }
+    this.logger.log(`[generateQuestionListForAttempt] Total questions selected: ${selected.length} for exam: ${exam.title}`);
+    if (selected.length === 0) {
+      this.logger.error(`[generateQuestionListForAttempt] WARNING: No questions selected! Exam sections: ${JSON.stringify(exam.sections.map((s: any) => ({ name: s.name, quota: s.quota, tags: s.tags, itemsCount: s.items?.length || 0 })))}`);
+    }
     return selected;
   }
 
@@ -465,9 +473,14 @@ export class AttemptsService {
     const seedNum = this.computeSeed(attemptCount, String(studentId), String(examId));
     const rng = mulberry32(seedNum);
 
+    this.logger.log(`[startAttempt] Generating questions for exam - examId: ${examIdStr}, sections: ${exam.sections.length}, studentState: ${studentState || 'not set'}`);
     const picked = await this.generateQuestionListForAttempt(exam, rng, studentState);
-    if (!picked.length) {
-      this.logger.error(`No questions available - examId: ${examIdStr}, examTitle: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, studentState: ${studentState || 'not set'}`);
+    
+    this.logger.log(`[startAttempt] Questions generated - count: ${picked.length}, examId: ${examIdStr}`);
+    
+    if (!picked || !picked.length) {
+      this.logger.error(`[startAttempt] No questions available - examId: ${examIdStr}, examTitle: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, studentState: ${studentState || 'not set'}`);
+      this.logger.error(`[startAttempt] Exam sections: ${JSON.stringify(exam.sections.map((s: any) => ({ name: s.name, quota: s.quota, tags: s.tags, items: s.items?.length || 0 })))}`);
       throw new BadRequestException({
         code: 'NO_QUESTIONS_AVAILABLE',
         message: 'No questions available for this exam',
@@ -476,16 +489,26 @@ export class AttemptsService {
         provider: (exam as any).provider,
         level: exam.level,
         studentState: studentState || null,
+        sections: exam.sections.map((s: any) => ({
+          name: s.name,
+          quota: s.quota,
+          tags: s.tags,
+          hasItems: Array.isArray(s.items) && s.items.length > 0,
+        })),
       });
     }
 
-    this.logger.log(`Successfully generated ${picked.length} questions for attempt - examId: ${examIdStr}, userId: ${userId}`);
+    this.logger.log(`[startAttempt] Successfully generated ${picked.length} questions for attempt - examId: ${examIdStr}, userId: ${userId}`);
 
     // بناء items مع خلط الخيارات إذا كان السؤال MCQ
+    this.logger.log(`[startAttempt] Building snapshot items - picked count: ${picked.length}`);
     const items: any[] = [];
-    for (const p of picked) {
+    for (let i = 0; i < picked.length; i++) {
+      const p = picked[i];
+      this.logger.debug(`[startAttempt] Building item ${i + 1}/${picked.length} - questionId: ${p.question._id}, qType: ${p.question.qType}`);
       items.push(await this.buildSnapshotItem(p.question, p.points, rng));
     }
+    this.logger.log(`[startAttempt] Built ${items.length} snapshot items`);
 
     let expiresAt: Date | undefined = undefined;
     if (typeof exam.timeLimitMin === 'number' && exam.timeLimitMin > 0) {
@@ -493,6 +516,19 @@ export class AttemptsService {
     }
 
     const totalMaxScore = items.reduce((s, it) => s + (it.points || 0), 0);
+
+    this.logger.log(`[startAttempt] Creating attempt - examId: ${examIdStr}, items count: ${items.length}, totalMaxScore: ${totalMaxScore}`);
+
+    if (!items || items.length === 0) {
+      this.logger.error(`[startAttempt] Cannot create attempt with empty items - examId: ${examIdStr}`);
+      throw new BadRequestException({
+        code: 'NO_ITEMS_IN_ATTEMPT',
+        message: 'Cannot create attempt: no items were generated',
+        examId: examIdStr,
+        pickedCount: picked.length,
+        itemsCount: items.length,
+      });
+    }
 
     const attempt = await this.AttemptModel.create({
       examId, studentId,
@@ -503,6 +539,8 @@ export class AttemptsService {
       expiresAt,
       totalMaxScore,
     });
+
+    this.logger.log(`[startAttempt] Attempt created successfully - attemptId: ${attempt._id}, items count: ${attempt.items.length}`);
 
     return {
       attemptId: attempt._id,
