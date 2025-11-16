@@ -136,6 +136,14 @@ export class QuestionsService {
     };
   }
 
+  async findById(id: string) {
+    const question = await this.model.findById(id).lean().exec();
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+    return question;
+  }
+
   async updateQuestion(id: string, dto: UpdateQuestionDto) {
     // لا نسمح بتغيير qType
     if (typeof (dto as any).qType !== 'undefined') {

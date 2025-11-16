@@ -36,6 +36,14 @@ export class QuestionsController {
     return this.service.findQuestions(q);
   }
 
+  // GET /questions/:id - الحصول على سؤال واحد
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  findOne(@Param('id') id: string) {
+    return this.service.findById(id);
+  }
+
   // PATCH /questions/:id  (admin/teacher فقط)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
