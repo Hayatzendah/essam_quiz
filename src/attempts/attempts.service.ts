@@ -341,6 +341,8 @@ export class AttemptsService {
   }
 
   private async buildSnapshotItem(q: QuestionDocument, points: number, rng?: () => number) {
+    this.logger.debug(`[buildSnapshotItem] Building item for questionId: ${q._id}, qType: ${q.qType}, hasPrompt: ${!!q.prompt}`);
+    
     const item: any = {
       questionId: q._id,
       qType: q.qType,
@@ -418,6 +420,7 @@ export class AttemptsService {
       item['mediaMime'] = m.mime;
     }
 
+    this.logger.debug(`[buildSnapshotItem] Item built - questionId: ${item.questionId}, qType: ${item.qType}, hasPrompt: ${!!item.promptSnapshot}, hasOptions: ${!!item.optionsText}, optionsCount: ${item.optionsText?.length || 0}`);
     return item;
   }
 
@@ -544,25 +547,43 @@ export class AttemptsService {
 
     this.logger.log(`[startAttempt] Attempt created successfully - attemptId: ${attempt._id}, items count: ${attempt.items.length}`);
 
-    return {
+    const responseItems = attempt.items.map((it: any) => ({
+      questionId: it.questionId,
+      qType: it.qType,
+      points: it.points,
+      prompt: it.promptSnapshot,
+      options: it.optionsText,
+      ...(it.mediaType && {
+        mediaType: it.mediaType,
+        mediaUrl: it.mediaUrl,
+        mediaMime: it.mediaMime,
+      }),
+    }));
+
+    this.logger.log(`[startAttempt] Response items count: ${responseItems.length}`);
+    if (responseItems.length > 0) {
+      this.logger.debug(`[startAttempt] First item sample: ${JSON.stringify({
+        questionId: responseItems[0].questionId,
+        qType: responseItems[0].qType,
+        hasPrompt: !!responseItems[0].prompt,
+        hasOptions: !!responseItems[0].options,
+        optionsCount: responseItems[0].options?.length || 0,
+      })}`);
+    } else {
+      this.logger.error(`[startAttempt] WARNING: Response items is empty! attempt.items.length: ${attempt.items.length}`);
+    }
+
+    const response = {
       attemptId: attempt._id,
       examId: attempt.examId,
       status: attempt.status,
       attemptCount: attempt.attemptCount,
       expiresAt: attempt.expiresAt,
-      items: attempt.items.map((it: any) => ({
-        questionId: it.questionId,
-        qType: it.qType,
-        points: it.points,
-        prompt: it.promptSnapshot,
-        options: it.optionsText,
-        ...(it.mediaType && {
-          mediaType: it.mediaType,
-          mediaUrl: it.mediaUrl,
-          mediaMime: it.mediaMime,
-        }),
-      })),
+      items: responseItems,
     };
+
+    this.logger.log(`[startAttempt] Returning response with ${response.items.length} items`);
+    return response;
   }
 
   private findItemIndex(attempt: AttemptDocument, input: { itemIndex?: number; questionId?: string }) {
