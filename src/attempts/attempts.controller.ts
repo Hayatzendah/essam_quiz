@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards, Logger } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards, Logger, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AttemptsService } from './attempts.service';
 import { StartAttemptDto } from './dto/start-attempt.dto';
@@ -29,12 +29,28 @@ export class AttemptsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  start(@Body() dto: StartAttemptDto, @Req() req: any) {
-    this.logger.debug(`Starting attempt - examId: ${dto?.examId}, user: ${req.user?.userId}, role: ${req.user?.role}`);
+  async start(@Body() dto: StartAttemptDto, @Req() req: any) {
+    this.logger.log(`[POST /attempts] Request received - examId: ${dto?.examId}, userId: ${req.user?.userId}, role: ${req.user?.role}`);
+    
     if (!dto?.examId) {
-      this.logger.warn(`Missing examId in request body. Received: ${JSON.stringify(dto)}`);
+      this.logger.error(`[POST /attempts] Missing examId in request body. Received: ${JSON.stringify(dto)}`);
+      throw new BadRequestException({
+        code: 'MISSING_EXAM_ID',
+        message: 'examId is required in request body',
+        received: dto,
+      });
     }
-    return this.service.startAttempt(dto.examId, req.user);
+
+    try {
+      const result = await this.service.startAttempt(dto.examId, req.user);
+      const attemptId = (result as any)?._id || (result as any)?.id || (result as any)?.attemptId || 'unknown';
+      this.logger.log(`[POST /attempts] Attempt created successfully - examId: ${dto.examId}, attemptId: ${attemptId}`);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`[POST /attempts] Error creating attempt - examId: ${dto.examId}, error: ${error.message}, stack: ${error.stack}`);
+      // إعادة رمي الخطأ كما هو (BadRequestException أو ForbiddenException)
+      throw error;
+    }
   }
 
   // حفظ إجابة أثناء المحاولة (طالب فقط)

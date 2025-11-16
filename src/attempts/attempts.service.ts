@@ -35,7 +35,22 @@ export class AttemptsService {
   }
 
   private ensureStudent(user: ReqUser) {
-    if (!user || user.role !== 'student') throw new ForbiddenException('Only student can perform this action');
+    if (!user) {
+      this.logger.error('ensureStudent: user is null or undefined');
+      throw new ForbiddenException({
+        code: 'USER_NOT_AUTHENTICATED',
+        message: 'User is not authenticated',
+      });
+    }
+    if (user.role !== 'student') {
+      this.logger.error(`ensureStudent: user role is "${user.role}", expected "student"`);
+      throw new ForbiddenException({
+        code: 'INSUFFICIENT_PERMISSIONS',
+        message: 'Only students can start exam attempts',
+        userRole: user.role,
+        requiredRole: 'student',
+      });
+    }
   }
 
   /**
