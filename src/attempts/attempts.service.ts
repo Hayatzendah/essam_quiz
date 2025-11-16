@@ -170,8 +170,11 @@ export class AttemptsService {
           }
         }
         
+        // فلترة tags: نبحث عن أسئلة تحتوي على أي من section tags
+        // هذا يسمح بالعثور على أسئلة تحتوي على الـ tag المطلوب حتى لو كان لها tags أخرى (مثل tags ولايات)
         if (sectionTags.length > 0) {
           filter.tags = { $in: sectionTags };
+          this.logger.debug(`[Section: ${sec.name}] Filtering by tags: ${JSON.stringify(sectionTags)}`);
         }
 
         this.logger.log(`[Section: ${sec.name}] Searching questions with filter: ${JSON.stringify(filter, null, 2)}`);
@@ -205,6 +208,14 @@ export class AttemptsService {
           
           const candidatesWithoutTags = await this.QuestionModel.find(filterWithoutTags).lean(false).exec();
           
+          // البحث عن أسئلة تحتوي على section tags (حتى لو كانت لها tags أخرى)
+          const candidatesWithTags = sectionTags.length > 0 
+            ? await this.QuestionModel.find({ 
+                status: QuestionStatus.PUBLISHED,
+                tags: { $in: sectionTags }
+              }).lean(false).limit(10).exec()
+            : [];
+          
           // البحث عن جميع الأسئلة المنشورة لنفس المستوى (بدون provider) لمعرفة ما هو موجود
           const allPublishedForLevel = await this.QuestionModel.find({ 
             status: QuestionStatus.PUBLISHED,
@@ -216,34 +227,41 @@ export class AttemptsService {
             status: QuestionStatus.PUBLISHED 
           }).lean(false).limit(10).exec();
           
-          this.logger.error(`No questions found for section - section: ${sec.name}`);
-          this.logger.error(`Filter used: ${JSON.stringify(filter)}`);
-          this.logger.error(`Questions found without tags filter: ${candidatesWithoutTags.length}`);
-          this.logger.error(`Total published questions for level "${exam.level}": ${allPublishedForLevel.length}`);
-          this.logger.error(`Total published questions (any level): ${allPublished.length}`);
+          this.logger.error(`❌ No questions found for section "${sec.name}"`);
+          this.logger.error(`📋 Filter used: ${JSON.stringify(filter, null, 2)}`);
+          this.logger.error(`🔍 Questions found without tags filter (provider + level only): ${candidatesWithoutTags.length}`);
+          this.logger.error(`🏷️  Questions found with section tags only (${JSON.stringify(sectionTags)}): ${candidatesWithTags.length}`);
+          this.logger.error(`📊 Total published questions for level "${exam.level}": ${allPublishedForLevel.length}`);
+          this.logger.error(`📊 Total published questions (any level): ${allPublished.length}`);
           
           if (candidatesWithoutTags.length > 0) {
-            this.logger.error(`Sample question tags: ${JSON.stringify(candidatesWithoutTags.slice(0, 3).map((q: any) => ({ id: q._id, tags: q.tags, provider: q.provider, level: q.level })))}`);
+            this.logger.error(`📝 Sample questions (provider + level match, tags may differ): ${JSON.stringify(candidatesWithoutTags.slice(0, 5).map((q: any) => ({ 
+              id: q._id, 
+              tags: q.tags, 
+              provider: q.provider, 
+              level: q.level,
+              status: q.status
+            })), null, 2)}`);
+          }
+          
+          if (candidatesWithTags.length > 0) {
+            this.logger.error(`📝 Sample questions with section tags (${JSON.stringify(sectionTags)}): ${JSON.stringify(candidatesWithTags.slice(0, 5).map((q: any) => ({ 
+              id: q._id, 
+              tags: q.tags, 
+              provider: q.provider, 
+              level: q.level,
+              status: q.status
+            })), null, 2)}`);
           }
           
           if (allPublishedForLevel.length > 0) {
-            this.logger.error(`Sample questions for level "${exam.level}": ${JSON.stringify(allPublishedForLevel.slice(0, 5).map((q: any) => ({ 
+            this.logger.error(`📝 Sample questions for level "${exam.level}": ${JSON.stringify(allPublishedForLevel.slice(0, 5).map((q: any) => ({ 
               id: q._id, 
               provider: q.provider, 
               level: q.level, 
               tags: q.tags,
               status: q.status 
-            })))}`);
-          }
-          
-          if (allPublished.length > 0) {
-            this.logger.error(`Sample published questions (any level): ${JSON.stringify(allPublished.slice(0, 5).map((q: any) => ({ 
-              id: q._id, 
-              provider: q.provider, 
-              level: q.level, 
-              tags: q.tags,
-              status: q.status 
-            })))}`);
+            })), null, 2)}`);
           }
           
           throw new BadRequestException({
