@@ -44,7 +44,26 @@ export class AttemptsController {
     try {
       const result = await this.service.startAttempt(dto.examId, req.user);
       const attemptId = (result as any)?._id || (result as any)?.id || (result as any)?.attemptId || 'unknown';
-      this.logger.log(`[POST /attempts] Attempt created successfully - examId: ${dto.examId}, attemptId: ${attemptId}`);
+      const itemsCount = (result as any)?.items?.length || 0;
+      
+      this.logger.log(`[POST /attempts] Attempt created successfully - examId: ${dto.examId}, attemptId: ${attemptId}, itemsCount: ${itemsCount}`);
+      
+      if (itemsCount === 0) {
+        this.logger.error(`[POST /attempts] WARNING: Attempt created with 0 items! Response: ${JSON.stringify({
+          attemptId,
+          examId: result?.examId,
+          status: result?.status,
+          itemsCount: result?.items?.length || 0,
+        })}`);
+      } else {
+        this.logger.log(`[POST /attempts] Response contains ${itemsCount} items. First item: ${JSON.stringify({
+          questionId: result?.items?.[0]?.questionId,
+          qType: result?.items?.[0]?.qType,
+          hasPrompt: !!result?.items?.[0]?.prompt,
+          hasOptions: !!result?.items?.[0]?.options,
+        })}`);
+      }
+      
       return result;
     } catch (error: any) {
       this.logger.error(`[POST /attempts] Error creating attempt - examId: ${dto.examId}, error: ${error.message}, stack: ${error.stack}`);
