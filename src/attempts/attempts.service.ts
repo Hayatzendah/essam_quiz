@@ -173,8 +173,26 @@ export class AttemptsService {
         // فلترة tags: نبحث عن أسئلة تحتوي على أي من section tags
         // هذا يسمح بالعثور على أسئلة تحتوي على الـ tag المطلوب حتى لو كان لها tags أخرى (مثل tags ولايات)
         if (sectionTags.length > 0) {
-          filter.tags = { $in: sectionTags };
-          this.logger.debug(`[Section: ${sec.name}] Filtering by tags: ${JSON.stringify(sectionTags)}`);
+          // تطبيع tags: نبحث عن tags بجميع الـ variations المحتملة لتجنب مشاكل case sensitivity
+          // هذا يحل مشاكل مثل "Fragen-300" vs "fragen-300" vs "300-Fragen"
+          const normalizedTags: string[] = [];
+          for (const tag of sectionTags) {
+            normalizedTags.push(tag); // الأصل أولاً
+            const tagLower = tag.toLowerCase();
+            
+            // إضافة variations شائعة للـ "300 Fragen" tags
+            if (tagLower.includes('fragen') && tagLower.includes('300')) {
+              const variations = [
+                '300-Fragen', 'fragen-300', 'Fragen-300', '300-fragen',
+                '300 Fragen', 'Fragen 300', '300_Fragen', 'Fragen_300'
+              ];
+              normalizedTags.push(...variations);
+            }
+          }
+          // إزالة duplicates مع الحفاظ على الترتيب
+          const uniqueTags = Array.from(new Set(normalizedTags));
+          filter.tags = { $in: uniqueTags };
+          this.logger.debug(`[Section: ${sec.name}] Filtering by tags - original: ${JSON.stringify(sectionTags)}, normalized (${uniqueTags.length} variations): ${JSON.stringify(uniqueTags)}`);
         }
 
         this.logger.log(`[Section: ${sec.name}] Searching questions with filter: ${JSON.stringify(filter, null, 2)}`);
@@ -497,9 +515,38 @@ export class AttemptsService {
     const rng = mulberry32(seedNum);
 
     this.logger.log(`[startAttempt] Generating questions for exam - examId: ${examIdStr}, sections: ${exam.sections.length}, studentState: ${studentState || 'not set'}`);
-    const picked = await this.generateQuestionListForAttempt(exam, rng, studentState);
     
-    this.logger.log(`[startAttempt] Questions generated - count: ${picked.length}, examId: ${examIdStr}`);
+    let picked: Array<{ question: QuestionDocument; points: number }>;
+    try {
+      picked = await this.generateQuestionListForAttempt(exam, rng, studentState);
+      this.logger.log(`[startAttempt] Questions generated - count: ${picked.length}, examId: ${examIdStr}`);
+    } catch (error: any) {
+      this.logger.error(`[startAttempt] Error generating questions - examId: ${examIdStr}, error: ${error.message}, stack: ${error.stack}`);
+      this.logger.error(`[startAttempt] Exam details - title: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, sections: ${JSON.stringify(exam.sections.map((s: any) => ({ name: s.name, quota: s.quota, tags: s.tags, hasItems: Array.isArray(s.items) && s.items.length > 0 })))}`);
+      
+      // إذا كان الخطأ BadRequestException، نعيده كما هو
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // لأي خطأ آخر، نعيده مع معلومات إضافية
+      throw new BadRequestException({
+        code: 'QUESTION_GENERATION_FAILED',
+        message: `Failed to generate questions for exam: ${error.message}`,
+        examId: examIdStr,
+        examTitle: exam.title,
+        provider: (exam as any).provider,
+        level: exam.level,
+        studentState: studentState || null,
+        sections: exam.sections.map((s: any) => ({
+          name: s.name,
+          quota: s.quota,
+          tags: s.tags,
+          hasItems: Array.isArray(s.items) && s.items.length > 0,
+        })),
+        originalError: error.message,
+      });
+    }
     
     if (!picked || !picked.length) {
       this.logger.error(`[startAttempt] No questions available - examId: ${examIdStr}, examTitle: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, studentState: ${studentState || 'not set'}`);
