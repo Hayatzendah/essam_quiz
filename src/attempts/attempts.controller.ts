@@ -73,11 +73,26 @@ export class AttemptsController {
   }
 
   // حفظ إجابة أثناء المحاولة (طالب فقط)
-  @Patch(':attemptId/answer')
+  // يدعم: PATCH /attempts/:attemptId/answer (مع itemIndex في body)
+  // و: PATCH /attempts/:attemptId/answer/:itemIndex (مع itemIndex في URL)
+  @Patch(':attemptId/answer/:itemIndex?')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  async answer(@Param('attemptId') attemptId: string, @Body() dto: AnswerOneDto, @Req() req: any) {
-    this.logger.log(`[PATCH /attempts/${attemptId}/answer] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`);
+  async answer(
+    @Param('attemptId') attemptId: string,
+    @Param('itemIndex') itemIndexFromUrl?: string,
+    @Body() dto: AnswerOneDto = {},
+    @Req() req: any
+  ) {
+    // إذا كان itemIndex في URL، نستخدمه
+    if (itemIndexFromUrl !== undefined) {
+      const parsedIndex = parseInt(itemIndexFromUrl, 10);
+      if (!isNaN(parsedIndex)) {
+        dto.itemIndex = parsedIndex;
+      }
+    }
+    
+    this.logger.log(`[PATCH /attempts/${attemptId}/answer${itemIndexFromUrl ? `/${itemIndexFromUrl}` : ''}] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`);
     this.logger.debug(`[PATCH /attempts/${attemptId}/answer] Request body: ${JSON.stringify(dto)}`);
     
     try {
