@@ -33,30 +33,34 @@ async function bootstrap() {
       process.exit(1);
     }
     
-    // Set defaults for TEACHER_EMAIL and TEACHER_PASSWORD if not provided
-    // ⚠️ WARNING: In production, you should set these in Railway environment variables!
-    if (!process.env.TEACHER_EMAIL) {
-      process.env.TEACHER_EMAIL = 'teacher@deutsch-tests.com';
-      if (isProduction) {
-        logger.warn('⚠️  ⚠️  ⚠️  WARNING: TEACHER_EMAIL not set, using default: teacher@deutsch-tests.com');
-        logger.warn('⚠️  ⚠️  ⚠️  Please set TEACHER_EMAIL in Railway environment variables for security!');
-      } else {
+    // TEACHER_EMAIL and TEACHER_PASSWORD are REQUIRED in production
+    // They should be set in Railway environment variables, NOT in the code
+    if (isProduction) {
+      if (!process.env.TEACHER_EMAIL || !process.env.TEACHER_PASSWORD) {
+        logger.error('❌ TEACHER_EMAIL and TEACHER_PASSWORD are REQUIRED in production!');
+        logger.error('Please set these variables in Railway environment settings:');
+        logger.error('  - TEACHER_EMAIL=teacher@deutsch-tests.com');
+        logger.error('  - TEACHER_PASSWORD=<your-strong-password>');
+        logger.error('');
+        logger.error('Password requirements:');
+        logger.error('  - At least 12 characters');
+        logger.error('  - Contains uppercase, lowercase, number, and special character (@$!%*?&#)');
+        process.exit(1);
+      }
+    } else {
+      // In development, use defaults if not provided
+      if (!process.env.TEACHER_EMAIL) {
+        process.env.TEACHER_EMAIL = 'teacher@deutsch-tests.com';
         logger.warn('⚠️  TEACHER_EMAIL not set, using default: teacher@deutsch-tests.com (development only)');
       }
-    }
-    if (!process.env.TEACHER_PASSWORD) {
-      process.env.TEACHER_PASSWORD = 'Teacher123!@#Dev';
-      if (isProduction) {
-        logger.warn('⚠️  ⚠️  ⚠️  WARNING: TEACHER_PASSWORD not set, using default: Teacher123!@#Dev');
-        logger.warn('⚠️  ⚠️  ⚠️  Please set a STRONG TEACHER_PASSWORD in Railway environment variables immediately!');
-        logger.warn('⚠️  ⚠️  ⚠️  This is a security risk! Change it as soon as possible!');
-      } else {
+      if (!process.env.TEACHER_PASSWORD) {
+        process.env.TEACHER_PASSWORD = 'Teacher123!@#Dev';
         logger.warn('⚠️  TEACHER_PASSWORD not set, using default: Teacher123!@#Dev (development only)');
       }
     }
     
-    // Validate password strength if provided (in both development and production)
-    if (process.env.TEACHER_PASSWORD && process.env.TEACHER_PASSWORD !== 'Teacher123!@#Dev') {
+    // Validate password strength (in both development and production)
+    if (process.env.TEACHER_PASSWORD) {
       const password = process.env.TEACHER_PASSWORD;
       const minLength = password.length >= 12;
       const hasUpper = /[A-Z]/.test(password);
