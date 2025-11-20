@@ -21,11 +21,6 @@ async function bootstrap() {
     const isProduction = process.env.NODE_ENV === 'production';
     const requiredEnvVars = ['MONGO_URI', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
     
-    // In production, TEACHER_EMAIL and TEACHER_PASSWORD are required
-    if (isProduction) {
-      requiredEnvVars.push('TEACHER_EMAIL', 'TEACHER_PASSWORD');
-    }
-    
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
     
     if (missingVars.length > 0) {
@@ -38,35 +33,48 @@ async function bootstrap() {
       process.exit(1);
     }
     
-    // Set defaults for development if not provided
-    if (!isProduction) {
-      if (!process.env.TEACHER_EMAIL) {
-        process.env.TEACHER_EMAIL = 'teacher@deutsch-tests.com';
+    // Set defaults for TEACHER_EMAIL and TEACHER_PASSWORD if not provided
+    // ⚠️ WARNING: In production, you should set these in Railway environment variables!
+    if (!process.env.TEACHER_EMAIL) {
+      process.env.TEACHER_EMAIL = 'teacher@deutsch-tests.com';
+      if (isProduction) {
+        logger.warn('⚠️  ⚠️  ⚠️  WARNING: TEACHER_EMAIL not set, using default: teacher@deutsch-tests.com');
+        logger.warn('⚠️  ⚠️  ⚠️  Please set TEACHER_EMAIL in Railway environment variables for security!');
+      } else {
         logger.warn('⚠️  TEACHER_EMAIL not set, using default: teacher@deutsch-tests.com (development only)');
       }
-      if (!process.env.TEACHER_PASSWORD) {
-        process.env.TEACHER_PASSWORD = 'Teacher123!@#Dev';
+    }
+    if (!process.env.TEACHER_PASSWORD) {
+      process.env.TEACHER_PASSWORD = 'Teacher123!@#Dev';
+      if (isProduction) {
+        logger.warn('⚠️  ⚠️  ⚠️  WARNING: TEACHER_PASSWORD not set, using default: Teacher123!@#Dev');
+        logger.warn('⚠️  ⚠️  ⚠️  Please set a STRONG TEACHER_PASSWORD in Railway environment variables immediately!');
+        logger.warn('⚠️  ⚠️  ⚠️  This is a security risk! Change it as soon as possible!');
+      } else {
         logger.warn('⚠️  TEACHER_PASSWORD not set, using default: Teacher123!@#Dev (development only)');
       }
-    } else {
-      // In production, validate password strength if provided
-      if (process.env.TEACHER_PASSWORD) {
-        const password = process.env.TEACHER_PASSWORD;
-        const minLength = password.length >= 12;
-        const hasUpper = /[A-Z]/.test(password);
-        const hasLower = /[a-z]/.test(password);
-        const hasNumber = /\d/.test(password);
-        const hasSpecial = /[@$!%*?&#]/.test(password);
-        
-        if (!minLength || !hasUpper || !hasLower || !hasNumber || !hasSpecial) {
-          logger.error('❌ TEACHER_PASSWORD does not meet security requirements:');
-          logger.error('   - Must be at least 12 characters long');
-          logger.error('   - Must contain at least one uppercase letter (A-Z)');
-          logger.error('   - Must contain at least one lowercase letter (a-z)');
-          logger.error('   - Must contain at least one number (0-9)');
-          logger.error('   - Must contain at least one special character (@$!%*?&#)');
-          process.exit(1);
+    }
+    
+    // Validate password strength if provided (in both development and production)
+    if (process.env.TEACHER_PASSWORD && process.env.TEACHER_PASSWORD !== 'Teacher123!@#Dev') {
+      const password = process.env.TEACHER_PASSWORD;
+      const minLength = password.length >= 12;
+      const hasUpper = /[A-Z]/.test(password);
+      const hasLower = /[a-z]/.test(password);
+      const hasNumber = /\d/.test(password);
+      const hasSpecial = /[@$!%*?&#]/.test(password);
+      
+      if (!minLength || !hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+        logger.error('❌ TEACHER_PASSWORD does not meet security requirements:');
+        logger.error('   - Must be at least 12 characters long');
+        logger.error('   - Must contain at least one uppercase letter (A-Z)');
+        logger.error('   - Must contain at least one lowercase letter (a-z)');
+        logger.error('   - Must contain at least one number (0-9)');
+        logger.error('   - Must contain at least one special character (@$!%*?&#)');
+        if (isProduction) {
+          logger.error('Please set a strong TEACHER_PASSWORD in Railway environment variables');
         }
+        process.exit(1);
       }
     }
 
