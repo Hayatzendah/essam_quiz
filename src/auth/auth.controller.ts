@@ -246,5 +246,15 @@ export class AuthController {
   async logout(@CurrentUser('userId') userId: string) {
     return this.auth.logout(userId);
   }
+
+  @ApiOperation({ summary: 'Get current user information' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiResponse({ status: 200, description: 'Returns current user information' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async getMe(@CurrentUser('userId') userId: string) {
+    return this.auth.getMe(userId);
+  }
 }
 

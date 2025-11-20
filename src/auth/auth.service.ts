@@ -38,13 +38,48 @@ export class AuthService {
   }
 
   async register(dto: { email: string; password: string; role?: 'student' | 'teacher' | 'admin'; state?: string }) {
+    // التحقق من أن المعلمين يستخدمون الإيميل والباسورد الثابتين فقط
+    const teacherEmail = process.env.TEACHER_EMAIL!;
+    const teacherPassword = process.env.TEACHER_PASSWORD!;
+    
+    if (dto.role === 'teacher') {
+      if (dto.email.toLowerCase() !== teacherEmail.toLowerCase()) {
+        throw new UnauthorizedException('Teachers must use the designated teacher email: ' + teacherEmail);
+      }
+      if (dto.password !== teacherPassword) {
+        throw new UnauthorizedException('Teachers must use the designated teacher password');
+      }
+    }
+    
     const user = await this.users.createUser(dto);
     return { message: 'registered', user };
   }
 
   async login(dto: { email: string; password: string }) {
-    const user = await this.users.validateUser(dto.email, dto.password);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    const teacherEmail = process.env.TEACHER_EMAIL!;
+    const teacherPassword = process.env.TEACHER_PASSWORD!;
+    
+    let user: any;
+    
+    // إذا كان الإيميل هو إيميل المعلم، نتحقق من الباسورد الثابت أولاً
+    if (dto.email.toLowerCase() === teacherEmail.toLowerCase()) {
+      if (dto.password !== teacherPassword) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      // إذا كان الباسورد صحيح، نبحث عن المستخدم مباشرة (بدون التحقق من الباسورد في الداتابيس)
+      const foundUser = await this.users.findByEmail(dto.email);
+      if (!foundUser || foundUser.role !== 'teacher') {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      // إزالة الباسورد من النتيجة
+      const plain = foundUser.toObject ? foundUser.toObject() : foundUser;
+      const { password: _, ...userWithoutPassword } = plain;
+      user = userWithoutPassword;
+    } else {
+      // للطلاب والمستخدمين الآخرين، نستخدم التحقق العادي
+      user = await this.users.validateUser(dto.email, dto.password);
+      if (!user) throw new UnauthorizedException('Invalid credentials');
+    }
     
     // Extract user ID - handle both _id (Mongoose) and id (plain object)
     const userId = user._id ? (typeof user._id === 'string' ? user._id : user._id.toString()) : user.id;
@@ -59,10 +94,15 @@ export class AuthService {
     // تخزين هاش الريفرش
     await this.setRefreshHash(userId, tokens.refreshToken);
     
+    // إرجاع response بالشكل المطلوب
     return {
-      user,
       accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      user: {
+        id: userId,
+        name: user.name || '',
+        email: user.email,
+        role: user.role || 'student',
+      },
     };
   }
 
@@ -127,6 +167,18 @@ export class AuthService {
 
   async checkUser(email: string) {
     return this.users.checkUserByEmail(email);
+  }
+
+  async getMe(userId: string) {
+    const user = await this.users.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+    
+    return {
+      id: user._id ? (typeof user._id === 'string' ? user._id : user._id.toString()) : (user as any).id,
+      name: user.name || '',
+      email: user.email,
+      role: user.role || 'student',
+    };
   }
 }
 

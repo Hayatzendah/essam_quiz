@@ -18,7 +18,7 @@ async function bootstrap() {
     logger.log(`Port: ${process.env.PORT || 4000}`);
     
     // Check required environment variables
-    const requiredEnvVars = ['MONGO_URI', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+    const requiredEnvVars = ['MONGO_URI', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'TEACHER_EMAIL', 'TEACHER_PASSWORD'];
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
     
     if (missingVars.length > 0) {
