@@ -182,5 +182,69 @@ export class UsersService {
       throw new NotFoundException(`Failed to update user role: ${error.message}`);
     }
   }
+
+  // حذف مستخدم
+  async deleteById(id: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`Invalid user ID format: ${id}`);
+    }
+    const user = await this.userModel.findByIdAndDelete(id).exec();
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return { message: 'User deleted successfully', id };
+  }
+
+  // حذف مستخدم بالإيميل
+  async deleteByEmail(email: string) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await this.userModel.findOneAndDelete({ email: normalizedEmail }).exec();
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
+    return { message: 'User deleted successfully', email: normalizedEmail };
+  }
+
+  // تغيير role جميع المعلمين القديمين (غير teacher@deutsch-tests.com) إلى student
+  async convertOldTeachersToStudents(teacherEmail: string) {
+    const normalizedTeacherEmail = teacherEmail.toLowerCase().trim();
+    const result = await this.userModel.updateMany(
+      { 
+        role: 'teacher',
+        email: { $ne: normalizedTeacherEmail }
+      },
+      { role: 'student' }
+    ).exec();
+    
+    return {
+      message: 'Old teachers converted to students',
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+    };
+  }
+
+  // حذف جميع المعلمين القديمين (غير teacher@deutsch-tests.com)
+  async deleteOldTeachers(teacherEmail: string) {
+    const normalizedTeacherEmail = teacherEmail.toLowerCase().trim();
+    const result = await this.userModel.deleteMany({
+      role: 'teacher',
+      email: { $ne: normalizedTeacherEmail }
+    }).exec();
+    
+    return {
+      message: 'Old teachers deleted',
+      deletedCount: result.deletedCount,
+    };
+  }
+
+  // جلب جميع المعلمين
+  async findAllTeachers() {
+    const teachers = await this.userModel.find({ role: 'teacher' }).select('-password').exec();
+    return teachers.map(user => {
+      const obj = user.toObject ? user.toObject() : user;
+      delete (obj as any).password;
+      return obj;
+    });
+  }
 }
 
