@@ -41,12 +41,12 @@ import { AppController } from './app.controller';
         SWAGGER_USER: Joi.string().optional(),
         SWAGGER_PASSWORD: Joi.string().optional(),
         SECRET_RANDOM_SERVER: Joi.string().optional(),
-        // Teacher authentication (required)
-        TEACHER_EMAIL: Joi.string().email().required(),
+        // Teacher authentication (required in production, optional in development)
+        TEACHER_EMAIL: Joi.string().email().optional(),
         TEACHER_PASSWORD: Joi.string()
           .min(12)
           .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]/)
-          .required()
+          .optional()
           .messages({
             'string.min': 'TEACHER_PASSWORD must be at least 12 characters long',
             'string.pattern.base': 'TEACHER_PASSWORD must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#)',

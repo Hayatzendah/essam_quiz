@@ -18,13 +18,56 @@ async function bootstrap() {
     logger.log(`Port: ${process.env.PORT || 4000}`);
     
     // Check required environment variables
-    const requiredEnvVars = ['MONGO_URI', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'TEACHER_EMAIL', 'TEACHER_PASSWORD'];
+    const isProduction = process.env.NODE_ENV === 'production';
+    const requiredEnvVars = ['MONGO_URI', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+    
+    // In production, TEACHER_EMAIL and TEACHER_PASSWORD are required
+    if (isProduction) {
+      requiredEnvVars.push('TEACHER_EMAIL', 'TEACHER_PASSWORD');
+    }
+    
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
     
     if (missingVars.length > 0) {
       logger.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
-      logger.error('Please set these variables in Railway environment settings');
+      if (isProduction) {
+        logger.error('Please set these variables in Railway environment settings');
+      } else {
+        logger.error('Please set these variables in your .env file or environment');
+      }
       process.exit(1);
+    }
+    
+    // Set defaults for development if not provided
+    if (!isProduction) {
+      if (!process.env.TEACHER_EMAIL) {
+        process.env.TEACHER_EMAIL = 'teacher@deutsch-tests.com';
+        logger.warn('⚠️  TEACHER_EMAIL not set, using default: teacher@deutsch-tests.com (development only)');
+      }
+      if (!process.env.TEACHER_PASSWORD) {
+        process.env.TEACHER_PASSWORD = 'Teacher123!@#Dev';
+        logger.warn('⚠️  TEACHER_PASSWORD not set, using default: Teacher123!@#Dev (development only)');
+      }
+    } else {
+      // In production, validate password strength if provided
+      if (process.env.TEACHER_PASSWORD) {
+        const password = process.env.TEACHER_PASSWORD;
+        const minLength = password.length >= 12;
+        const hasUpper = /[A-Z]/.test(password);
+        const hasLower = /[a-z]/.test(password);
+        const hasNumber = /\d/.test(password);
+        const hasSpecial = /[@$!%*?&#]/.test(password);
+        
+        if (!minLength || !hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+          logger.error('❌ TEACHER_PASSWORD does not meet security requirements:');
+          logger.error('   - Must be at least 12 characters long');
+          logger.error('   - Must contain at least one uppercase letter (A-Z)');
+          logger.error('   - Must contain at least one lowercase letter (a-z)');
+          logger.error('   - Must contain at least one number (0-9)');
+          logger.error('   - Must contain at least one special character (@$!%*?&#)');
+          process.exit(1);
+        }
+      }
     }
 
     const app = await NestFactory.create(AppModule, {
