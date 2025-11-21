@@ -71,15 +71,34 @@ export class AuthService {
         throw new UnauthorizedException('Invalid credentials');
       }
       // إذا كان الباسورد صحيح، نبحث عن المستخدم مباشرة (بدون التحقق من الباسورد في الداتابيس)
-      const foundUser = await this.users.findByEmail(dto.email);
+      let foundUser = await this.users.findByEmail(dto.email);
+      
+      // إذا المستخدم مش موجود، ننشئه تلقائياً كمعلم
       if (!foundUser) {
-        console.log('[Teacher Login] User not found in database');
-        throw new UnauthorizedException('Teacher account not found. Please register first.');
+        console.log('[Teacher Login] User not found, creating teacher account automatically');
+        const newUser = await this.users.createUser({
+          email: teacherEmail,
+          password: teacherPassword, // سيتم hash تلقائياً
+          role: 'teacher',
+        });
+        foundUser = await this.users.findByEmail(teacherEmail);
       }
-      if (foundUser.role !== 'teacher') {
+      
+      // التأكد من أن role = 'teacher'
+      if (foundUser && foundUser.role !== 'teacher') {
         console.log('[Teacher Login] User role is not teacher:', foundUser.role);
-        throw new UnauthorizedException('Invalid credentials');
+        // تحديث role إلى teacher
+        const userId = foundUser._id ? (typeof foundUser._id === 'string' ? foundUser._id : foundUser._id.toString()) : (foundUser as any).id;
+        if (userId) {
+          await this.users.updateById(userId, { role: 'teacher' });
+          foundUser.role = 'teacher';
+        }
       }
+      
+      if (!foundUser) {
+        throw new UnauthorizedException('Failed to create or find teacher account');
+      }
+      
       // إزالة الباسورد من النتيجة
       const plain = foundUser.toObject ? foundUser.toObject() : foundUser;
       const { password: _, ...userWithoutPassword } = plain;
