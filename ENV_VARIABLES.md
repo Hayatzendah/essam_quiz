@@ -23,8 +23,8 @@ JWT_ACCESS_SECRET=...        # Secret for access tokens (min 32 chars)
 JWT_REFRESH_SECRET=...       # Secret for refresh tokens (min 32 chars)
 JWT_ACCESS_EXPIRES_IN=15m    # Access token expiration (default: 15m)
 JWT_REFRESH_EXPIRES_IN=7d    # Refresh token expiration (default: 7d)
-TEACHER_EMAIL=teacher@deutsch-tests.com  # Fixed email for teachers (REQUIRED)
-TEACHER_PASSWORD=...         # Fixed password for teachers (REQUIRED - min 12 chars, must contain uppercase, lowercase, number, and special character)
+TEACHER_EMAIL=<your-teacher-email>  # Fixed email for teachers (REQUIRED)
+TEACHER_PASSWORD=<your-strong-password>  # Fixed password for teachers (REQUIRED - min 12 chars, must contain uppercase, lowercase, number, and special character)
 ```
 
 ### CORS
@@ -43,8 +43,8 @@ ENABLE_SWAGGER=false         # Enable Swagger UI at /docs (default: false)
 
 ### Teacher Authentication (Required)
 ```bash
-TEACHER_EMAIL=teacher@deutsch-tests.com  # Fixed email for teachers (REQUIRED)
-TEACHER_PASSWORD=YourStr0ng!P@ssw0rd     # Fixed password for teachers (REQUIRED)
+TEACHER_EMAIL=<your-teacher-email>  # Fixed email for teachers (REQUIRED)
+TEACHER_PASSWORD=<your-strong-password>  # Fixed password for teachers (REQUIRED)
                                          # Must be at least 12 characters
                                          # Must contain: uppercase, lowercase, number, and special character (@$!%*?&#)
 ```
@@ -89,8 +89,8 @@ NODE_ENV=production
 MONGO_URI=mongodb+srv://...
 JWT_ACCESS_SECRET=your-secret-here
 JWT_REFRESH_SECRET=your-secret-here
-TEACHER_EMAIL=teacher@deutsch-tests.com
-TEACHER_PASSWORD=YourStr0ng!P@ssw0rd
+TEACHER_EMAIL=<your-teacher-email>
+TEACHER_PASSWORD=<your-strong-password>
 WEB_APP_ORIGIN=https://your-frontend.com
 ```
 
@@ -144,7 +144,8 @@ openssl rand -hex 32
 
 **مثال على باسورد قوي:**
 ```bash
-TEACHER_PASSWORD=Deutsch2024!@#Teacher
+TEACHER_PASSWORD=<your-strong-password>
+# يجب أن يحتوي على: 12+ حرف، حروف كبيرة وصغيرة، أرقام، ورموز خاصة
 ```
 
 **أو يمكنك استخدام أداة لإنشاء باسورد عشوائي قوي:**

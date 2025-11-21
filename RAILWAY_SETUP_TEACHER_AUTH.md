@@ -18,8 +18,8 @@
 3. **أضف المتغيرات التالية:**
 
    ```bash
-   TEACHER_EMAIL=teacher@deutsch-tests.com
-   TEACHER_PASSWORD=YourStr0ng!P@ssw0rd2024
+   TEACHER_EMAIL=<your-teacher-email>
+   TEACHER_PASSWORD=<your-strong-password>
    ```
 
    **ملاحظات مهمة:**
@@ -30,11 +30,6 @@
      - **حرف صغير واحد على الأقل** (a-z)
      - **رقم واحد على الأقل** (0-9)
      - **رمز خاص واحد على الأقل** (@$!%*?&#)
-
-4. **مثال على باسورد قوي:**
-   ```bash
-   TEACHER_PASSWORD=Deutsch2024!@#Teacher
-   ```
 
 5. **احفظ التغييرات**
    - اضغط على **Save** أو **Add Variable**
@@ -62,8 +57,8 @@ node -e "const crypto = require('crypto'); const chars = 'ABCDEFGHIJKLMNOPQRSTUV
    ```bash
    POST /auth/login
    {
-     "email": "teacher@deutsch-tests.com",
-     "password": "YourStr0ng!P@ssw0rd2024"
+     "email": "<your-teacher-email>",
+     "password": "<your-teacher-password>"
    }
    ```
 
@@ -77,9 +72,7 @@ node -e "const crypto = require('crypto'); const chars = 'ABCDEFGHIJKLMNOPQRSTUV
 
 ## للمطورين (Development)
 
-في بيئة التطوير المحلية، يمكنك استخدام قيم افتراضية:
-- `TEACHER_EMAIL=teacher@deutsch-tests.com`
-- `TEACHER_PASSWORD=Teacher123!@#Dev`
+في بيئة التطوير المحلية، يمكنك استخدام قيم افتراضية للتطوير فقط.
 
-لكن في Production (Railway)، يجب تعيين قيم قوية وفريدة.
+لكن في Production (Railway)، يجب تعيين قيم قوية وفريدة في Environment Variables.
 
