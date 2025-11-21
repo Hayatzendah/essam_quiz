@@ -1145,8 +1145,9 @@ Authorization: Bearer <accessToken>
 - `search`: بحث نصي في نص السؤال (prompt) - اختياري
 - `tags`: tags للفلترة حسب الموضوع - اختياري
   - يمكن استخدام string واحد: `tags=daily-life`
-  - أو array: `tags[]=daily-life&tags[]=food`
-  - أو multiple values: `tags=daily-life&tags=food`
+  - أو array format: `tags[]=daily-life&tags[]=food`
+  - أو multiple values: `tags=daily-life&tags=family`
+  - جميع الصيغ مدعومة ✅
 - `page`: رقم الصفحة (افتراضي: 1) - اختياري
 - `limit`: عدد النتائج (افتراضي: 20) - اختياري
 

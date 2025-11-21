@@ -11,19 +11,13 @@ export class FindVocabDto {
   search?: string; // بحث نصي عن كلمة ألمانية في prompt
 
   @IsOptional()
-  @Transform(({ value }) => {
-    // إذا كان string واحد، حوله إلى array
-    if (typeof value === 'string') {
-      return [value];
-    }
-    // إذا كان array بالفعل، اتركه كما هو
-    if (Array.isArray(value)) {
-      return value;
-    }
-    return value;
-  })
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (!value) return [];
+    if (typeof value === 'string') return [value];
+    return value;
+  })
   tags?: string[]; // مصفوفة tags للفلترة حسب الموضوع
 
   @IsOptional()
