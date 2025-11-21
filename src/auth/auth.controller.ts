@@ -256,5 +256,40 @@ export class AuthController {
   async getMe(@CurrentUser('userId') userId: string) {
     return this.auth.getMe(userId);
   }
+
+  @ApiOperation({ summary: 'Check teacher account status (for debugging)' })
+  @ApiResponse({ status: 200, description: 'Returns teacher account status' })
+  @Get('check-teacher')
+  async checkTeacher() {
+    const teacherEmail = process.env.TEACHER_EMAIL || 'not-set';
+    const teacherPasswordSet = !!process.env.TEACHER_PASSWORD;
+    const teacherPasswordLength = process.env.TEACHER_PASSWORD?.length || 0;
+    
+    // محاولة البحث عن المستخدم في الداتابيس
+    let userExists = false;
+    let userRole = null;
+    try {
+      const user = await this.auth['users'].findByEmail(teacherEmail);
+      if (user) {
+        userExists = true;
+        userRole = user.role;
+      }
+    } catch (error) {
+      // ignore
+    }
+    
+    return {
+      teacherEmail,
+      teacherPasswordSet,
+      teacherPasswordLength,
+      userExists,
+      userRole,
+      message: userExists 
+        ? (userRole === 'teacher' 
+          ? 'Teacher account exists and is ready' 
+          : `User exists but role is '${userRole}' instead of 'teacher'`)
+        : 'Teacher account does not exist in database. Please register first.',
+    };
+  }
 }
 

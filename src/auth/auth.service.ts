@@ -63,12 +63,21 @@ export class AuthService {
     
     // إذا كان الإيميل هو إيميل المعلم، نتحقق من الباسورد الثابت أولاً
     if (dto.email.toLowerCase() === teacherEmail.toLowerCase()) {
+      // التحقق من الباسورد
       if (dto.password !== teacherPassword) {
+        console.log('[Teacher Login] Password mismatch');
+        console.log('[Teacher Login] Expected password length:', teacherPassword?.length || 0);
+        console.log('[Teacher Login] Received password length:', dto.password?.length || 0);
         throw new UnauthorizedException('Invalid credentials');
       }
       // إذا كان الباسورد صحيح، نبحث عن المستخدم مباشرة (بدون التحقق من الباسورد في الداتابيس)
       const foundUser = await this.users.findByEmail(dto.email);
-      if (!foundUser || foundUser.role !== 'teacher') {
+      if (!foundUser) {
+        console.log('[Teacher Login] User not found in database');
+        throw new UnauthorizedException('Teacher account not found. Please register first.');
+      }
+      if (foundUser.role !== 'teacher') {
+        console.log('[Teacher Login] User role is not teacher:', foundUser.role);
         throw new UnauthorizedException('Invalid credentials');
       }
       // إزالة الباسورد من النتيجة
