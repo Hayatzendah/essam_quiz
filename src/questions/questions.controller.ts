@@ -4,6 +4,7 @@ import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QueryQuestionDto } from './dto/query-question.dto';
+import { FindVocabDto } from './dto/find-vocab.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -24,6 +25,16 @@ export class QuestionsController {
   create(@Body() dto: CreateQuestionDto, @Req() req: any) {
     const userId = req.user?.userId || req.user?.sub || req.user?.id;
     return this.service.createQuestion(dto, userId);
+  }
+
+  // GET /questions/vocab - البحث عن أسئلة المفردات (Wortschatz)
+  @ApiOperation({ summary: 'Find vocabulary questions (Wortschatz)' })
+  @ApiResponse({ status: 200, description: 'Returns vocabulary questions filtered by level, tags, and search' })
+  @Get('vocab')
+  @UseGuards(JwtAuthGuard)
+  findVocab(@Query() dto: FindVocabDto) {
+    // متاح للجميع (طلاب ومعلمين) - فقط الأسئلة المنشورة
+    return this.service.findVocab(dto);
   }
 
   // GET /questions

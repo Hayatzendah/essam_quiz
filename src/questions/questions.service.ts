@@ -4,6 +4,7 @@ import { FilterQuery, Model } from 'mongoose';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { QueryQuestionDto } from './dto/query-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+import { FindVocabDto } from './dto/find-vocab.dto';
 import { Question, QuestionDocument, QuestionStatus, QuestionType } from './schemas/question.schema';
 
 @Injectable()
@@ -186,6 +187,51 @@ export class QuestionsService {
 
     await this.model.deleteOne({ _id: id }).exec();
     return { deleted: true };
+  }
+
+  /**
+   * البحث عن أسئلة المفردات (Wortschatz)
+   * - section = "wortschatz"
+   * - فلترة حسب level, tags, search
+   */
+  async findVocab(dto: FindVocabDto) {
+    const page = Math.max(parseInt(dto.page ?? '1', 10), 1);
+    const limit = Math.max(parseInt(dto.limit ?? '20', 10), 1);
+    const skip = (page - 1) * limit;
+
+    // بناء query للبحث عن أسئلة المفردات
+    const query: FilterQuery<QuestionDocument> = {
+      section: 'wortschatz',
+      status: QuestionStatus.PUBLISHED, // فقط الأسئلة المنشورة
+    };
+
+    // فلترة حسب level
+    if (dto.level) {
+      query.level = dto.level;
+    }
+
+    // فلترة حسب tags
+    if (dto.tags && dto.tags.length > 0) {
+      query.tags = { $in: dto.tags };
+    }
+
+    // بحث نصي في prompt
+    if (dto.search) {
+      // استخدام regex للبحث (case-insensitive)
+      query.prompt = { $regex: dto.search, $options: 'i' };
+    }
+
+    const [items, total] = await Promise.all([
+      this.model.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }).lean().exec(),
+      this.model.countDocuments(query),
+    ]);
+
+    return {
+      page,
+      limit,
+      total,
+      items,
+    };
   }
 }
 
