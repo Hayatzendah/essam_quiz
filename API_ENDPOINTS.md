@@ -256,16 +256,20 @@ console.log(response.data);
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": "...",
+    "name": "",
     "email": "user@example.com",
     "role": "student"
   }
 }
 ```
 
-**الاستخدام:** عند تسجيل الدخول - احفظ `accessToken` و `refreshToken` للاستخدام لاحقاً
+**ملاحظات مهمة:**
+- **للمعلمين:** إذا كان الإيميل = `TEACHER_EMAIL` من Environment Variables والباسورد = `TEACHER_PASSWORD`، النظام سينشئ حساب المعلم تلقائياً إذا لم يكن موجوداً
+- **للطلاب:** التحقق العادي من الباسورد في الداتابيس
+
+**الاستخدام:** عند تسجيل الدخول - احفظ `accessToken` للاستخدام لاحقاً
 
 **مثال استخدام (JavaScript/Axios):**
 ```javascript
@@ -346,6 +350,56 @@ await axios.post('https://api.deutsch-tests.com/auth/logout', {}, {
 localStorage.removeItem('accessToken');
 localStorage.removeItem('refreshToken');
 ```
+
+---
+
+### `GET /auth/me`
+**الوصف:** الحصول على معلومات المستخدم الحالي من الـ token  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** الجميع
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Response (200):**
+```json
+{
+  "id": "...",
+  "name": "",
+  "email": "user@example.com",
+  "role": "student"
+}
+```
+
+**الاستخدام:** للحصول على معلومات المستخدم الحالي من الـ token
+
+---
+
+### `GET /auth/check-teacher`
+**الوصف:** التحقق من حالة حساب المعلم (للتطوير والتصحيح)  
+**المصادقة:** غير مطلوبة  
+**الاستخدام:** للتحقق من إعدادات حساب المعلم في Environment Variables والداتابيس
+
+**Response (200):**
+```json
+{
+  "teacherEmail": "teacher@deutsch-tests.com",
+  "teacherPasswordSet": true,
+  "teacherPasswordLength": 25,
+  "userExists": true,
+  "userRole": "teacher",
+  "message": "Teacher account exists and is ready"
+}
+```
+
+**الحالات المحتملة:**
+- `userExists: false` - حساب المعلم غير موجود في الداتابيس (سيتم إنشاؤه تلقائياً عند Login)
+- `userRole !== "teacher"` - المستخدم موجود لكن role مختلف (سيتم تحديثه تلقائياً عند Login)
+- `teacherPasswordSet: false` - `TEACHER_PASSWORD` غير موجود في Environment Variables
+
+**الاستخدام:** للتحقق من إعدادات حساب المعلم قبل محاولة Login
 
 ---
 
@@ -1073,6 +1127,132 @@ useEffect(() => {
 **الاستخدام:**
 - **للطلاب:** تصفح الأسئلة المنشورة فقط (مثلاً: أسئلة LiD لولاية معينة)
 - **للمعلمين/الأدمن:** تصفح وإدارة جميع الأسئلة
+
+---
+
+### `GET /questions/vocab`
+**الوصف:** البحث عن أسئلة المفردات (Wortschatz)  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** جميع المستخدمين (طلاب ومعلمين) - فقط الأسئلة المنشورة
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Query Parameters:**
+- `level`: فلترة حسب المستوى (A1, A2, B1, B2, C1) - اختياري
+- `search`: بحث نصي في نص السؤال (prompt) - اختياري
+- `tags`: مصفوفة tags للفلترة حسب الموضوع - اختياري
+  - مثال: `tags[]=daily-life&tags[]=food`
+- `page`: رقم الصفحة (افتراضي: 1) - اختياري
+- `limit`: عدد النتائج (افتراضي: 20) - اختياري
+
+**ملاحظات:**
+- هذا الـ endpoint مخصص فقط لأسئلة المفردات (`section: "wortschatz"`)
+- يرجع فقط الأسئلة المنشورة (`status: "published"`)
+- متاح للطلاب والمعلمين على حد سواء
+
+**Response (200):**
+```json
+{
+  "page": 1,
+  "limit": 20,
+  "total": 50,
+  "items": [
+    {
+      "_id": "...",
+      "prompt": "ما معنى كلمة 'Haus'؟",
+      "qType": "mcq",
+      "options": [
+        { "text": "بيت", "isCorrect": true },
+        { "text": "سيارة", "isCorrect": false },
+        { "text": "شجرة", "isCorrect": false }
+      ],
+      "section": "wortschatz",
+      "level": "A1",
+      "tags": ["daily-life"],
+      "status": "published",
+      "createdAt": "2025-11-21T16:54:26.400Z",
+      "updatedAt": "2025-11-21T16:54:26.400Z"
+    }
+  ]
+}
+```
+
+**أمثلة على الاستخدام:**
+
+**1. جلب جميع أسئلة المفردات:**
+```javascript
+api.get('/questions/vocab');
+```
+
+**2. فلترة حسب المستوى:**
+```javascript
+api.get('/questions/vocab', {
+  params: {
+    level: 'A1'
+  }
+});
+```
+
+**3. البحث عن كلمة:**
+```javascript
+api.get('/questions/vocab', {
+  params: {
+    search: 'Haus'
+  }
+});
+```
+
+**4. فلترة حسب الموضوع:**
+```javascript
+api.get('/questions/vocab', {
+  params: {
+    tags: ['daily-life', 'food']
+  }
+});
+```
+
+**5. دمج الفلاتر:**
+```javascript
+api.get('/questions/vocab', {
+  params: {
+    level: 'B1',
+    search: 'Haus',
+    tags: ['daily-life'],
+    page: 1,
+    limit: 10
+  }
+});
+```
+
+**مثال على الاستخدام في React/Vue:**
+```javascript
+// جلب أسئلة المفردات حسب المستوى والموضوع
+useEffect(() => {
+  api.get('/questions/vocab', {
+    params: {
+      level: selectedLevel, // 'A1', 'A2', etc.
+      tags: selectedTags,   // ['daily-life', 'food']
+      page: currentPage,
+      limit: 20
+    }
+  })
+    .then(res => {
+      setVocabQuestions(res.data.items);
+      setTotalPages(Math.ceil(res.data.total / res.data.limit));
+    })
+    .catch(err => {
+      console.error('Error loading vocabulary questions:', err);
+    });
+}, [selectedLevel, selectedTags, currentPage]);
+```
+
+**الاستخدام:**
+- **لصفحة Wortschatz في الفرونت:** عرض أسئلة المفردات حسب المستوى والموضوع
+- **للبحث:** البحث عن كلمات ألمانية محددة
+- **للفلترة:** فلترة حسب الموضوع (daily-life, food, transport, etc.)
 
 ---
 
