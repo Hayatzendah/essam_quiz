@@ -7,6 +7,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { UserRole } from '../common/enums';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -267,7 +268,7 @@ export class AuthController {
     
     // محاولة البحث عن المستخدم في الداتابيس
     let userExists = false;
-    let userRole = null;
+    let userRole: UserRole | null = null;
     try {
       const user = await this.auth['users'].findByEmail(teacherEmail);
       if (user) {
