@@ -1143,8 +1143,10 @@ Authorization: Bearer <accessToken>
 **Query Parameters:**
 - `level`: فلترة حسب المستوى (A1, A2, B1, B2, C1) - اختياري
 - `search`: بحث نصي في نص السؤال (prompt) - اختياري
-- `tags`: مصفوفة tags للفلترة حسب الموضوع - اختياري
-  - مثال: `tags[]=daily-life&tags[]=food`
+- `tags`: tags للفلترة حسب الموضوع - اختياري
+  - يمكن استخدام string واحد: `tags=daily-life`
+  - أو array: `tags[]=daily-life&tags[]=food`
+  - أو multiple values: `tags=daily-life&tags=food`
 - `page`: رقم الصفحة (افتراضي: 1) - اختياري
 - `limit`: عدد النتائج (افتراضي: 20) - اختياري
 
@@ -1205,7 +1207,16 @@ api.get('/questions/vocab', {
 });
 ```
 
-**4. فلترة حسب الموضوع:**
+**4. فلترة حسب الموضوع (string واحد):**
+```javascript
+api.get('/questions/vocab', {
+  params: {
+    tags: 'daily-life'
+  }
+});
+```
+
+**4b. فلترة حسب الموضوع (array):**
 ```javascript
 api.get('/questions/vocab', {
   params: {

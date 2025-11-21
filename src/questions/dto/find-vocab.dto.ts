@@ -1,5 +1,5 @@
 import { IsEnum, IsOptional, IsString, IsArray } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class FindVocabDto {
   @IsOptional()
@@ -11,9 +11,19 @@ export class FindVocabDto {
   search?: string; // بحث نصي عن كلمة ألمانية في prompt
 
   @IsOptional()
+  @Transform(({ value }) => {
+    // إذا كان string واحد، حوله إلى array
+    if (typeof value === 'string') {
+      return [value];
+    }
+    // إذا كان array بالفعل، اتركه كما هو
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return value;
+  })
   @IsArray()
   @IsString({ each: true })
-  @Type(() => String)
   tags?: string[]; // مصفوفة tags للفلترة حسب الموضوع
 
   @IsOptional()
