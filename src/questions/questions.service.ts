@@ -233,5 +233,50 @@ export class QuestionsService {
       items,
     };
   }
+
+  /**
+   * البحث عن أسئلة القواعد النحوية (Grammatik)
+   * - section = "grammar"
+   * - فلترة حسب level, tags, search
+   */
+  async findGrammar(dto: FindVocabDto) {
+    const page = Math.max(parseInt(dto.page ?? '1', 10), 1);
+    const limit = Math.max(parseInt(dto.limit ?? '20', 10), 1);
+    const skip = (page - 1) * limit;
+
+    // بناء query للبحث عن أسئلة القواعد النحوية
+    const query: FilterQuery<QuestionDocument> = {
+      section: 'grammar',
+      status: QuestionStatus.PUBLISHED, // فقط الأسئلة المنشورة
+    };
+
+    // فلترة حسب level
+    if (dto.level) {
+      query.level = dto.level;
+    }
+
+    // فلترة حسب tags
+    if (dto.tags && dto.tags.length > 0) {
+      query.tags = { $in: dto.tags };
+    }
+
+    // بحث نصي في prompt
+    if (dto.search) {
+      // استخدام regex للبحث (case-insensitive)
+      query.prompt = { $regex: dto.search, $options: 'i' };
+    }
+
+    const [items, total] = await Promise.all([
+      this.model.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }).lean().exec(),
+      this.model.countDocuments(query),
+    ]);
+
+    return {
+      page,
+      limit,
+      total,
+      items,
+    };
+  }
 }
 

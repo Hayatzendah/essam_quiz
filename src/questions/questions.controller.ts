@@ -37,6 +37,16 @@ export class QuestionsController {
     return this.service.findVocab(dto);
   }
 
+  // GET /questions/grammar - البحث عن أسئلة القواعد النحوية (Grammatik)
+  @ApiOperation({ summary: 'Find grammar questions (Grammatik)' })
+  @ApiResponse({ status: 200, description: 'Returns grammar questions filtered by level, tags, and search' })
+  @Get('grammar')
+  @UseGuards(JwtAuthGuard)
+  findGrammar(@Query() dto: FindVocabDto) {
+    // متاح للجميع (طلاب ومعلمين) - فقط الأسئلة المنشورة
+    return this.service.findGrammar(dto);
+  }
+
   // GET /questions
   // - admin/teacher: يشوفوا جميع الأسئلة (draft/published/archived)
   @Get()
