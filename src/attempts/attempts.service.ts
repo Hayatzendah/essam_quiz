@@ -666,7 +666,7 @@ export class AttemptsService {
     
     // 1. إنشاء Exam تمرين
     const exam = await this.examsService.createPracticeExam(dto, user);
-    const examId = exam.id;
+    const examId = exam.id; // الآن مضمون أن يكون string
     
     this.logger.log(`[startPracticeAttempt] Practice exam created - examId: ${examId}, title: ${exam.title}`);
     
