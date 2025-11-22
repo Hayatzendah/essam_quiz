@@ -169,7 +169,7 @@ export class ExamsService {
     });
 
     return {
-      id: typeof doc._id === 'string' ? doc._id : doc._id.toString(),
+      id: String(doc._id),
       title: doc.title,
       level: doc.level,
       status: doc.status,
