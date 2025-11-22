@@ -48,6 +48,7 @@ export class ExamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher','student')
   findAll(@Query() q: QueryExamDto, @Req() req: any) {
+    this.logger.log(`[GET /exams] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, user object: ${JSON.stringify(req.user)}`);
     return this.service.findAll(req.user, q);
   }
 
