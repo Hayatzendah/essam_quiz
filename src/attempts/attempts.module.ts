@@ -9,6 +9,7 @@ import { Question, QuestionSchema } from '../questions/schemas/question.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
 import { MediaModule } from '../modules/media/media.module';
+import { ExamsModule } from '../exams/exams.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { MediaModule } from '../modules/media/media.module';
     ]),
     AuthModule,
     MediaModule,
+    ExamsModule,
   ],
   controllers: [AttemptsController],
   providers: [AttemptsService, AttemptsCronService],

@@ -8,6 +8,7 @@ import { GradeAttemptDto } from './dto/grade.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { CreatePracticeExamDto } from '../exams/dto/create-exam.dto';
 
 @ApiTags('Attempts')
 @ApiBearerAuth('JWT-auth')
@@ -23,6 +24,36 @@ export class AttemptsController {
   @Roles('student')
   findMyAttempts(@Req() req: any, @Query('examId') examId?: string) {
     return this.service.findByStudent(req.user, examId);
+  }
+
+  // بدء محاولة تمرين (إنشاء Exam تمرين وبدء Attempt في خطوة واحدة - للطلاب)
+  @Post('practice')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  @ApiOperation({ summary: 'Create practice exam and start attempt (for students)', description: 'إنشاء Exam تمرين وبدء Attempt في خطوة واحدة - للاستخدام في قسم القواعد والتمارين' })
+  @ApiResponse({ status: 201, description: 'Practice attempt started successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  async startPractice(@Body() dto: CreatePracticeExamDto, @Req() req: any) {
+    this.logger.log(`[POST /attempts/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, sections: ${dto?.sections?.length || 0}`);
+    
+    try {
+      const result = await this.service.startPracticeAttempt(dto, req.user);
+      const attemptId = (result as any)?.attemptId || (result as any)?._id || (result as any)?.id || 'unknown';
+      const itemsCount = (result as any)?.items?.length || 0;
+      
+      this.logger.log(`[POST /attempts/practice] Practice attempt started successfully - attemptId: ${attemptId}, itemsCount: ${itemsCount}`);
+      
+      if (itemsCount === 0) {
+        this.logger.error(`[POST /attempts/practice] WARNING: Attempt created with 0 items!`);
+      }
+      
+      return result;
+    } catch (error: any) {
+      this.logger.error(`[POST /attempts/practice] Error starting practice attempt - error: ${error.message}, stack: ${error.stack}`);
+      throw error;
+    }
   }
 
   // بدء محاولة امتحان (طالب فقط)

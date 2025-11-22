@@ -10,6 +10,8 @@ import { mulberry32, shuffleInPlace, pickRandom } from '../common/utils/random.u
 import { seedFrom } from '../common/utils/seed.util';
 import { normalizeAnswer } from '../common/utils/normalize.util';
 import { MSG } from '../common/constants/messages';
+import { ExamsService } from '../exams/exams.service';
+import { CreatePracticeExamDto } from '../exams/dto/create-exam.dto';
 
 type ReqUser = { userId: string; role: 'student'|'teacher'|'admin' };
 
@@ -23,6 +25,7 @@ export class AttemptsService {
     @InjectModel(Question.name) private readonly QuestionModel: Model<QuestionDocument>,
     @InjectModel(User.name) private readonly UserModel: Model<UserDocument>,
     private readonly media: MediaService,
+    private readonly examsService: ExamsService,
   ) {}
 
   private async computeAttemptCount(studentId: Types.ObjectId, examId: Types.ObjectId) {
@@ -649,6 +652,30 @@ export class AttemptsService {
 
     this.logger.log(`[startAttempt] Returning response with ${response.items.length} items`);
     return response;
+  }
+
+  /**
+   * إنشاء Exam تمرين وبدء Attempt في خطوة واحدة (للطلاب)
+   * - للاستخدام في قسم القواعد والتمارين
+   * - يسمح للطالب بإنشاء تمرين والبدء في حله مباشرة
+   */
+  async startPracticeAttempt(dto: CreatePracticeExamDto, user: ReqUser) {
+    this.ensureStudent(user);
+    
+    this.logger.log(`[startPracticeAttempt] Creating practice exam and starting attempt - userId: ${user.userId}, sections: ${dto?.sections?.length || 0}`);
+    
+    // 1. إنشاء Exam تمرين
+    const exam = await this.examsService.createPracticeExam(dto, user);
+    const examId = exam.id;
+    
+    this.logger.log(`[startPracticeAttempt] Practice exam created - examId: ${examId}, title: ${exam.title}`);
+    
+    // 2. بدء Attempt على هذا Exam
+    const attempt = await this.startAttempt(examId, user);
+    
+    this.logger.log(`[startPracticeAttempt] Attempt started - attemptId: ${attempt.attemptId}, examId: ${examId}`);
+    
+    return attempt;
   }
 
   private findItemIndex(attempt: AttemptDocument, input: { itemIndex?: number; questionId?: string }) {
