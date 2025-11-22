@@ -890,6 +890,97 @@ Authorization: Bearer <accessToken>
 
 ---
 
+### `POST /exams/:id/attempts`
+**الوصف:** بدء محاولة على exam موجود (للطلاب)  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** student فقط
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Path Parameters:**
+- `id`: معرف الامتحان (MongoDB ObjectId)
+
+**⚠️ ملاحظات مهمة:**
+- Exam يجب أن يكون منشور (published) ومتاح للطلاب
+- إذا كان Exam غير موجود أو غير منشور، ستحصل على `400 Bad Request`
+- إذا تجاوزت حد المحاولات المسموحة، ستحصل على `400 Bad Request`
+- **هذا الـ endpoint هو البديل الصحيح لـ POST /exams للطلاب عند بدء محاولة على exam موجود**
+
+**Response (201):**
+```json
+{
+  "attemptId": "attemptId123",
+  "examId": "examId123",
+  "status": "in-progress",
+  "attemptCount": 1,
+  "expiresAt": "2024-01-01T11:00:00.000Z",
+  "items": [
+    {
+      "questionId": "...",
+      "qType": "mcq",
+      "points": 1,
+      "prompt": "...",
+      "options": ["خيار 1", "خيار 2", "خيار 3"],
+      "mediaType": "audio",
+      "mediaUrl": "https://...",
+      "mediaMime": "audio/mpeg"
+    }
+  ]
+}
+```
+
+**Response (400):**
+```json
+{
+  "code": "EXAM_NOT_FOUND",
+  "message": "Exam not found",
+  "examId": "examId123"
+}
+```
+
+أو
+
+```json
+{
+  "code": "EXAM_NOT_AVAILABLE",
+  "message": "Exam is not published or not found",
+  "examId": "examId123",
+  "examStatus": "draft"
+}
+```
+
+**أمثلة على الاستخدام:**
+
+**1. بدء محاولة على exam موجود:**
+```javascript
+api.post('/exams/examId123/attempts');
+```
+
+**2. استخدام في React/Vue:**
+```javascript
+// بدء محاولة على exam موجود
+const startExamAttempt = async (examId) => {
+  try {
+    const res = await api.post(`/exams/${examId}/attempts`);
+    // حفظ attemptId للاستخدام لاحقاً
+    setAttemptId(res.data.attemptId);
+    setQuestions(res.data.items);
+    setStatus(res.data.status);
+  } catch (err) {
+    console.error('Error starting exam attempt:', err);
+  }
+};
+```
+
+**الاستخدام:**
+- **لصفحة التمارين:** بدء محاولة على exam جاهز (مجهز من المعلم)
+- **بديل لـ POST /exams:** للطلاب عند بدء محاولة على exam موجود
+
+---
+
 ### `PATCH /exams/:id`
 **الوصف:** تحديث امتحان  
 **المصادقة:** مطلوبة (Bearer Token)  
