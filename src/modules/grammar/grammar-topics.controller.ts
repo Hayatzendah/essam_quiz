@@ -1,0 +1,43 @@
+import { Controller, Get, Post, Patch, Param, Body, Query, NotFoundException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { GrammarTopicsService } from './grammar-topics.service';
+import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
+import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
+
+@ApiTags('Grammar Topics')
+@ApiBearerAuth('JWT-auth')
+@Controller('grammar/topics')
+export class GrammarTopicsController {
+  constructor(private readonly grammarTopicsService: GrammarTopicsService) {}
+
+  @ApiOperation({ summary: 'List all grammar topics, optionally filtered by level' })
+  @ApiResponse({ status: 200, description: 'Returns list of grammar topics' })
+  @Get()
+  findAll(@Query('level') level?: string) {
+    return this.grammarTopicsService.findAll({ level });
+  }
+
+  @ApiOperation({ summary: 'Get a grammar topic by slug' })
+  @ApiResponse({ status: 200, description: 'Returns the grammar topic' })
+  @ApiResponse({ status: 404, description: 'Grammar topic not found' })
+  @Get(':slug')
+  findBySlug(@Param('slug') slug: string, @Query('level') level?: string) {
+    return this.grammarTopicsService.findBySlug(slug, level);
+  }
+
+  @ApiOperation({ summary: 'Create a new grammar topic' })
+  @ApiResponse({ status: 201, description: 'Grammar topic created successfully' })
+  @Post()
+  create(@Body() dto: CreateGrammarTopicDto) {
+    return this.grammarTopicsService.create(dto);
+  }
+
+  @ApiOperation({ summary: 'Update a grammar topic' })
+  @ApiResponse({ status: 200, description: 'Grammar topic updated successfully' })
+  @ApiResponse({ status: 404, description: 'Grammar topic not found' })
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateGrammarTopicDto) {
+    return this.grammarTopicsService.update(id, dto);
+  }
+}
+

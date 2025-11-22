@@ -14,6 +14,7 @@ import { AttemptsModule } from './attempts/attempts.module';
 import { AuthModule } from './auth/auth.module';
 import { MediaModule } from './modules/media/media.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { GrammarModule } from './modules/grammar/grammar.module';
 
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -94,6 +95,7 @@ import { AppController } from './app.controller';
     AuthModule,
     MediaModule,
     AnalyticsModule,
+    GrammarModule,
   ],
 
   controllers: [AppController, HealthController],
