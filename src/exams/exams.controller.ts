@@ -29,7 +29,13 @@ export class ExamsController {
   @Post('practice')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student', 'admin', 'teacher')
+  @ApiOperation({ summary: 'Create practice exam (for students)', description: 'إنشاء امتحان تمرين ديناميكي للطلاب مع أسئلة محددة' })
+  @ApiResponse({ status: 201, description: 'Practice exam created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   createPracticeExam(@Body() dto: CreateExamDto, @Req() req: any) {
+    this.logger.log(`[POST /exams/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, sections: ${dto?.sections?.length || 0}`);
     return this.service.createPracticeExam(dto, req.user);
   }
 
