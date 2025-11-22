@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Req, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Req, Logger, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ExamsService } from './exams.service';
 import { CreateExamDto, CreatePracticeExamDto } from './dto/create-exam.dto';
@@ -8,7 +8,6 @@ import { AssignExamDto } from './dto/assign-exam.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { AttemptsService } from '../attempts/attempts.service';
 
 @ApiTags('Exams')
 @ApiBearerAuth('JWT-auth')
@@ -16,46 +15,59 @@ import { AttemptsService } from '../attempts/attempts.service';
 export class ExamsController {
   private readonly logger = new Logger(ExamsController.name);
 
-  constructor(
-    private readonly service: ExamsService,
-    @Inject(forwardRef(() => AttemptsService))
-    private readonly attemptsService: AttemptsService,
-  ) {}
+  constructor(private readonly service: ExamsService) {}
 
-  // إنشاء امتحان (admin/teacher) أو محاولة تمرين (student)
-  // للطلاب: يتم إنشاء محاولة (attempt) تلقائياً بدلاً من exam فقط
+  // إنشاء امتحان (admin/teacher فقط)
+  // ⚠️ للطلاب: استخدم POST /attempts/practice لبدء محاولة تمرين
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin','teacher','student')
-  @ApiOperation({ summary: 'Create exam (admin/teacher) or practice attempt (student)', description: 'إنشاء امتحان جديد للمعلمين/الأدمن، أو إنشاء محاولة تمرين للطلاب (يتم إنشاء attempt تلقائياً)' })
-  @ApiResponse({ status: 201, description: 'Exam created successfully (admin/teacher) or practice attempt started (student)' })
+  @Roles('admin','teacher')
+  @ApiOperation({ summary: 'Create exam (admin/teacher only)', description: 'إنشاء امتحان جديد - يتطلب role: admin أو teacher. للطلاب: استخدم POST /attempts/practice لبدء محاولة تمرين' })
+  @ApiResponse({ status: 201, description: 'Exam created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
-  async create(@Body() dto: CreateExamDto | CreatePracticeExamDto, @Req() req: any) {
+  @ApiResponse({ status: 403, description: 'Forbidden - requires admin or teacher role. Students should use POST /attempts/practice' })
+  create(@Body() dto: CreateExamDto, @Req() req: any) {
     this.logger.log(`[POST /exams] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, user object: ${JSON.stringify(req.user)}`);
     
-    // إذا كان المستخدم طالباً، أنشئ محاولة تمرين بدلاً من exam فقط
+    // إذا كان المستخدم طالباً، أرسل رسالة خطأ واضحة
     if (req.user?.role === 'student') {
-      this.logger.log(`[POST /exams] Student detected - redirecting to practice attempt creation`);
-      return this.attemptsService.startPracticeAttempt(dto as CreatePracticeExamDto, req.user);
+      this.logger.warn(`[POST /exams] Student attempted to create exam - userId: ${req.user?.userId}`);
+      throw new ForbiddenException({
+        status: 'error',
+        code: 403,
+        message: 'ليس لديك صلاحية لإنشاء امتحانات. استخدم POST /attempts/practice لبدء محاولة تمرين',
+        hint: 'Students cannot create exams. Use POST /attempts/practice to start a practice attempt instead.',
+      });
     }
     
-    // للمعلمين والأدمن: إنشاء exam عادي
-    return this.service.createExam(dto as CreateExamDto, req.user);
+    return this.service.createExam(dto, req.user);
   }
 
-  // إنشاء امتحان تمرين ديناميكي (للطلاب - للتمارين)
+  // إنشاء امتحان تمرين ديناميكي (admin/teacher فقط)
+  // ⚠️ للطلاب: استخدم POST /attempts/practice لبدء محاولة تمرين
   @Post('practice')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('student', 'admin', 'teacher')
-  @ApiOperation({ summary: 'Create practice exam (for students)', description: 'إنشاء امتحان تمرين ديناميكي للطلاب مع أسئلة محددة' })
+  @Roles('admin', 'teacher')
+  @ApiOperation({ summary: 'Create practice exam (admin/teacher only)', description: 'إنشاء امتحان تمرين ديناميكي - يتطلب role: admin أو teacher. للطلاب: استخدم POST /attempts/practice لبدء محاولة تمرين' })
   @ApiResponse({ status: 201, description: 'Practice exam created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({ status: 403, description: 'Forbidden - requires admin or teacher role. Students should use POST /attempts/practice' })
   createPracticeExam(@Body() dto: CreatePracticeExamDto, @Req() req: any) {
     this.logger.log(`[POST /exams/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, sections: ${dto?.sections?.length || 0}`);
+    
+    // إذا كان المستخدم طالباً، أرسل رسالة خطأ واضحة
+    if (req.user?.role === 'student') {
+      this.logger.warn(`[POST /exams/practice] Student attempted to create practice exam - userId: ${req.user?.userId}`);
+      throw new ForbiddenException({
+        status: 'error',
+        code: 403,
+        message: 'ليس لديك صلاحية لإنشاء امتحانات. استخدم POST /attempts/practice لبدء محاولة تمرين',
+        hint: 'Students cannot create exams. Use POST /attempts/practice to start a practice attempt instead.',
+      });
+    }
+    
     return this.service.createPracticeExam(dto, req.user);
   }
 
