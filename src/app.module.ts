@@ -29,6 +29,7 @@ import { AppController } from './app.controller';
         PORT: Joi.number().default(4000),
         NODE_ENV: Joi.string()
           .valid('development', 'production', 'test')
+          .empty('')
           .default('development'),
         MONGO_URI: Joi.string().required(),
         JWT_ACCESS_SECRET: Joi.string().required(),
