@@ -22,6 +22,7 @@ export class ExamsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher')
   create(@Body() dto: CreateExamDto, @Req() req: any) {
+    this.logger.log(`[POST /exams] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, user object: ${JSON.stringify(req.user)}`);
     return this.service.createExam(dto, req.user);
   }
 

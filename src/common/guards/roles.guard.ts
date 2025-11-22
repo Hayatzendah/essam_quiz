@@ -17,24 +17,34 @@ export class RolesGuard implements CanActivate {
       
       // If no roles are required, allow access
       if (!required || required.length === 0) {
+        this.logger.debug('No roles required, allowing access');
         return true;
       }
 
       const req = ctx.switchToHttp().getRequest();
       const user = req.user;
 
+      // Log for debugging
+      this.logger.debug(`RolesGuard check - Required roles: ${required.join(', ')}, User object: ${JSON.stringify(user)}`);
+
       // If user is not authenticated or doesn't have a role
-      if (!user?.role) {
-        this.logger.warn(`Access denied: User not authenticated or missing role`);
+      if (!user) {
+        this.logger.warn(`Access denied: User not authenticated - req.user is ${user}`);
+        throw new ForbiddenException('Access denied: User not authenticated');
+      }
+
+      if (!user.role) {
+        this.logger.warn(`Access denied: User missing role - User object: ${JSON.stringify(user)}`);
         throw new ForbiddenException('Access denied: User role is required');
       }
 
       // Check if user's role is in the required roles
       if (!required.includes(user.role)) {
         this.logger.warn(`Access denied: User role '${user.role}' is not in required roles: ${required.join(', ')}`);
-        throw new ForbiddenException(`Access denied: Required role(s): ${required.join(', ')}`);
+        throw new ForbiddenException(`Access denied: Required role(s): ${required.join(', ')}. Your role: ${user.role}`);
       }
 
+      this.logger.debug(`Access granted: User role '${user.role}' matches required roles`);
       return true;
     } catch (error) {
       // Re-throw ForbiddenException
