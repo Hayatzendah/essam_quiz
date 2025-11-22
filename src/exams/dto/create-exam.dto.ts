@@ -59,5 +59,28 @@ export class CreateExamDto {
   status?: ExamStatus;
 }
 
+// DTO للـ practice exam - يجعل title اختياري
+export class CreatePracticeExamDto {
+  @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() level?: string;
+  @IsOptional() @IsString() provider?: string;
+
+  @IsArray() @ArrayMinSize(1)
+  @ValidateNested({ each: true }) @Type(() => ExamSectionDto)
+  sections: ExamSectionDto[];
+
+  @IsOptional() @IsBoolean()
+  randomizeQuestions?: boolean;
+
+  @IsOptional() @IsNumber() @Min(0)
+  attemptLimit?: number;
+
+  @IsOptional() @IsNumber() @Min(0)
+  timeLimitMin?: number;
+
+  @IsOptional() @IsString()
+  resultsPolicy?: 'only_scores' | 'correct_with_scores' | 'explanations_with_scores' | 'release_delayed';
+}
+
 
 

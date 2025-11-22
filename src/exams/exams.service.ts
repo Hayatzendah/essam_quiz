@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { CreateExamDto } from './dto/create-exam.dto';
+import { CreateExamDto, CreatePracticeExamDto } from './dto/create-exam.dto';
 import { QueryExamDto } from './dto/query-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
@@ -141,7 +141,7 @@ export class ExamsService {
    * - status: published تلقائياً
    * - بدون validation معقد
    */
-  async createPracticeExam(dto: CreateExamDto, user: ReqUser) {
+  async createPracticeExam(dto: CreatePracticeExamDto, user: ReqUser) {
     // التحقق من أن sections تحتوي على items (أسئلة محددة)
     if (!dto.sections || dto.sections.length === 0) {
       throw new BadRequestException('At least one section with items is required');
@@ -157,9 +157,13 @@ export class ExamsService {
       }
     }
 
+    // إضافة title تلقائياً إذا كان مفقوداً
+    const title = dto.title || `Practice Exam - ${new Date().toLocaleDateString()}`;
+
     const userId = user.userId || (user as any).sub || (user as any).id;
     const doc = await this.model.create({
       ...dto,
+      title,
       status: ExamStatus.PUBLISHED, // دائماً published للطلاب
       ownerId: new Types.ObjectId(userId),
     });

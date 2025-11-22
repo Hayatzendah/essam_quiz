@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Req, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ExamsService } from './exams.service';
-import { CreateExamDto } from './dto/create-exam.dto';
+import { CreateExamDto, CreatePracticeExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { QueryExamDto } from './dto/query-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
@@ -34,7 +34,7 @@ export class ExamsController {
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
-  createPracticeExam(@Body() dto: CreateExamDto, @Req() req: any) {
+  createPracticeExam(@Body() dto: CreatePracticeExamDto, @Req() req: any) {
     this.logger.log(`[POST /exams/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, sections: ${dto?.sections?.length || 0}`);
     return this.service.createPracticeExam(dto, req.user);
   }
