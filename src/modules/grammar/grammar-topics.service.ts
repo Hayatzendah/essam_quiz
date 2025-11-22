@@ -1,14 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GrammarTopic, GrammarTopicDocument } from './schemas/grammar-topic.schema';
 import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
 import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
+import { AttemptsService } from '../../attempts/attempts.service';
+import { QuestionsService } from '../../questions/questions.service';
 
 @Injectable()
 export class GrammarTopicsService {
   constructor(
     @InjectModel(GrammarTopic.name) private readonly model: Model<GrammarTopicDocument>,
+    @Inject(forwardRef(() => AttemptsService))
+    private readonly attemptsService: AttemptsService,
+    private readonly questionsService: QuestionsService,
   ) {}
 
   /**
@@ -111,6 +116,64 @@ export class GrammarTopicsService {
     }
 
     return updated;
+  }
+
+  /**
+   * بدء محاولة تمرين على grammar topic
+   * - البحث عن grammar topic بالـ slug
+   * - البحث عن أسئلة مرتبطة بـ topic tags
+   * - إنشاء exam ديناميكي من هذه الأسئلة
+   * - بدء attempt على هذا exam
+   */
+  async startPracticeAttempt(slug: string, level?: string, questionsCount?: number, user?: any) {
+    // 1. البحث عن grammar topic
+    const topic = await this.findBySlug(slug, level);
+    
+    // 2. البحث عن أسئلة مرتبطة بـ topic tags
+    const tags = topic.tags || [];
+    if (tags.length === 0) {
+      throw new BadRequestException(`Grammar topic "${topic.title}" has no tags. Cannot find related questions.`);
+    }
+
+    // 3. البحث عن أسئلة القواعد النحوية المرتبطة بالموضوع
+    const questionsResult = await this.questionsService.findGrammar({
+      level: topic.level,
+      tags: tags,
+      limit: questionsCount ? questionsCount.toString() : '20',
+      page: '1',
+    });
+
+    if (!questionsResult.items || questionsResult.items.length === 0) {
+      throw new BadRequestException({
+        code: 'NO_QUESTIONS_FOUND',
+        message: `No questions found for grammar topic "${topic.title}" with tags: ${tags.join(', ')}`,
+        topic: topic.title,
+        level: topic.level,
+        tags: tags,
+      });
+    }
+
+    // 4. إنشاء exam ديناميكي من هذه الأسئلة
+    const examDto = {
+      title: `تمرين: ${topic.title} - ${topic.level}`,
+      level: topic.level,
+      provider: 'Grammatik',
+      sections: [
+        {
+          name: topic.title,
+          items: questionsResult.items.map((q: any) => ({
+            questionId: q._id || q.id,
+            points: 1,
+          })),
+        },
+      ],
+      randomizeQuestions: true,
+      attemptLimit: 0, // غير محدود
+      timeLimitMin: 0, // غير محدود
+    };
+
+    // 5. بدء attempt على هذا exam
+    return this.attemptsService.startPracticeAttempt(examDto, user);
   }
 }
 

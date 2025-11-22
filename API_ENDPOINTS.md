@@ -1699,6 +1699,94 @@ const fetchGrammarTopic = async (slug, level) => {
 
 ---
 
+### `POST /grammar/topics/:slug/attempts`
+**الوصف:** بدء محاولة تمرين على موضوع قواعد نحوية (للطلاب)  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** student فقط
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Path Parameters:**
+- `slug`: معرف الموضوع (مثل: `akkusativ`, `sein-haben`)
+
+**Query Parameters:**
+- `level`: المستوى (A1, A2, B1, B2, C1) - اختياري (مستحسن لتجنب التكرار)
+- `questionsCount`: عدد الأسئلة المطلوبة (افتراضي: 20) - اختياري
+
+**ملاحظات مهمة:**
+- يتم البحث عن أسئلة مرتبطة بـ topic tags تلقائياً
+- يتم إنشاء exam ديناميكي من هذه الأسئلة
+- يتم بدء attempt تلقائياً على هذا exam
+- **هذا الـ endpoint هو البديل الصحيح لـ POST /exams للطلاب عند بدء تمرين قواعد نحوية**
+
+**Response (201):**
+```json
+{
+  "attemptId": "attemptId123",
+  "examId": "examId123",
+  "status": "in-progress",
+  "attemptCount": 1,
+  "items": [
+    {
+      "questionId": "...",
+      "qType": "mcq",
+      "points": 1,
+      "prompt": "...",
+      "options": ["خيار 1", "خيار 2", "خيار 3"]
+    }
+  ]
+}
+```
+
+**Response (400):**
+```json
+{
+  "code": "NO_QUESTIONS_FOUND",
+  "message": "No questions found for grammar topic \"الحالة المنصوبة - Akkusativ\" with tags: akkusativ, cases",
+  "topic": "الحالة المنصوبة - Akkusativ",
+  "level": "A1",
+  "tags": ["akkusativ", "cases"]
+}
+```
+
+**أمثلة على الاستخدام:**
+
+**1. بدء تمرين على موضوع محدد:**
+```javascript
+api.post('/grammar/topics/akkusativ/attempts', null, {
+  params: {
+    level: 'A1',
+    questionsCount: 10
+  }
+});
+```
+
+**2. استخدام في React/Vue:**
+```javascript
+// بدء تمرين على موضوع قواعد نحوية
+const startGrammarExercise = async (slug, level) => {
+  try {
+    const res = await api.post(`/grammar/topics/${slug}/attempts`, null, {
+      params: { level, questionsCount: 10 }
+    });
+    // حفظ attemptId للاستخدام لاحقاً
+    setAttemptId(res.data.attemptId);
+    setQuestions(res.data.items);
+  } catch (err) {
+    console.error('Error starting grammar exercise:', err);
+  }
+};
+```
+
+**الاستخدام:**
+- **لصفحة التمارين النحوية:** بدء تمرين على موضوع قواعد نحوية محدد
+- **بديل لـ POST /exams:** للطلاب عند بدء تمرين قواعد نحوية
+
+---
+
 ### `POST /grammar/topics`
 **الوصف:** إنشاء موضوع قواعد نحوية جديد  
 **المصادقة:** مطلوبة (Bearer Token)  
@@ -1945,6 +2033,11 @@ Authorization: Bearer <accessToken>
 - ترتيب الخيارات مختلط عشوائياً إذا كان `randomizeQuestions: true`
 - الأسئلة مختلطة عشوائياً إذا كان `randomizeQuestions: true`
 - **للاختبارات "Deutschland-in-Leben":** يتم استخدام `student.state` (الولاية) تلقائياً لفلترة أسئلة الولاية
+
+**⚠️ للتمارين النحوية (Grammar Exercises):**
+- **استخدم `POST /grammar/topics/:slug/attempts` بدلاً من هذا الـ endpoint**
+- هذا الـ endpoint مخصص للامتحانات الجاهزة (exams موجودة مسبقاً)
+- للتمارين النحوية الديناميكية، استخدم `POST /grammar/topics/:slug/attempts` الذي يبحث عن الأسئلة تلقائياً
   - إذا كان `provider = "Deutschland-in-Leben"` و `student.state = "Bayern"`
   - يتم استبدال tags الولاية في section بـ `student.state` تلقائياً
   - مثال: section مع `tags: ["Bayern"]` → يتم استخدام `student.state` بدلاً منه
