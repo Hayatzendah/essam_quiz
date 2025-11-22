@@ -55,9 +55,9 @@ export class GrammarTopicsController {
   @ApiResponse({ status: 404, description: 'Grammar topic not found' })
   async startAttempt(
     @Param('slug') slug: string,
+    @Req() req: any,
     @Query('level') level?: string,
-    @Query('questionsCount') questionsCount?: string,
-    @Req() req: any
+    @Query('questionsCount') questionsCount?: string
   ) {
     const count = questionsCount ? parseInt(questionsCount, 10) : undefined;
     return this.grammarTopicsService.startPracticeAttempt(slug, level, count, req.user);

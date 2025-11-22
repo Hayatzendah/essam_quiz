@@ -137,7 +137,7 @@ export class GrammarTopicsService {
 
     // 3. البحث عن أسئلة القواعد النحوية المرتبطة بالموضوع
     const questionsResult = await this.questionsService.findGrammar({
-      level: topic.level,
+      level: topic.level as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | undefined,
       tags: tags,
       limit: questionsCount ? questionsCount.toString() : '20',
       page: '1',
