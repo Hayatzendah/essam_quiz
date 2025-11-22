@@ -41,7 +41,16 @@ export class RolesGuard implements CanActivate {
       // Check if user's role is in the required roles
       if (!required.includes(user.role)) {
         this.logger.warn(`Access denied: User role '${user.role}' is not in required roles: ${required.join(', ')}`);
-        throw new ForbiddenException(`Access denied: Required role(s): ${required.join(', ')}. Your role: ${user.role}`);
+        
+        // Provide helpful message with alternative endpoint for students
+        let errorMessage = `Access denied: This endpoint requires role(s): ${required.join(' or ')}. Your current role: '${user.role}'.`;
+        
+        // Special message for students trying to create exams
+        if (user.role === 'student' && required.includes('teacher') && required.includes('admin')) {
+          errorMessage += ' Students should use POST /exams/practice instead.';
+        }
+        
+        throw new ForbiddenException(errorMessage);
       }
 
       this.logger.debug(`Access granted: User role '${user.role}' matches required roles`);

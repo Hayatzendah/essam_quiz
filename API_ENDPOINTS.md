@@ -146,10 +146,11 @@ axios.get(url); // ❌ قد ينتج: api.deutsch-tests.co_eben&state=Bayern
 2. [Users (المستخدمون)](#users-المستخدمون)
 3. [Exams (الامتحانات)](#exams-الامتحانات)
 4. [Questions (الأسئلة)](#questions-الأسئلة)
-5. [Attempts (المحاولات)](#attempts-المحاولات)
-6. [Analytics (التحليلات)](#analytics-التحليلات)
-7. [Media (الوسائط)](#media-الوسائط)
-8. [Health & App (الصحة والتطبيق)](#health--app-الصحة-والتطبيق)
+5. [Grammar Topics (مواضيع القواعد النحوية)](#-grammar-topics-مواضيع-القواعد-النحوية)
+6. [Attempts (المحاولات)](#attempts-المحاولات)
+7. [Analytics (التحليلات)](#analytics-التحليلات)
+8. [Media (الوسائط)](#media-الوسائط)
+9. [Health & App (الصحة والتطبيق)](#health--app-الصحة-والتطبيق)
 
 ---
 
@@ -622,7 +623,9 @@ Authorization: Bearer <accessToken>
 ### `POST /exams`
 **الوصف:** إنشاء امتحان جديد  
 **المصادقة:** مطلوبة (Bearer Token)  
-**الأدوار المسموحة:** teacher, admin
+**الأدوار المسموحة:** teacher, admin  
+**⚠️ مهم:** هذا الـ endpoint محصور بـ **admin** و **teacher** فقط. إذا كان role المستخدم = **student**، سيتم رفض الطلب بـ 403 Forbidden.  
+**للطلاب:** استخدم `POST /exams/practice` بدلاً من هذا الـ endpoint.
 
 **Headers:**
 ```
@@ -708,6 +711,68 @@ Authorization: Bearer <accessToken>
 ```
 
 **الاستخدام:** للمعلمين والأدمن لإنشاء امتحان جديد
+
+---
+
+### `POST /exams/practice`
+**الوصف:** إنشاء امتحان تمرين ديناميكي (للطلاب - للتمارين)  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** student, admin, teacher
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Body:**
+```json
+{
+  "title": "تمرين اللغة الألمانية",
+  "level": "B1", // اختياري
+  "provider": "telc", // اختياري
+  "sections": [
+    {
+      "name": "Exercises",
+      "items": [
+        { "questionId": "...", "points": 1 },
+        { "questionId": "...", "points": 2 }
+      ]
+    }
+  ],
+  "randomizeQuestions": true, // اختياري
+  "attemptLimit": 0, // اختياري (0 = غير محدود)
+  "timeLimitMin": 60 // اختياري (0 = غير محدود)
+}
+```
+
+**ملاحظات مهمة:**
+- يجب أن تحتوي كل section على `items` (أسئلة محددة) - لا يمكن استخدام `quota`
+- الحالة (`status`) تكون `published` تلقائياً
+- للطلاب فقط: يجب استخدام `items` بدلاً من `quota`
+
+**Response (201):**
+```json
+{
+  "id": "...",
+  "title": "تمرين اللغة الألمانية",
+  "level": "B1",
+  "status": "published",
+  "sections": [
+    {
+      "name": "Exercises",
+      "items": [
+        { "questionId": "...", "points": 1 }
+      ]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "ownerId": "userId",
+  "createdAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**الاستخدام:** للطلاب لإنشاء امتحان تمرين ديناميكي مع أسئلة محددة
 
 ---
 
@@ -1268,6 +1333,159 @@ useEffect(() => {
 
 ---
 
+### `GET /questions/grammar`
+**الوصف:** البحث عن أسئلة القواعد النحوية (Grammatik)  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** جميع المستخدمين (طلاب ومعلمين) - فقط الأسئلة المنشورة
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Query Parameters:**
+- `level`: فلترة حسب المستوى (A1, A2, B1, B2, C1) - اختياري
+- `search`: بحث نصي في نص السؤال (prompt) - اختياري
+- `tags`: tags للفلترة حسب الموضوع - اختياري
+  - يمكن استخدام string واحد: `tags=verb`
+  - أو array format: `tags[]=verb&tags[]=noun`
+  - أو multiple values: `tags=verb&tags=adjective`
+  - جميع الصيغ مدعومة ✅
+- `page`: رقم الصفحة (افتراضي: 1) - اختياري
+- `limit`: عدد النتائج (افتراضي: 20) - اختياري
+
+**ملاحظات:**
+- هذا الـ endpoint مخصص فقط لأسئلة القواعد النحوية (`section: "grammar"`)
+- يرجع فقط الأسئلة المنشورة (`status: "published"`)
+- متاح للطلاب والمعلمين على حد سواء
+
+**Response (200):**
+```json
+{
+  "page": 1,
+  "limit": 20,
+  "total": 45,
+  "items": [
+    {
+      "_id": "65f1234567890abcdef12345",
+      "prompt": "Ergänzen Sie: Ich ___ gestern ins Kino gegangen.",
+      "qType": "FILL",
+      "section": "grammar",
+      "level": "A2",
+      "tags": ["verb", "perfekt"],
+      "status": "published",
+      "provider": "Goethe",
+      "options": null,
+      "fillExact": "bin",
+      "regexList": ["bin", "war"],
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    },
+    {
+      "_id": "65f1234567890abcdef12346",
+      "prompt": "Wählen Sie die richtige Form: Der Mann, ___ ich gesehen habe, ist mein Lehrer.",
+      "qType": "MCQ",
+      "section": "grammar",
+      "level": "B1",
+      "tags": ["relative-pronoun", "dativ"],
+      "status": "published",
+      "provider": "telc",
+      "options": [
+        { "text": "den", "isCorrect": true },
+        { "text": "der", "isCorrect": false },
+        { "text": "dem", "isCorrect": false },
+        { "text": "die", "isCorrect": false }
+      ],
+      "createdAt": "2024-01-14T09:20:00.000Z"
+    }
+  ]
+}
+```
+
+**أمثلة على الاستخدام:**
+
+**1. جلب جميع أسئلة القواعد النحوية:**
+```javascript
+api.get('/questions/grammar');
+```
+
+**2. فلترة حسب المستوى:**
+```javascript
+api.get('/questions/grammar', {
+  params: {
+    level: 'A2'
+  }
+});
+```
+
+**3. البحث عن موضوع:**
+```javascript
+api.get('/questions/grammar', {
+  params: {
+    search: 'Perfekt'
+  }
+});
+```
+
+**4. فلترة حسب الموضوع (string واحد):**
+```javascript
+api.get('/questions/grammar', {
+  params: {
+    tags: 'verb'
+  }
+});
+```
+
+**4b. فلترة حسب الموضوع (array):**
+```javascript
+api.get('/questions/grammar', {
+  params: {
+    tags: ['verb', 'perfekt']
+  }
+});
+```
+
+**5. دمج الفلاتر:**
+```javascript
+api.get('/questions/grammar', {
+  params: {
+    level: 'B1',
+    search: 'Pronomen',
+    tags: ['relative-pronoun'],
+    page: 1,
+    limit: 10
+  }
+});
+```
+
+**مثال على الاستخدام في React/Vue:**
+```javascript
+// جلب أسئلة القواعد النحوية حسب المستوى والموضوع
+useEffect(() => {
+  api.get('/questions/grammar', {
+    params: {
+      level: selectedLevel, // 'A1', 'A2', etc.
+      tags: selectedTags,   // ['verb', 'perfekt']
+      page: currentPage,
+      limit: 20
+    }
+  })
+    .then(res => {
+      setGrammarQuestions(res.data.items);
+      setTotalPages(Math.ceil(res.data.total / res.data.limit));
+    })
+    .catch(err => {
+      console.error('Error loading grammar questions:', err);
+    });
+}, [selectedLevel, selectedTags, currentPage]);
+```
+
+**الاستخدام:**
+- **لصفحة Grammatik في الفرونت:** عرض أسئلة القواعد النحوية حسب المستوى والموضوع
+- **للبحث:** البحث عن مواضيع قواعدية محددة (Perfekt, Dativ, etc.)
+- **للفلترة:** فلترة حسب الموضوع (verb, noun, adjective, relative-pronoun, etc.)
+
+---
+
 ### `PATCH /questions/:id`
 **الوصف:** تحديث سؤال  
 **المصادقة:** مطلوبة (Bearer Token)  
@@ -1331,6 +1549,311 @@ Authorization: Bearer <accessToken>
 **الاستخدام:** 
 - **Soft delete (افتراضي):** يخفي السؤال لكن يحتفظ به في قاعدة البيانات
 - **Hard delete:** يحذف السؤال نهائياً (استخدم بحذر!)
+
+---
+
+## 📖 Grammar Topics (مواضيع القواعد النحوية)
+
+### `GET /grammar/topics`
+**الوصف:** جلب قائمة مواضيع القواعد النحوية، مع إمكانية الفلترة حسب المستوى  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** جميع المستخدمين
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Query Parameters:**
+- `level`: فلترة حسب المستوى (A1, A2, B1, B2, C1) - اختياري
+
+**Response (200):**
+```json
+{
+  "items": [
+    {
+      "_id": "69218b1bcddedde1d2b5ebbb",
+      "title": "الحالة المنصوبة - Akkusativ",
+      "slug": "akkusativ",
+      "level": "A1",
+      "shortDescription": "تعلم استخدام الحالة المنصوبة في الألمانية",
+      "tags": ["akkusativ", "cases"],
+      "contentHtml": "<h1>Akkusativ</h1><p>...</p>",
+      "createdAt": "2025-11-22T10:06:19.251Z",
+      "updatedAt": "2025-11-22T10:21:49.264Z"
+    }
+  ]
+}
+```
+
+**أمثلة على الاستخدام:**
+
+**1. جلب جميع المواضيع:**
+```javascript
+api.get('/grammar/topics');
+```
+
+**2. جلب مواضيع مستوى محدد:**
+```javascript
+api.get('/grammar/topics', {
+  params: {
+    level: 'A1'
+  }
+});
+```
+
+**3. استخدام في React/Vue:**
+```javascript
+// جلب مواضيع القواعد لمستوى معين
+useEffect(() => {
+  api.get('/grammar/topics', {
+    params: {
+      level: selectedLevel // 'A1', 'A2', etc.
+    }
+  })
+    .then(res => {
+      setGrammarTopics(res.data.items);
+    })
+    .catch(err => {
+      console.error('Error loading grammar topics:', err);
+    });
+}, [selectedLevel]);
+```
+
+**الاستخدام:**
+- **لصفحة Grammatik في الفرونت:** عرض قائمة مواضيع القواعد حسب المستوى
+- **للتنقل:** استخدام `slug` للوصول إلى صفحة الموضوع المحدد
+
+---
+
+### `GET /grammar/topics/:slug`
+**الوصف:** جلب موضوع قواعد نحوية محدد حسب slug  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** جميع المستخدمين
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Path Parameters:**
+- `slug`: معرف الموضوع (مثل: `akkusativ`, `sein-haben`)
+
+**Query Parameters:**
+- `level`: المستوى (A1, A2, B1, B2, C1) - اختياري (مستحسن لتجنب التكرار)
+
+**Response (200):**
+```json
+{
+  "_id": "69218b1bcddedde1d2b5ebbb",
+  "title": "الحالة المنصوبة - Akkusativ",
+  "slug": "akkusativ",
+  "level": "A1",
+  "shortDescription": "تعلم استخدام الحالة المنصوبة في الألمانية",
+  "tags": ["akkusativ", "cases"],
+  "contentHtml": "<h1>Akkusativ</h1><h2>ما هي الحالة المنصوبة (Akkusativ)؟</h2><p>الحالة المنصوبة هي إحدى الحالات الأربع في اللغة الألمانية...</p>",
+  "createdAt": "2025-11-22T10:06:19.251Z",
+  "updatedAt": "2025-11-22T10:21:49.264Z"
+}
+```
+
+**Response (404):**
+```json
+{
+  "statusCode": 404,
+  "message": "Grammar topic with slug \"akkusativ\" and level \"A1\" not found",
+  "error": "Not Found"
+}
+```
+
+**أمثلة على الاستخدام:**
+
+**1. جلب موضوع محدد:**
+```javascript
+api.get('/grammar/topics/akkusativ', {
+  params: {
+    level: 'A1'
+  }
+});
+```
+
+**2. استخدام في React/Vue:**
+```javascript
+// جلب محتوى موضوع محدد
+const fetchGrammarTopic = async (slug, level) => {
+  try {
+    const res = await api.get(`/grammar/topics/${slug}`, {
+      params: { level }
+    });
+    setTopicContent(res.data.contentHtml);
+    setTopicTitle(res.data.title);
+  } catch (err) {
+    console.error('Error loading grammar topic:', err);
+  }
+};
+```
+
+**الاستخدام:**
+- **لصفحة شرح القاعدة:** عرض محتوى HTML للموضوع
+- **للربط مع الأسئلة:** استخدام `tags` للبحث عن أسئلة متعلقة
+
+---
+
+### `POST /grammar/topics`
+**الوصف:** إنشاء موضوع قواعد نحوية جديد  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** teacher, admin
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "title": "الحالة المنصوبة - Akkusativ",
+  "slug": "akkusativ",
+  "level": "A1",
+  "shortDescription": "تعلم استخدام الحالة المنصوبة في الألمانية",
+  "tags": ["akkusativ", "cases"],
+  "contentHtml": "<h1>Akkusativ</h1><p>محتوى HTML...</p>"
+}
+```
+
+**ملاحظات:**
+- `title`: مطلوب (الحد الأدنى 3 أحرف)
+- `slug`: اختياري (إذا لم يتم توفيره، سيتم توليده تلقائياً من العنوان)
+- `level`: مطلوب (A1, A2, B1, B2, C1)
+- `shortDescription`: اختياري
+- `tags`: اختياري (مصفوفة من strings)
+- `contentHtml`: اختياري (محتوى HTML للموضوع)
+
+**Response (201):**
+```json
+{
+  "_id": "69218b1bcddedde1d2b5ebbb",
+  "title": "الحالة المنصوبة - Akkusativ",
+  "slug": "akkusativ",
+  "level": "A1",
+  "shortDescription": "تعلم استخدام الحالة المنصوبة في الألمانية",
+  "tags": ["akkusativ", "cases"],
+  "contentHtml": "<h1>Akkusativ</h1><p>محتوى HTML...</p>",
+  "createdAt": "2025-11-22T10:06:19.251Z",
+  "updatedAt": "2025-11-22T10:06:19.251Z"
+}
+```
+
+**Response (400):**
+```json
+{
+  "statusCode": 400,
+  "message": "A grammar topic with slug \"akkusativ\" already exists for level \"A1\"",
+  "error": "Bad Request"
+}
+```
+
+**أمثلة على الاستخدام:**
+
+**1. إنشاء موضوع مع slug:**
+```javascript
+api.post('/grammar/topics', {
+  title: "الحالة المنصوبة - Akkusativ",
+  slug: "akkusativ",
+  level: "A1",
+  shortDescription: "تعلم استخدام الحالة المنصوبة في الألمانية",
+  tags: ["akkusativ", "cases"],
+  contentHtml: "<h1>Akkusativ</h1><p>...</p>"
+});
+```
+
+**2. إنشاء موضوع بدون slug (سيتم توليده تلقائياً):**
+```javascript
+api.post('/grammar/topics', {
+  title: "الحالة المنصوبة - Akkusativ",
+  level: "A1",
+  shortDescription: "تعلم استخدام الحالة المنصوبة في الألمانية",
+  tags: ["akkusativ", "cases"]
+});
+```
+
+---
+
+### `PATCH /grammar/topics/:id`
+**الوصف:** تحديث موضوع قواعد نحوية موجود  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** teacher, admin
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+```
+
+**Path Parameters:**
+- `id`: معرف الموضوع (MongoDB ObjectId)
+
+**Body:** (جميع الحقول اختيارية)
+```json
+{
+  "title": "الحالة المنصوبة - Akkusativ (محدث)",
+  "shortDescription": "وصف محدث",
+  "tags": ["akkusativ", "cases", "grammar"],
+  "contentHtml": "<h1>Akkusativ</h1><h2>محتوى محدث...</h2>"
+}
+```
+
+**ملاحظات:**
+- يمكن تحديث حقل واحد أو أكثر
+- الحقول غير المرسلة لن تتغير
+- إذا تم تحديث `slug`، يجب التأكد من عدم التكرار مع موضوع آخر في نفس المستوى
+
+**Response (200):**
+```json
+{
+  "_id": "69218b1bcddedde1d2b5ebbb",
+  "title": "الحالة المنصوبة - Akkusativ (محدث)",
+  "slug": "akkusativ",
+  "level": "A1",
+  "shortDescription": "وصف محدث",
+  "tags": ["akkusativ", "cases", "grammar"],
+  "contentHtml": "<h1>Akkusativ</h1><h2>محتوى محدث...</h2>",
+  "createdAt": "2025-11-22T10:06:19.251Z",
+  "updatedAt": "2025-11-22T10:21:49.264Z"
+}
+```
+
+**Response (404):**
+```json
+{
+  "statusCode": 404,
+  "message": "Grammar topic with id \"69218b1bcddedde1d2b5ebbb\" not found",
+  "error": "Not Found"
+}
+```
+
+**أمثلة على الاستخدام:**
+
+**1. تحديث محتوى HTML فقط:**
+```javascript
+api.patch('/grammar/topics/69218b1bcddedde1d2b5ebbb', {
+  contentHtml: "<h1>Akkusativ</h1><p>محتوى محدث...</p>"
+});
+```
+
+**2. تحديث عدة حقول:**
+```javascript
+api.patch('/grammar/topics/69218b1bcddedde1d2b5ebbb', {
+  title: "عنوان محدث",
+  shortDescription: "وصف محدث",
+  tags: ["akkusativ", "cases", "updated"]
+});
+```
+
+**الاستخدام:**
+- **للوحة تحكم المعلم:** تحديث محتوى المواضيع
+- **لتصحيح الأخطاء:** تحديث محتوى HTML أو الوصف
 
 ---
 

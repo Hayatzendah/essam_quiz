@@ -18,9 +18,15 @@ export class ExamsController {
   constructor(private readonly service: ExamsService) {}
 
   // إنشاء امتحان (admin/teacher)
+  // ⚠️ للطلاب: استخدم POST /exams/practice بدلاً من هذا الـ endpoint
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin','teacher')
+  @ApiOperation({ summary: 'Create exam (admin/teacher only)', description: 'إنشاء امتحان جديد - يتطلب role: admin أو teacher. للطلاب: استخدم POST /exams/practice' })
+  @ApiResponse({ status: 201, description: 'Exam created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - requires admin or teacher role. Students should use POST /exams/practice' })
   create(@Body() dto: CreateExamDto, @Req() req: any) {
     this.logger.log(`[POST /exams] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, user object: ${JSON.stringify(req.user)}`);
     return this.service.createExam(dto, req.user);
