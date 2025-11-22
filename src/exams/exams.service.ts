@@ -135,6 +135,48 @@ export class ExamsService {
     };
   }
 
+  /**
+   * إنشاء Exam ديناميكي للطلاب (للتمارين)
+   * - يسمح للطلاب بإنشاء Exam للتمارين فقط
+   * - status: published تلقائياً
+   * - بدون validation معقد
+   */
+  async createPracticeExam(dto: CreateExamDto, user: ReqUser) {
+    // التحقق من أن sections تحتوي على items (أسئلة محددة)
+    if (!dto.sections || dto.sections.length === 0) {
+      throw new BadRequestException('At least one section with items is required');
+    }
+
+    for (const s of dto.sections) {
+      if (!s.items || !Array.isArray(s.items) || s.items.length === 0) {
+        throw new BadRequestException(`Section "${s.name}" must have items (questions)`);
+      }
+      // لا نسمح بـ quota للطلاب (فقط items)
+      if (s.quota) {
+        throw new BadRequestException('Students cannot create exams with quota. Use items instead.');
+      }
+    }
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const doc = await this.model.create({
+      ...dto,
+      status: ExamStatus.PUBLISHED, // دائماً published للطلاب
+      ownerId: new Types.ObjectId(userId),
+    });
+
+    return {
+      id: doc._id,
+      title: doc.title,
+      level: doc.level,
+      status: doc.status,
+      sections: doc.sections,
+      randomizeQuestions: doc.randomizeQuestions,
+      attemptLimit: doc.attemptLimit,
+      ownerId: doc.ownerId,
+      createdAt: (doc as any).createdAt,
+    };
+  }
+
   async findAll(user: ReqUser, q: QueryExamDto) {
     const filter: any = {};
 

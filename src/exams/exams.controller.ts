@@ -25,6 +25,14 @@ export class ExamsController {
     return this.service.createExam(dto, req.user);
   }
 
+  // إنشاء امتحان تمرين ديناميكي (للطلاب - للتمارين)
+  @Post('practice')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student', 'admin', 'teacher')
+  createPracticeExam(@Body() dto: CreateExamDto, @Req() req: any) {
+    return this.service.createPracticeExam(dto, req.user);
+  }
+
   // قائمة الامتحانات
   // - admin: جميع الامتحانات
   // - teacher: امتحاناته فقط
