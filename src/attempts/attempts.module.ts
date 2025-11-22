@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AttemptsController } from './attempts.controller';
 import { AttemptsService } from './attempts.service';
@@ -21,7 +21,7 @@ import { ExamsModule } from '../exams/exams.module';
     ]),
     AuthModule,
     MediaModule,
-    ExamsModule,
+    forwardRef(() => ExamsModule),
   ],
   controllers: [AttemptsController],
   providers: [AttemptsService, AttemptsCronService],
