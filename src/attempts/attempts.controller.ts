@@ -182,8 +182,9 @@ export class AttemptsController {
   @Post(':attemptId/submit')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  submit(@Param('attemptId') attemptId: string, @Body() _dto: SubmitAttemptDto, @Req() req: any) {
-    return this.service.submitAttempt(req.user, attemptId);
+  submit(@Param('attemptId') attemptId: string, @Body() dto: SubmitAttemptDto, @Req() req: any) {
+    this.logger.log(`[POST /attempts/${attemptId}/submit] Request received - userId: ${req.user?.userId}, answersCount: ${dto?.answers?.length || 0}`);
+    return this.service.submitAttempt(req.user, attemptId, dto.answers);
   }
 
   // إدخال درجات يدوية (معلم مالك أو أدمن)

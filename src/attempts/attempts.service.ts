@@ -921,7 +921,7 @@ export class AttemptsService {
     return auto;
   }
 
-  async submitAttempt(user: ReqUser, attemptIdStr: string) {
+  async submitAttempt(user: ReqUser, attemptIdStr: string, answers?: Array<{ itemId?: string; userAnswer?: any }>) {
     this.ensureStudent(user);
 
     const userId = user.userId || (user as any).sub || (user as any).id;
@@ -930,6 +930,53 @@ export class AttemptsService {
 
     if (attempt.studentId.toString() !== userId) throw new ForbiddenException();
     if (attempt.status !== AttemptStatus.IN_PROGRESS) throw new ForbiddenException('Already submitted');
+
+    // إذا تم إرسال answers في body، احفظها أولاً
+    if (answers && Array.isArray(answers) && answers.length > 0) {
+      this.logger.log(`[submitAttempt] Saving ${answers.length} answers from request body`);
+      
+      for (let answerIndex = 0; answerIndex < answers.length; answerIndex++) {
+        const answer = answers[answerIndex];
+        
+        // محاولة البحث عن item
+        let item: any = null;
+        let itemIndex: number = -1;
+        
+        if (answer.itemId) {
+          // البحث باستخدام questionId أو _id
+          const foundIndex = (attempt.items as any[]).findIndex((it: any) => 
+            it.questionId?.toString() === answer.itemId || it._id?.toString() === answer.itemId
+          );
+          
+          if (foundIndex >= 0) {
+            item = (attempt.items as any[])[foundIndex];
+            itemIndex = foundIndex;
+          } else {
+            // محاولة البحث باستخدام index (itemId كرقم)
+            const parsedIndex = parseInt(answer.itemId, 10);
+            if (!isNaN(parsedIndex) && parsedIndex >= 0 && parsedIndex < (attempt.items as any[]).length) {
+              item = (attempt.items as any[])[parsedIndex];
+              itemIndex = parsedIndex;
+            }
+          }
+        }
+        
+        // إذا لم نجد item باستخدام itemId، استخدم index في array
+        if (!item && answerIndex < (attempt.items as any[]).length) {
+          item = (attempt.items as any[])[answerIndex];
+          itemIndex = answerIndex;
+        }
+        
+        if (item) {
+          this.saveAnswerToItem(item, answer.userAnswer);
+          this.logger.debug(`[submitAttempt] Saved answer ${answerIndex} for itemIndex ${itemIndex} (questionId: ${item.questionId}, qType: ${item.qType}) - userAnswer: ${JSON.stringify(answer.userAnswer)}`);
+        } else {
+          this.logger.warn(`[submitAttempt] Could not find item for answer ${answerIndex}: ${JSON.stringify(answer)}`);
+        }
+      }
+      
+      await attempt.save();
+    }
 
     const now = Date.now();
     attempt.submittedAt = new Date(now);
@@ -940,6 +987,10 @@ export class AttemptsService {
     let totalMax = 0;
     for (let i = 0; i < (attempt.items as any[]).length; i++) {
       const it = (attempt.items as any[])[i];
+      
+      // Log تفصيلي قبل التصحيح
+      this.logger.debug(`[submitAttempt] Before scoring Item ${i} - questionId: ${it.questionId}, qType: ${it.qType}, studentAnswerText: "${it.studentAnswerText}", studentAnswerBoolean: ${it.studentAnswerBoolean}, studentAnswerIndexes: [${(it.studentAnswerIndexes || []).join(', ')}]`);
+      
       const itemScore = this.scoreItem(it);
       totalAuto += itemScore;
       totalMax  += it.points || 0;
@@ -952,13 +1003,51 @@ export class AttemptsService {
 
     await attempt.save();
 
+    const percentage = totalMax > 0 ? Math.round((attempt.totalAutoScore / totalMax) * 100) : 0;
+
+    this.logger.log(`[submitAttempt] Attempt submitted - attemptId: ${attemptIdStr}, totalAutoScore: ${attempt.totalAutoScore}, totalMaxScore: ${totalMax}, percentage: ${percentage}%`);
+
     return {
       attemptId: attempt._id,
       status: attempt.status,
       totalAutoScore: attempt.totalAutoScore,
       totalMaxScore: attempt.totalMaxScore,
       finalScore: attempt.finalScore,
+      percentage: percentage,
     };
+  }
+
+  private saveAnswerToItem(item: any, userAnswer: any) {
+    if (item.qType === 'fill') {
+      item.studentAnswerText = normalizeAnswer(userAnswer || '');
+      this.logger.debug(`[saveAnswerToItem] FILL - questionId: ${item.questionId}, userAnswer: "${userAnswer}", normalized: "${item.studentAnswerText}"`);
+    } else if (item.qType === 'true_false') {
+      // تحويل string إلى boolean إذا لزم الأمر
+      if (typeof userAnswer === 'boolean') {
+        item.studentAnswerBoolean = userAnswer;
+      } else if (typeof userAnswer === 'string') {
+        const lower = userAnswer.toLowerCase();
+        // دعم "richtig"/"falsch" (ألماني) و "true"/"false" (إنجليزي) و "صح"/"خطأ" (عربي)
+        item.studentAnswerBoolean = lower === 'true' || lower === 'richtig' || lower === 'صح' || lower === '1';
+        this.logger.debug(`[saveAnswerToItem] TRUE_FALSE - questionId: ${item.questionId}, userAnswer: "${userAnswer}", converted to: ${item.studentAnswerBoolean}`);
+      } else {
+        item.studentAnswerBoolean = Boolean(userAnswer);
+        this.logger.debug(`[saveAnswerToItem] TRUE_FALSE - questionId: ${item.questionId}, userAnswer: ${userAnswer} (${typeof userAnswer}), converted to: ${item.studentAnswerBoolean}`);
+      }
+    } else if (item.qType === 'mcq') {
+      if (Array.isArray(userAnswer)) {
+        item.studentAnswerIndexes = userAnswer;
+      } else if (typeof userAnswer === 'number') {
+        item.studentAnswerIndexes = [userAnswer];
+      } else {
+        // محاولة تحويل string إلى number
+        const num = parseInt(userAnswer, 10);
+        if (!isNaN(num)) {
+          item.studentAnswerIndexes = [num];
+        }
+      }
+      this.logger.debug(`[saveAnswerToItem] MCQ - questionId: ${item.questionId}, userAnswer: ${JSON.stringify(userAnswer)}, studentAnswerIndexes: [${(item.studentAnswerIndexes || []).join(', ')}]`);
+    }
   }
 
   async gradeAttempt(user: ReqUser, attemptIdStr: string, items: { questionId: string; score: number }[]) {
