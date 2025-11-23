@@ -759,11 +759,22 @@ export class AttemptsService {
       it.studentAnswerText = normalizeAnswer(payload.studentAnswerText || '');
       this.logger.debug(`[saveAnswer] Saving FILL answer - itemIndex: ${idx}, questionId: ${it.questionId}, original: "${payload.studentAnswerText}", normalized: "${it.studentAnswerText}", fillExact: "${it.fillExact}"`);
     } else if (it.qType === 'true_false') {
-      if (typeof payload.studentAnswerBoolean !== 'boolean') {
+      // تحويل string إلى boolean إذا لزم الأمر (للتوافق مع Frontend)
+      let studentAnswer: boolean;
+      if (typeof payload.studentAnswerBoolean === 'boolean') {
+        studentAnswer = payload.studentAnswerBoolean;
+      } else if (typeof payload.studentAnswerBoolean === 'string') {
+        // تحويل "true"/"false" strings إلى boolean
+        studentAnswer = payload.studentAnswerBoolean.toLowerCase() === 'true';
+        this.logger.warn(`[saveAnswer] TRUE_FALSE received string instead of boolean - itemIndex: ${idx}, questionId: ${it.questionId}, received: "${payload.studentAnswerBoolean}", converted to: ${studentAnswer}`);
+      } else if (payload.studentAnswerBoolean === null || payload.studentAnswerBoolean === undefined) {
         throw new BadRequestException('Provide studentAnswerBoolean for true_false');
+      } else {
+        // تحويل أي قيمة أخرى إلى boolean
+        studentAnswer = Boolean(payload.studentAnswerBoolean);
+        this.logger.warn(`[saveAnswer] TRUE_FALSE received unexpected type - itemIndex: ${idx}, questionId: ${it.questionId}, type: ${typeof payload.studentAnswerBoolean}, value: ${payload.studentAnswerBoolean}, converted to: ${studentAnswer}`);
       }
-      it.studentAnswerBoolean = payload.studentAnswerBoolean;
-      this.logger.debug(`[saveAnswer] Saving TRUE_FALSE answer - itemIndex: ${idx}, questionId: ${it.questionId}, answerKeyBoolean: ${it.answerKeyBoolean}, studentAnswerBoolean: ${it.studentAnswerBoolean}`);
+      it.studentAnswerBoolean = studentAnswer;
       this.logger.debug(`[saveAnswer] Saving TRUE_FALSE answer - itemIndex: ${idx}, questionId: ${it.questionId}, answerKeyBoolean: ${it.answerKeyBoolean}, studentAnswerBoolean: ${it.studentAnswerBoolean}`);
     } else if (it.qType === 'match') {
       if (!Array.isArray(payload.studentAnswerMatch)) {
