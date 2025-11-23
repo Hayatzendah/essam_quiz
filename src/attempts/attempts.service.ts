@@ -428,7 +428,11 @@ export class AttemptsService {
     }
 
     if (q.qType === 'fill') {
-      if (q.fillExact) item.fillExact = q.fillExact;
+      // تطبيع fillExact عند الحفظ للتأكد من المقارنة الصحيحة
+      if (q.fillExact) {
+        item.fillExact = normalizeAnswer(q.fillExact);
+        this.logger.debug(`[buildSnapshotItem] FILL - original fillExact: "${q.fillExact}", normalized: "${item.fillExact}"`);
+      }
       if (q.regexList && q.regexList.length) item.regexList = q.regexList;
     }
 
@@ -750,7 +754,9 @@ export class AttemptsService {
       this.logger.debug(`[saveAnswer] Saving MCQ answer - itemIndex: ${idx}, questionId: ${it.questionId}, correctOptionIndexes: [${(it.correctOptionIndexes || []).join(', ')}], studentAnswerIndexes: [${payload.studentAnswerIndexes.join(', ')}]`);
       it.studentAnswerIndexes = payload.studentAnswerIndexes;
     } else if (it.qType === 'fill') {
-      it.studentAnswerText = (payload.studentAnswerText || '').trim();
+      // تطبيع الإجابة عند الحفظ (إزالة مسافات زائدة، \n، \r، tabs)
+      it.studentAnswerText = normalizeAnswer(payload.studentAnswerText || '');
+      this.logger.debug(`[saveAnswer] Saving FILL answer - itemIndex: ${idx}, questionId: ${it.questionId}, original: "${payload.studentAnswerText}", normalized: "${it.studentAnswerText}", fillExact: "${it.fillExact}"`);
     } else if (it.qType === 'true_false') {
       if (typeof payload.studentAnswerBoolean !== 'boolean') {
         throw new BadRequestException('Provide studentAnswerBoolean for true_false');
@@ -810,7 +816,9 @@ export class AttemptsService {
     }
 
     if (it.qType === 'fill') {
+      // تطبيع إجابة الطالب
       const ans = normalizeAnswer(it.studentAnswerText || '');
+      
       // دعم fillExact كـ string أو array
       const exactList = Array.isArray(it.fillExact)
         ? it.fillExact.map((e: string) => normalizeAnswer(e))
@@ -818,19 +826,26 @@ export class AttemptsService {
         ? [normalizeAnswer(it.fillExact)]
         : [];
       
+      this.logger.debug(`[scoreItem] FILL scoring - questionId: ${it.questionId}, studentAnswer: "${it.studentAnswerText}", normalized: "${ans}", fillExact: ${JSON.stringify(it.fillExact)}, normalizedExactList: [${exactList.map(e => `"${e}"`).join(', ')}]`);
+      
       const exactHit = exactList.length > 0 && exactList.includes(ans);
+      
       const regexHit = Array.isArray(it.regexList)
         ? it.regexList.some((rx: string) => {
             try {
               const reg = new RegExp(rx, 'i');
-              return reg.test(ans);
-            } catch {
+              const matches = reg.test(ans);
+              this.logger.debug(`[scoreItem] FILL regex test - regex: "${rx}", answer: "${ans}", matches: ${matches}`);
+              return matches;
+            } catch (error) {
+              this.logger.error(`[scoreItem] FILL regex error - regex: "${rx}", error: ${error}`);
               return false;
             }
           })
         : false;
 
       auto = exactHit || regexHit ? it.points : 0;
+      this.logger.debug(`[scoreItem] FILL result - exactHit: ${exactHit}, regexHit: ${regexHit}, score: ${auto}`);
     }
 
     if (it.qType === 'match') {
