@@ -761,7 +761,8 @@ export class AttemptsService {
     } else if (it.qType === 'true_false') {
       // تحويل string إلى boolean إذا لزم الأمر (للتوافق مع Frontend)
       let studentAnswer: boolean;
-      const answerValue = payload.studentAnswerBoolean;
+      // استخدام any للتغلب على مشكلة TypeScript type narrowing
+      const answerValue: any = payload.studentAnswerBoolean;
       
       if (typeof answerValue === 'boolean') {
         studentAnswer = answerValue;
