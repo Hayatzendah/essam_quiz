@@ -1059,6 +1059,8 @@ export class AttemptsService {
           studentAnswerReorder: it.studentAnswerReorder,
           correctOptionIndexes: it.correctOptionIndexes,
           answerKeyBoolean: it.answerKeyBoolean,
+          fillExact: it.fillExact, // الإجابة الصحيحة لأسئلة FILL
+          regexList: it.regexList, // قائمة regex patterns لأسئلة FILL
           answerKeyMatch: it.answerKeyMatch,
           answerKeyReorder: it.answerKeyReorder,
           autoScore: it.autoScore,
@@ -1083,6 +1085,8 @@ export class AttemptsService {
           studentAnswerReorder: it.studentAnswerReorder,
           correctOptionIndexes: it.correctOptionIndexes,
           answerKeyBoolean: it.answerKeyBoolean,
+          fillExact: it.fillExact, // الإجابة الصحيحة لأسئلة FILL
+          regexList: it.regexList, // قائمة regex patterns لأسئلة FILL
           answerKeyMatch: it.answerKeyMatch,
           answerKeyReorder: it.answerKeyReorder,
           autoScore: it.autoScore,
