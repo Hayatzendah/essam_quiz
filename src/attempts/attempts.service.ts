@@ -398,22 +398,25 @@ export class AttemptsService {
 
       // خلط ترتيب الخيارات إذا كان rng متوفر
       if (rng) {
-        const shuffled = [...options];
-        shuffleInPlace(shuffled, rng);
-        item.optionsText = shuffled.map(o => o.text);
+        // إنشاء مصفوفة من الأزواج [index, option] لتتبع الفهرس الأصلي
+        const indexedOptions = options.map((opt, idx) => ({ originalIndex: idx, option: opt }));
+        shuffleInPlace(indexedOptions, rng);
+        
+        item.optionsText = indexedOptions.map(item => item.option.text);
+        
         // حساب correctOptionIndexes الجديدة بعد الخلط
         const newCorrectIdxs: number[] = [];
-        shuffled.forEach((opt, newIdx) => {
-          const originalIdx = options.findIndex(o => o.text === opt.text && o.isCorrect === opt.isCorrect);
-          if (originalCorrectIdxs.includes(originalIdx)) {
+        indexedOptions.forEach((item, newIdx) => {
+          if (originalCorrectIdxs.includes(item.originalIndex)) {
             newCorrectIdxs.push(newIdx);
           }
         });
         item.correctOptionIndexes = newCorrectIdxs;
-        item.optionOrder = shuffled.map((_, newIdx) => {
-          const originalIdx = options.findIndex(o => o.text === shuffled[newIdx].text);
-          return originalIdx;
-        });
+        
+        // حفظ ترتيب الخيارات الأصلي للرجوع إليه
+        item.optionOrder = indexedOptions.map(item => item.originalIndex);
+        
+        this.logger.debug(`[buildSnapshotItem] MCQ shuffled - original correct: [${originalCorrectIdxs.join(', ')}], new correct: [${newCorrectIdxs.join(', ')}]`);
       } else {
         item.optionsText = options.map(o => o.text);
         item.correctOptionIndexes = originalCorrectIdxs;
@@ -744,7 +747,7 @@ export class AttemptsService {
           qType: it.qType,
         });
       }
-      this.logger.debug(`[saveAnswer] Saving MCQ answer - itemIndex: ${idx}, studentAnswerIndexes: ${JSON.stringify(payload.studentAnswerIndexes)}`);
+      this.logger.debug(`[saveAnswer] Saving MCQ answer - itemIndex: ${idx}, questionId: ${it.questionId}, correctOptionIndexes: [${(it.correctOptionIndexes || []).join(', ')}], studentAnswerIndexes: [${payload.studentAnswerIndexes.join(', ')}]`);
       it.studentAnswerIndexes = payload.studentAnswerIndexes;
     } else if (it.qType === 'fill') {
       it.studentAnswerText = (payload.studentAnswerText || '').trim();
@@ -787,12 +790,16 @@ export class AttemptsService {
       const correct = new Set<number>(it.correctOptionIndexes || []);
       const ans = new Set<number>(it.studentAnswerIndexes || []);
 
+      this.logger.debug(`[scoreItem] MCQ scoring - questionId: ${it.questionId}, correctIndexes: [${Array.from(correct).join(', ')}], studentIndexes: [${Array.from(ans).join(', ')}], points: ${it.points}`);
+
       if (correct.size <= 1) {
         auto = ans.size === 1 && correct.has([...ans][0]) ? it.points : 0;
+        this.logger.debug(`[scoreItem] MCQ single correct - score: ${auto}`);
       } else {
         const intersect = [...ans].filter(a => correct.has(a)).length;
         const fraction = (correct.size === 0) ? 0 : intersect / correct.size;
         auto = Math.round(it.points * fraction * 1000) / 1000;
+        this.logger.debug(`[scoreItem] MCQ multiple correct - intersect: ${intersect}, fraction: ${fraction}, score: ${auto}`);
       }
     }
 
