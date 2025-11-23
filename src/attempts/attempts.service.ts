@@ -761,18 +761,20 @@ export class AttemptsService {
     } else if (it.qType === 'true_false') {
       // تحويل string إلى boolean إذا لزم الأمر (للتوافق مع Frontend)
       let studentAnswer: boolean;
-      if (typeof payload.studentAnswerBoolean === 'boolean') {
-        studentAnswer = payload.studentAnswerBoolean;
-      } else if (typeof payload.studentAnswerBoolean === 'string') {
+      const answerValue = payload.studentAnswerBoolean;
+      
+      if (typeof answerValue === 'boolean') {
+        studentAnswer = answerValue;
+      } else if (typeof answerValue === 'string') {
         // تحويل "true"/"false" strings إلى boolean
-        studentAnswer = payload.studentAnswerBoolean.toLowerCase() === 'true';
-        this.logger.warn(`[saveAnswer] TRUE_FALSE received string instead of boolean - itemIndex: ${idx}, questionId: ${it.questionId}, received: "${payload.studentAnswerBoolean}", converted to: ${studentAnswer}`);
-      } else if (payload.studentAnswerBoolean === null || payload.studentAnswerBoolean === undefined) {
+        studentAnswer = answerValue.toLowerCase() === 'true';
+        this.logger.warn(`[saveAnswer] TRUE_FALSE received string instead of boolean - itemIndex: ${idx}, questionId: ${it.questionId}, received: "${answerValue}", converted to: ${studentAnswer}`);
+      } else if (answerValue === null || answerValue === undefined) {
         throw new BadRequestException('Provide studentAnswerBoolean for true_false');
       } else {
         // تحويل أي قيمة أخرى إلى boolean
-        studentAnswer = Boolean(payload.studentAnswerBoolean);
-        this.logger.warn(`[saveAnswer] TRUE_FALSE received unexpected type - itemIndex: ${idx}, questionId: ${it.questionId}, type: ${typeof payload.studentAnswerBoolean}, value: ${payload.studentAnswerBoolean}, converted to: ${studentAnswer}`);
+        studentAnswer = Boolean(answerValue);
+        this.logger.warn(`[saveAnswer] TRUE_FALSE received unexpected type - itemIndex: ${idx}, questionId: ${it.questionId}, type: ${typeof answerValue}, value: ${answerValue}, converted to: ${studentAnswer}`);
       }
       it.studentAnswerBoolean = studentAnswer;
       this.logger.debug(`[saveAnswer] Saving TRUE_FALSE answer - itemIndex: ${idx}, questionId: ${it.questionId}, answerKeyBoolean: ${it.answerKeyBoolean}, studentAnswerBoolean: ${it.studentAnswerBoolean}`);
