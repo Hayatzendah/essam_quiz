@@ -425,6 +425,7 @@ export class AttemptsService {
 
     if (q.qType === 'true_false') {
       item.answerKeyBoolean = (q as any).answerKeyBoolean;
+      this.logger.debug(`[buildSnapshotItem] TRUE_FALSE - questionId: ${item.questionId}, answerKeyBoolean: ${item.answerKeyBoolean}`);
     }
 
     if (q.qType === 'fill') {
@@ -762,6 +763,8 @@ export class AttemptsService {
         throw new BadRequestException('Provide studentAnswerBoolean for true_false');
       }
       it.studentAnswerBoolean = payload.studentAnswerBoolean;
+      this.logger.debug(`[saveAnswer] Saving TRUE_FALSE answer - itemIndex: ${idx}, questionId: ${it.questionId}, answerKeyBoolean: ${it.answerKeyBoolean}, studentAnswerBoolean: ${it.studentAnswerBoolean}`);
+      this.logger.debug(`[saveAnswer] Saving TRUE_FALSE answer - itemIndex: ${idx}, questionId: ${it.questionId}, answerKeyBoolean: ${it.answerKeyBoolean}, studentAnswerBoolean: ${it.studentAnswerBoolean}`);
     } else if (it.qType === 'match') {
       if (!Array.isArray(payload.studentAnswerMatch)) {
         throw new BadRequestException('Provide studentAnswerMatch for MATCH');
@@ -812,6 +815,9 @@ export class AttemptsService {
     if (it.qType === 'true_false') {
       if (typeof it.answerKeyBoolean === 'boolean' && typeof it.studentAnswerBoolean === 'boolean') {
         auto = it.answerKeyBoolean === it.studentAnswerBoolean ? it.points : 0;
+        this.logger.debug(`[scoreItem] TRUE_FALSE scoring - questionId: ${it.questionId}, answerKeyBoolean: ${it.answerKeyBoolean}, studentAnswerBoolean: ${it.studentAnswerBoolean}, match: ${it.answerKeyBoolean === it.studentAnswerBoolean}, score: ${auto}`);
+      } else {
+        this.logger.warn(`[scoreItem] TRUE_FALSE scoring failed - questionId: ${it.questionId}, answerKeyBoolean type: ${typeof it.answerKeyBoolean}, value: ${it.answerKeyBoolean}, studentAnswerBoolean type: ${typeof it.studentAnswerBoolean}, value: ${it.studentAnswerBoolean}`);
       }
     }
 
@@ -918,9 +924,12 @@ export class AttemptsService {
 
     let totalAuto = 0;
     let totalMax = 0;
-    for (const it of attempt.items as any[]) {
-      totalAuto += this.scoreItem(it);
+    for (let i = 0; i < (attempt.items as any[]).length; i++) {
+      const it = (attempt.items as any[])[i];
+      const itemScore = this.scoreItem(it);
+      totalAuto += itemScore;
       totalMax  += it.points || 0;
+      this.logger.debug(`[submitAttempt] Item ${i} (questionId: ${it.questionId}, qType: ${it.qType}) - score: ${itemScore}/${it.points || 0}, totalAuto: ${totalAuto}, totalMax: ${totalMax}`);
     }
 
     attempt.totalAutoScore = Math.round(totalAuto * 1000) / 1000;
