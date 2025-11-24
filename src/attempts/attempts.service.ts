@@ -813,13 +813,15 @@ export class AttemptsService {
       const correct = new Set<number>(it.correctOptionIndexes || []);
       const ans = new Set<number>(it.studentAnswerIndexes || []);
 
-      this.logger.debug(`[scoreItem] MCQ scoring - questionId: ${it.questionId}, correctIndexes: [${Array.from(correct).join(', ')}], studentIndexes: [${Array.from(ans).join(', ')}], points: ${it.points}`);
+      this.logger.debug(`[scoreItem] MCQ scoring - questionId: ${it.questionId}, correctIndexes: [${Array.from(correct).join(', ')}], studentIndexes: [${Array.from(ans).join(', ')}], points: ${it.points}, optionsText: [${(it.optionsText || []).join(', ')}]`);
 
       if (correct.size <= 1) {
-        auto = ans.size === 1 && correct.has([...ans][0]) ? it.points : 0;
-        this.logger.debug(`[scoreItem] MCQ single correct - score: ${auto}`);
+        // إصلاح: استخدام Array.from بدلاً من [...ans][0] لأن Set لا يدعم spread operator بهذه الطريقة
+        const studentAnswerValue = ans.size > 0 ? Array.from(ans)[0] : undefined;
+        auto = studentAnswerValue !== undefined && correct.has(studentAnswerValue) ? it.points : 0;
+        this.logger.debug(`[scoreItem] MCQ single correct - studentAnswerValue: ${studentAnswerValue}, isCorrect: ${correct.has(studentAnswerValue || -1)}, score: ${auto}`);
       } else {
-        const intersect = [...ans].filter(a => correct.has(a)).length;
+        const intersect = Array.from(ans).filter(a => correct.has(a)).length;
         const fraction = (correct.size === 0) ? 0 : intersect / correct.size;
         auto = Math.round(it.points * fraction * 1000) / 1000;
         this.logger.debug(`[scoreItem] MCQ multiple correct - intersect: ${intersect}, fraction: ${fraction}, score: ${auto}`);
@@ -1104,9 +1106,9 @@ export class AttemptsService {
           });
           if (index >= 0) {
             item.studentAnswerIndexes = [index];
-            this.logger.debug(`[saveAnswerToItem] MCQ - Found text "${userAnswer}" at index ${index} in options`);
+            this.logger.debug(`[saveAnswerToItem] MCQ - Found text "${userAnswer}" at index ${index} in options: [${optionsText.join(', ')}]`);
           } else {
-            this.logger.warn(`[saveAnswerToItem] MCQ - Could not find text "${userAnswer}" in options: [${optionsText.join(', ')}]`);
+            this.logger.warn(`[saveAnswerToItem] MCQ - Could not find text "${userAnswer}" in options: [${optionsText.join(', ')}]. Available options: ${optionsText.map((opt, idx) => `[${idx}]: "${opt}"`).join(', ')}`);
           }
         }
       }
