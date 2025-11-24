@@ -1007,6 +1007,44 @@ export class AttemptsService {
 
     this.logger.log(`[submitAttempt] Attempt submitted - attemptId: ${attemptIdStr}, totalAutoScore: ${attempt.totalAutoScore}, totalMaxScore: ${totalMax}, percentage: ${percentage}%`);
 
+    // بناء items مع isCorrect و correctAnswer
+    const items = (attempt.items as any[]).map(it => {
+      const itemResult: any = {
+        questionId: it.questionId,
+        itemIndex: (attempt.items as any[]).indexOf(it),
+        qType: it.qType,
+        points: it.points,
+        prompt: it.promptSnapshot,
+        autoScore: it.autoScore || 0,
+        isCorrect: (it.autoScore || 0) >= (it.points || 0), // صحيح إذا حصل على كامل النقاط
+      };
+
+      // إضافة الإجابة الصحيحة حسب نوع السؤال
+      if (it.qType === 'mcq') {
+        itemResult.studentAnswerIndexes = it.studentAnswerIndexes;
+        itemResult.options = it.optionsText;
+        itemResult.correctOptionIndexes = it.correctOptionIndexes;
+        // إضافة correctAnswer كنص (من optionsText)
+        if (Array.isArray(it.optionsText) && Array.isArray(it.correctOptionIndexes)) {
+          itemResult.correctAnswer = it.correctOptionIndexes.map((idx: number) => it.optionsText[idx]).join(', ');
+        }
+      } else if (it.qType === 'true_false') {
+        itemResult.studentAnswerBoolean = it.studentAnswerBoolean;
+        itemResult.correctAnswer = it.answerKeyBoolean;
+      } else if (it.qType === 'fill') {
+        itemResult.studentAnswerText = it.studentAnswerText;
+        itemResult.correctAnswer = it.fillExact || (it.regexList && it.regexList[0]) || '';
+      } else if (it.qType === 'match') {
+        itemResult.studentAnswerMatch = it.studentAnswerMatch;
+        itemResult.correctAnswer = it.answerKeyMatch;
+      } else if (it.qType === 'reorder') {
+        itemResult.studentAnswerReorder = it.studentAnswerReorder;
+        itemResult.correctAnswer = it.answerKeyReorder;
+      }
+
+      return itemResult;
+    });
+
     return {
       attemptId: attempt._id,
       status: attempt.status,
@@ -1014,6 +1052,7 @@ export class AttemptsService {
       totalMaxScore: attempt.totalMaxScore,
       finalScore: attempt.finalScore,
       percentage: percentage,
+      items: items, // إضافة items مع النتائج
     };
   }
 
