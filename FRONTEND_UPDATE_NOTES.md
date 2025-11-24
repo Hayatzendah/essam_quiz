@@ -110,7 +110,25 @@ function getStudentAnswer(item) {
 **الآن يمكنك إرسال الإجابات مع Submit:**
 
 ```javascript
-// ✅ صحيح - إرسال النص مباشرة
+// ✅ الأفضل - استخدام itemIndex (الأكثر دقة)
+await api.post(`/attempts/${attemptId}/submit`, {
+  answers: [
+    { itemIndex: 0, userAnswer: "den" },       // MCQ: نص + itemIndex
+    { itemIndex: 1, userAnswer: "خطأ" },       // TRUE_FALSE: نص + itemIndex
+    { itemIndex: 2, userAnswer: "den" }        // FILL: نص + itemIndex
+  ]
+});
+
+// ✅ صحيح - إرسال questionId
+await api.post(`/attempts/${attemptId}/submit`, {
+  answers: [
+    { itemId: "questionId123", userAnswer: "den" },  // MCQ: نص + questionId
+    { itemId: "questionId456", userAnswer: "خطأ" },  // TRUE_FALSE: نص + questionId
+    { itemId: "questionId789", userAnswer: "den" }   // FILL: نص + questionId
+  ]
+});
+
+// ⚠️ أقل دقة - استخدام itemId كـ index (string)
 await api.post(`/attempts/${attemptId}/submit`, {
   answers: [
     { itemId: "0", userAnswer: "den" },        // MCQ: نص
@@ -122,17 +140,20 @@ await api.post(`/attempts/${attemptId}/submit`, {
 // ✅ صحيح - إرسال index
 await api.post(`/attempts/${attemptId}/submit`, {
   answers: [
-    { itemId: "0", userAnswer: 1 },            // MCQ: index
-    { itemId: "1", userAnswer: false },        // TRUE_FALSE: boolean
-    { itemId: "2", userAnswer: "den" }         // FILL: نص
+    { itemIndex: 0, userAnswer: 1 },           // MCQ: index
+    { itemIndex: 1, userAnswer: false },       // TRUE_FALSE: boolean
+    { itemIndex: 2, userAnswer: "den" }        // FILL: نص
   ]
 });
 ```
 
 **ملاحظات مهمة:**
+- ✅ **الأفضل:** استخدام `itemIndex` (رقم السؤال في attempt) - الأكثر دقة
+- ✅ يمكن استخدام `itemId` مع `questionId` (من items عند بدء المحاولة)
 - ✅ يمكن إرسال النص ("den") أو index (1) لأسئلة MCQ
 - ✅ يمكن إرسال "صح"/"خطأ" أو true/false لأسئلة TRUE_FALSE
 - ✅ النظام سيقوم بالتحويل تلقائياً
+- ⚠️ **تجنب:** الاعتماد على ترتيب الإجابات في array (قد يكون غير دقيق)
 
 ---
 
