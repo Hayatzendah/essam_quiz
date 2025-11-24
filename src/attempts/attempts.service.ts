@@ -1026,9 +1026,20 @@ export class AttemptsService {
       if (typeof userAnswer === 'boolean') {
         item.studentAnswerBoolean = userAnswer;
       } else if (typeof userAnswer === 'string') {
-        const lower = userAnswer.toLowerCase();
+        const lower = userAnswer.toLowerCase().trim();
         // دعم "richtig"/"falsch" (ألماني) و "true"/"false" (إنجليزي) و "صح"/"خطأ" (عربي)
-        item.studentAnswerBoolean = lower === 'true' || lower === 'richtig' || lower === 'صح' || lower === '1';
+        const trueValues = ['true', 'richtig', 'صح', '1', 'yes', 'ja', 'نعم'];
+        const falseValues = ['false', 'falsch', 'خطأ', '0', 'no', 'nein', 'لا'];
+        
+        if (trueValues.includes(lower)) {
+          item.studentAnswerBoolean = true;
+        } else if (falseValues.includes(lower)) {
+          item.studentAnswerBoolean = false;
+        } else {
+          // افتراضي: Boolean conversion
+          item.studentAnswerBoolean = Boolean(userAnswer);
+          this.logger.warn(`[saveAnswerToItem] TRUE_FALSE - Unknown string value: "${userAnswer}", converted to: ${item.studentAnswerBoolean}`);
+        }
         this.logger.debug(`[saveAnswerToItem] TRUE_FALSE - questionId: ${item.questionId}, userAnswer: "${userAnswer}", converted to: ${item.studentAnswerBoolean}`);
       } else {
         item.studentAnswerBoolean = Boolean(userAnswer);
@@ -1039,11 +1050,25 @@ export class AttemptsService {
         item.studentAnswerIndexes = userAnswer;
       } else if (typeof userAnswer === 'number') {
         item.studentAnswerIndexes = [userAnswer];
-      } else {
-        // محاولة تحويل string إلى number
+      } else if (typeof userAnswer === 'string') {
+        // محاولة تحويل string إلى number أولاً
         const num = parseInt(userAnswer, 10);
         if (!isNaN(num)) {
           item.studentAnswerIndexes = [num];
+        } else {
+          // إذا لم يكن رقم، ابحث عن النص في optionsText
+          const optionsText = item.optionsText || [];
+          const index = optionsText.findIndex((opt: string) => {
+            const normalizedOpt = normalizeAnswer(opt);
+            const normalizedAnswer = normalizeAnswer(userAnswer);
+            return normalizedOpt === normalizedAnswer;
+          });
+          if (index >= 0) {
+            item.studentAnswerIndexes = [index];
+            this.logger.debug(`[saveAnswerToItem] MCQ - Found text "${userAnswer}" at index ${index} in options`);
+          } else {
+            this.logger.warn(`[saveAnswerToItem] MCQ - Could not find text "${userAnswer}" in options: [${optionsText.join(', ')}]`);
+          }
         }
       }
       this.logger.debug(`[saveAnswerToItem] MCQ - questionId: ${item.questionId}, userAnswer: ${JSON.stringify(userAnswer)}, studentAnswerIndexes: [${(item.studentAnswerIndexes || []).join(', ')}]`);
