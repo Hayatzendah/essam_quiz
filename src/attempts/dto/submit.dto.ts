@@ -4,7 +4,11 @@ import { Type } from 'class-transformer';
 export class SubmitAnswerDto {
   @IsOptional()
   @IsString()
-  itemId?: string;
+  itemId?: string; // questionId أو itemIndex (string)
+
+  @IsOptional()
+  @IsNumber()
+  itemIndex?: number; // رقم السؤال في attempt (0-based) - أفضل من itemId
 
   @IsOptional()
   userAnswer?: string | number | boolean | number[];

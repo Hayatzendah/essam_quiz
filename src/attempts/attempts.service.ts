@@ -923,7 +923,7 @@ export class AttemptsService {
     return auto;
   }
 
-  async submitAttempt(user: ReqUser, attemptIdStr: string, answers?: Array<{ itemId?: string; userAnswer?: any }>) {
+  async submitAttempt(user: ReqUser, attemptIdStr: string, answers?: Array<{ itemId?: string; itemIndex?: number; userAnswer?: any }>) {
     this.ensureStudent(user);
 
     const userId = user.userId || (user as any).sub || (user as any).id;
@@ -944,36 +944,52 @@ export class AttemptsService {
         let item: any = null;
         let itemIndex: number = -1;
         
-        if (answer.itemId) {
-          // البحث باستخدام questionId أو _id
+        // الأولوية: itemIndex (الأكثر دقة)
+        if (answer.itemIndex !== undefined && typeof answer.itemIndex === 'number') {
+          const idx = answer.itemIndex;
+          if (idx >= 0 && idx < (attempt.items as any[]).length) {
+            item = (attempt.items as any[])[idx];
+            itemIndex = idx;
+            this.logger.debug(`[submitAttempt] Found item using itemIndex: ${idx}`);
+          } else {
+            this.logger.warn(`[submitAttempt] Invalid itemIndex: ${idx}, items count: ${(attempt.items as any[]).length}`);
+          }
+        }
+        
+        // الثاني: itemId (questionId أو index كـ string)
+        if (!item && answer.itemId) {
+          // البحث باستخدام questionId
           const foundIndex = (attempt.items as any[]).findIndex((it: any) => 
-            it.questionId?.toString() === answer.itemId || it._id?.toString() === answer.itemId
+            it.questionId?.toString() === answer.itemId
           );
           
           if (foundIndex >= 0) {
             item = (attempt.items as any[])[foundIndex];
             itemIndex = foundIndex;
+            this.logger.debug(`[submitAttempt] Found item using questionId: ${answer.itemId} at index ${foundIndex}`);
           } else {
             // محاولة البحث باستخدام index (itemId كرقم)
             const parsedIndex = parseInt(answer.itemId, 10);
             if (!isNaN(parsedIndex) && parsedIndex >= 0 && parsedIndex < (attempt.items as any[]).length) {
               item = (attempt.items as any[])[parsedIndex];
               itemIndex = parsedIndex;
+              this.logger.debug(`[submitAttempt] Found item using itemId as index: ${parsedIndex}`);
             }
           }
         }
         
-        // إذا لم نجد item باستخدام itemId، استخدم index في array
+        // الأخير: استخدام answerIndex (فقط إذا لم نجد item) - ⚠️ قد يكون غير دقيق
         if (!item && answerIndex < (attempt.items as any[]).length) {
           item = (attempt.items as any[])[answerIndex];
           itemIndex = answerIndex;
+          this.logger.warn(`[submitAttempt] Using answerIndex ${answerIndex} as itemIndex - this may be incorrect if answers are not in order!`);
         }
         
         if (item) {
           this.saveAnswerToItem(item, answer.userAnswer);
-          this.logger.debug(`[submitAttempt] Saved answer ${answerIndex} for itemIndex ${itemIndex} (questionId: ${item.questionId}, qType: ${item.qType}) - userAnswer: ${JSON.stringify(answer.userAnswer)}`);
+          this.logger.debug(`[submitAttempt] Saved answer ${answerIndex} for itemIndex ${itemIndex} (questionId: ${item.questionId}, qType: ${item.qType}, prompt: "${item.promptSnapshot?.substring(0, 50)}...") - userAnswer: ${JSON.stringify(answer.userAnswer)}`);
         } else {
-          this.logger.warn(`[submitAttempt] Could not find item for answer ${answerIndex}: ${JSON.stringify(answer)}`);
+          this.logger.error(`[submitAttempt] Could not find item for answer ${answerIndex}: ${JSON.stringify(answer)}. Available items count: ${(attempt.items as any[]).length}`);
         }
       }
       
