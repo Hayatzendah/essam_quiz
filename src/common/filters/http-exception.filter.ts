@@ -39,17 +39,29 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack);
     }
 
+    // استخراج تفاصيل إضافية من error object
+    const errorDetails = typeof error === 'object' ? error : { message: error };
+    const errorCode = (errorDetails as any)?.code || status;
+    const errorMessage = Array.isArray(message) ? message.join(', ') : message;
+    const validationErrors = (errorDetails as any)?.errors || (errorDetails as any)?.details || null;
+
     const errorResponse = {
       status: 'error',
-      code: status,
-      message: Array.isArray(message) ? message.join(', ') : message,
-      error: typeof error === 'object' ? error : { message: error },
+      code: errorCode,
+      message: errorMessage,
+      error: errorDetails,
+      ...(validationErrors && { errors: validationErrors }),
       path: request.url,
       method: request.method,
       timestamp: new Date().toISOString(),
     };
 
-    this.logger.error(`${request.method} ${request.url} - ${status} - ${message}`);
+    this.logger.error(
+      `${request.method} ${request.url} - ${status} - ${errorMessage}`,
+    );
+    if (validationErrors) {
+      this.logger.error(`Validation errors: ${JSON.stringify(validationErrors)}`);
+    }
 
     response.status(status).json(errorResponse);
   }
