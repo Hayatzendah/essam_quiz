@@ -638,33 +638,109 @@ Authorization: Bearer <accessToken>
 Authorization: Bearer <accessToken>
 ```
 
-**Body (مثال عام):**
+**Body (مثال Goethe A1 - للظهور في الفرونت):**
 ```json
 {
-  "title": "امتحان اللغة الألمانية",
-  "description": "وصف الامتحان", // اختياري
-  "level": "B1", // اختياري: A1, A2, B1, B2, C1, C2
-  "provider": "telc", // اختياري: telc, Goethe, ÖSD, ECL, DTB, DTZ, Deutschland-in-Leben, Grammatik, Wortschatz
+  "title": "Goethe-Zertifikat A1 - Start Deutsch 1",
+  "description": "امتحان Goethe A1 الرسمي - يتضمن جميع المهارات الأربع",
+  "level": "A1",
+  "provider": "goethe",
   "sections": [
     {
       "name": "Hören - Teil 1",
-      "skill": "HOEREN", // اختياري: HOEREN | LESEN | SCHREIBEN | SPRECHEN
-      "label": "Hören - Teil 1", // اختياري: تسمية القسم (افتراضي: name)
-      "durationMin": 20, // اختياري: مدة القسم بالدقائق
-      "partsCount": 3, // اختياري: عدد الأجزاء (يُحسب تلقائياً من items/quota إذا لم يتم تحديده)
-      "quota": 3, // عدد الأسئلة العشوائية
-      "tags": ["Hören", "Teil-1"], // اختياري: للفلترة
-      "difficultyDistribution": { // اختياري
+      "skill": "HOEREN",
+      "label": "الاستماع - الجزء الأول",
+      "durationMin": 20,
+      "partsCount": 5,
+      "quota": 5,
+      "tags": ["Hören", "A1", "Goethe"],
+      "difficultyDistribution": {
+        "easy": 3,
+        "medium": 2,
+        "hard": 0
+      }
+    },
+    {
+      "name": "Lesen - Teil 1",
+      "skill": "LESEN",
+      "label": "القراءة - الجزء الأول",
+      "durationMin": 25,
+      "partsCount": 4,
+      "quota": 6,
+      "tags": ["Lesen", "A1", "Goethe"],
+      "difficultyDistribution": {
+        "easy": 4,
+        "medium": 2,
+        "hard": 0
+      }
+    },
+    {
+      "name": "Schreiben - Teil 1",
+      "skill": "SCHREIBEN",
+      "label": "الكتابة - الجزء الأول",
+      "durationMin": 20,
+      "partsCount": 2,
+      "quota": 3,
+      "tags": ["Schreiben", "A1", "Goethe"],
+      "difficultyDistribution": {
+        "easy": 2,
+        "medium": 1,
+        "hard": 0
+      }
+    },
+    {
+      "name": "Sprechen - Teil 1",
+      "skill": "SPRECHEN",
+      "label": "المحادثة - الجزء الأول",
+      "durationMin": 15,
+      "partsCount": 2,
+      "quota": 2,
+      "tags": ["Sprechen", "A1", "Goethe"],
+      "difficultyDistribution": {
         "easy": 1,
         "medium": 1,
-        "hard": 1
+        "hard": 0
       }
     }
   ],
-  "randomizeQuestions": true, // خلط ترتيب الأسئلة
-  "attemptLimit": 3, // عدد المحاولات المسموحة (0 = غير محدود)
-  "timeLimitMin": 60, // الوقت بالدقائق (0 = غير محدود)
-  "status": "draft" // draft | published | archived
+  "randomizeQuestions": true,
+  "attemptLimit": 3,
+  "timeLimitMin": 80,
+  "status": "published"
+}
+```
+
+**Body (مثال عام - مع items بدلاً من quota):**
+```json
+{
+  "title": "امتحان اللغة الألمانية",
+  "description": "وصف الامتحان",
+  "level": "B1",
+  "provider": "telc",
+  "sections": [
+    {
+      "name": "Hören - Teil 1",
+      "skill": "HOEREN",
+      "label": "Hören - Teil 1",
+      "durationMin": 20,
+      "partsCount": 3,
+      "items": [
+        {
+          "questionId": "QUESTION_ID_1",
+          "points": 1
+        },
+        {
+          "questionId": "QUESTION_ID_2",
+          "points": 1
+        }
+      ],
+      "tags": ["Hören", "Teil-1"]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 3,
+  "timeLimitMin": 60,
+  "status": "published"
 }
 ```
 
@@ -722,6 +798,14 @@ Authorization: Bearer <accessToken>
 ```
 
 **الاستخدام:** للمعلمين والأدمن لإنشاء امتحان جديد
+
+**📌 ملاحظة مهمة جداً - لجعل الامتحان يظهر في الفرونت:**
+1. **يجب أن يكون `"status": "published"`** (ليس `"draft"`)
+2. الفرونت يستخدم `GET /exams/public?level=A1&provider=goethe` الذي يعرض فقط الامتحانات المنشورة
+3. إذا كان `status: "draft"`، لن يظهر في الفرونت
+4. بعد إنشاء الامتحان بـ `status: "published"`، سيظهر تلقائياً في:
+   - `GET /exams/public?level=A1&provider=goethe`
+   - `GET /exams/{examId}/public`
 
 ---
 
