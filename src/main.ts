@@ -159,14 +159,23 @@ async function bootstrap() {
         exceptionFactory: (errors) => {
           const messages = errors.map((error) => {
             const constraints = error.constraints || {};
-            return Object.values(constraints).join(', ');
+            const property = error.property;
+            const value = error.value;
+            return {
+              property,
+              value,
+              constraints: Object.values(constraints),
+            };
           });
+          const logger = new Logger('ValidationPipe');
+          logger.error(`Validation failed: ${JSON.stringify(messages)}`);
           return new HttpException(
             {
               status: 'error',
               code: 400,
               message: 'Validation failed',
-              errors: messages,
+              errors: messages.map((m) => `${m.property}: ${m.constraints.join(', ')}`),
+              details: messages,
             },
             400,
           );

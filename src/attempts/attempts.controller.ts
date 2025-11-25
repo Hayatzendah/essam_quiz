@@ -100,6 +100,9 @@ export class AttemptsController {
     this.logger.log(
       `[POST /attempts] Request received - examId: ${dto?.examId}, mode: ${mode}, userId: ${req.user?.userId}, role: ${req.user?.role}`,
     );
+    this.logger.debug(
+      `[POST /attempts] Full request body: ${JSON.stringify(dto)}, user: ${JSON.stringify({ userId: req.user?.userId, role: req.user?.role })}`,
+    );
 
     if (!dto?.examId) {
       this.logger.error(
@@ -149,8 +152,28 @@ export class AttemptsController {
       return result;
     } catch (error: any) {
       this.logger.error(
-        `[POST /attempts] Error creating attempt - examId: ${dto.examId}, mode: ${mode}, error: ${error.message}, stack: ${error.stack}`,
+        `[POST /attempts] Error creating attempt - examId: ${dto.examId}, mode: ${mode}, error: ${error.message}`,
       );
+      this.logger.error(
+        `[POST /attempts] Error details - code: ${error?.response?.code || error?.code || 'UNKNOWN'}, message: ${error?.response?.message || error?.message || 'Unknown error'}`,
+      );
+      this.logger.error(
+        `[POST /attempts] Error stack: ${error.stack}`,
+      );
+      
+      // إذا كان الخطأ من class-validator (validation error)
+      if (error?.response?.message && Array.isArray(error.response.message)) {
+        this.logger.error(
+          `[POST /attempts] Validation errors: ${JSON.stringify(error.response.message)}`,
+        );
+        throw new BadRequestException({
+          code: 'VALIDATION_ERROR',
+          message: 'Request validation failed',
+          errors: error.response.message,
+          received: dto,
+        });
+      }
+      
       // إعادة رمي الخطأ كما هو (BadRequestException أو ForbiddenException)
       throw error;
     }
