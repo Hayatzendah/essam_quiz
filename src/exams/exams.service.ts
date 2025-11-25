@@ -435,12 +435,26 @@ export class ExamsService {
                       partsCount = s.quota;
                     }
 
-                    return {
+                    // استخدام partsCount من الحقل إذا كان موجوداً، وإلا استخدم المحسوب
+                    const finalPartsCount = typeof s.partsCount === 'number' && s.partsCount > 0 
+                      ? s.partsCount 
+                      : partsCount;
+
+                    // بناء object مع جميع الحقول المطلوبة
+                    const sectionObj: any = {
                       skill: s.skill || undefined,
-                      label: s.label || s.name || '',
-                      durationMin: s.durationMin || undefined,
-                      partsCount: s.partsCount || partsCount,
+                      label: s.label || s.name || '', // label مطلوب دائماً
                     };
+
+                    // إضافة durationMin إذا كان موجوداً
+                    if (typeof s.durationMin === 'number' && s.durationMin > 0) {
+                      sectionObj.durationMin = s.durationMin;
+                    }
+
+                    // إضافة partsCount دائماً (حتى لو كان 0)
+                    sectionObj.partsCount = finalPartsCount;
+
+                    return sectionObj;
                   })
                   .filter((s: any) => s !== null)
               : [];

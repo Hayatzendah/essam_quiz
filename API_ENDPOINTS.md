@@ -974,30 +974,48 @@ Content-Type: application/json
 {
   "items": [
     {
-      "id": "examId123",
-      "title": "telc B1 - Hören",
-      "level": "B1",
-      "provider": "telc",
-      "timeLimitMin": 60,
+      "id": "69262594a15c6ab8ea5b2751",
+      "title": "Goethe-Zertifikat A1 - Start Deutsch 1",
+      "level": "A1",
+      "provider": "goethe",
+      "timeLimitMin": 80,
       "sections": [
         {
           "skill": "HOEREN",
           "label": "Hören - Teil 1",
           "durationMin": 20,
-          "partsCount": 3
+          "partsCount": 5
         },
         {
           "skill": "LESEN",
           "label": "Lesen - Teil 1",
-          "durationMin": 30,
-          "partsCount": 5
+          "durationMin": 25,
+          "partsCount": 4
+        },
+        {
+          "skill": "SCHREIBEN",
+          "label": "Schreiben - Teil 1",
+          "durationMin": 20,
+          "partsCount": 2
+        },
+        {
+          "skill": "SPRECHEN",
+          "label": "Sprechen - Teil 1",
+          "durationMin": 15,
+          "partsCount": 2
         }
       ]
     }
   ],
-  "count": 25
+  "count": 1
 }
 ```
+
+**ملاحظات على الـ Response:**
+- `sections[]` يحتوي على: `skill`, `label`, `durationMin`, `partsCount`
+- `label` يستخدم `name` كقيمة افتراضية إذا لم يتم تحديد `label`
+- `partsCount` يُحسب تلقائياً من `items.length` أو `quota` إذا لم يتم تحديده
+- `durationMin` و `partsCount` قد يكونان `undefined` إذا لم يتم تحديدهما في Exam
 
 **ملاحظات:**
 - يعرض فقط الامتحانات المنشورة (status = published)
