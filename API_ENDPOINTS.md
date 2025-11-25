@@ -14,10 +14,13 @@
 https://api.deutsch-tests.com
 ```
 
-**ملاحظة:** في التطوير المحلي، يمكن استخدام:
+**⚠️ مهم للتطوير المحلي:**
+- في التطوير المحلي، **يجب** استخدام:
 ```
 http://localhost:4000
 ```
+- لا تستخدم `api.deutsch-tests.com` في التطوير المحلي (سيسبب ERR_NAME_NOT_RESOLVED)
+- تأكد من أن الـ Backend يعمل على `http://localhost:4000` قبل إجراء الطلبات
 
 ---
 
@@ -55,8 +58,11 @@ http://localhost:4000
 ```javascript
 import axios from 'axios';
 
+// ⚠️ مهم: في التطوير المحلي، استخدم http://localhost:4000
 const api = axios.create({
-  baseURL: 'https://api.deutsch-tests.com', // بدون /api (ما فيش global prefix)
+  baseURL: process.env.NODE_ENV === 'production' 
+    ? 'https://api.deutsch-tests.com' 
+    : 'http://localhost:4000', // للتطوير المحلي
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -636,11 +642,16 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "title": "امتحان اللغة الألمانية",
-  "level": "B1", // اختياري: A1, A2, B1, B2, C1
+  "description": "وصف الامتحان", // اختياري
+  "level": "B1", // اختياري: A1, A2, B1, B2, C1, C2
   "provider": "telc", // اختياري: telc, Goethe, ÖSD, ECL, DTB, DTZ, Deutschland-in-Leben, Grammatik, Wortschatz
   "sections": [
     {
       "name": "Hören - Teil 1",
+      "skill": "HOEREN", // اختياري: HOEREN | LESEN | SCHREIBEN | SPRECHEN
+      "label": "Hören - Teil 1", // اختياري: تسمية القسم (افتراضي: name)
+      "durationMin": 20, // اختياري: مدة القسم بالدقائق
+      "partsCount": 3, // اختياري: عدد الأجزاء (يُحسب تلقائياً من items/quota إذا لم يتم تحديده)
       "quota": 3, // عدد الأسئلة العشوائية
       "tags": ["Hören", "Teil-1"], // اختياري: للفلترة
       "difficultyDistribution": { // اختياري
@@ -728,11 +739,16 @@ Authorization: Bearer <accessToken>
 ```json
 {
   "title": "تمرين اللغة الألمانية",
+  "description": "وصف التمرين", // اختياري
   "level": "B1", // اختياري
   "provider": "telc", // اختياري
   "sections": [
     {
       "name": "Exercises",
+      "skill": "HOEREN", // اختياري: HOEREN | LESEN | SCHREIBEN | SPRECHEN
+      "label": "Exercises", // اختياري: تسمية القسم (افتراضي: name)
+      "durationMin": 20, // اختياري: مدة القسم بالدقائق
+      "partsCount": 2, // اختياري: عدد الأجزاء (يُحسب تلقائياً من items/quota إذا لم يتم تحديده)
       "items": [
         { "questionId": "...", "points": 1 },
         { "questionId": "...", "points": 2 }
@@ -850,6 +866,199 @@ Authorization: Bearer <accessToken>
 ```
 
 **الاستخدام:** للطالب لرؤية جميع الامتحانات المتاحة له (منشورة وغير مخصصة أو مخصصة له، ولم يتجاوز حد المحاولات)
+
+---
+
+### `GET /exams/public`
+**الوصف:** عرض قائمة الامتحانات المنشورة للطلاب (Public endpoint)  
+**المصادقة:** غير مطلوبة (Public endpoint)  
+**الأدوار المسموحة:** جميع المستخدمين (طلاب ومعلمين)
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**ملاحظة:** هذا endpoint Public - لا يحتاج JWT Token
+
+**Query Parameters:**
+- `level`: فلترة حسب المستوى (A1, A2, B1, B2, C1, C2) - اختياري
+- `provider`: فلترة حسب المزود (goethe, telc, oesd, dtb, dtz, ecl) - اختياري
+
+**Response (200):**
+```json
+{
+  "items": [
+    {
+      "id": "examId123",
+      "title": "telc B1 - Hören",
+      "level": "B1",
+      "provider": "telc",
+      "timeLimitMin": 60,
+      "sections": [
+        {
+          "skill": "HOEREN",
+          "label": "Hören - Teil 1",
+          "durationMin": 20,
+          "partsCount": 3
+        },
+        {
+          "skill": "LESEN",
+          "label": "Lesen - Teil 1",
+          "durationMin": 30,
+          "partsCount": 5
+        }
+      ]
+    }
+  ],
+  "count": 25
+}
+```
+
+**ملاحظات:**
+- يعرض فقط الامتحانات المنشورة (status = published)
+- يفلتر حسب `level` و `provider` إذا تم إرسالهما
+- لا يعرض الأسئلة، فقط هيكل الأقسام
+- `partsCount` يُحسب تلقائياً من `items` أو `quota` إذا لم يتم تحديده
+- `label` يستخدم `name` كقيمة افتراضية إذا لم يتم تحديده
+
+**أمثلة على الاستخدام:**
+
+**1. جلب جميع الامتحانات المنشورة:**
+```javascript
+api.get('/exams/public');
+```
+
+**2. فلترة حسب المستوى:**
+```javascript
+api.get('/exams/public', {
+  params: {
+    level: 'B1'
+  }
+});
+```
+
+**3. فلترة حسب المستوى والمزود:**
+```javascript
+api.get('/exams/public', {
+  params: {
+    level: 'B1',
+    provider: 'goethe'
+  }
+});
+```
+
+**4. استخدام في React/Vue:**
+```javascript
+// جلب الامتحانات المنشورة مع الفلترة
+useEffect(() => {
+  api.get('/exams/public', {
+    params: {
+      level: selectedLevel, // 'A1', 'A2', 'B1', etc.
+      provider: selectedProvider // 'goethe', 'telc', etc.
+    }
+  })
+    .then(res => {
+      setExams(res.data.items);
+    })
+    .catch(err => {
+      console.error('Error loading exams:', err);
+    });
+}, [selectedLevel, selectedProvider]);
+```
+
+**⚠️ مهم للتطوير المحلي:**
+- في التطوير المحلي، تأكد من استخدام `http://localhost:4000` كـ baseURL
+- مثال: `const api = axios.create({ baseURL: 'http://localhost:4000' });`
+- لا تستخدم `api.deutsch-tests.com` في التطوير المحلي (سيسبب ERR_NAME_NOT_RESOLVED)
+
+**الاستخدام:**
+- **لصفحة Prüfungen في الفرونت:** عرض قائمة الامتحانات المنشورة مع إمكانية الفلترة
+- **للفلترة:** فلترة الامتحانات حسب المستوى والمزود
+
+---
+
+### `GET /exams/:examId/public`
+**الوصف:** عرض تفاصيل امتحان معين للطالب (Public endpoint)  
+**المصادقة:** غير مطلوبة (Public endpoint)  
+**الأدوار المسموحة:** جميع المستخدمين
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**ملاحظة:** هذا endpoint Public - لا يحتاج JWT Token
+
+**Path Parameters:**
+- `examId`: معرف الامتحان (MongoDB ObjectId)
+
+**Response (200):**
+```json
+{
+  "id": "examId123",
+  "title": "telc B1 - Hören",
+  "description": "امتحان telc B1 للاستماع",
+  "level": "B1",
+  "provider": "telc",
+  "timeLimitMin": 60,
+  "attemptLimit": 3,
+  "sections": [
+    {
+      "skill": "HOEREN",
+      "label": "Hören - Teil 1",
+      "durationMin": 20,
+      "partsCount": 3
+    },
+    {
+      "skill": "LESEN",
+      "label": "Lesen - Teil 1",
+      "durationMin": 30,
+      "partsCount": 5
+    }
+  ]
+}
+```
+
+**Response (404):**
+```json
+{
+  "statusCode": 404,
+  "message": "Exam not found",
+  "error": "Not Found"
+}
+```
+
+**ملاحظات:**
+- يعرض فقط الامتحانات المنشورة (status = published)
+- لا يعرض الأسئلة نفسها، فقط هيكل الأقسام
+- `partsCount` يُحسب تلقائياً من `items` أو `quota` إذا لم يتم تحديده
+- `label` يستخدم `name` كقيمة افتراضية إذا لم يتم تحديده
+
+**أمثلة على الاستخدام:**
+
+**1. جلب تفاصيل امتحان محدد:**
+```javascript
+api.get('/exams/examId123/public');
+```
+
+**2. استخدام في React/Vue:**
+```javascript
+// جلب تفاصيل امتحان محدد
+const fetchExamDetails = async (examId) => {
+  try {
+    const res = await api.get(`/exams/${examId}/public`);
+    setExamDetails(res.data);
+    setSections(res.data.sections);
+  } catch (err) {
+    console.error('Error loading exam details:', err);
+  }
+};
+```
+
+**الاستخدام:**
+- **لصفحة تفاصيل الامتحان:** عرض تفاصيل الامتحان قبل البدء
+- **لربط زر "ابدأ الامتحان":** عرض معلومات الامتحان قبل بدء المحاولة
 
 ---
 
@@ -978,6 +1187,60 @@ const startExamAttempt = async (examId) => {
 **الاستخدام:**
 - **لصفحة التمارين:** بدء محاولة على exam جاهز (مجهز من المعلم)
 - **بديل لـ POST /exams:** للطلاب عند بدء محاولة على exam موجود
+
+---
+
+**أمثلة على استخدام POST /attempts:**
+
+**1. بدء محاولة عادية (exam mode):**
+```javascript
+api.post('/attempts', {
+  examId: 'examId123',
+  mode: 'exam'
+});
+```
+
+**2. بدء محاولة تمرين (training mode):**
+```javascript
+api.post('/attempts', {
+  examId: 'examId123',
+  mode: 'training'
+});
+```
+
+**3. استخدام في React/Vue:**
+```javascript
+// بدء محاولة على exam مع تحديد mode
+const startAttempt = async (examId, mode = 'exam') => {
+  try {
+    const res = await api.post('/attempts', {
+      examId,
+      mode
+    });
+    // حفظ attemptId و timeLimitMin للاستخدام لاحقاً
+    setAttemptId(res.data.attemptId);
+    setQuestions(res.data.items);
+    setTimeLimitMin(res.data.timeLimitMin);
+    setStatus(res.data.status);
+  } catch (err) {
+    console.error('Error starting attempt:', err);
+  }
+};
+
+// ربط زر "ابدأ امتحان تجريبي"
+const handleStartExam = () => {
+  startAttempt(selectedExamId, 'exam');
+};
+
+// ربط زر "ابدأ تمرين"
+const handleStartTraining = () => {
+  startAttempt(selectedExamId, 'training');
+};
+```
+
+**الاستخدام:**
+- **لصفحة Prüfungen:** ربط زر "ابدأ الامتحان" مع الـ Attempts
+- **لصفحة التمارين:** بدء محاولة تمرين على exam موجود
 
 ---
 
@@ -2087,14 +2350,17 @@ Authorization: Bearer <accessToken>
 **Body:**
 ```json
 {
-  "examId": "examId123"  // ⚠️ مهم: يجب أن يكون MongoId صحيح (24 حرف hex)
+  "examId": "examId123",  // ⚠️ مهم: يجب أن يكون MongoId صحيح (24 حرف hex)
+  "mode": "exam"  // اختياري: "exam" | "training" (افتراضي: "exam")
 }
 ```
 
 **⚠️ ملاحظات مهمة:**
 - `examId` **مطلوب** ويجب أن يكون MongoId صحيح (مثل: `"6759a0c0..."`)
+- `mode` اختياري: يمكن أن يكون `"exam"` أو `"training"` (افتراضي: `"exam"`)
 - إذا كان `examId` غير موجود أو غير صحيح، ستحصل على `400 Bad Request`
 - تأكد من أن الـ Frontend يرسل `examId` وليس `id` أو `exam` أو أي اسم آخر
+- يستخدم منطق AttemptsModule لاختيار الأسئلة وإنشاء Attempt جديد
 
 **Response (201):**
 ```json
@@ -2104,6 +2370,7 @@ Authorization: Bearer <accessToken>
   "status": "in-progress",
   "attemptCount": 1,
   "expiresAt": "2024-01-01T11:00:00.000Z",
+  "timeLimitMin": 60,
   "items": [
     {
       "questionId": "...",
@@ -2118,6 +2385,13 @@ Authorization: Bearer <accessToken>
   ]
 }
 ```
+
+**ملاحظات:**
+- Response يحتوي على `attemptId + items + timeLimitMin` ليتم عرض الأسئلة للطالب
+- الأسئلة لا تحتوي على `isCorrect` (لحماية الإجابات)
+- ترتيب الخيارات مختلط عشوائياً إذا كان `randomizeQuestions: true`
+- الأسئلة مختلطة عشوائياً إذا كان `randomizeQuestions: true`
+- **للاختبارات "Deutschland-in-Leben":** يتم استخدام `student.state` (الولاية) تلقائياً لفلترة أسئلة الولاية
 
 **ملاحظات:**
 - الأسئلة لا تحتوي على `isCorrect` (لحماية الإجابات)

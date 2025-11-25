@@ -57,11 +57,18 @@ export class AttemptsController {
   }
 
   // بدء محاولة امتحان (طالب فقط)
+  // Body: { "examId": "...", "mode": "exam" | "training" }
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
+  @ApiOperation({ summary: 'Start attempt on exam', description: 'بدء محاولة على امتحان - يستخدم منطق AttemptsModule لاختيار الأسئلة وإنشاء Attempt جديد' })
+  @ApiResponse({ status: 201, description: 'Attempt started successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - exam not found, not published, or attempt limit reached' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   async start(@Body() dto: StartAttemptDto, @Req() req: any) {
-    this.logger.log(`[POST /attempts] Request received - examId: ${dto?.examId}, userId: ${req.user?.userId}, role: ${req.user?.role}`);
+    const mode = dto.mode || 'exam';
+    this.logger.log(`[POST /attempts] Request received - examId: ${dto?.examId}, mode: ${mode}, userId: ${req.user?.userId}, role: ${req.user?.role}`);
     
     if (!dto?.examId) {
       this.logger.error(`[POST /attempts] Missing examId in request body. Received: ${JSON.stringify(dto)}`);
@@ -73,11 +80,13 @@ export class AttemptsController {
     }
 
     try {
+      // استخدام startAttempt في كلا الحالتين (exam و training)
+      // يمكن توسيع هذا لاحقاً لإضافة معالجة مختلفة للـ training mode
       const result = await this.service.startAttempt(dto.examId, req.user);
       const attemptId = (result as any)?._id || (result as any)?.id || (result as any)?.attemptId || 'unknown';
       const itemsCount = (result as any)?.items?.length || 0;
       
-      this.logger.log(`[POST /attempts] Attempt created successfully - examId: ${dto.examId}, attemptId: ${attemptId}, itemsCount: ${itemsCount}`);
+      this.logger.log(`[POST /attempts] Attempt created successfully - examId: ${dto.examId}, mode: ${mode}, attemptId: ${attemptId}, itemsCount: ${itemsCount}`);
       
       if (itemsCount === 0) {
         this.logger.error(`[POST /attempts] WARNING: Attempt created with 0 items! Response: ${JSON.stringify({
@@ -95,9 +104,15 @@ export class AttemptsController {
         })}`);
       }
       
-      return result;
+      // إرجاع attemptId + items + timeLimitMin
+      return {
+        attemptId: attemptId,
+        items: result?.items || [],
+        timeLimitMin: result?.timeLimitMin || 0,
+        ...result,
+      };
     } catch (error: any) {
-      this.logger.error(`[POST /attempts] Error creating attempt - examId: ${dto.examId}, error: ${error.message}, stack: ${error.stack}`);
+      this.logger.error(`[POST /attempts] Error creating attempt - examId: ${dto.examId}, mode: ${mode}, error: ${error.message}, stack: ${error.stack}`);
       // إعادة رمي الخطأ كما هو (BadRequestException أو ForbiddenException)
       throw error;
     }

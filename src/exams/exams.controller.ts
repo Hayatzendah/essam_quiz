@@ -96,6 +96,34 @@ export class ExamsController {
     return this.service.findAvailableForStudent(req.user, q);
   }
 
+  // قائمة الامتحانات المنشورة للطلاب (Public endpoint)
+  // Public endpoint - لا يحتاج JWT
+  @Get('public')
+  @ApiOperation({ summary: 'Get published exams for students', description: 'عرض قائمة الامتحانات المنشورة فقط - Public endpoint (لا يحتاج JWT)' })
+  @ApiResponse({ status: 200, description: 'List of published exams' })
+  async findPublic(@Query() q: QueryExamDto) {
+    this.logger.log(`[GET /exams/public] Request received - level: ${q?.level}, provider: ${q?.provider}, page: ${(q as any)?.page}, limit: ${(q as any)?.limit}`);
+    try {
+      const result = await this.service.findPublicExams(q);
+      this.logger.log(`[GET /exams/public] Success - found ${result.count} exams`);
+      return result;
+    } catch (error: any) {
+      this.logger.error(`[GET /exams/public] Error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  // تفاصيل امتحان معين للطالب (Public endpoint)
+  // Public endpoint - لا يحتاج JWT
+  @Get(':examId/public')
+  @ApiOperation({ summary: 'Get exam details for students', description: 'عرض تفاصيل الامتحان المتاحة للطالب - لا يعرض الأسئلة، فقط هيكل الأقسام - Public endpoint (لا يحتاج JWT)' })
+  @ApiResponse({ status: 200, description: 'Exam details' })
+  @ApiResponse({ status: 404, description: 'Exam not found' })
+  findPublicById(@Param('examId') examId: string) {
+    this.logger.log(`[GET /exams/${examId}/public] Request received`);
+    return this.service.findPublicExamById(examId);
+  }
+
   // تفاصيل الامتحان
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)

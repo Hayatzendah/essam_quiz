@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsMongoId, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested, ArrayMinSize } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsMongoId, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested, ArrayMinSize } from 'class-validator';
 import { ExamStatus } from '../schemas/exam.schema';
 
 class SectionItemDto {
@@ -15,6 +15,19 @@ class DifficultyDistributionDto {
 
 class ExamSectionDto {
   @IsString() @IsNotEmpty() name: string;
+
+  @IsOptional() @IsString()
+  @IsIn(['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'])
+  skill?: 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
+
+  @IsOptional() @IsString()
+  label?: string;
+
+  @IsOptional() @IsNumber() @Min(0)
+  durationMin?: number;
+
+  @IsOptional() @IsNumber() @Min(0)
+  partsCount?: number;
 
   @IsOptional() @IsArray() @ArrayMinSize(1)
   @ValidateNested({ each: true }) @Type(() => SectionItemDto)
@@ -35,6 +48,7 @@ class ExamSectionDto {
 
 export class CreateExamDto {
   @IsString() @IsNotEmpty() title: string;
+  @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() level?: string;
   @IsOptional() @IsString() provider?: string;
 
@@ -62,6 +76,7 @@ export class CreateExamDto {
 // DTO للـ practice exam - يجعل title اختياري
 export class CreatePracticeExamDto {
   @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() level?: string;
   @IsOptional() @IsString() provider?: string;
 

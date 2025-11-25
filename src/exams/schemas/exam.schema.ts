@@ -31,6 +31,26 @@ const DifficultyDistributionSchema = SchemaFactory.createForClass(DifficultyDist
 export class ExamSection {
   @Prop({ required: true, trim: true }) name: string;
 
+  // مهارة القسم: HOEREN, LESEN, SCHREIBEN, SPRECHEN
+  @Prop({ 
+    type: String, 
+    enum: ['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'],
+    trim: true 
+  })
+  skill?: 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
+
+  // تسمية القسم (يمكن استخدام name أو label)
+  @Prop({ trim: true })
+  label?: string;
+
+  // مدة القسم بالدقائق
+  @Prop({ type: Number, min: 0 })
+  durationMin?: number;
+
+  // عدد الأجزاء في القسم (يمكن حسابه من items/quota)
+  @Prop({ type: Number, min: 0 })
+  partsCount?: number;
+
   // طريقة 1: أسئلة ثابتة
   @Prop({ type: [SectionItemSchema], default: undefined })
   items?: SectionItem[];
@@ -55,6 +75,7 @@ const ExamSectionSchema = SchemaFactory.createForClass(ExamSection);
 @Schema({ timestamps: true })
 export class Exam {
   @Prop({ required: true, trim: true }) title: string;
+  @Prop({ trim: true }) description?: string;
   @Prop({ trim: true }) level?: string;
   @Prop({ trim: true }) provider?: string; // telc, Goethe, ÖSD, ECL, DTB, DTZ, Deutschland-in-Leben, Grammatik, Wortschatz
 

@@ -1,4 +1,5 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ExamStatus } from '../schemas/exam.schema';
 
 export class QueryExamDto {
@@ -13,6 +14,12 @@ export class QueryExamDto {
 
   @IsOptional() @IsString()
   state?: string; // الولاية الألمانية (Bundesland) - للفلترة حسب tags في sections
+
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+  page?: number;
+
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+  limit?: number;
 }
 
 

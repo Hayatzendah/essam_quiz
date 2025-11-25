@@ -319,6 +319,158 @@ export class ExamsService {
     return { items: availableExams, count: availableExams.length };
   }
 
+  /**
+   * عرض قائمة الامتحانات المنشورة للطلاب (Public endpoint)
+   * - يعرض فقط الامتحانات المنشورة (status = published)
+   * - يفلتر حسب level و provider إذا تم إرسالهما
+   * - Response: id, title, level, provider, timeLimitMin, sections[]
+   */
+  async findPublicExams(q: QueryExamDto) {
+    try {
+      this.logger.log(`[findPublicExams] Starting - level: ${q?.level}, provider: ${q?.provider}`);
+      
+      const filter: any = {
+        status: ExamStatus.PUBLISHED,
+      };
+
+      // فلترة حسب level و provider
+      if (q?.level) {
+        filter.level = q.level;
+        this.logger.debug(`[findPublicExams] Filter by level: ${q.level}`);
+      }
+      if (q?.provider) {
+        // استخدام regex للبحث case-insensitive (لأن provider قد يكون "telc" أو "Telc" أو "TELC")
+        filter.provider = { $regex: new RegExp(`^${q.provider}$`, 'i') };
+        this.logger.debug(`[findPublicExams] Filter by provider (case-insensitive): ${q.provider}`);
+      }
+
+      this.logger.debug(`[findPublicExams] Filter: ${JSON.stringify(filter)}`);
+
+      // Pagination (إذا كان موجوداً)
+      const page = (q as any)?.page ? parseInt((q as any).page, 10) : 1;
+      const limit = (q as any)?.limit ? parseInt((q as any).limit, 10) : undefined;
+      
+      // التحقق من أن page و limit صحيحين
+      const skip = limit ? (page - 1) * limit : 0;
+      if (skip < 0) {
+        this.logger.warn(`[findPublicExams] Invalid pagination - page: ${page}, limit: ${limit}, skip: ${skip}`);
+      }
+
+      this.logger.debug(`[findPublicExams] Querying database with filter: ${JSON.stringify(filter)}`);
+      const query = this.model.find(filter).sort({ createdAt: -1 });
+      
+      if (limit) {
+        query.skip(skip).limit(limit);
+        this.logger.debug(`[findPublicExams] Pagination - skip: ${skip}, limit: ${limit}`);
+      }
+
+      const items = await query.lean().exec();
+      this.logger.log(`[findPublicExams] Found ${items?.length || 0} exams`);
+
+      // التحقق من أن items موجودة
+      if (!items || !Array.isArray(items)) {
+        this.logger.warn(`[findPublicExams] No exams found or items is not an array`);
+        return { items: [], count: 0 };
+      }
+
+      // تحويل البيانات إلى الصيغة المطلوبة
+      const publicExams = items.map((exam: any) => {
+        try {
+          // التحقق من أن exam موجود
+          if (!exam) {
+            this.logger.warn(`[findPublicExams] Exam is null or undefined`);
+            return null;
+          }
+
+          // التحقق من أن sections موجودة
+          const sections = Array.isArray(exam.sections) 
+            ? exam.sections.map((s: any) => {
+                if (!s) return null;
+                
+                // حساب partsCount من items أو quota
+                let partsCount = 0;
+                if (Array.isArray(s.items) && s.items.length > 0) {
+                  partsCount = s.items.length;
+                } else if (typeof s.quota === 'number' && s.quota > 0) {
+                  partsCount = s.quota;
+                }
+
+                return {
+                  skill: s.skill || undefined,
+                  label: s.label || s.name || '',
+                  durationMin: s.durationMin || undefined,
+                  partsCount: s.partsCount || partsCount,
+                };
+              }).filter((s: any) => s !== null)
+            : [];
+
+          return {
+            id: exam._id?.toString() || '',
+            title: exam.title || '',
+            level: exam.level || undefined,
+            provider: exam.provider || undefined,
+            timeLimitMin: exam.timeLimitMin || 0,
+            sections,
+          };
+        } catch (error: any) {
+          this.logger.error(`[findPublicExams] Error mapping exam ${exam?._id}: ${error.message}`, error.stack);
+          return null;
+        }
+      }).filter((exam: any) => exam !== null);
+
+      this.logger.log(`[findPublicExams] Success - returning ${publicExams.length} exams`);
+      return { items: publicExams, count: publicExams.length };
+    } catch (error: any) {
+      this.logger.error(`[findPublicExams] Error: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * عرض تفاصيل امتحان معين للطالب (Public endpoint)
+   * - يعرض بيانات الامتحان المتاحة للطالب
+   * - Response: id, title, description, level, provider, timeLimitMin, attemptLimit, sections[]
+   * - لا يعرض الأسئلة نفسها، فقط هيكل الأقسام
+   */
+  async findPublicExamById(examId: string) {
+    const doc = await this.model.findById(examId).lean().exec();
+    if (!doc) throw new NotFoundException('Exam not found');
+
+    // التحقق من أن الامتحان منشور
+    if (doc.status !== ExamStatus.PUBLISHED) {
+      throw new NotFoundException('Exam not found');
+    }
+
+    // تحويل الأقسام إلى الصيغة المطلوبة
+    const sections = doc.sections.map((s: any) => {
+      // حساب partsCount من items أو quota
+      let partsCount = 0;
+      if (Array.isArray(s.items) && s.items.length > 0) {
+        partsCount = s.items.length;
+      } else if (typeof s.quota === 'number' && s.quota > 0) {
+        partsCount = s.quota;
+      }
+
+      return {
+        skill: s.skill,
+        label: s.label || s.name,
+        durationMin: s.durationMin,
+        partsCount: s.partsCount || partsCount,
+      };
+    });
+
+    return {
+      id: doc._id.toString(),
+      title: doc.title,
+      description: doc.description,
+      level: doc.level,
+      provider: doc.provider,
+      timeLimitMin: doc.timeLimitMin,
+      attemptLimit: doc.attemptLimit,
+      sections,
+    };
+  }
+
   async findById(id: string, user?: ReqUser) {
     const doc = await this.model.findById(id).lean().exec();
     if (!doc) throw new NotFoundException('Exam not found');
