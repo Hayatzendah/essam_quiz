@@ -340,7 +340,9 @@ export class ExamsService {
       }
       if (q?.provider) {
         // استخدام regex للبحث case-insensitive (لأن provider قد يكون "telc" أو "Telc" أو "TELC")
-        filter.provider = { $regex: new RegExp(`^${q.provider}$`, 'i') };
+        // استخدام string pattern بدلاً من RegExp object لـ MongoDB
+        const escapedProvider = q.provider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        filter.provider = { $regex: `^${escapedProvider}$`, $options: 'i' };
         this.logger.debug(`[findPublicExams] Filter by provider (case-insensitive): ${q.provider}`);
       }
 
