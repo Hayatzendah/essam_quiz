@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AttemptsService } from './attempts.service';
 import { StartAttemptDto } from './dto/start-attempt.dto';
@@ -30,28 +42,38 @@ export class AttemptsController {
   @Post('practice')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  @ApiOperation({ summary: 'Create practice exam and start attempt (for students)', description: 'إنشاء Exam تمرين وبدء Attempt في خطوة واحدة - للاستخدام في قسم القواعد والتمارين' })
+  @ApiOperation({
+    summary: 'Create practice exam and start attempt (for students)',
+    description: 'إنشاء Exam تمرين وبدء Attempt في خطوة واحدة - للاستخدام في قسم القواعد والتمارين',
+  })
   @ApiResponse({ status: 201, description: 'Practice attempt started successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   async startPractice(@Body() dto: CreatePracticeExamDto, @Req() req: any) {
-    this.logger.log(`[POST /attempts/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, sections: ${dto?.sections?.length || 0}`);
-    
+    this.logger.log(
+      `[POST /attempts/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, sections: ${dto?.sections?.length || 0}`,
+    );
+
     try {
       const result = await this.service.startPracticeAttempt(dto, req.user);
-      const attemptId = (result as any)?.attemptId || (result as any)?._id || (result as any)?.id || 'unknown';
+      const attemptId =
+        (result as any)?.attemptId || (result as any)?._id || (result as any)?.id || 'unknown';
       const itemsCount = (result as any)?.items?.length || 0;
-      
-      this.logger.log(`[POST /attempts/practice] Practice attempt started successfully - attemptId: ${attemptId}, itemsCount: ${itemsCount}`);
-      
+
+      this.logger.log(
+        `[POST /attempts/practice] Practice attempt started successfully - attemptId: ${attemptId}, itemsCount: ${itemsCount}`,
+      );
+
       if (itemsCount === 0) {
         this.logger.error(`[POST /attempts/practice] WARNING: Attempt created with 0 items!`);
       }
-      
+
       return result;
     } catch (error: any) {
-      this.logger.error(`[POST /attempts/practice] Error starting practice attempt - error: ${error.message}, stack: ${error.stack}`);
+      this.logger.error(
+        `[POST /attempts/practice] Error starting practice attempt - error: ${error.message}, stack: ${error.stack}`,
+      );
       throw error;
     }
   }
@@ -61,17 +83,28 @@ export class AttemptsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  @ApiOperation({ summary: 'Start attempt on exam', description: 'بدء محاولة على امتحان - يستخدم منطق AttemptsModule لاختيار الأسئلة وإنشاء Attempt جديد' })
+  @ApiOperation({
+    summary: 'Start attempt on exam',
+    description:
+      'بدء محاولة على امتحان - يستخدم منطق AttemptsModule لاختيار الأسئلة وإنشاء Attempt جديد',
+  })
   @ApiResponse({ status: 201, description: 'Attempt started successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request - exam not found, not published, or attempt limit reached' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - exam not found, not published, or attempt limit reached',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   async start(@Body() dto: StartAttemptDto, @Req() req: any) {
     const mode = dto.mode || 'exam';
-    this.logger.log(`[POST /attempts] Request received - examId: ${dto?.examId}, mode: ${mode}, userId: ${req.user?.userId}, role: ${req.user?.role}`);
-    
+    this.logger.log(
+      `[POST /attempts] Request received - examId: ${dto?.examId}, mode: ${mode}, userId: ${req.user?.userId}, role: ${req.user?.role}`,
+    );
+
     if (!dto?.examId) {
-      this.logger.error(`[POST /attempts] Missing examId in request body. Received: ${JSON.stringify(dto)}`);
+      this.logger.error(
+        `[POST /attempts] Missing examId in request body. Received: ${JSON.stringify(dto)}`,
+      );
       throw new BadRequestException({
         code: 'MISSING_EXAM_ID',
         message: 'examId is required in request body',
@@ -83,36 +116,41 @@ export class AttemptsController {
       // استخدام startAttempt في كلا الحالتين (exam و training)
       // يمكن توسيع هذا لاحقاً لإضافة معالجة مختلفة للـ training mode
       const result = await this.service.startAttempt(dto.examId, req.user);
-      const attemptId = (result as any)?._id || (result as any)?.id || (result as any)?.attemptId || 'unknown';
+      const attemptId =
+        (result as any)?._id || (result as any)?.id || (result as any)?.attemptId || 'unknown';
       const itemsCount = (result as any)?.items?.length || 0;
-      
-      this.logger.log(`[POST /attempts] Attempt created successfully - examId: ${dto.examId}, mode: ${mode}, attemptId: ${attemptId}, itemsCount: ${itemsCount}`);
-      
+
+      this.logger.log(
+        `[POST /attempts] Attempt created successfully - examId: ${dto.examId}, mode: ${mode}, attemptId: ${attemptId}, itemsCount: ${itemsCount}`,
+      );
+
       if (itemsCount === 0) {
-        this.logger.error(`[POST /attempts] WARNING: Attempt created with 0 items! Response: ${JSON.stringify({
-          attemptId,
-          examId: result?.examId,
-          status: result?.status,
-          itemsCount: result?.items?.length || 0,
-        })}`);
+        this.logger.error(
+          `[POST /attempts] WARNING: Attempt created with 0 items! Response: ${JSON.stringify({
+            attemptId,
+            examId: result?.examId,
+            status: result?.status,
+            itemsCount: result?.items?.length || 0,
+          })}`,
+        );
       } else {
-        this.logger.log(`[POST /attempts] Response contains ${itemsCount} items. First item: ${JSON.stringify({
-          questionId: result?.items?.[0]?.questionId,
-          qType: result?.items?.[0]?.qType,
-          hasPrompt: !!result?.items?.[0]?.prompt,
-          hasOptions: !!result?.items?.[0]?.options,
-        })}`);
+        this.logger.log(
+          `[POST /attempts] Response contains ${itemsCount} items. First item: ${JSON.stringify({
+            questionId: result?.items?.[0]?.questionId,
+            qType: result?.items?.[0]?.qType,
+            hasPrompt: !!result?.items?.[0]?.prompt,
+            hasOptions: !!result?.items?.[0]?.options,
+          })}`,
+        );
       }
-      
+
       // إرجاع attemptId + items + timeLimitMin
-      return {
-        attemptId: attemptId,
-        items: result?.items || [],
-        timeLimitMin: result?.timeLimitMin || 0,
-        ...result,
-      };
+      // result يحتوي بالفعل على جميع الحقول المطلوبة
+      return result;
     } catch (error: any) {
-      this.logger.error(`[POST /attempts] Error creating attempt - examId: ${dto.examId}, mode: ${mode}, error: ${error.message}, stack: ${error.stack}`);
+      this.logger.error(
+        `[POST /attempts] Error creating attempt - examId: ${dto.examId}, mode: ${mode}, error: ${error.message}, stack: ${error.stack}`,
+      );
       // إعادة رمي الخطأ كما هو (BadRequestException أو ForbiddenException)
       throw error;
     }
@@ -121,7 +159,7 @@ export class AttemptsController {
   // حفظ إجابة أثناء المحاولة (طالب فقط)
   // يدعم: PATCH /attempts/:attemptId/answer (مع itemIndex في body)
   // و: PATCH /attempts/:attemptId/answer/:itemIndex (مع itemIndex في URL)
-  
+
   // Route with itemIndex in URL (must come before the route without it)
   @Patch(':attemptId/answer/:itemIndex')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -130,17 +168,21 @@ export class AttemptsController {
     @Param('attemptId') attemptId: string,
     @Param('itemIndex') itemIndexFromUrl: string,
     @Body() dto: AnswerOneDto,
-    @Req() req: any
+    @Req() req: any,
   ) {
     // Parse itemIndex from URL and use it
     const parsedIndex = parseInt(itemIndexFromUrl, 10);
     if (!isNaN(parsedIndex)) {
       dto.itemIndex = parsedIndex;
     }
-    
-    this.logger.log(`[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`);
-    this.logger.debug(`[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Request body: ${JSON.stringify(dto)}`);
-    
+
+    this.logger.log(
+      `[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`,
+    );
+    this.logger.debug(
+      `[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Request body: ${JSON.stringify(dto)}`,
+    );
+
     try {
       const result = await this.service.saveAnswer(req.user, attemptId, {
         itemIndex: dto.itemIndex,
@@ -152,11 +194,15 @@ export class AttemptsController {
         studentAnswerReorder: dto.studentAnswerReorder,
         studentAnswerAudioKey: dto.studentAnswerAudioKey,
       });
-      
-      this.logger.log(`[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Answer saved successfully`);
+
+      this.logger.log(
+        `[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Answer saved successfully`,
+      );
       return result;
     } catch (error: any) {
-      this.logger.error(`[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Error saving answer - error: ${error.message}, stack: ${error.stack}`);
+      this.logger.error(
+        `[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Error saving answer - error: ${error.message}, stack: ${error.stack}`,
+      );
       throw error;
     }
   }
@@ -165,14 +211,12 @@ export class AttemptsController {
   @Patch(':attemptId/answer')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  async answer(
-    @Param('attemptId') attemptId: string,
-    @Body() dto: AnswerOneDto,
-    @Req() req: any
-  ) {
-    this.logger.log(`[PATCH /attempts/${attemptId}/answer] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`);
+  async answer(@Param('attemptId') attemptId: string, @Body() dto: AnswerOneDto, @Req() req: any) {
+    this.logger.log(
+      `[PATCH /attempts/${attemptId}/answer] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`,
+    );
     this.logger.debug(`[PATCH /attempts/${attemptId}/answer] Request body: ${JSON.stringify(dto)}`);
-    
+
     try {
       const result = await this.service.saveAnswer(req.user, attemptId, {
         itemIndex: dto.itemIndex,
@@ -184,11 +228,13 @@ export class AttemptsController {
         studentAnswerReorder: dto.studentAnswerReorder,
         studentAnswerAudioKey: dto.studentAnswerAudioKey,
       });
-      
+
       this.logger.log(`[PATCH /attempts/${attemptId}/answer] Answer saved successfully`);
       return result;
     } catch (error: any) {
-      this.logger.error(`[PATCH /attempts/${attemptId}/answer] Error saving answer - error: ${error.message}, stack: ${error.stack}`);
+      this.logger.error(
+        `[PATCH /attempts/${attemptId}/answer] Error saving answer - error: ${error.message}, stack: ${error.stack}`,
+      );
       throw error;
     }
   }
@@ -198,14 +244,16 @@ export class AttemptsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
   submit(@Param('attemptId') attemptId: string, @Body() dto: SubmitAttemptDto, @Req() req: any) {
-    this.logger.log(`[POST /attempts/${attemptId}/submit] Request received - userId: ${req.user?.userId}, answersCount: ${dto?.answers?.length || 0}`);
+    this.logger.log(
+      `[POST /attempts/${attemptId}/submit] Request received - userId: ${req.user?.userId}, answersCount: ${dto?.answers?.length || 0}`,
+    );
     return this.service.submitAttempt(req.user, attemptId, dto.answers);
   }
 
   // إدخال درجات يدوية (معلم مالك أو أدمن)
   @Post(':attemptId/grade')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('teacher','admin')
+  @Roles('teacher', 'admin')
   grade(@Param('attemptId') attemptId: string, @Body() dto: GradeAttemptDto, @Req() req: any) {
     return this.service.gradeAttempt(req.user, attemptId, dto.items);
   }
@@ -213,11 +261,8 @@ export class AttemptsController {
   // عرض المحاولة (الطالب مالكها | المعلم المالك للامتحان | الأدمن)
   @Get(':attemptId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('student','teacher','admin')
+  @Roles('student', 'teacher', 'admin')
   view(@Param('attemptId') attemptId: string, @Req() req: any) {
     return this.service.getAttempt(req.user, attemptId);
   }
 }
-
-
-
