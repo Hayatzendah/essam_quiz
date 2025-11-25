@@ -5,7 +5,12 @@ import { Model, Types, disconnect } from 'mongoose';
 import { AttemptsService } from './attempts.service';
 import { Attempt, AttemptSchema, AttemptStatus } from './schemas/attempt.schema';
 import { Exam, ExamSchema, ExamStatus } from '../exams/schemas/exam.schema';
-import { Question, QuestionSchema, QuestionStatus, QuestionType } from '../questions/schemas/question.schema';
+import {
+  Question,
+  QuestionSchema,
+  QuestionStatus,
+  QuestionType,
+} from '../questions/schemas/question.schema';
 
 const teacherUser = { userId: '671fc2b4c7e54e0d8f7d1aaa', role: 'teacher' as const };
 const adminUser = { userId: '671fc2b4c7e54e0d8f7d1bbb', role: 'admin' as const };
@@ -94,7 +99,7 @@ describe('AttemptsService', () => {
       },
     ]);
 
-    testQuestionIds = questions.map(q => q._id);
+    testQuestionIds = questions.map((q) => q._id);
 
     // إنشاء امتحان تجريبي
     const exam = await examModel.create({
@@ -131,7 +136,7 @@ describe('AttemptsService', () => {
   describe('اختبار اختيار الأسئلة', () => {
     it('يجب أن يختار الأسئلة الثابتة من الامتحان', async () => {
       const attempt = await service.startAttempt(testExamId.toString(), studentUser);
-      
+
       expect(attempt.attemptId).toBeDefined();
       expect(attempt.items).toHaveLength(2);
       expect(attempt.items[0].questionId.toString()).toBe(testQuestionIds[0].toString());
@@ -154,9 +159,9 @@ describe('AttemptsService', () => {
       });
 
       const attempt = await service.startAttempt(randomExam._id.toString(), studentUser);
-      
+
       expect(attempt.items).toHaveLength(2);
-      
+
       await examModel.deleteOne({ _id: randomExam._id });
     });
 
@@ -176,9 +181,9 @@ describe('AttemptsService', () => {
       });
 
       const attempt = await service.startAttempt(distExam._id.toString(), studentUser);
-      
+
       expect(attempt.items).toHaveLength(3);
-      
+
       await examModel.deleteOne({ _id: distExam._id });
     });
   });
@@ -209,7 +214,7 @@ describe('AttemptsService', () => {
       // الترتيب قد يكون مختلفاً بسبب seed مختلف (attemptCount مختلف)
       expect(attempt1.items).toHaveLength(3);
       expect(attempt2.items).toHaveLength(3);
-      
+
       await examModel.deleteOne({ _id: shuffledExam._id });
     });
   });
@@ -231,18 +236,18 @@ describe('AttemptsService', () => {
 
       // محاولة أولى
       const attempt1 = await service.startAttempt(exam._id.toString(), studentUser);
-      const questionIds1 = attempt1.items.map(i => i.questionId.toString());
+      const questionIds1 = attempt1.items.map((i) => i.questionId.toString());
 
       // حذف المحاولة الأولى
       await attemptModel.deleteOne({ _id: attempt1.attemptId });
 
       // محاولة ثانية (نفس attemptCount = 1)
       const attempt2 = await service.startAttempt(exam._id.toString(), studentUser);
-      const questionIds2 = attempt2.items.map(i => i.questionId.toString());
+      const questionIds2 = attempt2.items.map((i) => i.questionId.toString());
 
       // يجب أن تكون نفس الأسئلة (نفس seed)
       expect(questionIds1.sort()).toEqual(questionIds2.sort());
-      
+
       await examModel.deleteOne({ _id: exam._id });
     });
   });
@@ -250,7 +255,7 @@ describe('AttemptsService', () => {
   describe('اختبار التصحيح الآلي', () => {
     it('يجب أن يصحح MCQ بشكل صحيح', async () => {
       const attempt = await service.startAttempt(testExamId.toString(), studentUser);
-      
+
       // إجابة صحيحة
       await service.saveAnswer(studentUser, attempt.attemptId.toString(), {
         itemIndex: 0,
@@ -264,7 +269,7 @@ describe('AttemptsService', () => {
       });
 
       const result = await service.submitAttempt(studentUser, attempt.attemptId.toString());
-      
+
       expect(result.status).toBe(AttemptStatus.SUBMITTED);
       expect(result.totalAutoScore).toBeGreaterThan(0);
       expect(result.totalAutoScore).toBeLessThanOrEqual(result.totalMaxScore);
@@ -285,7 +290,7 @@ describe('AttemptsService', () => {
       });
 
       const attempt = await service.startAttempt(tfExam._id.toString(), studentUser);
-      
+
       // إجابة صحيحة
       await service.saveAnswer(studentUser, attempt.attemptId.toString(), {
         itemIndex: 0,
@@ -293,9 +298,9 @@ describe('AttemptsService', () => {
       });
 
       const result = await service.submitAttempt(studentUser, attempt.attemptId.toString());
-      
+
       expect(result.totalAutoScore).toBe(1); // إجابة صحيحة
-      
+
       await examModel.deleteOne({ _id: tfExam._id });
     });
 
@@ -314,7 +319,7 @@ describe('AttemptsService', () => {
       });
 
       const attempt = await service.startAttempt(fillExam._id.toString(), studentUser);
-      
+
       // إجابة صحيحة
       await service.saveAnswer(studentUser, attempt.attemptId.toString(), {
         itemIndex: 0,
@@ -322,9 +327,9 @@ describe('AttemptsService', () => {
       });
 
       const result = await service.submitAttempt(studentUser, attempt.attemptId.toString());
-      
+
       expect(result.totalAutoScore).toBe(1); // إجابة صحيحة
-      
+
       await examModel.deleteOne({ _id: fillExam._id });
     });
   });
@@ -358,16 +363,16 @@ describe('AttemptsService', () => {
   describe('اختبار الصلاحيات', () => {
     it('يجب أن يمنع الطالب من الوصول لمحاولة طالب آخر', async () => {
       const attempt = await service.startAttempt(testExamId.toString(), studentUser);
-      
-      await expect(
-        service.getAttempt(studentUser2, attempt.attemptId.toString())
-      ).rejects.toThrow(ForbiddenException);
+
+      await expect(service.getAttempt(studentUser2, attempt.attemptId.toString())).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('يجب أن يسمح للمعلم المالك بالوصول لمحاولات امتحانه', async () => {
       const attempt = await service.startAttempt(testExamId.toString(), studentUser);
       await service.submitAttempt(studentUser, attempt.attemptId.toString());
-      
+
       const viewResult = await service.getAttempt(teacherUser, attempt.attemptId.toString());
       expect(viewResult).toBeDefined();
     });
@@ -375,15 +380,15 @@ describe('AttemptsService', () => {
     it('يجب أن يمنع المعلم غير المالك من الوصول', async () => {
       const otherTeacher = { userId: '671fc2b4c7e54e0d8f7d1eee', role: 'teacher' as const };
       const attempt = await service.startAttempt(testExamId.toString(), studentUser);
-      
-      await expect(
-        service.getAttempt(otherTeacher, attempt.attemptId.toString())
-      ).rejects.toThrow(ForbiddenException);
+
+      await expect(service.getAttempt(otherTeacher, attempt.attemptId.toString())).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('يجب أن يسمح للأدمن بالوصول لأي محاولة', async () => {
       const attempt = await service.startAttempt(testExamId.toString(), studentUser);
-      
+
       const viewResult = await service.getAttempt(adminUser, attempt.attemptId.toString());
       expect(viewResult).toBeDefined();
     });
@@ -393,11 +398,11 @@ describe('AttemptsService', () => {
     it('يجب أن يسمح للمعلم المالك بالتصحيح اليدوي', async () => {
       const attempt = await service.startAttempt(testExamId.toString(), studentUser);
       await service.submitAttempt(studentUser, attempt.attemptId.toString());
-      
+
       const gradeResult = await service.gradeAttempt(teacherUser, attempt.attemptId.toString(), [
         { questionId: testQuestionIds[0].toString(), score: 0.5 },
       ]);
-      
+
       expect(gradeResult.status).toBe(AttemptStatus.GRADED);
       expect(gradeResult.finalScore).toBeGreaterThan(0);
     });
@@ -406,11 +411,11 @@ describe('AttemptsService', () => {
       const otherTeacher = { userId: '671fc2b4c7e54e0d8f7d1eee', role: 'teacher' as const };
       const attempt = await service.startAttempt(testExamId.toString(), studentUser);
       await service.submitAttempt(studentUser, attempt.attemptId.toString());
-      
+
       await expect(
         service.gradeAttempt(otherTeacher, attempt.attemptId.toString(), [
           { questionId: testQuestionIds[0].toString(), score: 0.5 },
-        ])
+        ]),
       ).rejects.toThrow(ForbiddenException);
     });
   });
@@ -420,22 +425,16 @@ describe('AttemptsService', () => {
       // بدء محاولة
       const attempt = await service.startAttempt(testExamId.toString(), studentUser);
       const originalPrompt = attempt.items[0].prompt;
-      
+
       // تعديل السؤال الأصلي
-      await questionModel.updateOne(
-        { _id: testQuestionIds[0] },
-        { prompt: 'Modified Question' }
-      );
-      
+      await questionModel.updateOne({ _id: testQuestionIds[0] }, { prompt: 'Modified Question' });
+
       // عرض المحاولة - يجب أن يعرض الـ snapshot الأصلي
       const viewResult = await service.getAttempt(studentUser, attempt.attemptId.toString());
       expect(viewResult.items[0].prompt).toBe(originalPrompt);
-      
+
       // إعادة السؤال الأصلي
-      await questionModel.updateOne(
-        { _id: testQuestionIds[0] },
-        { prompt: 'What is 2 + 2?' }
-      );
+      await questionModel.updateOne({ _id: testQuestionIds[0] }, { prompt: 'What is 2 + 2?' });
     });
   });
 
@@ -443,19 +442,19 @@ describe('AttemptsService', () => {
     it('يجب أن يمنع المحاولات بعد الوصول للحد الأقصى', async () => {
       // محاولة 1
       await service.startAttempt(testExamId.toString(), studentUser);
-      
+
       // محاولة 2
       const attempt2 = await service.startAttempt(testExamId.toString(), studentUser);
       await attemptModel.deleteOne({ _id: attempt2.attemptId });
-      
+
       // محاولة 3
       const attempt3 = await service.startAttempt(testExamId.toString(), studentUser);
       await attemptModel.deleteOne({ _id: attempt3.attemptId });
-      
+
       // محاولة 4 - يجب أن تفشل (attemptLimit = 3)
-      await expect(
-        service.startAttempt(testExamId.toString(), studentUser)
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.startAttempt(testExamId.toString(), studentUser)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -476,17 +475,17 @@ describe('AttemptsService', () => {
       });
 
       const attempt = await service.startAttempt(timeExam._id.toString(), studentUser);
-      
+
       // انتظار انتهاء الوقت
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       await expect(
         service.saveAnswer(studentUser, attempt.attemptId.toString(), {
           itemIndex: 0,
           studentAnswerIndexes: [1],
-        })
+        }),
       ).rejects.toThrow(ForbiddenException);
-      
+
       await examModel.deleteOne({ _id: timeExam._id });
     });
   });
@@ -509,23 +508,13 @@ describe('AttemptsService', () => {
 
       const attempt = await service.startAttempt(policyExam._id.toString(), studentUser);
       await service.submitAttempt(studentUser, attempt.attemptId.toString());
-      
+
       const viewResult = await service.getAttempt(studentUser, attempt.attemptId.toString());
       expect(viewResult.finalScore).toBeDefined();
       // يجب ألا يحتوي على items (only_scores)
       expect(viewResult.items).toBeUndefined();
-      
+
       await examModel.deleteOne({ _id: policyExam._id });
     });
   });
 });
-
-
-
-
-
-
-
-
-
-

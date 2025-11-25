@@ -8,7 +8,8 @@ class ManualItemGradeDto {
 
 export class GradeAttemptDto {
   // attemptId يأتي من URL parameter
-  @IsArray() @ValidateNested({ each: true }) @Type(() => ManualItemGradeDto)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ManualItemGradeDto)
   items: ManualItemGradeDto[];
 }
-

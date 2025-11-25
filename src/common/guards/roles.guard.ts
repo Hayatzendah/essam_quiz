@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 
@@ -10,11 +16,11 @@ export class RolesGuard implements CanActivate {
 
   canActivate(ctx: ExecutionContext): boolean {
     try {
-      const required = this.reflector.getAllAndOverride<Array<'student' | 'teacher' | 'admin'>>(ROLES_KEY, [
-        ctx.getHandler(),
-        ctx.getClass(),
-      ]);
-      
+      const required = this.reflector.getAllAndOverride<Array<'student' | 'teacher' | 'admin'>>(
+        ROLES_KEY,
+        [ctx.getHandler(), ctx.getClass()],
+      );
+
       // If no roles are required, allow access
       if (!required || required.length === 0) {
         this.logger.debug('No roles required, allowing access');
@@ -25,7 +31,9 @@ export class RolesGuard implements CanActivate {
       const user = req.user;
 
       // Log for debugging
-      this.logger.debug(`RolesGuard check - Required roles: ${required.join(', ')}, User object: ${JSON.stringify(user)}`);
+      this.logger.debug(
+        `RolesGuard check - Required roles: ${required.join(', ')}, User object: ${JSON.stringify(user)}`,
+      );
 
       // If user is not authenticated or doesn't have a role
       if (!user) {
@@ -40,16 +48,18 @@ export class RolesGuard implements CanActivate {
 
       // Check if user's role is in the required roles
       if (!required.includes(user.role)) {
-        this.logger.warn(`Access denied: User role '${user.role}' is not in required roles: ${required.join(', ')}`);
-        
+        this.logger.warn(
+          `Access denied: User role '${user.role}' is not in required roles: ${required.join(', ')}`,
+        );
+
         // Provide helpful message with alternative endpoint for students
         let errorMessage = `Access denied: This endpoint requires role(s): ${required.join(' or ')}. Your current role: '${user.role}'.`;
-        
+
         // Special message for students trying to create exams
         if (user.role === 'student' && required.includes('teacher') && required.includes('admin')) {
           errorMessage += ' Students should use POST /exams/practice instead.';
         }
-        
+
         throw new ForbiddenException(errorMessage);
       }
 
@@ -66,8 +76,3 @@ export class RolesGuard implements CanActivate {
     }
   }
 }
-
-
-
-
-

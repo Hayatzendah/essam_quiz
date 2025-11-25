@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
@@ -18,7 +29,10 @@ export class QuestionsController {
 
   @ApiOperation({ summary: 'Create a new question (teacher/admin only)' })
   @ApiResponse({ status: 201, description: 'Question created successfully' })
-  @ApiResponse({ status: 403, description: 'Forbidden - only teachers and admins can create questions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - only teachers and admins can create questions',
+  })
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
@@ -29,7 +43,10 @@ export class QuestionsController {
 
   // GET /questions/vocab - البحث عن أسئلة المفردات (Wortschatz)
   @ApiOperation({ summary: 'Find vocabulary questions (Wortschatz)' })
-  @ApiResponse({ status: 200, description: 'Returns vocabulary questions filtered by level, tags, and search' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns vocabulary questions filtered by level, tags, and search',
+  })
   @Get('vocab')
   @UseGuards(JwtAuthGuard)
   findVocab(@Query() dto: FindVocabDto) {
@@ -39,7 +56,10 @@ export class QuestionsController {
 
   // GET /questions/grammar - البحث عن أسئلة القواعد النحوية (Grammatik)
   @ApiOperation({ summary: 'Find grammar questions (Grammatik)' })
-  @ApiResponse({ status: 200, description: 'Returns grammar questions filtered by level, tags, and search' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns grammar questions filtered by level, tags, and search',
+  })
   @Get('grammar')
   @UseGuards(JwtAuthGuard)
   findGrammar(@Query() dto: FindVocabDto) {

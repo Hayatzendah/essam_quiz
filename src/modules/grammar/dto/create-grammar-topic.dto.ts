@@ -27,4 +27,3 @@ export class CreateGrammarTopicDto {
   @IsString()
   contentHtml?: string;
 }
-

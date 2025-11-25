@@ -8,6 +8,3 @@ import { MediaController } from './media.controller';
   exports: [MediaService],
 })
 export class MediaModule {}
-
-
-

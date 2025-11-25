@@ -43,9 +43,10 @@ export class AttemptsCronService {
         }
       } catch (error: any) {
         const attemptId = (attempt as any)._id?.toString() || (attempt as any).id?.toString();
-        this.logger.error(`Failed to auto-submit attempt ${attemptId}: ${error?.message || 'Unknown error'}`);
+        this.logger.error(
+          `Failed to auto-submit attempt ${attemptId}: ${error?.message || 'Unknown error'}`,
+        );
       }
     }
   }
 }
-

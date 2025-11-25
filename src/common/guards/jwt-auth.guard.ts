@@ -10,7 +10,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       const request = context.switchToHttp().getRequest();
       const authHeader = request.headers?.authorization;
       this.logger.debug(`Authorization header: ${authHeader ? 'present' : 'missing'}`);
-      
+
       if (!authHeader) {
         this.logger.warn('No authorization header found');
         throw new UnauthorizedException('Authorization header is missing');
@@ -22,7 +22,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      this.logger.error(`Error in JwtAuthGuard.canActivate: ${error?.message || 'Unknown error'}`, error?.stack);
+      this.logger.error(
+        `Error in JwtAuthGuard.canActivate: ${error?.message || 'Unknown error'}`,
+        error?.stack,
+      );
       throw new UnauthorizedException('Authentication failed');
     }
   }
@@ -43,8 +46,3 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return user;
   }
 }
-
-
-
-
-

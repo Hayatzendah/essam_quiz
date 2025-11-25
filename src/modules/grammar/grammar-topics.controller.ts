@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, NotFoundException, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Query,
+  NotFoundException,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { GrammarTopicsService } from './grammar-topics.service';
 import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
@@ -47,9 +58,16 @@ export class GrammarTopicsController {
   @Post(':slug/attempts')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  @ApiOperation({ summary: 'Start practice attempt for grammar topic (for students)', description: 'بدء محاولة تمرين على موضوع قواعد نحوية - يتم البحث عن الأسئلة المرتبطة بالموضوع وإنشاء attempt تلقائياً' })
+  @ApiOperation({
+    summary: 'Start practice attempt for grammar topic (for students)',
+    description:
+      'بدء محاولة تمرين على موضوع قواعد نحوية - يتم البحث عن الأسئلة المرتبطة بالموضوع وإنشاء attempt تلقائياً',
+  })
   @ApiResponse({ status: 201, description: 'Practice attempt started successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request - validation failed or no questions found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - validation failed or no questions found',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Grammar topic not found' })
@@ -57,10 +75,9 @@ export class GrammarTopicsController {
     @Param('slug') slug: string,
     @Req() req: any,
     @Query('level') level?: string,
-    @Query('questionsCount') questionsCount?: string
+    @Query('questionsCount') questionsCount?: string,
   ) {
     const count = questionsCount ? parseInt(questionsCount, 10) : undefined;
     return this.grammarTopicsService.startPracticeAttempt(slug, level, count, req.user);
   }
 }
-

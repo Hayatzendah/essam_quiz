@@ -14,7 +14,3 @@ export class QueryQuestionDto {
   @IsOptional() @IsNumberString() page?: string; // 1..n
   @IsOptional() @IsNumberString() limit?: string; // 10..n
 }
-
-
-
-

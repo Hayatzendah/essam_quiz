@@ -20,7 +20,9 @@ export class LoggingInterceptor implements NestInterceptor {
         },
         error: (error) => {
           const took = Date.now() - started;
-          this.logger.error(`[${method}] ${url} -> ${took}ms - Error: ${error?.message || 'Unknown'}`);
+          this.logger.error(
+            `[${method}] ${url} -> ${took}ms - Error: ${error?.message || 'Unknown'}`,
+          );
         },
       }),
     );

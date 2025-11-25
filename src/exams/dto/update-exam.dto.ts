@@ -5,19 +5,12 @@ import { ExamStatus } from '../schemas/exam.schema';
 
 export class UpdateExamDto extends PartialType(CreateExamDto) {
   // السماح بتغيير الحالة مع تحقق بالـ Service
-  @IsOptional() @IsEnum(ExamStatus)
+  @IsOptional()
+  @IsEnum(ExamStatus)
   status?: ExamStatus;
 
   // الإسناد (اختياري عبر PATCH أيضاً)
-  @IsOptional() @IsMongoId()
+  @IsOptional()
+  @IsMongoId()
   assignedClassId?: string;
 }
-
-
-
-
-
-
-
-
-

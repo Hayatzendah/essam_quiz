@@ -15,8 +15,3 @@ export class UpdateQuestionDto extends PartialType(CreateQuestionDto) {
   @IsEnum(QuestionStatus)
   status?: QuestionStatus;
 }
-
-
-
-
-

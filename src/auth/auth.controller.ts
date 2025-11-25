@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -188,9 +198,24 @@ export class AuthController {
       message: 'Auth API Endpoints',
       baseUrl,
       endpoints: {
-        register: { method: 'POST', url: `${baseUrl}/auth/register`, path: '/auth/register', body: { email: 'string', password: 'string', role: 'student|teacher|admin (optional)' } },
-        login: { method: 'POST', url: `${baseUrl}/auth/login`, path: '/auth/login', body: { email: 'string', password: 'string' } },
-        refresh: { method: 'POST', url: `${baseUrl}/auth/refresh`, path: '/auth/refresh', body: { refreshToken: 'string' } },
+        register: {
+          method: 'POST',
+          url: `${baseUrl}/auth/register`,
+          path: '/auth/register',
+          body: { email: 'string', password: 'string', role: 'student|teacher|admin (optional)' },
+        },
+        login: {
+          method: 'POST',
+          url: `${baseUrl}/auth/login`,
+          path: '/auth/login',
+          body: { email: 'string', password: 'string' },
+        },
+        refresh: {
+          method: 'POST',
+          url: `${baseUrl}/auth/refresh`,
+          path: '/auth/refresh',
+          body: { refreshToken: 'string' },
+        },
         logout: { method: 'POST', url: `${baseUrl}/auth/logout`, path: '/auth/logout' },
       },
     };
@@ -265,7 +290,7 @@ export class AuthController {
     const teacherEmail = process.env.TEACHER_EMAIL || 'not-set';
     const teacherPasswordSet = !!process.env.TEACHER_PASSWORD;
     const teacherPasswordLength = process.env.TEACHER_PASSWORD?.length || 0;
-    
+
     // محاولة البحث عن المستخدم في الداتابيس
     let userExists = false;
     let userRole: UserRole | null = null;
@@ -278,19 +303,18 @@ export class AuthController {
     } catch (error) {
       // ignore
     }
-    
+
     return {
       teacherEmail,
       teacherPasswordSet,
       teacherPasswordLength,
       userExists,
       userRole,
-      message: userExists 
-        ? (userRole === 'teacher' 
-          ? 'Teacher account exists and is ready' 
-          : `User exists but role is '${userRole}' instead of 'teacher'`)
+      message: userExists
+        ? userRole === 'teacher'
+          ? 'Teacher account exists and is ready'
+          : `User exists but role is '${userRole}' instead of 'teacher'`
         : 'Teacher account does not exist in database. Please register first.',
     };
   }
 }
-

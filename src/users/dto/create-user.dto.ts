@@ -19,4 +19,3 @@ export class CreateUserDto {
   @IsString()
   state?: string; // الولاية الألمانية (Bundesland)
 }
-

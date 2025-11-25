@@ -212,13 +212,19 @@ describe('E2E Error Scenarios', () => {
     await app.init();
 
     // Setup users
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({ name: 'Teacher2', email: 'teacher2@test.com', password: '12345678', role: 'teacher' });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      name: 'Teacher2',
+      email: 'teacher2@test.com',
+      password: '12345678',
+      role: 'teacher',
+    });
 
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({ name: 'Student2', email: 'student2@test.com', password: '12345678', role: 'student' });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      name: 'Student2',
+      email: 'student2@test.com',
+      password: '12345678',
+      role: 'student',
+    });
 
     const teacherRes = await request(app.getHttpServer())
       .post('/auth/login')
@@ -237,7 +243,10 @@ describe('E2E Error Scenarios', () => {
       .send({
         prompt: 'Test?',
         qType: 'mcq',
-        options: [{ text: 'A', isCorrect: true }, { text: 'B', isCorrect: false }],
+        options: [
+          { text: 'A', isCorrect: true },
+          { text: 'B', isCorrect: false },
+        ],
         status: 'published',
       });
 
@@ -293,9 +302,12 @@ describe('E2E Error Scenarios', () => {
 
   it('student cannot view another student attempt', async () => {
     // Create another student
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({ name: 'Student3', email: 'student3@test.com', password: '12345678', role: 'student' });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      name: 'Student3',
+      email: 'student3@test.com',
+      password: '12345678',
+      role: 'student',
+    });
 
     const student3Res = await request(app.getHttpServer())
       .post('/auth/login')

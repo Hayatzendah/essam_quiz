@@ -54,8 +54,7 @@ export class AnalyticsService {
     const avgPercentage =
       gradedAttempts.length > 0
         ? gradedAttempts.reduce(
-            (sum, a) =>
-              sum + (a.totalMaxScore > 0 ? (a.finalScore || 0) / a.totalMaxScore : 0),
+            (sum, a) => sum + (a.totalMaxScore > 0 ? (a.finalScore || 0) / a.totalMaxScore : 0),
             0,
           ) / gradedAttempts.length
         : 0;
@@ -213,5 +212,3 @@ export class AnalyticsService {
     };
   }
 }
-
-

@@ -4,12 +4,7 @@ export type QuestionLevel = 'A1' | 'A2' | 'B1' | 'B2';
 
 export type QuestionProvider = 'General' | 'DTZ' | 'Other';
 
-export type QuestionSection =
-  | 'LanguageBlocks'
-  | 'Listening'
-  | 'Reading'
-  | 'Writing'
-  | 'Speaking';
+export type QuestionSection = 'LanguageBlocks' | 'Listening' | 'Reading' | 'Writing' | 'Speaking';
 
 export type QuestionType =
   | 'mcq'

@@ -36,7 +36,7 @@ describe('UsersService', () => {
     expect(user).toHaveProperty('_id');
     expect((user as any).password).toBeUndefined();
     createdUserId = (user as any)._id.toString();
-    
+
     // التحقق من أن كلمة المرور مشفرة في قاعدة البيانات
     const userWithPassword = await service.findByEmail('test@example.com', true);
     expect(userWithPassword?.password).toBeDefined();
@@ -94,9 +94,8 @@ describe('UsersService', () => {
 
   // Test 9: التعامل مع حالات خطأ - role غير صحيح
   it('should throw NotFoundException for invalid role', async () => {
-    await expect(
-      service.updateRole(createdUserId, 'invalid-role' as any),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.updateRole(createdUserId, 'invalid-role' as any)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });
-

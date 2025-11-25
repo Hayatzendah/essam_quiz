@@ -1,4 +1,10 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateExamDto, CreatePracticeExamDto } from './dto/create-exam.dto';
@@ -7,7 +13,7 @@ import { UpdateExamDto } from './dto/update-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
 import { Exam, ExamDocument, ExamStatus } from './schemas/exam.schema';
 
-type ReqUser = { userId: string; role: 'student'|'teacher'|'admin' };
+type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
 @Injectable()
 export class ExamsService {
@@ -36,7 +42,7 @@ export class ExamsService {
     // التحقق من عدد الأقسام
     if (!dto.sections || dto.sections.length !== 2) {
       throw new BadRequestException(
-        'Deutschland-in-Leben Test must have exactly 2 sections: State section (3 questions) and 300 Fragen section (30 questions)'
+        'Deutschland-in-Leben Test must have exactly 2 sections: State section (3 questions) and 300 Fragen section (30 questions)',
       );
     }
 
@@ -44,34 +50,49 @@ export class ExamsService {
 
     // قائمة الولايات الألمانية المدعومة
     const validStates = [
-      'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen',
-      'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen',
-      'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen',
-      'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen', 'NRW'
+      'Baden-Württemberg',
+      'Bayern',
+      'Berlin',
+      'Brandenburg',
+      'Bremen',
+      'Hamburg',
+      'Hessen',
+      'Mecklenburg-Vorpommern',
+      'Niedersachsen',
+      'Nordrhein-Westfalen',
+      'Rheinland-Pfalz',
+      'Saarland',
+      'Sachsen',
+      'Sachsen-Anhalt',
+      'Schleswig-Holstein',
+      'Thüringen',
+      'NRW',
     ];
 
     // التحقق من القسم الأول (الولاية)
     if (firstSection.quota !== 3) {
       throw new BadRequestException(
-        `First section must have quota = 3 (State questions). Found: ${firstSection.quota}`
+        `First section must have quota = 3 (State questions). Found: ${firstSection.quota}`,
       );
     }
 
     if (!firstSection.tags || firstSection.tags.length === 0) {
-      throw new BadRequestException('First section must have tags with state name (e.g., ["Bayern"])');
+      throw new BadRequestException(
+        'First section must have tags with state name (e.g., ["Bayern"])',
+      );
     }
 
-    const stateTag = firstSection.tags.find(tag => validStates.includes(tag));
+    const stateTag = firstSection.tags.find((tag) => validStates.includes(tag));
     if (!stateTag) {
       throw new BadRequestException(
-        `First section must have a valid German state in tags. Valid states: ${validStates.join(', ')}`
+        `First section must have a valid German state in tags. Valid states: ${validStates.join(', ')}`,
       );
     }
 
     // التحقق من القسم الثاني (الـ300)
     if (secondSection.quota !== 30) {
       throw new BadRequestException(
-        `Second section must have quota = 30 (300 Fragen pool). Found: ${secondSection.quota}`
+        `Second section must have quota = 30 (300 Fragen pool). Found: ${secondSection.quota}`,
       );
     }
 
@@ -82,7 +103,7 @@ export class ExamsService {
     // التحقق من اسم القسم الثاني
     if (secondSection.name !== '300 Fragen Pool') {
       throw new BadRequestException(
-        `Second section name must be "300 Fragen Pool". Found: "${secondSection.name}"`
+        `Second section name must be "300 Fragen Pool". Found: "${secondSection.name}"`,
       );
     }
   }
@@ -101,11 +122,14 @@ export class ExamsService {
         throw new BadRequestException(`Section "${s.name}" must have either items or quota`);
       }
       if (hasQuota && s.difficultyDistribution) {
-        const sum = (s.difficultyDistribution.easy || 0)
-                  + (s.difficultyDistribution.medium || 0)
-                  + (s.difficultyDistribution.hard || 0);
+        const sum =
+          (s.difficultyDistribution.easy || 0) +
+          (s.difficultyDistribution.medium || 0) +
+          (s.difficultyDistribution.hard || 0);
         if (sum !== s.quota) {
-          throw new BadRequestException(`Section "${s.name}" difficultyDistribution must sum to quota`);
+          throw new BadRequestException(
+            `Section "${s.name}" difficultyDistribution must sum to quota`,
+          );
         }
       }
     }
@@ -153,7 +177,9 @@ export class ExamsService {
       }
       // لا نسمح بـ quota للطلاب (فقط items)
       if (s.quota) {
-        throw new BadRequestException('Students cannot create exams with quota. Use items instead.');
+        throw new BadRequestException(
+          'Students cannot create exams with quota. Use items instead.',
+        );
       }
     }
 
@@ -187,7 +213,7 @@ export class ExamsService {
     // الطالب: يشوف فقط الامتحانات المنشورة
     if (user.role === 'student') {
       filter.status = ExamStatus.PUBLISHED;
-      
+
       // فلترة حسب assignedStudentIds (غير مخصص أو مخصص له)
       const userId = user.userId || (user as any).sub || (user as any).id;
       const studentId = new Types.ObjectId(userId);
@@ -221,31 +247,34 @@ export class ExamsService {
     }
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
-    
+
     // للطلاب: فلترة حسب attemptLimit
     if (user.role === 'student') {
       const userId = user.userId || (user as any).sub || (user as any).id;
       const studentId = new Types.ObjectId(userId);
       const examIds = items.map((e: any) => e._id);
-      
+
       if (examIds.length > 0) {
-        const attemptCounts = await this.model.db.collection('attempts').aggregate([
-          {
-            $match: {
-              studentId,
-              examId: { $in: examIds },
+        const attemptCounts = await this.model.db
+          .collection('attempts')
+          .aggregate([
+            {
+              $match: {
+                studentId,
+                examId: { $in: examIds },
+              },
             },
-          },
-          {
-            $group: {
-              _id: '$examId',
-              count: { $sum: 1 },
+            {
+              $group: {
+                _id: '$examId',
+                count: { $sum: 1 },
+              },
             },
-          },
-        ]).toArray();
-        
+          ])
+          .toArray();
+
         const attemptCountMap = new Map(attemptCounts.map((a: any) => [a._id.toString(), a.count]));
-        
+
         const availableExams: any[] = [];
         for (const exam of items) {
           const attemptCount = attemptCountMap.get(exam._id.toString()) || 0;
@@ -282,29 +311,32 @@ export class ExamsService {
     if (q?.provider) filter.provider = q.provider;
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
-    
+
     // فلترة حسب attemptLimit
     const availableExams: any[] = [];
     const examIds = items.map((e: any) => e._id);
-    
+
     if (examIds.length > 0) {
-      const attemptCounts = await this.model.db.collection('attempts').aggregate([
-        {
-          $match: {
-            studentId,
-            examId: { $in: examIds },
+      const attemptCounts = await this.model.db
+        .collection('attempts')
+        .aggregate([
+          {
+            $match: {
+              studentId,
+              examId: { $in: examIds },
+            },
           },
-        },
-        {
-          $group: {
-            _id: '$examId',
-            count: { $sum: 1 },
+          {
+            $group: {
+              _id: '$examId',
+              count: { $sum: 1 },
+            },
           },
-        },
-      ]).toArray();
-      
+        ])
+        .toArray();
+
       const attemptCountMap = new Map(attemptCounts.map((a: any) => [a._id.toString(), a.count]));
-      
+
       for (const exam of items) {
         const attemptCount = attemptCountMap.get(exam._id.toString()) || 0;
         const attemptLimit = exam.attemptLimit || 0;
@@ -328,7 +360,7 @@ export class ExamsService {
   async findPublicExams(q: QueryExamDto) {
     try {
       this.logger.log(`[findPublicExams] Starting - level: ${q?.level}, provider: ${q?.provider}`);
-      
+
       const filter: any = {
         status: ExamStatus.PUBLISHED,
       };
@@ -351,16 +383,20 @@ export class ExamsService {
       // Pagination (إذا كان موجوداً)
       const page = (q as any)?.page ? parseInt((q as any).page, 10) : 1;
       const limit = (q as any)?.limit ? parseInt((q as any).limit, 10) : undefined;
-      
+
       // التحقق من أن page و limit صحيحين
       const skip = limit ? (page - 1) * limit : 0;
       if (skip < 0) {
-        this.logger.warn(`[findPublicExams] Invalid pagination - page: ${page}, limit: ${limit}, skip: ${skip}`);
+        this.logger.warn(
+          `[findPublicExams] Invalid pagination - page: ${page}, limit: ${limit}, skip: ${skip}`,
+        );
       }
 
-      this.logger.debug(`[findPublicExams] Querying database with filter: ${JSON.stringify(filter)}`);
+      this.logger.debug(
+        `[findPublicExams] Querying database with filter: ${JSON.stringify(filter)}`,
+      );
       const query = this.model.find(filter).sort({ createdAt: -1 });
-      
+
       if (limit) {
         query.skip(skip).limit(limit);
         this.logger.debug(`[findPublicExams] Pagination - skip: ${skip}, limit: ${limit}`);
@@ -376,49 +412,56 @@ export class ExamsService {
       }
 
       // تحويل البيانات إلى الصيغة المطلوبة
-      const publicExams = items.map((exam: any) => {
-        try {
-          // التحقق من أن exam موجود
-          if (!exam) {
-            this.logger.warn(`[findPublicExams] Exam is null or undefined`);
+      const publicExams = items
+        .map((exam: any) => {
+          try {
+            // التحقق من أن exam موجود
+            if (!exam) {
+              this.logger.warn(`[findPublicExams] Exam is null or undefined`);
+              return null;
+            }
+
+            // التحقق من أن sections موجودة
+            const sections = Array.isArray(exam.sections)
+              ? exam.sections
+                  .map((s: any) => {
+                    if (!s) return null;
+
+                    // حساب partsCount من items أو quota
+                    let partsCount = 0;
+                    if (Array.isArray(s.items) && s.items.length > 0) {
+                      partsCount = s.items.length;
+                    } else if (typeof s.quota === 'number' && s.quota > 0) {
+                      partsCount = s.quota;
+                    }
+
+                    return {
+                      skill: s.skill || undefined,
+                      label: s.label || s.name || '',
+                      durationMin: s.durationMin || undefined,
+                      partsCount: s.partsCount || partsCount,
+                    };
+                  })
+                  .filter((s: any) => s !== null)
+              : [];
+
+            return {
+              id: exam._id?.toString() || '',
+              title: exam.title || '',
+              level: exam.level || undefined,
+              provider: exam.provider || undefined,
+              timeLimitMin: exam.timeLimitMin || 0,
+              sections,
+            };
+          } catch (error: any) {
+            this.logger.error(
+              `[findPublicExams] Error mapping exam ${exam?._id}: ${error.message}`,
+              error.stack,
+            );
             return null;
           }
-
-          // التحقق من أن sections موجودة
-          const sections = Array.isArray(exam.sections) 
-            ? exam.sections.map((s: any) => {
-                if (!s) return null;
-                
-                // حساب partsCount من items أو quota
-                let partsCount = 0;
-                if (Array.isArray(s.items) && s.items.length > 0) {
-                  partsCount = s.items.length;
-                } else if (typeof s.quota === 'number' && s.quota > 0) {
-                  partsCount = s.quota;
-                }
-
-                return {
-                  skill: s.skill || undefined,
-                  label: s.label || s.name || '',
-                  durationMin: s.durationMin || undefined,
-                  partsCount: s.partsCount || partsCount,
-                };
-              }).filter((s: any) => s !== null)
-            : [];
-
-          return {
-            id: exam._id?.toString() || '',
-            title: exam.title || '',
-            level: exam.level || undefined,
-            provider: exam.provider || undefined,
-            timeLimitMin: exam.timeLimitMin || 0,
-            sections,
-          };
-        } catch (error: any) {
-          this.logger.error(`[findPublicExams] Error mapping exam ${exam?._id}: ${error.message}`, error.stack);
-          return null;
-        }
-      }).filter((exam: any) => exam !== null);
+        })
+        .filter((exam: any) => exam !== null);
 
       this.logger.log(`[findPublicExams] Success - returning ${publicExams.length} exams`);
       return { items: publicExams, count: publicExams.length };
@@ -521,13 +564,16 @@ export class ExamsService {
     if (!(isOwner || isAdmin)) throw new ForbiddenException('Only owner teacher or admin');
 
     // قيود بعد النشر
-    const goingToPublish = dto.status === ExamStatus.PUBLISHED && doc.status !== ExamStatus.PUBLISHED;
+    const goingToPublish =
+      dto.status === ExamStatus.PUBLISHED && doc.status !== ExamStatus.PUBLISHED;
 
     if (doc.status === ExamStatus.PUBLISHED && !isAdmin) {
       // بعد النشر نقيّد التعديلات الجذرية
       const structuralChange = typeof dto.sections !== 'undefined';
       if (structuralChange) {
-        throw new BadRequestException('Cannot change sections after publish (admin only if allowed)');
+        throw new BadRequestException(
+          'Cannot change sections after publish (admin only if allowed)',
+        );
       }
     }
 
@@ -535,11 +581,14 @@ export class ExamsService {
     if (goingToPublish && dto.sections) {
       for (const s of dto.sections) {
         if (typeof s.quota === 'number' && s.quota > 0 && s.difficultyDistribution) {
-          const sum = (s.difficultyDistribution.easy || 0)
-                    + (s.difficultyDistribution.medium || 0)
-                    + (s.difficultyDistribution.hard || 0);
+          const sum =
+            (s.difficultyDistribution.easy || 0) +
+            (s.difficultyDistribution.medium || 0) +
+            (s.difficultyDistribution.hard || 0);
           if (sum !== s.quota) {
-            throw new BadRequestException(`Section "${s.name}" difficultyDistribution must sum to quota`);
+            throw new BadRequestException(
+              `Section "${s.name}" difficultyDistribution must sum to quota`,
+            );
           }
         }
       }
@@ -575,7 +624,7 @@ export class ExamsService {
     }
 
     if (dto.classId) doc.assignedClassId = new Types.ObjectId(dto.classId);
-    if (dto.studentIds) doc.assignedStudentIds = dto.studentIds.map(id => new Types.ObjectId(id));
+    if (dto.studentIds) doc.assignedStudentIds = dto.studentIds.map((id) => new Types.ObjectId(id));
     await doc.save();
 
     return { assignedClassId: doc.assignedClassId, assignedStudentIds: doc.assignedStudentIds };
@@ -589,12 +638,13 @@ export class ExamsService {
     const userId = user.userId || (user as any).sub || (user as any).id;
     const isOwner = doc.ownerId?.toString() === userId;
     const isAdmin = user.role === 'admin';
-    if (!(isOwner || isAdmin)) throw new ForbiddenException('Only owner teacher or admin can delete');
+    if (!(isOwner || isAdmin))
+      throw new ForbiddenException('Only owner teacher or admin can delete');
 
     // التحقق من وجود محاولات مرتبطة بالامتحان
     const AttemptModel = this.model.db.collection('attempts');
     const attemptCount = await AttemptModel.countDocuments({ examId: new Types.ObjectId(id) });
-    
+
     if (attemptCount > 0 && !hard) {
       throw new BadRequestException({
         code: 'EXAM_HAS_ATTEMPTS',
@@ -615,4 +665,3 @@ export class ExamsService {
     }
   }
 }
-

@@ -288,7 +288,10 @@ export class MediaController {
       fileFilter: (req, file, cb) => {
         // للطلاب: فقط ملفات صوتية
         if (!/^audio\//.test(file.mimetype)) {
-          return cb(new BadRequestException('Only audio files allowed for student uploads') as any, false);
+          return cb(
+            new BadRequestException('Only audio files allowed for student uploads') as any,
+            false,
+          );
         }
         cb(null, true);
       },
@@ -307,4 +310,3 @@ export class MediaController {
     return { key: saved.key, mime: saved.mime, url: saved.url, private: true };
   }
 }
-

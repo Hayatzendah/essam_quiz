@@ -120,7 +120,7 @@ QuestionSchema.pre('validate', function (next) {
     if (!Array.isArray(q.options) || q.options.length < 2) {
       return next(new Error('MCQ requires at least 2 options'));
     }
-    const correct = q.options.filter(o => !!o.isCorrect).length;
+    const correct = q.options.filter((o) => !!o.isCorrect).length;
     if (correct < 1) return next(new Error('MCQ must have at least one correct option'));
   }
 

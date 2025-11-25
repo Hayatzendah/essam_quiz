@@ -48,7 +48,9 @@ describe('QuestionsService', () => {
       qType: QuestionType.TRUE_FALSE,
       answerKeyBoolean: false,
     });
-    const updated = await service.updateQuestion(String(created.id), { prompt: 'Earth is not flat' });
+    const updated = await service.updateQuestion(String(created.id), {
+      prompt: 'Earth is not flat',
+    });
     expect(updated.version).toBe(2);
   });
 
@@ -62,8 +64,3 @@ describe('QuestionsService', () => {
     expect(res.archived).toBe(true);
   });
 });
-
-
-
-
-

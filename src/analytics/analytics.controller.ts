@@ -32,4 +32,3 @@ export class AnalyticsController {
     return this.analytics.getQuestionAnalytics(questionId, req.user);
   }
 }
-

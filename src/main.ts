@@ -11,18 +11,18 @@ import basicAuth from 'express-basic-auth';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
+
   try {
     logger.log('🚀 Starting application...');
     logger.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.log(`Port: ${process.env.PORT || 4000}`);
-    
+
     // Check required environment variables
     const isProduction = process.env.NODE_ENV === 'production';
     const requiredEnvVars = ['MONGO_URI', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
-    
-    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-    
+
+    const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
+
     if (missingVars.length > 0) {
       logger.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
       if (isProduction) {
@@ -32,7 +32,7 @@ async function bootstrap() {
       }
       process.exit(1);
     }
-    
+
     // TEACHER_EMAIL and TEACHER_PASSWORD are REQUIRED in production
     // They should be set in Railway environment variables, NOT in the code
     if (isProduction) {
@@ -51,14 +51,18 @@ async function bootstrap() {
       // In development, use defaults if not provided
       if (!process.env.TEACHER_EMAIL) {
         process.env.TEACHER_EMAIL = 'teacher@deutsch-tests.com';
-        logger.warn('⚠️  TEACHER_EMAIL not set, using default: teacher@deutsch-tests.com (development only)');
+        logger.warn(
+          '⚠️  TEACHER_EMAIL not set, using default: teacher@deutsch-tests.com (development only)',
+        );
       }
       if (!process.env.TEACHER_PASSWORD) {
         process.env.TEACHER_PASSWORD = 'Teacher123!@#Dev';
-        logger.warn('⚠️  TEACHER_PASSWORD not set, using default: Teacher123!@#Dev (development only)');
+        logger.warn(
+          '⚠️  TEACHER_PASSWORD not set, using default: Teacher123!@#Dev (development only)',
+        );
       }
     }
-    
+
     // Validate password strength (in both development and production)
     if (process.env.TEACHER_PASSWORD) {
       const password = process.env.TEACHER_PASSWORD;
@@ -67,7 +71,7 @@ async function bootstrap() {
       const hasLower = /[a-z]/.test(password);
       const hasNumber = /\d/.test(password);
       const hasSpecial = /[@$!%*?&#]/.test(password);
-      
+
       if (!minLength || !hasUpper || !hasLower || !hasNumber || !hasSpecial) {
         logger.error('❌ TEACHER_PASSWORD does not meet security requirements:');
         logger.error('   - Must be at least 12 characters long');
@@ -100,7 +104,7 @@ async function bootstrap() {
     // CORS configuration
     const webAppOrigin = process.env.WEB_APP_ORIGIN || process.env.CORS_ORIGIN;
     const allowAllOrigins = process.env.CORS_ALLOW_ALL === 'true';
-    
+
     // Default allowed origins (production domains + localhost for development)
     const defaultAllowedOrigins = [
       'http://localhost:5173', // Frontend local development (Vite default)
@@ -119,13 +123,18 @@ async function bootstrap() {
       'http://127.0.0.1:5176',
       'http://127.0.0.1:5177',
     ];
-    
-    let allowedOrigins: string[] | boolean | ((origin: string, callback: (err: Error | null, allow?: boolean) => void) => void);
-    
+
+    let allowedOrigins:
+      | string[]
+      | boolean
+      | ((origin: string, callback: (err: Error | null, allow?: boolean) => void) => void);
+
     if (allowAllOrigins) {
       // Allow all origins (for development/testing only)
       allowedOrigins = true;
-      logger.warn('⚠️  CORS: Allowing all origins (CORS_ALLOW_ALL=true). Not recommended for production!');
+      logger.warn(
+        '⚠️  CORS: Allowing all origins (CORS_ALLOW_ALL=true). Not recommended for production!',
+      );
     } else if (webAppOrigin) {
       // Split by comma and trim each origin, then merge with default origins
       const customOrigins = webAppOrigin.split(',').map((origin) => origin.trim());
@@ -179,7 +188,7 @@ async function bootstrap() {
       // Basic Auth protection for Swagger in production
       const swaggerUser = process.env.SWAGGER_USER || 'admin';
       const swaggerPassword = process.env.SWAGGER_PASSWORD || 'admin123';
-      
+
       if (process.env.NODE_ENV === 'production') {
         app.use(
           '/docs',
@@ -221,7 +230,7 @@ async function bootstrap() {
     }
 
     await app.listen(port, '0.0.0.0');
-    
+
     logger.log(`✅ Application is running on: http://0.0.0.0:${port}`);
     logger.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
     if (webAppOrigin) {

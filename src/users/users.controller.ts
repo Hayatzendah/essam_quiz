@@ -1,4 +1,17 @@
-import { Controller, Get, Patch, Param, Body, UseGuards, Req, Logger, HttpException, HttpStatus, Delete, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+  Logger,
+  HttpException,
+  HttpStatus,
+  Delete,
+  Post,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -193,7 +206,10 @@ export class UsersController {
       this.logger.log(`Successfully deleted ${result.deletedCount} old teachers`);
       return result;
     } catch (error) {
-      this.logger.error(`Error in DELETE /users/cleanup/old-teachers: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error in DELETE /users/cleanup/old-teachers: ${error.message}`,
+        error.stack,
+      );
       throw new HttpException(
         `Failed to delete old teachers: ${error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -201,4 +217,3 @@ export class UsersController {
     }
   }
 }
-

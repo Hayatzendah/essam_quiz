@@ -38,19 +38,24 @@ export class UsersService {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const exists = await this.userModel.exists({ email: normalizedEmail });
     if (exists) throw new ConflictException('Email already registered');
-    
+
     const created = await this.userModel.create({
       ...dto,
       email: normalizedEmail,
     });
-    
+
     const obj = created.toObject();
     delete (obj as any).password;
     return obj as any;
   }
 
   // للحفاظ على التوافق مع الكود القديم
-  async createUser(dto: { email: string; password: string; role?: 'student' | 'teacher' | 'admin'; state?: string }) {
+  async createUser(dto: {
+    email: string;
+    password: string;
+    role?: 'student' | 'teacher' | 'admin';
+    state?: string;
+  }) {
     const normalizedEmail = dto.email.toLowerCase().trim();
     const exists = await this.userModel.exists({ email: normalizedEmail });
     if (exists) throw new ConflictException('Email already in use');
@@ -81,7 +86,7 @@ export class UsersService {
 
     const ok = await bcrypt.compare(password, user.password);
     console.log(`[validateUser] Password match: ${ok}`);
-    
+
     if (!ok) return null;
 
     // إزالة الـ password من النتيجة
@@ -157,14 +162,12 @@ export class UsersService {
       // Validate role
       const validRoles: User['role'][] = ['student', 'teacher', 'admin'];
       if (!validRoles.includes(role)) {
-        throw new NotFoundException(`Invalid role: ${role}. Must be one of: ${validRoles.join(', ')}`);
+        throw new NotFoundException(
+          `Invalid role: ${role}. Must be one of: ${validRoles.join(', ')}`,
+        );
       }
 
-      const user = await this.userModel.findByIdAndUpdate(
-        id,
-        { role },
-        { new: true },
-      ).exec();
+      const user = await this.userModel.findByIdAndUpdate(id, { role }, { new: true }).exec();
 
       if (!user) {
         throw new NotFoundException(`User with ID ${id} not found`);
@@ -208,14 +211,16 @@ export class UsersService {
   // تغيير role جميع المعلمين القديمين (غير teacher@deutsch-tests.com) إلى student
   async convertOldTeachersToStudents(teacherEmail: string) {
     const normalizedTeacherEmail = teacherEmail.toLowerCase().trim();
-    const result = await this.userModel.updateMany(
-      { 
-        role: 'teacher',
-        email: { $ne: normalizedTeacherEmail }
-      },
-      { role: 'student' }
-    ).exec();
-    
+    const result = await this.userModel
+      .updateMany(
+        {
+          role: 'teacher',
+          email: { $ne: normalizedTeacherEmail },
+        },
+        { role: 'student' },
+      )
+      .exec();
+
     return {
       message: 'Old teachers converted to students',
       matchedCount: result.matchedCount,
@@ -226,11 +231,13 @@ export class UsersService {
   // حذف جميع المعلمين القديمين (غير teacher@deutsch-tests.com)
   async deleteOldTeachers(teacherEmail: string) {
     const normalizedTeacherEmail = teacherEmail.toLowerCase().trim();
-    const result = await this.userModel.deleteMany({
-      role: 'teacher',
-      email: { $ne: normalizedTeacherEmail }
-    }).exec();
-    
+    const result = await this.userModel
+      .deleteMany({
+        role: 'teacher',
+        email: { $ne: normalizedTeacherEmail },
+      })
+      .exec();
+
     return {
       message: 'Old teachers deleted',
       deletedCount: result.deletedCount,
@@ -240,11 +247,10 @@ export class UsersService {
   // جلب جميع المعلمين
   async findAllTeachers() {
     const teachers = await this.userModel.find({ role: 'teacher' }).select('-password').exec();
-    return teachers.map(user => {
+    return teachers.map((user) => {
       const obj = user.toObject ? user.toObject() : user;
       delete (obj as any).password;
       return obj;
     });
   }
 }
-

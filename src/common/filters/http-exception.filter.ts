@@ -25,7 +25,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      
+
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
         error = exceptionResponse;
@@ -36,10 +36,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     } else if (exception instanceof Error) {
       message = exception.message;
       error = exception.message;
-      this.logger.error(
-        `Unhandled exception: ${exception.message}`,
-        exception.stack,
-      );
+      this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack);
     }
 
     const errorResponse = {
@@ -52,14 +49,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
     };
 
-    this.logger.error(
-      `${request.method} ${request.url} - ${status} - ${message}`,
-    );
+    this.logger.error(`${request.method} ${request.url} - ${status} - ${message}`);
 
     response.status(status).json(errorResponse);
   }
 }
-
-
-
-

@@ -14,14 +14,22 @@ export class MediaService {
 
   constructor() {
     // التحقق من متغيرات البيئة
-    const requiredEnvVars = ['S3_REGION', 'S3_ENDPOINT', 'S3_ACCESS_KEY', 'S3_SECRET_KEY', 'S3_BUCKET'];
-    const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-    
+    const requiredEnvVars = [
+      'S3_REGION',
+      'S3_ENDPOINT',
+      'S3_ACCESS_KEY',
+      'S3_SECRET_KEY',
+      'S3_BUCKET',
+    ];
+    const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
+
     // إذا لم تكن متغيرات S3 موجودة، نستخدم وضع Mock للاختبار
     this.useMockMode = missingVars.length > 0 || process.env.MEDIA_USE_MOCK === 'true';
-    
+
     if (this.useMockMode) {
-      this.logger.warn('⚠️ MediaService running in MOCK MODE (no S3). Files will not be actually stored.');
+      this.logger.warn(
+        '⚠️ MediaService running in MOCK MODE (no S3). Files will not be actually stored.',
+      );
       this.logger.warn('⚠️ This is for testing only. Set S3 environment variables for production.');
     } else {
       this.s3 = new S3Client({
@@ -41,11 +49,12 @@ export class MediaService {
 
   async uploadBuffer(opts: { buffer: Buffer; mime: string; ext?: string; prefix?: string }) {
     const key = `${opts.prefix || 'questions'}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${opts.ext ? '.' + opts.ext : ''}`;
-    
+
     // وضع Mock للاختبار بدون S3
     if (this.useMockMode) {
       this.logger.warn(`⚠️ MOCK MODE: Simulating upload for ${key} (${opts.buffer.length} bytes)`);
-      const baseUrl = process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
+      const baseUrl =
+        process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
       const mockUrl = `${baseUrl}/media/mock/${key}`;
       return { key, url: mockUrl, mime: opts.mime };
     }
@@ -54,7 +63,9 @@ export class MediaService {
       // التحقق من وجود متغيرات البيئة
       if (!this.bucket || !process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY) {
         this.logger.error('S3 configuration is missing. Please check environment variables.');
-        throw new InternalServerErrorException('S3 configuration is missing. Please check environment variables in Railway.');
+        throw new InternalServerErrorException(
+          'S3 configuration is missing. Please check environment variables in Railway.',
+        );
       }
 
       const putCommand: any = {
@@ -68,11 +79,11 @@ export class MediaService {
       if (process.env.S3_USE_ACL !== 'false') {
         putCommand.ACL = 'private'; // نخليه خاص
       }
-      
+
       this.logger.log(`Uploading file to S3: ${key} (${opts.buffer.length} bytes)`);
       await this.s3.send(new PutObjectCommand(putCommand));
       this.logger.log(`✅ File uploaded successfully: ${key}`);
-      
+
       // public URL (هيكون غير صالح لو ACL private) - هنستخدم presign وقت العرض
       const url = `${process.env.S3_ENDPOINT?.replace(/\/+$/, '')}/${this.bucket}/${key}`;
       return { key, url, mime: opts.mime };
@@ -80,19 +91,25 @@ export class MediaService {
       this.logger.error(`❌ Failed to upload media: ${e?.message || 'Unknown error'}`);
       this.logger.error(`Error details: ${JSON.stringify(e)}`);
       this.logger.error(`Stack: ${e?.stack}`);
-      
+
       // رسالة خطأ أكثر وضوحاً
       const errorMessage = e?.message || 'Unknown error';
       if (errorMessage.includes('credentials') || errorMessage.includes('AccessDenied')) {
-        throw new InternalServerErrorException('S3 credentials are invalid or insufficient permissions. Please check S3_ACCESS_KEY and S3_SECRET_KEY in Railway.');
+        throw new InternalServerErrorException(
+          'S3 credentials are invalid or insufficient permissions. Please check S3_ACCESS_KEY and S3_SECRET_KEY in Railway.',
+        );
       }
       if (errorMessage.includes('bucket') || errorMessage.includes('Bucket')) {
-        throw new InternalServerErrorException(`S3 bucket "${this.bucket}" not found or inaccessible. Please check S3_BUCKET in Railway.`);
+        throw new InternalServerErrorException(
+          `S3 bucket "${this.bucket}" not found or inaccessible. Please check S3_BUCKET in Railway.`,
+        );
       }
       if (errorMessage.includes('endpoint') || errorMessage.includes('ENOTFOUND')) {
-        throw new InternalServerErrorException(`Cannot connect to S3 endpoint "${process.env.S3_ENDPOINT}". Please check S3_ENDPOINT in Railway.`);
+        throw new InternalServerErrorException(
+          `Cannot connect to S3 endpoint "${process.env.S3_ENDPOINT}". Please check S3_ENDPOINT in Railway.`,
+        );
       }
-      
+
       throw new InternalServerErrorException(`Failed to upload media: ${errorMessage}`);
     }
   }
@@ -101,7 +118,8 @@ export class MediaService {
     // وضع Mock للاختبار بدون S3
     if (this.useMockMode) {
       this.logger.warn(`⚠️ MOCK MODE: Generating mock presigned URL for ${key}`);
-      const baseUrl = process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
+      const baseUrl =
+        process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
       return `${baseUrl}/media/mock/${key}?expires=${Date.now() + (expiresSec ?? this.defaultExpires) * 1000}`;
     }
 
@@ -109,4 +127,3 @@ export class MediaService {
     return await getSignedUrl(this.s3, cmd, { expiresIn: expiresSec ?? this.defaultExpires });
   }
 }
-

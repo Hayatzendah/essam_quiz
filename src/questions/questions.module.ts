@@ -5,9 +5,7 @@ import { QuestionsController } from './questions.controller';
 import { Question, QuestionSchema } from './schemas/question.schema';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Question.name, schema: QuestionSchema }]),
-  ],
+  imports: [MongooseModule.forFeature([{ name: Question.name, schema: QuestionSchema }])],
   controllers: [QuestionsController],
   providers: [QuestionsService],
   exports: [QuestionsService],

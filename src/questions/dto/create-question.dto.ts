@@ -1,4 +1,14 @@
-import { IsArray, IsBoolean, IsEnum, IsIn, IsOptional, IsString, MinLength, ValidateNested, ArrayMinSize } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsIn,
+  IsOptional,
+  IsString,
+  MinLength,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { QuestionStatus, QuestionType } from '../schemas/question.schema';
 
@@ -33,35 +43,44 @@ class QuestionMediaDto {
 }
 
 export class CreateQuestionDto {
-  @IsString() @MinLength(3)
+  @IsString()
+  @MinLength(3)
   prompt: string;
 
   @IsEnum(QuestionType)
   qType: QuestionType;
 
   // MCQ
-  @IsOptional() @IsArray() @ArrayMinSize(2) @ValidateNested({ each: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(2)
+  @ValidateNested({ each: true })
   @Type(() => McqOptionDto)
   options?: McqOptionDto[];
 
   // TRUE/FALSE
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   answerKeyBoolean?: boolean;
 
   // FILL
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   fillExact?: string;
 
-  @IsOptional() @IsArray()
+  @IsOptional()
+  @IsArray()
   @IsString({ each: true })
   regexList?: string[];
 
   // MATCH
-  @IsOptional() @IsArray()
+  @IsOptional()
+  @IsArray()
   answerKeyMatch?: [string, string][];
 
   // REORDER
-  @IsOptional() @IsArray()
+  @IsOptional()
+  @IsArray()
   @IsString({ each: true })
   answerKeyReorder?: string[];
 
@@ -72,13 +91,13 @@ export class CreateQuestionDto {
   @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
 
   // حالة ابتدائية اختيارية
-  @IsOptional() @IsEnum(QuestionStatus)
+  @IsOptional()
+  @IsEnum(QuestionStatus)
   status?: QuestionStatus;
 
   // وسائط
-  @IsOptional() @ValidateNested()
+  @IsOptional()
+  @ValidateNested()
   @Type(() => QuestionMediaDto)
   media?: QuestionMediaDto;
 }
-
-

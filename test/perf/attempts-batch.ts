@@ -2,20 +2,13 @@ import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 
 // Performance test script
-export async function runBatchAttemptsTest(
-  app: INestApplication,
-  token: string,
-  examId: string,
-) {
+export async function runBatchAttemptsTest(app: INestApplication, token: string, examId: string) {
   const t0 = Date.now();
   const N = 100;
   const srv = app.getHttpServer();
 
   const jobs = Array.from({ length: N }, () =>
-    request(srv)
-      .post('/attempts')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ examId }),
+    request(srv).post('/attempts').set('Authorization', `Bearer ${token}`).send({ examId }),
   );
 
   const res = await Promise.allSettled(jobs);
@@ -30,5 +23,3 @@ export async function runBatchAttemptsTest(
   console.log(`Failed: ${failedCount}`);
   console.log(`Avg time per request: ${(t1 - t0) / N}ms`);
 }
-
-

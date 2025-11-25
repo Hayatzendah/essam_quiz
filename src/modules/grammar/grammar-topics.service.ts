@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GrammarTopic, GrammarTopicDocument } from './schemas/grammar-topic.schema';
@@ -25,11 +31,7 @@ export class GrammarTopicsService {
       query.level = filter.level;
     }
 
-    const items = await this.model
-      .find(query)
-      .sort({ level: 1, title: 1 })
-      .lean()
-      .exec();
+    const items = await this.model.find(query).sort({ level: 1, title: 1 }).lean().exec();
 
     return { items };
   }
@@ -45,7 +47,9 @@ export class GrammarTopicsService {
 
     const topic = await this.model.findOne(query).lean().exec();
     if (!topic) {
-      throw new NotFoundException(`Grammar topic with slug "${slug}"${level ? ` and level "${level}"` : ''} not found`);
+      throw new NotFoundException(
+        `Grammar topic with slug "${slug}"${level ? ` and level "${level}"` : ''} not found`,
+      );
     }
 
     return topic;
@@ -70,7 +74,9 @@ export class GrammarTopicsService {
     // Check if slug already exists for this level
     const existing = await this.model.findOne({ slug, level: dto.level }).exec();
     if (existing) {
-      throw new BadRequestException(`A grammar topic with slug "${slug}" already exists for level "${dto.level}"`);
+      throw new BadRequestException(
+        `A grammar topic with slug "${slug}" already exists for level "${dto.level}"`,
+      );
     }
 
     const topic = await this.model.create({
@@ -94,19 +100,23 @@ export class GrammarTopicsService {
     // If slug is being updated, normalize it
     if (dto.slug) {
       dto.slug = dto.slug.toLowerCase().trim();
-      
+
       // Determine the level to check (use new level if provided, otherwise current level)
       const levelToCheck = dto.level || currentTopic.level;
-      
+
       // Check if the new slug conflicts with another topic at the same level
-      const existing = await this.model.findOne({ 
-        slug: dto.slug, 
-        level: levelToCheck,
-        _id: { $ne: id }
-      }).exec();
-      
+      const existing = await this.model
+        .findOne({
+          slug: dto.slug,
+          level: levelToCheck,
+          _id: { $ne: id },
+        })
+        .exec();
+
       if (existing) {
-        throw new BadRequestException(`A grammar topic with slug "${dto.slug}" already exists for level "${levelToCheck}"`);
+        throw new BadRequestException(
+          `A grammar topic with slug "${dto.slug}" already exists for level "${levelToCheck}"`,
+        );
       }
     }
 
@@ -128,11 +138,13 @@ export class GrammarTopicsService {
   async startPracticeAttempt(slug: string, level?: string, questionsCount?: number, user?: any) {
     // 1. البحث عن grammar topic
     const topic = await this.findBySlug(slug, level);
-    
+
     // 2. البحث عن أسئلة مرتبطة بـ topic tags
     const tags = topic.tags || [];
     if (tags.length === 0) {
-      throw new BadRequestException(`Grammar topic "${topic.title}" has no tags. Cannot find related questions.`);
+      throw new BadRequestException(
+        `Grammar topic "${topic.title}" has no tags. Cannot find related questions.`,
+      );
     }
 
     // 3. البحث عن أسئلة القواعد النحوية المرتبطة بالموضوع
@@ -176,4 +188,3 @@ export class GrammarTopicsService {
     return this.attemptsService.startPracticeAttempt(examDto, user);
   }
 }
-

@@ -32,10 +32,10 @@ export class ExamSection {
   @Prop({ required: true, trim: true }) name: string;
 
   // مهارة القسم: HOEREN, LESEN, SCHREIBEN, SPRECHEN
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'],
-    trim: true 
+    trim: true,
   })
   skill?: 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
 
@@ -98,12 +98,16 @@ export class Exam {
   timeLimitMin: number;
 
   // سياسة عرض النتائج للطالب بعد التسليم
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['only_scores', 'correct_with_scores', 'explanations_with_scores', 'release_delayed'],
-    default: 'only_scores'
+    default: 'only_scores',
   })
-  resultsPolicy: 'only_scores' | 'correct_with_scores' | 'explanations_with_scores' | 'release_delayed';
+  resultsPolicy:
+    | 'only_scores'
+    | 'correct_with_scores'
+    | 'explanations_with_scores'
+    | 'release_delayed';
 
   // مالك الامتحان (المعلم الذي أنشأه)
   @Prop({ type: Types.ObjectId, ref: 'User', index: true })
@@ -152,9 +156,10 @@ ExamSchema.pre('validate', function (next) {
     }
 
     if (hasQuota && s.difficultyDistribution) {
-      const sum = (s.difficultyDistribution.easy || 0)
-                + (s.difficultyDistribution.medium || 0)
-                + (s.difficultyDistribution.hard || 0);
+      const sum =
+        (s.difficultyDistribution.easy || 0) +
+        (s.difficultyDistribution.medium || 0) +
+        (s.difficultyDistribution.hard || 0);
       if (sum !== s.quota) {
         return next(new Error(`Section "${s.name}" difficultyDistribution must sum to quota`));
       }

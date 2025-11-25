@@ -1,19 +1,12 @@
 import { IsArray, IsMongoId, IsOptional } from 'class-validator';
 
 export class AssignExamDto {
-  @IsOptional() @IsMongoId()
+  @IsOptional()
+  @IsMongoId()
   classId?: string;
 
-  @IsOptional() @IsArray()
+  @IsOptional()
+  @IsArray()
   @IsMongoId({ each: true })
   studentIds?: string[];
 }
-
-
-
-
-
-
-
-
-

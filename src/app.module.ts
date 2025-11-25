@@ -51,7 +51,8 @@ import { AppController } from './app.controller';
           .optional()
           .messages({
             'string.min': 'TEACHER_PASSWORD must be at least 12 characters long',
-            'string.pattern.base': 'TEACHER_PASSWORD must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#)',
+            'string.pattern.base':
+              'TEACHER_PASSWORD must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#)',
           }),
         // S3/Media configuration (optional - will use mock mode if not set)
         S3_REGION: Joi.string().optional(),
@@ -115,7 +116,9 @@ export class AppModule implements OnModuleInit {
       this.logger.error(`❌ MongoDB connection error: ${err.message}`);
       this.logger.error('Please check:');
       this.logger.error('1. MONGO_URI is correct in Railway environment variables');
-      this.logger.error('2. MongoDB Atlas Network Access allows connections from Railway (0.0.0.0/0)');
+      this.logger.error(
+        '2. MongoDB Atlas Network Access allows connections from Railway (0.0.0.0/0)',
+      );
       this.logger.error('3. MongoDB username and password are correct');
     });
 

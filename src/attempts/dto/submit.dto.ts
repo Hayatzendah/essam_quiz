@@ -1,4 +1,12 @@
-import { IsArray, IsBoolean, IsMongoId, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SubmitAnswerDto {
@@ -22,4 +30,3 @@ export class SubmitAttemptDto {
   @Type(() => SubmitAnswerDto)
   answers?: SubmitAnswerDto[]; // اختياري - إذا تم إرسال الإجابات هنا، سيتم حفظها قبل التصحيح
 }
-

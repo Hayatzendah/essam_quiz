@@ -20,7 +20,7 @@ export function normalizeAnswer(input: unknown, opts: NormalizeOpts = {}): strin
 
   // إزالة \n و \r و tabs
   s = s.replace(/[\n\r\t]/g, '');
-  
+
   if (trim) s = s.trim();
   if (removeArabicDiacritics) s = s.replace(AR_DIACRITICS, '');
   if (collapseSpaces) s = s.replace(/\s+/g, ' ');
@@ -28,4 +28,3 @@ export function normalizeAnswer(input: unknown, opts: NormalizeOpts = {}): strin
 
   return s;
 }
-

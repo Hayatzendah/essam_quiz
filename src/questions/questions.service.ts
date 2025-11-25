@@ -1,23 +1,32 @@
-import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model } from 'mongoose';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { QueryQuestionDto } from './dto/query-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { FindVocabDto } from './dto/find-vocab.dto';
-import { Question, QuestionDocument, QuestionStatus, QuestionType } from './schemas/question.schema';
+import {
+  Question,
+  QuestionDocument,
+  QuestionStatus,
+  QuestionType,
+} from './schemas/question.schema';
 
 @Injectable()
 export class QuestionsService {
-  constructor(
-    @InjectModel(Question.name) private readonly model: Model<QuestionDocument>,
-  ) {}
+  constructor(@InjectModel(Question.name) private readonly model: Model<QuestionDocument>) {}
 
   // التحقق الخاص (حسب نوع السؤال)
   private validateCreatePayload(dto: CreateQuestionDto) {
     if (dto.qType === QuestionType.MCQ) {
-      const hasCorrect = (dto.options || []).some(o => o.isCorrect === true);
-      if (!hasCorrect) throw new BadRequestException('MCQ must include at least one option with isCorrect=true');
+      const hasCorrect = (dto.options || []).some((o) => o.isCorrect === true);
+      if (!hasCorrect)
+        throw new BadRequestException('MCQ must include at least one option with isCorrect=true');
     }
     if (dto.qType === QuestionType.TRUE_FALSE) {
       if (typeof dto.answerKeyBoolean !== 'boolean') {
@@ -64,33 +73,54 @@ export class QuestionsService {
     if (filters.section) q.section = filters.section;
     if (filters.qType) q.qType = filters.qType;
     if (filters.status) q.status = filters.status;
-    
+
     // قائمة جميع الولايات الألمانية
     const allStates = [
-      'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen',
-      'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen',
-      'Nordrhein-Westfalen', 'Rheinland-Pfalz', 'Saarland', 'Sachsen',
-      'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen', 'NRW'
+      'Baden-Württemberg',
+      'Bayern',
+      'Berlin',
+      'Brandenburg',
+      'Bremen',
+      'Hamburg',
+      'Hessen',
+      'Mecklenburg-Vorpommern',
+      'Niedersachsen',
+      'Nordrhein-Westfalen',
+      'Rheinland-Pfalz',
+      'Saarland',
+      'Sachsen',
+      'Sachsen-Anhalt',
+      'Schleswig-Holstein',
+      'Thüringen',
+      'NRW',
     ];
-    
+
     // فلترة حسب الولاية (state) - للأسئلة العامة + أسئلة الولاية المحددة
     if (filters.state) {
       if (filters.tags) {
         // إذا كان tags موجود، نضيف state للقائمة
-        const existingTags = filters.tags.split(',').map(s => s.trim()).filter(Boolean);
+        const existingTags = filters.tags
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
         q.tags = { $in: [...existingTags, filters.state] };
       } else {
         // للأسئلة العامة (بدون tags للولايات) + أسئلة الولاية المحددة
         q.$or = [
           { tags: { $nin: allStates } }, // أسئلة عامة (ليس لها tag للولاية)
-          { tags: filters.state } // أسئلة الولاية المحددة
+          { tags: filters.state }, // أسئلة الولاية المحددة
         ];
       }
     } else if (filters.tags) {
       // فلترة حسب tags فقط (بدون state)
-      q.tags = { $in: filters.tags.split(',').map(s => s.trim()).filter(Boolean) };
+      q.tags = {
+        $in: filters.tags
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      };
     }
-    
+
     if (filters.text) q.$text = { $search: filters.text };
     return q;
   }
@@ -107,7 +137,10 @@ export class QuestionsService {
     ]);
 
     return {
-      page, limit, total, items,
+      page,
+      limit,
+      total,
+      items,
     };
   }
 
@@ -133,7 +166,10 @@ export class QuestionsService {
     ]);
 
     return {
-      page, limit, total, items,
+      page,
+      limit,
+      total,
+      items,
     };
   }
 
@@ -148,12 +184,12 @@ export class QuestionsService {
   async updateQuestion(id: string, dto: UpdateQuestionDto) {
     // لا نسمح بتغيير qType - نتجاهله إذا كان موجوداً في الـ payload
     const { qType, ...updateData } = dto as any;
-    
+
     // إذا كان qType موجود في الـ payload، نتحقق من أنه نفس القيمة الحالية
     if (typeof qType !== 'undefined') {
       const existing = await this.model.findById(id).lean().exec();
       if (!existing) throw new NotFoundException('Question not found');
-      
+
       // إذا كان qType مختلف عن القيمة الحالية، نرفض التحديث
       if (qType !== existing.qType) {
         throw new BadRequestException('qType cannot be updated');
@@ -279,4 +315,3 @@ export class QuestionsService {
     };
   }
 }
-
