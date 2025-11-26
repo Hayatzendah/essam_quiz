@@ -11,7 +11,9 @@ import { CreateExamDto, CreatePracticeExamDto } from './dto/create-exam.dto';
 import { QueryExamDto } from './dto/query-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
-import { Exam, ExamDocument, ExamStatus, ExamStatusEnum } from './schemas/exam.schema';
+import { Exam, ExamDocument } from './schemas/exam.schema';
+import type { ExamStatus } from './schemas/exam.schema';
+import { ExamStatusEnum } from './schemas/exam.schema';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -524,7 +526,7 @@ export class ExamsService {
     return {
       id: doc._id.toString(),
       title: doc.title,
-      description: doc.description,
+      description: (doc as any).description,
       level: doc.level,
       provider: doc.provider,
       timeLimitMin: doc.timeLimitMin,
@@ -592,7 +594,7 @@ export class ExamsService {
 
     if (doc.status === ExamStatusEnum.PUBLISHED && !isAdmin) {
       // بعد النشر نقيّد التعديلات الجذرية
-      const structuralChange = typeof dto.sections !== 'undefined';
+      const structuralChange = typeof (dto as any).sections !== 'undefined';
       if (structuralChange) {
         throw new BadRequestException(
           'Cannot change sections after publish (admin only if allowed)',
@@ -601,8 +603,8 @@ export class ExamsService {
     }
 
     // تحققات قبل النشر: لكل سكشن بquota لازم quota>0، والتوزيع يساوي الكوتا
-    if (goingToPublish && dto.sections) {
-      for (const s of dto.sections) {
+    if (goingToPublish && (dto as any).sections) {
+      for (const s of (dto as any).sections) {
         if (typeof s.quota === 'number' && s.quota > 0 && s.difficultyDistribution) {
           const sum =
             (s.difficultyDistribution.easy || 0) +
@@ -620,7 +622,7 @@ export class ExamsService {
     // Validation خاص لـ "Deutschland-in-Leben" عند التحديث
     const updatedProvider = dto.provider !== undefined ? dto.provider : doc.provider;
     if (updatedProvider === 'Deutschland-in-Leben') {
-      const updatedDto = { ...dto, sections: dto.sections || doc.sections };
+      const updatedDto = { ...dto, sections: (dto as any).sections || doc.sections };
       this.validateDeutschlandInLebenStructure(updatedDto as CreateExamDto);
     }
 
@@ -646,11 +648,11 @@ export class ExamsService {
       throw new BadRequestException('Provide classId or studentIds');
     }
 
-    if (dto.classId) doc.assignedClassId = new Types.ObjectId(dto.classId);
-    if (dto.studentIds) doc.assignedStudentIds = dto.studentIds.map((id) => new Types.ObjectId(id));
+    if (dto.classId) (doc as any).assignedClassId = new Types.ObjectId(dto.classId);
+    if (dto.studentIds) (doc as any).assignedStudentIds = dto.studentIds.map((id) => new Types.ObjectId(id));
     await doc.save();
 
-    return { assignedClassId: doc.assignedClassId, assignedStudentIds: doc.assignedStudentIds };
+    return { assignedClassId: (doc as any).assignedClassId, assignedStudentIds: (doc as any).assignedStudentIds };
   }
 
   async removeExam(id: string, user: ReqUser, hard: boolean = false) {

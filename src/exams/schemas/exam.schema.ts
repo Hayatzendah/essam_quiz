@@ -36,7 +36,7 @@ class ExamSection {
   @Prop({ type: String, trim: true })
   name?: string;
 
-  @Prop({ type: String, enum: ['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRACHEN'], trim: true })
+  @Prop({ type: String, enum: ['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'], trim: true })
   skill?: 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
 
   @Prop({ type: String, trim: true })
@@ -85,7 +85,7 @@ export class Exam {
   description?: string;
 
   @Prop({ type: String, enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], index: true })
-  level?: QuestionLevel | string;
+  level?: string;
 
   @Prop({ type: String, index: true })
   provider?: QuestionProvider | string;
