@@ -98,20 +98,13 @@ export class AttemptsController {
   async start(@Body() dto: StartAttemptDto, @Req() req: any) {
     const mode = dto.mode || 'exam';
     this.logger.log(
-      `[POST /attempts] Request received - examId: ${dto?.examId}, mode: ${mode}, userId: ${req.user?.userId}, role: ${req.user?.role}`,
+      `[POST /attempts] 🔍 Request received - examId: ${dto?.examId}, mode: ${mode}, userId: ${req.user?.userId}, role: ${req.user?.role}`,
+    );
+    this.logger.log(
+      `[POST /attempts] 🔍 Request details - examId type: ${typeof dto?.examId}, examId value: "${dto?.examId}", examId length: ${dto?.examId?.length}`,
     );
     this.logger.debug(
       `[POST /attempts] Full request body: ${JSON.stringify(dto)}, user: ${JSON.stringify({ userId: req.user?.userId, role: req.user?.role })}`,
-    );
-
-    // 🔍 DEBUG: طباعة تفاصيل الـ request لتشخيص المشكلة
-    this.logger.warn(
-      `[POST /attempts] 🔍 DEBUG INFO:
-      - examId type: ${typeof dto?.examId}
-      - examId value: "${dto?.examId}"
-      - examId length: ${dto?.examId?.length}
-      - Request headers: ${JSON.stringify(req.headers)}
-      - Full DTO: ${JSON.stringify(dto, null, 2)}`,
     );
     
     if (!dto?.examId) {

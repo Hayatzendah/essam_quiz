@@ -91,8 +91,12 @@ export class AttemptsService {
     studentState?: string,
   ) {
     this.logger.log(
-      `[generateQuestionListForAttempt] Starting - exam: ${exam.title}, sections: ${exam.sections.length}, studentState: ${studentState || 'not set'}`,
+      `[generateQuestionListForAttempt] 🔍 Starting - exam: ${exam.title}, examId: ${(exam as any)._id}, sections: ${exam.sections.length}, studentState: ${studentState || 'not set'}`,
     );
+    this.logger.log(
+      `[generateQuestionListForAttempt] Exam details - provider: ${(exam as any).provider}, level: ${exam.level}`,
+    );
+    
     const selected: Array<{ question: QuestionDocument; points: number }> = [];
 
     for (let secIndex = 0; secIndex < exam.sections.length; secIndex++) {
@@ -101,14 +105,15 @@ export class AttemptsService {
       const hasQuota = typeof (sec as any).quota === 'number' && (sec as any).quota > 0;
 
       this.logger.log(
-        `[generateQuestionListForAttempt] Section ${secIndex + 1}/${exam.sections.length}: "${(sec as any).name || sec.section}", hasItems: ${hasItems}, hasQuota: ${hasQuota}, quota: ${(sec as any).quota}, tags: ${JSON.stringify((sec as any).tags || [])}`,
+        `[generateQuestionListForAttempt] 📋 Section ${secIndex + 1}/${exam.sections.length}: "${(sec as any).name || sec.section}", hasItems: ${hasItems}, hasQuota: ${hasQuota}, quota: ${(sec as any).quota}, tags: ${JSON.stringify((sec as any).tags || [])}`,
       );
 
-      // تحذير إذا كان القسم لا يحتوي على items أو quota
+      // تحذير إذا كان القسم لا يحتوي على items أو quota - نخطي هذا القسم
       if (!hasItems && !hasQuota) {
         this.logger.warn(
-          `[generateQuestionListForAttempt] WARNING: Section ${secIndex + 1} "${(sec as any).name || sec.section}" has no items and no quota! Section data: ${JSON.stringify({ name: (sec as any).name, section: sec.section, items: (sec as any).items, quota: (sec as any).quota })}`,
+          `[generateQuestionListForAttempt] ⚠️ WARNING: Section ${secIndex + 1} "${(sec as any).name || sec.section}" has no items and no quota! Skipping this section. Section data: ${JSON.stringify({ name: (sec as any).name, section: sec.section, items: (sec as any).items, quota: (sec as any).quota })}`,
         );
+        continue; // Skip this section
       }
 
       if (hasItems) {
@@ -150,15 +155,10 @@ export class AttemptsService {
         }
 
         if (itemIds.length === 0) {
-          this.logger.error(
-            `[generateQuestionListForAttempt] No valid questionIds found in section "${(sec as any).name || sec.section}"`,
+          this.logger.warn(
+            `[generateQuestionListForAttempt] ⚠️ No valid questionIds found in section "${(sec as any).name || sec.section}". Skipping this section. Invalid IDs: ${JSON.stringify(invalidIds)}`,
           );
-          throw new BadRequestException({
-            code: 'NO_QUESTIONS_FOR_SECTION',
-            message: `No valid question IDs found for section "${(sec as any).name || sec.section}"`,
-            sectionName: (sec as any).name || sec.section,
-            invalidIds: invalidIds,
-          });
+          continue; // Skip this section instead of throwing
         }
 
         this.logger.log(
@@ -177,16 +177,10 @@ export class AttemptsService {
         );
 
         if (qDocs.length === 0) {
-          this.logger.error(
-            `[generateQuestionListForAttempt] No published questions found for section "${(sec as any).name || sec.section}" - searched for ${itemIds.length} questionIds`,
+          this.logger.warn(
+            `[generateQuestionListForAttempt] ⚠️ No published questions found for section "${(sec as any).name || sec.section}" - searched for ${itemIds.length} questionIds. Skipping this section. Please ensure all questions have status: "published"`,
           );
-          throw new BadRequestException({
-            code: 'NO_QUESTIONS_FOR_SECTION',
-            message: `No published questions found for section "${(sec as any).name || sec.section}". Please ensure all questions have status: "published"`,
-            sectionName: (sec as any).name || sec.section,
-            requestedIds: itemIds.map((id) => id.toString()),
-            foundCount: 0,
-          });
+          continue; // Skip this section instead of throwing
         }
 
         const sectionItems: Array<{ question: QuestionDocument; points: number }> = [];
@@ -205,17 +199,10 @@ export class AttemptsService {
         }
 
         if (sectionItems.length === 0) {
-          this.logger.error(
-            `[generateQuestionListForAttempt] No matching questions found for section "${(sec as any).name || sec.section}" - requested: ${items.length}, found in DB: ${qDocs.length}, matched: ${sectionItems.length}`,
+          this.logger.warn(
+            `[generateQuestionListForAttempt] ⚠️ No matching questions found for section "${(sec as any).name || sec.section}" - requested: ${items.length}, found in DB: ${qDocs.length}, matched: ${sectionItems.length}. Skipping this section.`,
           );
-          throw new BadRequestException({
-            code: 'NO_QUESTIONS_FOR_SECTION',
-            message: `No published questions found for section "${(sec as any).name || sec.section}"`,
-            sectionName: (sec as any).name || sec.section,
-            requestedCount: items.length,
-            foundInDb: qDocs.length,
-            matchedCount: sectionItems.length,
-          });
+          continue; // Skip this section instead of throwing
         }
 
         // خلط ترتيب الأسئلة داخل القسم إذا كان randomize=true
@@ -336,16 +323,17 @@ export class AttemptsService {
           );
         }
 
+        // 🔍 LOG: Detailed filter information
         this.logger.log(
-          `[Section: ${(sec as any).name || sec.section}] Searching questions with filter: ${JSON.stringify(filter, null, 2)}`,
+          `[generateQuestionListForAttempt] 🔍 [Section: ${(sec as any).name || sec.section}] Searching questions with filter: ${JSON.stringify(filter, null, 2)}`,
         );
         this.logger.log(
-          `[Section: ${(sec as any).name || sec.section}] Exam provider: "${(exam as any).provider}", level: "${exam.level}", sectionTags: ${JSON.stringify(sectionTags)}`,
+          `[generateQuestionListForAttempt] 🔍 [Section: ${(sec as any).name || sec.section}] Exam provider: "${(exam as any).provider}", level: "${exam.level}", sectionTags: ${JSON.stringify(sectionTags)}`,
         );
         
         const candidates = await this.QuestionModel.find(filter).lean(false).exec();
         this.logger.log(
-          `[Section: ${(sec as any).name || sec.section}] Found ${candidates.length} candidate questions (quota required: ${(sec as any).quota})`,
+          `[generateQuestionListForAttempt] ✅ [Section: ${(sec as any).name || sec.section}] Found ${candidates.length} candidate questions (quota required: ${(sec as any).quota})`,
         );
         
         if (candidates.length > 0) {
@@ -408,22 +396,22 @@ export class AttemptsService {
             .limit(10)
             .exec();
           
-          this.logger.error(`❌ No questions found for section "${(sec as any).name || sec.section}"`);
-          this.logger.error(`📋 Filter used: ${JSON.stringify(filter, null, 2)}`);
-          this.logger.error(
-            `🔍 Questions found without tags filter (provider + level only): ${candidatesWithoutTags.length}`,
+          this.logger.warn(`[generateQuestionListForAttempt] ⚠️ No questions found for section "${(sec as any).name || sec.section}". Skipping this section.`);
+          this.logger.warn(`[generateQuestionListForAttempt] 📋 Filter used: ${JSON.stringify(filter, null, 2)}`);
+          this.logger.warn(
+            `[generateQuestionListForAttempt] 🔍 Questions found without tags filter (provider + level only): ${candidatesWithoutTags.length}`,
           );
-          this.logger.error(
-            `🏷️  Questions found with section tags only (${JSON.stringify(sectionTags)}): ${candidatesWithTags.length}`,
+          this.logger.warn(
+            `[generateQuestionListForAttempt] 🏷️  Questions found with section tags only (${JSON.stringify(sectionTags)}): ${candidatesWithTags.length}`,
           );
-          this.logger.error(
-            `📊 Total published questions for level "${exam.level}": ${allPublishedForLevel.length}`,
+          this.logger.warn(
+            `[generateQuestionListForAttempt] 📊 Total published questions for level "${exam.level}": ${allPublishedForLevel.length}`,
           );
-          this.logger.error(`📊 Total published questions (any level): ${allPublished.length}`);
+          this.logger.warn(`[generateQuestionListForAttempt] 📊 Total published questions (any level): ${allPublished.length}`);
           
           if (candidatesWithoutTags.length > 0) {
-            this.logger.error(
-              `📝 Sample questions (provider + level match, tags may differ): ${JSON.stringify(
+            this.logger.warn(
+              `[generateQuestionListForAttempt] 📝 Sample questions (provider + level match, tags may differ): ${JSON.stringify(
                 candidatesWithoutTags.slice(0, 5).map((q: any) => ({
               id: q._id, 
               tags: q.tags, 
@@ -438,8 +426,8 @@ export class AttemptsService {
           }
           
           if (candidatesWithTags.length > 0) {
-            this.logger.error(
-              `📝 Sample questions with section tags (${JSON.stringify(sectionTags)}): ${JSON.stringify(
+            this.logger.warn(
+              `[generateQuestionListForAttempt] 📝 Sample questions with section tags (${JSON.stringify(sectionTags)}): ${JSON.stringify(
                 candidatesWithTags.slice(0, 5).map((q: any) => ({
               id: q._id, 
               tags: q.tags, 
@@ -454,8 +442,8 @@ export class AttemptsService {
           }
           
           if (allPublishedForLevel.length > 0) {
-            this.logger.error(
-              `📝 Sample questions for level "${exam.level}": ${JSON.stringify(
+            this.logger.warn(
+              `[generateQuestionListForAttempt] 📝 Sample questions for level "${exam.level}": ${JSON.stringify(
                 allPublishedForLevel.slice(0, 5).map((q: any) => ({
               id: q._id, 
               provider: q.provider, 
@@ -469,36 +457,8 @@ export class AttemptsService {
             );
           }
           
-          throw new BadRequestException({
-            code: 'NO_QUESTIONS_FOR_SECTION',
-            message: `No questions found for section "${(sec as any).name || sec.section}"`,
-            sectionName: (sec as any).name || sec.section,
-            filter: {
-              provider: (exam as any).provider,
-              level: exam.level,
-              tags: sectionTags,
-              status: 'published',
-            },
-            diagnostic: {
-              questionsFoundWithoutTags: candidatesWithoutTags.length,
-              totalPublishedForLevel: allPublishedForLevel.length,
-              totalPublished: allPublished.length,
-              sampleQuestionsForLevel: allPublishedForLevel.slice(0, 5).map((q: any) => ({
-                id: q._id,
-                provider: q.provider,
-                level: q.level,
-                tags: q.tags,
-                status: q.status,
-              })),
-              sampleQuestions: candidatesWithoutTags.slice(0, 3).map((q: any) => ({
-                id: q._id,
-                provider: q.provider,
-                level: q.level,
-                tags: q.tags,
-                status: q.status,
-              })),
-            },
-          });
+          // Skip this section instead of throwing
+          continue;
         }
 
         let pickList: QuestionDocument[] = [];
@@ -533,43 +493,34 @@ export class AttemptsService {
 
         if (pickList.length < (sec as any).quota) {
           this.logger.warn(
-            `Not enough questions for section - section: ${(sec as any).name || sec.section}, required: ${(sec as any).quota}, found: ${pickList.length}, available: ${candidates.length}`,
+            `[generateQuestionListForAttempt] ⚠️ Not enough questions for section "${(sec as any).name || sec.section}" - required: ${(sec as any).quota}, found: ${pickList.length}, available: ${candidates.length}. Using ${pickList.length} questions (less than quota).`,
           );
-          throw new BadRequestException({
-            code: 'NOT_ENOUGH_QUESTIONS_FOR_SECTION',
-            message: `Section "${(sec as any).name || sec.section}" requires ${(sec as any).quota} questions, but only ${pickList.length} are available (${candidates.length} total candidates)`,
-            sectionName: (sec as any).name || sec.section,
-            required: (sec as any).quota,
-            available: pickList.length,
-            totalCandidates: candidates.length,
-            filter: {
-              provider: (exam as any).provider,
-              level: exam.level,
-              tags: sectionTags,
-              status: 'published',
-            },
-          });
+          // Continue with available questions instead of throwing
         }
 
         for (const q of pickList) {
           selected.push({ question: q, points: 1 });
         }
-        this.logger.debug(`Section "${(sec as any).name || sec.section}": Selected ${pickList.length} questions`);
+        this.logger.log(
+          `[generateQuestionListForAttempt] ✅ [Section: ${(sec as any).name || sec.section}] Selected ${pickList.length} questions (quota was ${(sec as any).quota})`,
+        );
       }
     }
 
     if (exam.randomizeQuestions) {
       this.logger.log(
-        `[generateQuestionListForAttempt] Shuffling ${selected.length} questions (randomizeQuestions=true)`,
+        `[generateQuestionListForAttempt] 🔀 Shuffling ${selected.length} questions (randomizeQuestions=true)`,
       );
       shuffleInPlace(selected, rng);
     }
+    
     this.logger.log(
-      `[generateQuestionListForAttempt] Total questions selected: ${selected.length} for exam: ${exam.title}`,
+      `[generateQuestionListForAttempt] ✅ Total questions selected: ${selected.length} for exam: ${exam.title} (examId: ${(exam as any)._id})`,
     );
+    
     if (selected.length === 0) {
       this.logger.error(
-        `[generateQuestionListForAttempt] ERROR: No questions selected! Exam sections details: ${JSON.stringify(exam.sections.map((s: any) => ({ 
+        `[generateQuestionListForAttempt] ❌ ERROR: No questions selected! Exam sections details: ${JSON.stringify(exam.sections.map((s: any) => ({ 
           name: s.name || s.section, 
           section: s.section,
           quota: s.quota, 
@@ -584,6 +535,7 @@ export class AttemptsService {
         `[generateQuestionListForAttempt] Exam details - id: ${(exam as any)._id}, title: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}`,
       );
     }
+    
     return selected;
   }
 
@@ -699,12 +651,12 @@ export class AttemptsService {
     const examId = new Types.ObjectId(examIdStr);
 
     this.logger.log(
-      `Starting attempt - examId: ${examIdStr}, userId: ${userId}, role: ${user.role}`,
+      `[startAttempt] Starting attempt - examId: ${examIdStr}, userId: ${userId}, role: ${user.role}`,
     );
 
     const exam = await this.ExamModel.findById(examId).lean(false).exec();
     if (!exam) {
-      this.logger.warn(`Exam not found - examId: ${examIdStr}`);
+      this.logger.warn(`[startAttempt] Exam not found - examId: ${examIdStr}`);
       throw new BadRequestException({
         code: 'EXAM_NOT_FOUND',
         message: 'Exam not found',
@@ -712,14 +664,32 @@ export class AttemptsService {
       });
     }
 
-    this.logger.debug(
-      `Exam found - title: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, status: ${exam.status}`,
+    this.logger.log(
+      `[startAttempt] Exam found - id: ${examIdStr}, title: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, status: ${exam.status}, sectionsCount: ${exam.sections.length}`,
+    );
+
+    // 🔍 LOG: Exam sections details
+    this.logger.log(
+      `[startAttempt] Exam sections: ${JSON.stringify(
+        exam.sections.map((s: any) => ({
+          name: s.name || s.section,
+          section: s.section,
+          skill: s.skill,
+          hasItems: Array.isArray(s.items) && s.items.length > 0,
+          itemsCount: s.items?.length || 0,
+          hasQuota: typeof s.quota === 'number' && s.quota > 0,
+          quota: s.quota,
+          tags: s.tags || [],
+        })),
+        null,
+        2,
+      )}`,
     );
 
     // جلب معلومات الطالب (بما فيها state)
     const student = await this.UserModel.findById(userId).lean().exec();
     const studentState = (student as any)?.state;
-    this.logger.debug(`Student state: ${studentState || 'not set'}`);
+    this.logger.log(`[startAttempt] Student state: ${studentState || 'not set'}`);
 
     if (exam.status !== ExamStatusEnum.PUBLISHED) {
       this.logger.warn(`Exam is not published - examId: ${examIdStr}, status: ${exam.status}`);
@@ -798,26 +768,38 @@ export class AttemptsService {
       });
     }
     
+    // 🔍 Only throw NO_QUESTIONS_AVAILABLE if there are literally no questions at all
     if (!picked || !picked.length) {
       this.logger.error(
-        `[startAttempt] No questions available - examId: ${examIdStr}, examTitle: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, studentState: ${studentState || 'not set'}`,
+        `[startAttempt] ❌ NO_QUESTIONS_AVAILABLE - examId: ${examIdStr}, examTitle: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, studentState: ${studentState || 'not set'}`,
       );
       this.logger.error(
-        `[startAttempt] Exam sections: ${JSON.stringify(exam.sections.map((s: any) => ({ name: s.name, quota: s.quota, tags: s.tags, items: s.items?.length || 0 })))}`,
+        `[startAttempt] Exam sections details: ${JSON.stringify(exam.sections.map((s: any) => ({ 
+          name: s.name || s.section, 
+          section: s.section,
+          quota: s.quota, 
+          tags: s.tags, 
+          itemsCount: s.items?.length || 0,
+          hasItems: Array.isArray(s.items) && s.items.length > 0,
+          hasQuota: typeof s.quota === 'number' && s.quota > 0,
+        })), null, 2)}`,
       );
       throw new BadRequestException({
         code: 'NO_QUESTIONS_AVAILABLE',
         message: 'No questions available for this exam',
+        path: '/attempts',
+        statusCode: 400,
         examId: examIdStr,
         examTitle: exam.title,
         provider: (exam as any).provider,
         level: exam.level,
         studentState: studentState || null,
         sections: exam.sections.map((s: any) => ({
-          name: s.name,
+          name: s.name || s.section,
           quota: s.quota,
           tags: s.tags,
           hasItems: Array.isArray(s.items) && s.items.length > 0,
+          itemsCount: s.items?.length || 0,
         })),
       });
     }

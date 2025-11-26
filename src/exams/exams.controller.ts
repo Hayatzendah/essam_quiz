@@ -139,6 +139,18 @@ export class ExamsController {
     return this.service.findAvailableForStudent(req.user, q);
   }
 
+  // 🔍 DEBUG ENDPOINT - فحص بنية الامتحان
+  @Get('debug/:id')
+  @ApiOperation({
+    summary: 'Debug exam structure',
+    description: 'فحص بنية الامتحان وتشخيص مشكلة "No questions available" - Public endpoint للتشخيص'
+  })
+  @ApiResponse({ status: 200, description: 'Debug info returned' })
+  async debugExam(@Param('id') id: string) {
+    this.logger.log(`[GET /exams/debug/${id}] Debug request received`);
+    return this.service.debugExamStructure(id);
+  }
+
   // قائمة الامتحانات المنشورة للطلاب (Public endpoint)
   // Public endpoint - لا يحتاج JWT
   @Get('public')
