@@ -188,23 +188,8 @@ export class ExamsController {
     return this.service.findPublicExamById(examId);
   }
 
-  // تفاصيل الامتحان
-  @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'teacher', 'student')
-  findById(@Param('id') id: string, @Req() req: any) {
-    return this.service.findById(id, req.user);
-  }
-
-  // تحديث الامتحان (المالك أو الأدمن)
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'teacher')
-  update(@Param('id') id: string, @Body() dto: UpdateExamDto, @Req() req: any) {
-    return this.service.updateExam(id, dto, req.user);
-  }
-
   // إيجاد جميع الامتحانات التي sections فارغة (admin فقط)
+  // ⚠️ يجب أن يكون قبل @Get(':id') لتجنب التعارض
   @Get('empty-sections')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -222,6 +207,7 @@ export class ExamsController {
   }
 
   // إصلاح جميع الامتحانات التي sections فارغة (admin فقط)
+  // ⚠️ يجب أن يكون قبل @Post(':id/...') لتجنب التعارض
   @Post('fix-all-empty-sections')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -236,6 +222,22 @@ export class ExamsController {
       `[POST /exams/fix-all-empty-sections] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
     );
     return this.service.fixAllExamsWithEmptySections(req.user);
+  }
+
+  // تفاصيل الامتحان
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher', 'student')
+  findById(@Param('id') id: string, @Req() req: any) {
+    return this.service.findById(id, req.user);
+  }
+
+  // تحديث الامتحان (المالك أو الأدمن)
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  update(@Param('id') id: string, @Body() dto: UpdateExamDto, @Req() req: any) {
+    return this.service.updateExam(id, dto, req.user);
   }
 
   // إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة (admin فقط)
