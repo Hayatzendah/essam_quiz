@@ -204,6 +204,40 @@ export class ExamsController {
     return this.service.updateExam(id, dto, req.user);
   }
 
+  // إيجاد جميع الامتحانات التي sections فارغة (admin فقط)
+  @Get('empty-sections')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Find all exams with empty sections (admin only)',
+    description: 'إيجاد جميع الامتحانات التي تحتوي على sections فارغة',
+  })
+  @ApiResponse({ status: 200, description: 'List of exams with empty sections' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  findExamsWithEmptySections(@Req() req: any) {
+    this.logger.log(
+      `[GET /exams/empty-sections] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
+    );
+    return this.service.findExamsWithEmptySections(req.user);
+  }
+
+  // إصلاح جميع الامتحانات التي sections فارغة (admin فقط)
+  @Post('fix-all-empty-sections')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Fix all exams with empty sections (admin only)',
+    description: 'إصلاح جميع الامتحانات التي تحتوي على sections فارغة تلقائياً',
+  })
+  @ApiResponse({ status: 200, description: 'All exams fixed successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  fixAllExamsWithEmptySections(@Req() req: any) {
+    this.logger.log(
+      `[POST /exams/fix-all-empty-sections] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
+    );
+    return this.service.fixAllExamsWithEmptySections(req.user);
+  }
+
   // إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة (admin فقط)
   @Post(':id/fix-sections')
   @UseGuards(JwtAuthGuard, RolesGuard)

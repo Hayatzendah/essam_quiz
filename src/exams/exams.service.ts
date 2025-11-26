@@ -793,6 +793,137 @@ export class ExamsService {
     };
   }
 
+  /**
+   * إيجاد جميع الامتحانات التي sections فارغة
+   * - للاستخدام من قبل admin فقط
+   */
+  async findExamsWithEmptySections(user: ReqUser) {
+    if (!user || user.role !== 'admin') {
+      throw new ForbiddenException('Only admin can view this information');
+    }
+
+    const allExams = await this.model.find({}).lean().exec();
+    
+    const examsWithEmptySections = allExams
+      .map((exam: any) => {
+        if (!Array.isArray(exam.sections) || exam.sections.length === 0) {
+          return {
+            examId: exam._id.toString(),
+            title: exam.title,
+            level: exam.level,
+            provider: exam.provider,
+            status: exam.status,
+            emptySections: [],
+            reason: 'No sections at all',
+          };
+        }
+
+        const emptySections = exam.sections
+          .map((s: any, index: number) => {
+            if (!s || s === null) {
+              return {
+                index: index + 1,
+                name: `Section ${index + 1}`,
+                reason: 'Section is null',
+              };
+            }
+
+            const hasItems = Array.isArray(s.items) && s.items.length > 0;
+            const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+
+            if (!hasItems && !hasQuota) {
+              return {
+                index: index + 1,
+                name: s.name || `Section ${index + 1}`,
+                reason: 'No items and no quota',
+              };
+            }
+
+            return null;
+          })
+          .filter((s: any) => s !== null);
+
+        if (emptySections.length === 0) {
+          return null;
+        }
+
+        return {
+          examId: exam._id.toString(),
+          title: exam.title,
+          level: exam.level,
+          provider: exam.provider,
+          status: exam.status,
+          emptySections,
+        };
+      })
+      .filter((exam: any) => exam !== null);
+
+    return {
+      totalExams: allExams.length,
+      examsWithEmptySections: examsWithEmptySections.length,
+      exams: examsWithEmptySections,
+    };
+  }
+
+  /**
+   * إصلاح جميع الامتحانات التي sections فارغة
+   * - للاستخدام من قبل admin فقط
+   */
+  async fixAllExamsWithEmptySections(user: ReqUser) {
+    if (!user || user.role !== 'admin') {
+      throw new ForbiddenException('Only admin can fix exams');
+    }
+
+    const allExams = await this.model.find({}).exec();
+    const results = [];
+
+    for (const exam of allExams) {
+      let hasEmptySections = false;
+      const updatedSections = exam.sections.map((s: any, index: number) => {
+        if (!s || s === null) {
+          hasEmptySections = true;
+          return {
+            name: `Section ${index + 1}`,
+            quota: 5,
+            tags: [],
+          };
+        }
+
+        const hasItems = Array.isArray(s.items) && s.items.length > 0;
+        const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+
+        if (!hasItems && !hasQuota) {
+          hasEmptySections = true;
+          return {
+            ...s,
+            quota: 5,
+          };
+        }
+
+        return s;
+      });
+
+      if (hasEmptySections) {
+        exam.set('sections', updatedSections);
+        exam.markModified('sections');
+        await exam.save();
+
+        results.push({
+          examId: exam._id.toString(),
+          title: exam.title,
+          status: 'fixed',
+        });
+      }
+    }
+
+    return {
+      success: true,
+      message: `Fixed ${results.length} exam(s) with empty sections`,
+      fixedExams: results,
+      totalFixed: results.length,
+    };
+  }
+
   async assignExam(id: string, dto: AssignExamDto, user: ReqUser) {
     if (!user) throw new ForbiddenException();
     const doc = await this.model.findById(id).exec();
