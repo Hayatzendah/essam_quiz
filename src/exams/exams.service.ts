@@ -596,9 +596,19 @@ export class ExamsService {
       // بعد النشر نقيّد التعديلات الجذرية
       const structuralChange = typeof (dto as any).sections !== 'undefined';
       if (structuralChange) {
-        throw new BadRequestException(
-          'Cannot change sections after publish (admin only if allowed)',
-        );
+        // السماح للمعلم المالك بتعديل الأقسام إذا كانت فارغة (لا items ولا quota)
+        const hasEmptySections = doc.sections.some((s: any) => {
+          const hasItems = Array.isArray(s.items) && s.items.length > 0;
+          const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+          return !hasItems && !hasQuota;
+        });
+        
+        if (!hasEmptySections) {
+          throw new BadRequestException(
+            'Cannot change sections after publish. Only admin can modify sections of published exams with existing content.',
+          );
+        }
+        // إذا كانت الأقسام فارغة، نسمح للمعلم المالك بتعديلها
       }
     }
 
