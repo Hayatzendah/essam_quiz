@@ -639,7 +639,12 @@ export class ExamsService {
     // تطبيق التحديث
     // معالجة خاصة لـ sections لأن Object.assign قد لا يعمل بشكل صحيح مع nested arrays
     if ((dto as any).sections !== undefined) {
+      this.logger.log(
+        `[updateExam] Updating sections - examId: ${id}, old sections: ${JSON.stringify(doc.sections)}, new sections: ${JSON.stringify((dto as any).sections)}`,
+      );
+      // استخدام markModified لضمان أن Mongoose يحدث الحقل
       doc.sections = (dto as any).sections;
+      doc.markModified('sections');
     }
     
     // تطبيق باقي التحديثات
@@ -647,7 +652,13 @@ export class ExamsService {
     Object.assign(doc, restDto);
 
     // لو في تعديل في البنية قبل النشر، عادي — سيؤثر على اختيار الأسئلة لاحقًا في attempts
+    this.logger.log(
+      `[updateExam] Saving exam - examId: ${id}, sections before save: ${JSON.stringify(doc.sections)}`,
+    );
     await doc.save();
+    this.logger.log(
+      `[updateExam] Exam saved - examId: ${id}, sections after save: ${JSON.stringify(doc.sections)}`,
+    );
     return doc.toObject();
   }
 
