@@ -173,17 +173,17 @@ export class ExamsController {
     }
   }
 
-  // إيجاد جميع الامتحانات التي sections فارغة (admin فقط)
+  // إيجاد جميع الامتحانات التي sections فارغة (admin/teacher)
   // ⚠️ يجب أن يكون قبل جميع الـ routes الديناميكية (:id, :examId) لتجنب التعارض
   @Get('empty-sections')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'teacher')
   @ApiOperation({
-    summary: 'Find all exams with empty sections (admin only)',
-    description: 'إيجاد جميع الامتحانات التي تحتوي على sections فارغة',
+    summary: 'Find all exams with empty sections (admin/teacher)',
+    description: 'إيجاد جميع الامتحانات التي تحتوي على sections فارغة - admin: جميع الامتحانات، teacher: امتحاناته فقط',
   })
   @ApiResponse({ status: 200, description: 'List of exams with empty sections' })
-  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin or teacher only' })
   findExamsWithEmptySections(@Req() req: any) {
     this.logger.log(
       `[GET /exams/empty-sections] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
@@ -240,16 +240,16 @@ export class ExamsController {
     return this.service.updateExam(id, dto, req.user);
   }
 
-  // إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة (admin فقط)
+  // إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة (admin/teacher)
   @Post(':id/fix-sections')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'teacher')
   @ApiOperation({
-    summary: 'Fix empty sections in exam (admin only)',
-    description: 'إصلاح الامتحان تلقائياً: إضافة quota=5 للأقسام الفارغة (لا items ولا quota)',
+    summary: 'Fix empty sections in exam (admin/teacher)',
+    description: 'إصلاح الامتحان تلقائياً: إضافة quota=5 للأقسام الفارغة (لا items ولا quota) - teacher: فقط امتحاناته',
   })
   @ApiResponse({ status: 200, description: 'Exam sections fixed successfully' })
-  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin or teacher (owner only)' })
   @ApiResponse({ status: 404, description: 'Exam not found' })
   fixSections(@Param('id') id: string, @Req() req: any) {
     this.logger.log(

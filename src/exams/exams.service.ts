@@ -713,8 +713,8 @@ export class ExamsService {
    * - يفحص كل section وإذا كان فارغاً (لا items ولا quota) يضيف quota = 5
    */
   async fixEmptySections(examId: string, user: ReqUser) {
-    if (!user || user.role !== 'admin') {
-      throw new ForbiddenException('Only admin can fix exams');
+    if (!user || (user.role !== 'admin' && user.role !== 'teacher')) {
+      throw new ForbiddenException('Only admin or teacher can fix exams');
     }
 
     if (!Types.ObjectId.isValid(examId)) {
@@ -723,6 +723,15 @@ export class ExamsService {
 
     const doc = await this.model.findById(examId).exec();
     if (!doc) throw new NotFoundException('Exam not found');
+
+    // التحقق من أن المعلم هو مالك الامتحان
+    if (user.role === 'teacher') {
+      const userId = user.userId || (user as any).sub || (user as any).id;
+      const isOwner = doc.ownerId?.toString() === userId;
+      if (!isOwner) {
+        throw new ForbiddenException('Only the exam owner can fix this exam');
+      }
+    }
 
     this.logger.log(
       `[fixEmptySections] Fixing exam - examId: ${examId}, current sections: ${JSON.stringify(doc.sections.map((s: any) => ({ name: s?.name, hasItems: Array.isArray(s?.items) && s.items.length > 0, hasQuota: typeof s?.quota === 'number' && s.quota > 0 })))}`,
@@ -798,11 +807,16 @@ export class ExamsService {
    * - للاستخدام من قبل admin فقط
    */
   async findExamsWithEmptySections(user: ReqUser) {
-    if (!user || user.role !== 'admin') {
-      throw new ForbiddenException('Only admin can view this information');
+    if (!user || (user.role !== 'admin' && user.role !== 'teacher')) {
+      throw new ForbiddenException('Only admin or teacher can view this information');
     }
 
-    const allExams = await this.model.find({}).lean().exec();
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const isAdmin = user.role === 'admin';
+    
+    // Admin: جميع الامتحانات، Teacher: امتحاناته فقط
+    const query = isAdmin ? {} : { ownerId: new Types.ObjectId(userId) };
+    const allExams = await this.model.find(query).lean().exec();
     
     const examsWithEmptySections = allExams
       .map((exam: any) => {
