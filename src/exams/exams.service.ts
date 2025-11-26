@@ -423,43 +423,62 @@ export class ExamsService {
               return null;
             }
 
-            // التحقق من أن sections موجودة
-            const sections = Array.isArray(exam.sections)
-              ? exam.sections
-                  .map((s: any) => {
-                    if (!s) return null;
+            // التحقق من أن sections موجودة وليست فارغة
+            if (!Array.isArray(exam.sections) || exam.sections.length === 0) {
+              this.logger.warn(`[findPublicExams] Exam ${exam._id} has no sections - skipping`);
+              return null;
+            }
 
-                    // حساب partsCount من items أو quota
-                    let partsCount = 0;
-                    if (Array.isArray(s.items) && s.items.length > 0) {
-                      partsCount = s.items.length;
-                    } else if (typeof s.quota === 'number' && s.quota > 0) {
-                      partsCount = s.quota;
-                    }
+            // التحقق من أن sections تحتوي على sections صحيحة (ليست null)
+            const validSections = exam.sections.filter((s: any) => {
+              if (!s || s === null) return false;
+              const hasItems = Array.isArray(s.items) && s.items.length > 0;
+              const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+              return hasItems || hasQuota;
+            });
 
-                    // استخدام partsCount من الحقل إذا كان موجوداً، وإلا استخدم المحسوب
-                    const finalPartsCount = typeof s.partsCount === 'number' && s.partsCount > 0 
-                      ? s.partsCount 
-                      : partsCount;
+            if (validSections.length === 0) {
+              this.logger.warn(`[findPublicExams] Exam ${exam._id} has no valid sections (all null or empty) - skipping`);
+              return null;
+            }
 
-                    // بناء object مع جميع الحقول المطلوبة
-                    const sectionObj: any = {
-                      skill: s.skill || undefined,
-                      label: s.label || s.name || '', // label مطلوب دائماً
-                    };
+            const sections = validSections
+              .map((s: any) => {
+                // حساب partsCount من items أو quota
+                let partsCount = 0;
+                if (Array.isArray(s.items) && s.items.length > 0) {
+                  partsCount = s.items.length;
+                } else if (typeof s.quota === 'number' && s.quota > 0) {
+                  partsCount = s.quota;
+                }
 
-                    // إضافة durationMin إذا كان موجوداً
-                    if (typeof s.durationMin === 'number' && s.durationMin > 0) {
-                      sectionObj.durationMin = s.durationMin;
-                    }
+                // استخدام partsCount من الحقل إذا كان موجوداً، وإلا استخدم المحسوب
+                const finalPartsCount = typeof s.partsCount === 'number' && s.partsCount > 0 
+                  ? s.partsCount 
+                  : partsCount;
 
-                    // إضافة partsCount دائماً (حتى لو كان 0)
-                    sectionObj.partsCount = finalPartsCount;
+                // بناء object مع جميع الحقول المطلوبة
+                const sectionObj: any = {
+                  skill: s.skill || undefined,
+                  label: s.label || s.name || '', // label مطلوب دائماً
+                };
 
-                    return sectionObj;
-                  })
-                  .filter((s: any) => s !== null)
-              : [];
+                // إضافة durationMin إذا كان موجوداً
+                if (typeof s.durationMin === 'number' && s.durationMin > 0) {
+                  sectionObj.durationMin = s.durationMin;
+                }
+
+                // إضافة partsCount دائماً (حتى لو كان 0)
+                sectionObj.partsCount = finalPartsCount;
+
+                return sectionObj;
+              })
+              .filter((s: any) => s !== null);
+
+            if (sections.length === 0) {
+              this.logger.warn(`[findPublicExams] Exam ${exam._id} has no valid sections after mapping - skipping`);
+              return null;
+            }
 
             return {
               id: exam._id?.toString() || '',
@@ -505,8 +524,25 @@ export class ExamsService {
       throw new NotFoundException('Exam not found');
     }
 
+    // التحقق من أن sections موجودة وليست فارغة
+    if (!Array.isArray(doc.sections) || doc.sections.length === 0) {
+      throw new NotFoundException('Exam not found or has no sections');
+    }
+
+    // التحقق من أن sections تحتوي على sections صحيحة (ليست null)
+    const validSections = doc.sections.filter((s: any) => {
+      if (!s || s === null) return false;
+      const hasItems = Array.isArray(s.items) && s.items.length > 0;
+      const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+      return hasItems || hasQuota;
+    });
+
+    if (validSections.length === 0) {
+      throw new NotFoundException('Exam not found or has no valid sections');
+    }
+
     // تحويل الأقسام إلى الصيغة المطلوبة
-    const sections = doc.sections.map((s: any) => {
+    const sections = validSections.map((s: any) => {
       // حساب partsCount من items أو quota
       let partsCount = 0;
       if (Array.isArray(s.items) && s.items.length > 0) {
