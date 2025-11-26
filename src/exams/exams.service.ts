@@ -492,6 +492,9 @@ export class ExamsService {
    * - لا يعرض الأسئلة نفسها، فقط هيكل الأقسام
    */
   async findPublicExamById(examId: string) {
+    if (!Types.ObjectId.isValid(examId)) {
+      throw new BadRequestException(`Invalid exam ID format: ${examId}. Expected a valid MongoDB ObjectId (24 hex characters)`);
+    }
     const doc = await this.model.findById(examId).lean().exec();
     if (!doc) throw new NotFoundException('Exam not found');
 
@@ -531,6 +534,9 @@ export class ExamsService {
   }
 
   async findById(id: string, user?: ReqUser) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException(`Invalid exam ID format: ${id}. Expected a valid MongoDB ObjectId (24 hex characters)`);
+    }
     const doc = await this.model.findById(id).lean().exec();
     if (!doc) throw new NotFoundException('Exam not found');
 
@@ -569,6 +575,9 @@ export class ExamsService {
 
   async updateExam(id: string, dto: UpdateExamDto, user: ReqUser) {
     if (!user) throw new ForbiddenException();
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException(`Invalid exam ID format: ${id}. Expected a valid MongoDB ObjectId (24 hex characters)`);
+    }
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException('Exam not found');
 
