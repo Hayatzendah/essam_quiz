@@ -642,8 +642,8 @@ export class ExamsService {
       this.logger.log(
         `[updateExam] Updating sections - examId: ${id}, old sections: ${JSON.stringify(doc.sections)}, new sections: ${JSON.stringify((dto as any).sections)}`,
       );
-      // استخدام markModified لضمان أن Mongoose يحدث الحقل
-      doc.sections = (dto as any).sections;
+      // استخدام set() و markModified لضمان أن Mongoose يحدث الحقل بشكل صحيح
+      doc.set('sections', (dto as any).sections);
       doc.markModified('sections');
     }
     
