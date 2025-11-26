@@ -8,7 +8,8 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Attempt, AttemptDocument, AttemptStatus } from './schemas/attempt.schema';
-import { Exam, ExamDocument, ExamStatus, ExamStatusEnum } from '../exams/schemas/exam.schema';
+import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
+import { ExamStatusEnum } from '../common/enums';
 import { Question, QuestionDocument, QuestionStatus } from '../questions/schemas/question.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { MediaService } from '../modules/media/media.service';
@@ -100,11 +101,63 @@ export class AttemptsService {
       const hasQuota = typeof (sec as any).quota === 'number' && (sec as any).quota > 0;
 
       this.logger.log(
-        `[generateQuestionListForAttempt] Section ${secIndex + 1}/${exam.sections.length}: "${sec.name}", hasItems: ${hasItems}, hasQuota: ${hasQuota}, quota: ${(sec as any).quota}, tags: ${JSON.stringify((sec as any).tags || [])}`,
+        `[generateQuestionListForAttempt] Section ${secIndex + 1}/${exam.sections.length}: "${(sec as any).name || sec.section}", hasItems: ${hasItems}, hasQuota: ${hasQuota}, quota: ${(sec as any).quota}, tags: ${JSON.stringify((sec as any).tags || [])}`,
       );
 
       if (hasItems) {
-        const itemIds = (sec as any).items.map((it: any) => new Types.ObjectId(it.questionId));
+        const items = (sec as any).items || [];
+        this.logger.log(
+          `[generateQuestionListForAttempt] Section "${(sec as any).name || sec.section}" has ${items.length} items - questionIds: ${JSON.stringify(items.map((it: any) => it.questionId))}`,
+        );
+
+        // تحويل questionIds إلى ObjectId مع معالجة الأخطاء
+        const itemIds: Types.ObjectId[] = [];
+        const invalidIds: string[] = [];
+        for (const it of items) {
+          if (!it.questionId) {
+            invalidIds.push('(missing)');
+            continue;
+          }
+          try {
+            if (Types.ObjectId.isValid(it.questionId)) {
+              itemIds.push(new Types.ObjectId(it.questionId));
+            } else {
+              invalidIds.push(it.questionId);
+              this.logger.warn(
+                `[generateQuestionListForAttempt] Invalid questionId in section "${(sec as any).name || sec.section}": ${it.questionId}`,
+              );
+            }
+          } catch (error) {
+            invalidIds.push(it.questionId);
+            this.logger.error(
+              `[generateQuestionListForAttempt] Error converting questionId to ObjectId: ${it.questionId}`,
+              error,
+            );
+          }
+        }
+
+        if (invalidIds.length > 0) {
+          this.logger.error(
+            `[generateQuestionListForAttempt] Found ${invalidIds.length} invalid questionIds in section "${(sec as any).name || sec.section}": ${JSON.stringify(invalidIds)}`,
+          );
+        }
+
+        if (itemIds.length === 0) {
+          this.logger.error(
+            `[generateQuestionListForAttempt] No valid questionIds found in section "${(sec as any).name || sec.section}"`,
+          );
+          throw new BadRequestException({
+            code: 'NO_QUESTIONS_FOR_SECTION',
+            message: `No valid question IDs found for section "${(sec as any).name || sec.section}"`,
+            sectionName: (sec as any).name || sec.section,
+            invalidIds: invalidIds,
+          });
+        }
+
+        this.logger.log(
+          `[generateQuestionListForAttempt] Searching for ${itemIds.length} questions with IDs: ${JSON.stringify(itemIds.map((id) => id.toString()))}`,
+        );
+
         const qDocs = await this.QuestionModel.find({
           _id: { $in: itemIds },
           status: QuestionStatus.PUBLISHED,
@@ -112,20 +165,49 @@ export class AttemptsService {
           .lean(false)
           .exec();
 
-        const sectionItems: Array<{ question: QuestionDocument; points: number }> = [];
-        for (const it of (sec as any).items) {
-          const q = qDocs.find((d: any) => d._id.toString() === String(it.questionId));
-          if (q) sectionItems.push({ question: q, points: it.points ?? 1 });
-        }
+        this.logger.log(
+          `[generateQuestionListForAttempt] Found ${qDocs.length} published questions out of ${itemIds.length} requested`,
+        );
 
-        if (sectionItems.length === 0) {
-          this.logger.warn(
-            `No published questions found for section with items - section: ${sec.name}`,
+        if (qDocs.length === 0) {
+          this.logger.error(
+            `[generateQuestionListForAttempt] No published questions found for section "${(sec as any).name || sec.section}" - searched for ${itemIds.length} questionIds`,
           );
           throw new BadRequestException({
             code: 'NO_QUESTIONS_FOR_SECTION',
-            message: `No published questions found for section "${sec.name}"`,
-            sectionName: sec.name,
+            message: `No published questions found for section "${(sec as any).name || sec.section}". Please ensure all questions have status: "published"`,
+            sectionName: (sec as any).name || sec.section,
+            requestedIds: itemIds.map((id) => id.toString()),
+            foundCount: 0,
+          });
+        }
+
+        const sectionItems: Array<{ question: QuestionDocument; points: number }> = [];
+        const foundIds = new Set(qDocs.map((q: any) => q._id.toString()));
+        for (const it of items) {
+          if (!it.questionId) continue;
+          const qIdStr = String(it.questionId);
+          const q = qDocs.find((d: any) => d._id.toString() === qIdStr);
+          if (q) {
+            sectionItems.push({ question: q, points: it.points ?? 1 });
+          } else {
+            this.logger.warn(
+              `[generateQuestionListForAttempt] Question ${qIdStr} not found or not published in section "${(sec as any).name || sec.section}"`,
+            );
+          }
+        }
+
+        if (sectionItems.length === 0) {
+          this.logger.error(
+            `[generateQuestionListForAttempt] No matching questions found for section "${(sec as any).name || sec.section}" - requested: ${items.length}, found in DB: ${qDocs.length}, matched: ${sectionItems.length}`,
+          );
+          throw new BadRequestException({
+            code: 'NO_QUESTIONS_FOR_SECTION',
+            message: `No published questions found for section "${(sec as any).name || sec.section}"`,
+            sectionName: (sec as any).name || sec.section,
+            requestedCount: items.length,
+            foundInDb: qDocs.length,
+            matchedCount: sectionItems.length,
           });
         }
 
@@ -136,7 +218,7 @@ export class AttemptsService {
 
         selected.push(...sectionItems);
         this.logger.debug(
-          `Section "${sec.name}": Added ${sectionItems.length} questions from items`,
+          `Section "${(sec as any).name || sec.section}": Added ${sectionItems.length} questions from items`,
         );
       } else if (hasQuota) {
         const filter: any = { status: QuestionStatus.PUBLISHED };
@@ -200,7 +282,7 @@ export class AttemptsService {
             sectionTags.length = 0;
             sectionTags.push(...filteredTags, stateInTags);
             this.logger.debug(
-              `State section detected - using state from section tags: ${stateInTags} for section: ${sec.name}`,
+              `State section detected - using state from section tags: ${stateInTags} for section: ${(sec as any).name || sec.section}`,
             );
           } else if (studentState && sectionTags.some((tag) => germanStates.includes(tag))) {
             // إذا كان section يحتوي على tags للولاية لكن ليس الولاية المحددة
@@ -209,7 +291,7 @@ export class AttemptsService {
             sectionTags.length = 0;
             sectionTags.push(...filteredTags, studentState);
             this.logger.debug(
-              `State section detected - using studentState: ${studentState} for section: ${sec.name}`,
+              `State section detected - using studentState: ${studentState} for section: ${(sec as any).name || sec.section}`,
             );
           }
         }
@@ -243,25 +325,25 @@ export class AttemptsService {
           const uniqueTags = Array.from(new Set(normalizedTags));
           filter.tags = { $in: uniqueTags };
           this.logger.debug(
-            `[Section: ${sec.name}] Filtering by tags - original: ${JSON.stringify(sectionTags)}, normalized (${uniqueTags.length} variations): ${JSON.stringify(uniqueTags)}`,
+            `[Section: ${(sec as any).name || sec.section}] Filtering by tags - original: ${JSON.stringify(sectionTags)}, normalized (${uniqueTags.length} variations): ${JSON.stringify(uniqueTags)}`,
           );
         }
 
         this.logger.log(
-          `[Section: ${sec.name}] Searching questions with filter: ${JSON.stringify(filter, null, 2)}`,
+          `[Section: ${(sec as any).name || sec.section}] Searching questions with filter: ${JSON.stringify(filter, null, 2)}`,
         );
         this.logger.log(
-          `[Section: ${sec.name}] Exam provider: "${(exam as any).provider}", level: "${exam.level}", sectionTags: ${JSON.stringify(sectionTags)}`,
+          `[Section: ${(sec as any).name || sec.section}] Exam provider: "${(exam as any).provider}", level: "${exam.level}", sectionTags: ${JSON.stringify(sectionTags)}`,
         );
 
         const candidates = await this.QuestionModel.find(filter).lean(false).exec();
         this.logger.log(
-          `[Section: ${sec.name}] Found ${candidates.length} candidate questions (quota required: ${(sec as any).quota})`,
+          `[Section: ${(sec as any).name || sec.section}] Found ${candidates.length} candidate questions (quota required: ${(sec as any).quota})`,
         );
 
         if (candidates.length > 0) {
           this.logger.debug(
-            `[Section: ${sec.name}] Sample candidates: ${JSON.stringify(
+            `[Section: ${(sec as any).name || sec.section}] Sample candidates: ${JSON.stringify(
               candidates.slice(0, 3).map((q: any) => ({
                 id: q._id,
                 provider: q.provider,
@@ -319,7 +401,7 @@ export class AttemptsService {
             .limit(10)
             .exec();
 
-          this.logger.error(`❌ No questions found for section "${sec.name}"`);
+          this.logger.error(`❌ No questions found for section "${(sec as any).name || sec.section}"`);
           this.logger.error(`📋 Filter used: ${JSON.stringify(filter, null, 2)}`);
           this.logger.error(
             `🔍 Questions found without tags filter (provider + level only): ${candidatesWithoutTags.length}`,
@@ -382,8 +464,8 @@ export class AttemptsService {
 
           throw new BadRequestException({
             code: 'NO_QUESTIONS_FOR_SECTION',
-            message: `No questions found for section "${sec.name}"`,
-            sectionName: sec.name,
+            message: `No questions found for section "${(sec as any).name || sec.section}"`,
+            sectionName: (sec as any).name || sec.section,
             filter: {
               provider: (exam as any).provider,
               level: exam.level,
@@ -444,12 +526,12 @@ export class AttemptsService {
 
         if (pickList.length < (sec as any).quota) {
           this.logger.warn(
-            `Not enough questions for section - section: ${sec.name}, required: ${(sec as any).quota}, found: ${pickList.length}, available: ${candidates.length}`,
+            `Not enough questions for section - section: ${(sec as any).name || sec.section}, required: ${(sec as any).quota}, found: ${pickList.length}, available: ${candidates.length}`,
           );
           throw new BadRequestException({
             code: 'NOT_ENOUGH_QUESTIONS_FOR_SECTION',
-            message: `Section "${sec.name}" requires ${(sec as any).quota} questions, but only ${pickList.length} are available (${candidates.length} total candidates)`,
-            sectionName: sec.name,
+            message: `Section "${(sec as any).name || sec.section}" requires ${(sec as any).quota} questions, but only ${pickList.length} are available (${candidates.length} total candidates)`,
+            sectionName: (sec as any).name || sec.section,
             required: (sec as any).quota,
             available: pickList.length,
             totalCandidates: candidates.length,
@@ -465,7 +547,7 @@ export class AttemptsService {
         for (const q of pickList) {
           selected.push({ question: q, points: 1 });
         }
-        this.logger.debug(`Section "${sec.name}": Selected ${pickList.length} questions`);
+        this.logger.debug(`Section "${(sec as any).name || sec.section}": Selected ${pickList.length} questions`);
       }
     }
 
