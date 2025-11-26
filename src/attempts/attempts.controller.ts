@@ -103,6 +103,16 @@ export class AttemptsController {
     this.logger.debug(
       `[POST /attempts] Full request body: ${JSON.stringify(dto)}, user: ${JSON.stringify({ userId: req.user?.userId, role: req.user?.role })}`,
     );
+
+    // 🔍 DEBUG: طباعة تفاصيل الـ request لتشخيص المشكلة
+    this.logger.warn(
+      `[POST /attempts] 🔍 DEBUG INFO:
+      - examId type: ${typeof dto?.examId}
+      - examId value: "${dto?.examId}"
+      - examId length: ${dto?.examId?.length}
+      - Request headers: ${JSON.stringify(req.headers)}
+      - Full DTO: ${JSON.stringify(dto, null, 2)}`,
+    );
     
     if (!dto?.examId) {
       this.logger.error(

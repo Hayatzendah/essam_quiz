@@ -68,19 +68,19 @@ export class AttemptsService {
    */
   private normalizeProvider(provider?: string): string[] {
     if (!provider) return [];
-
+    
     const normalized = provider.trim();
-
+    
     // إذا كان "LiD" أو اختصارات أخرى، نبحث عن كلا القيمتين
     if (normalized === 'LiD' || normalized === 'lid' || normalized === 'LID') {
       return ['Deutschland-in-Leben', 'LiD', 'lid', 'LID'];
     }
-
+    
     // إذا كان "Deutschland-in-Leben"، نبحث عن كلا القيمتين أيضاً
     if (normalized === 'Deutschland-in-Leben' || normalized === 'Deutschland in Leben') {
       return ['Deutschland-in-Leben', 'LiD', 'lid', 'LID', 'Deutschland in Leben'];
     }
-
+    
     // للـ providers الأخرى، نرجع القيمة كما هي
     return [normalized];
   }
@@ -103,6 +103,13 @@ export class AttemptsService {
       this.logger.log(
         `[generateQuestionListForAttempt] Section ${secIndex + 1}/${exam.sections.length}: "${(sec as any).name || sec.section}", hasItems: ${hasItems}, hasQuota: ${hasQuota}, quota: ${(sec as any).quota}, tags: ${JSON.stringify((sec as any).tags || [])}`,
       );
+
+      // تحذير إذا كان القسم لا يحتوي على items أو quota
+      if (!hasItems && !hasQuota) {
+        this.logger.warn(
+          `[generateQuestionListForAttempt] WARNING: Section ${secIndex + 1} "${(sec as any).name || sec.section}" has no items and no quota! Section data: ${JSON.stringify({ name: (sec as any).name, section: sec.section, items: (sec as any).items, quota: (sec as any).quota })}`,
+        );
+      }
 
       if (hasItems) {
         const items = (sec as any).items || [];
@@ -222,10 +229,10 @@ export class AttemptsService {
         );
       } else if (hasQuota) {
         const filter: any = { status: QuestionStatus.PUBLISHED };
-
+        
         // فلترة أساسية: provider و level (مطلوبة)
         if (exam.level) filter.level = exam.level;
-
+        
         // تطبيع provider لدعم "LiD" و "Deutschland-in-Leben"
         if ((exam as any).provider) {
           const providerVariants = this.normalizeProvider((exam as any).provider);
@@ -238,16 +245,16 @@ export class AttemptsService {
             `Normalized provider: "${(exam as any).provider}" -> ${JSON.stringify(providerVariants)}`,
           );
         }
-
+        
         // ⚠️ لا نضيف section للفلترة لأن أسئلة Deutschland-in-Leben قد لا تحتوي على section
         // بدلاً من ذلك، نستخدم tags فقط للفلترة
-
+        
         // دعم tags من section
         const sectionTags: string[] = [];
         if ((sec as any).tags && Array.isArray((sec as any).tags) && (sec as any).tags.length > 0) {
           sectionTags.push(...(sec as any).tags);
         }
-
+        
         // إذا كان provider = "Deutschland-in-Leben" أو "LiD" و section يحتوي على tags للولاية
         // نستخدم الولاية من tags القسم نفسه (الامتحان محدد لولاية معينة)
         const examProvider = (exam as any).provider?.toLowerCase();
@@ -270,11 +277,11 @@ export class AttemptsService {
           'Schleswig-Holstein',
           'Thüringen',
         ];
-
+        
         if (examProvider === 'deutschland-in-leben' || examProvider === 'lid') {
           // إذا كان section يحتوي على tags للولاية، نستخدم الولاية من tags القسم
           const stateInTags = sectionTags.find((tag) => germanStates.includes(tag));
-
+          
           if (stateInTags) {
             // القسم مخصص لولاية معينة - نستخدم الولاية من tags القسم
             // نزيل جميع tags الولايات ونضع فقط الولاية المطلوبة
@@ -295,7 +302,7 @@ export class AttemptsService {
             );
           }
         }
-
+        
         // فلترة tags: نبحث عن أسئلة تحتوي على أي من section tags
         // هذا يسمح بالعثور على أسئلة تحتوي على الـ tag المطلوب حتى لو كان لها tags أخرى (مثل tags ولايات)
         if (sectionTags.length > 0) {
@@ -305,7 +312,7 @@ export class AttemptsService {
           for (const tag of sectionTags) {
             normalizedTags.push(tag); // الأصل أولاً
             const tagLower = tag.toLowerCase();
-
+            
             // إضافة variations شائعة للـ "300 Fragen" tags
             if (tagLower.includes('fragen') && tagLower.includes('300')) {
               const variations = [
@@ -335,20 +342,20 @@ export class AttemptsService {
         this.logger.log(
           `[Section: ${(sec as any).name || sec.section}] Exam provider: "${(exam as any).provider}", level: "${exam.level}", sectionTags: ${JSON.stringify(sectionTags)}`,
         );
-
+        
         const candidates = await this.QuestionModel.find(filter).lean(false).exec();
         this.logger.log(
           `[Section: ${(sec as any).name || sec.section}] Found ${candidates.length} candidate questions (quota required: ${(sec as any).quota})`,
         );
-
+        
         if (candidates.length > 0) {
           this.logger.debug(
             `[Section: ${(sec as any).name || sec.section}] Sample candidates: ${JSON.stringify(
               candidates.slice(0, 3).map((q: any) => ({
-                id: q._id,
-                provider: q.provider,
-                level: q.level,
-                tags: q.tags,
+            id: q._id, 
+            provider: q.provider, 
+            level: q.level, 
+            tags: q.tags,
                 status: q.status,
               })),
             )}`,
@@ -367,40 +374,40 @@ export class AttemptsService {
               filterWithoutTags.provider = { $in: providerVariants };
             }
           }
-
+          
           const candidatesWithoutTags = await this.QuestionModel.find(filterWithoutTags)
             .lean(false)
             .exec();
-
+          
           // البحث عن أسئلة تحتوي على section tags (حتى لو كانت لها tags أخرى)
           const candidatesWithTags =
             sectionTags.length > 0
-              ? await this.QuestionModel.find({
-                  status: QuestionStatus.PUBLISHED,
+            ? await this.QuestionModel.find({ 
+                status: QuestionStatus.PUBLISHED,
                   tags: { $in: sectionTags },
                 })
                   .lean(false)
                   .limit(10)
                   .exec()
-              : [];
-
+            : [];
+          
           // البحث عن جميع الأسئلة المنشورة لنفس المستوى (بدون provider) لمعرفة ما هو موجود
-          const allPublishedForLevel = await this.QuestionModel.find({
+          const allPublishedForLevel = await this.QuestionModel.find({ 
             status: QuestionStatus.PUBLISHED,
             level: exam.level,
           })
             .lean(false)
             .limit(10)
             .exec();
-
+          
           // البحث عن جميع الأسئلة المنشورة (بدون أي فلترة) لمعرفة ما هو موجود
-          const allPublished = await this.QuestionModel.find({
+          const allPublished = await this.QuestionModel.find({ 
             status: QuestionStatus.PUBLISHED,
           })
             .lean(false)
             .limit(10)
             .exec();
-
+          
           this.logger.error(`❌ No questions found for section "${(sec as any).name || sec.section}"`);
           this.logger.error(`📋 Filter used: ${JSON.stringify(filter, null, 2)}`);
           this.logger.error(
@@ -413,15 +420,15 @@ export class AttemptsService {
             `📊 Total published questions for level "${exam.level}": ${allPublishedForLevel.length}`,
           );
           this.logger.error(`📊 Total published questions (any level): ${allPublished.length}`);
-
+          
           if (candidatesWithoutTags.length > 0) {
             this.logger.error(
               `📝 Sample questions (provider + level match, tags may differ): ${JSON.stringify(
                 candidatesWithoutTags.slice(0, 5).map((q: any) => ({
-                  id: q._id,
-                  tags: q.tags,
-                  provider: q.provider,
-                  level: q.level,
+              id: q._id, 
+              tags: q.tags, 
+              provider: q.provider, 
+              level: q.level,
                   status: q.status,
                 })),
                 null,
@@ -429,15 +436,15 @@ export class AttemptsService {
               )}`,
             );
           }
-
+          
           if (candidatesWithTags.length > 0) {
             this.logger.error(
               `📝 Sample questions with section tags (${JSON.stringify(sectionTags)}): ${JSON.stringify(
                 candidatesWithTags.slice(0, 5).map((q: any) => ({
-                  id: q._id,
-                  tags: q.tags,
-                  provider: q.provider,
-                  level: q.level,
+              id: q._id, 
+              tags: q.tags, 
+              provider: q.provider, 
+              level: q.level,
                   status: q.status,
                 })),
                 null,
@@ -445,15 +452,15 @@ export class AttemptsService {
               )}`,
             );
           }
-
+          
           if (allPublishedForLevel.length > 0) {
             this.logger.error(
               `📝 Sample questions for level "${exam.level}": ${JSON.stringify(
                 allPublishedForLevel.slice(0, 5).map((q: any) => ({
-                  id: q._id,
-                  provider: q.provider,
-                  level: q.level,
-                  tags: q.tags,
+              id: q._id, 
+              provider: q.provider, 
+              level: q.level, 
+              tags: q.tags,
                   status: q.status,
                 })),
                 null,
@@ -461,7 +468,7 @@ export class AttemptsService {
               )}`,
             );
           }
-
+          
           throw new BadRequestException({
             code: 'NO_QUESTIONS_FOR_SECTION',
             message: `No questions found for section "${(sec as any).name || sec.section}"`,
@@ -562,7 +569,19 @@ export class AttemptsService {
     );
     if (selected.length === 0) {
       this.logger.error(
-        `[generateQuestionListForAttempt] WARNING: No questions selected! Exam sections: ${JSON.stringify(exam.sections.map((s: any) => ({ name: s.name, quota: s.quota, tags: s.tags, itemsCount: s.items?.length || 0 })))}`,
+        `[generateQuestionListForAttempt] ERROR: No questions selected! Exam sections details: ${JSON.stringify(exam.sections.map((s: any) => ({ 
+          name: s.name || s.section, 
+          section: s.section,
+          quota: s.quota, 
+          tags: s.tags, 
+          itemsCount: s.items?.length || 0,
+          hasItems: Array.isArray(s.items) && s.items.length > 0,
+          hasQuota: typeof s.quota === 'number' && s.quota > 0,
+          items: s.items?.map((it: any) => ({ questionId: it.questionId, points: it.points })) || []
+        })), null, 2)}`,
+      );
+      this.logger.error(
+        `[generateQuestionListForAttempt] Exam details - id: ${(exam as any)._id}, title: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}`,
       );
     }
     return selected;
@@ -572,7 +591,7 @@ export class AttemptsService {
     this.logger.debug(
       `[buildSnapshotItem] Building item for questionId: ${q._id}, qType: ${q.qType}, hasPrompt: ${!!q.prompt}`,
     );
-
+    
     const item: any = {
       questionId: q._id,
       qType: q.qType,
@@ -594,9 +613,9 @@ export class AttemptsService {
         // إنشاء مصفوفة من الأزواج [index, option] لتتبع الفهرس الأصلي
         const indexedOptions = options.map((opt, idx) => ({ originalIndex: idx, option: opt }));
         shuffleInPlace(indexedOptions, rng);
-
+        
         item.optionsText = indexedOptions.map((item) => item.option.text);
-
+        
         // حساب correctOptionIndexes الجديدة بعد الخلط
         const newCorrectIdxs: number[] = [];
         indexedOptions.forEach((item, newIdx) => {
@@ -605,10 +624,10 @@ export class AttemptsService {
           }
         });
         item.correctOptionIndexes = newCorrectIdxs;
-
+        
         // حفظ ترتيب الخيارات الأصلي للرجوع إليه
         item.optionOrder = indexedOptions.map((item) => item.originalIndex);
-
+        
         this.logger.debug(
           `[buildSnapshotItem] MCQ shuffled - original correct: [${originalCorrectIdxs.join(', ')}], new correct: [${newCorrectIdxs.join(', ')}]`,
         );
@@ -740,7 +759,7 @@ export class AttemptsService {
     this.logger.log(
       `[startAttempt] Generating questions for exam - examId: ${examIdStr}, sections: ${exam.sections.length}, studentState: ${studentState || 'not set'}`,
     );
-
+    
     let picked: Array<{ question: QuestionDocument; points: number }>;
     try {
       picked = await this.generateQuestionListForAttempt(exam, rng, studentState);
@@ -754,12 +773,12 @@ export class AttemptsService {
       this.logger.error(
         `[startAttempt] Exam details - title: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, sections: ${JSON.stringify(exam.sections.map((s: any) => ({ name: s.name, quota: s.quota, tags: s.tags, hasItems: Array.isArray(s.items) && s.items.length > 0 })))}`,
       );
-
+      
       // إذا كان الخطأ BadRequestException، نعيده كما هو
       if (error instanceof BadRequestException) {
         throw error;
       }
-
+      
       // لأي خطأ آخر، نعيده مع معلومات إضافية
       throw new BadRequestException({
         code: 'QUESTION_GENERATION_FAILED',
@@ -778,7 +797,7 @@ export class AttemptsService {
         originalError: error.message,
       });
     }
-
+    
     if (!picked || !picked.length) {
       this.logger.error(
         `[startAttempt] No questions available - examId: ${examIdStr}, examTitle: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, studentState: ${studentState || 'not set'}`,
@@ -875,11 +894,11 @@ export class AttemptsService {
     if (responseItems.length > 0) {
       this.logger.debug(
         `[startAttempt] First item sample: ${JSON.stringify({
-          questionId: responseItems[0].questionId,
-          qType: responseItems[0].qType,
-          hasPrompt: !!responseItems[0].prompt,
-          hasOptions: !!responseItems[0].options,
-          optionsCount: responseItems[0].options?.length || 0,
+        questionId: responseItems[0].questionId,
+        qType: responseItems[0].qType,
+        hasPrompt: !!responseItems[0].prompt,
+        hasOptions: !!responseItems[0].options,
+        optionsCount: responseItems[0].options?.length || 0,
         })}`,
       );
     } else {
@@ -911,26 +930,26 @@ export class AttemptsService {
    */
   async startPracticeAttempt(dto: CreatePracticeExamDto, user: ReqUser) {
     this.ensureStudent(user);
-
+    
     this.logger.log(
       `[startPracticeAttempt] Creating practice exam and starting attempt - userId: ${user.userId}, sections: ${dto?.sections?.length || 0}`,
     );
-
+    
     // 1. إنشاء Exam تمرين
     const exam = await this.examsService.createPracticeExam(dto, user);
     const examId = exam.id; // الآن مضمون أن يكون string
-
+    
     this.logger.log(
       `[startPracticeAttempt] Practice exam created - examId: ${examId}, title: ${exam.title}`,
     );
-
+    
     // 2. بدء Attempt على هذا Exam
     const attempt = await this.startAttempt(examId, user);
-
+    
     this.logger.log(
       `[startPracticeAttempt] Attempt started - attemptId: ${attempt.attemptId}, examId: ${examId}`,
     );
-
+    
     return attempt;
   }
 
@@ -965,13 +984,13 @@ export class AttemptsService {
       studentAnswerBoolean?: boolean;
       studentAnswerMatch?: [string, string][];
       studentAnswerReorder?: string[];
-      studentAnswerAudioKey?: string;
+    studentAnswerAudioKey?: string;
     },
   ) {
     this.logger.log(
       `[saveAnswer] Starting - attemptId: ${attemptIdStr}, itemIndex: ${payload.itemIndex}, questionId: ${payload.questionId}`,
     );
-
+    
     this.ensureStudent(user);
 
     const userId = user.userId || (user as any).sub || (user as any).id;
@@ -987,7 +1006,7 @@ export class AttemptsService {
       );
       throw new ForbiddenException('Not authorized to modify this attempt');
     }
-
+    
     if (attempt.status !== AttemptStatus.IN_PROGRESS) {
       this.logger.error(`[saveAnswer] Attempt is not in progress - status: ${attempt.status}`);
       throw new ForbiddenException('Attempt is not in progress');
@@ -1003,12 +1022,12 @@ export class AttemptsService {
     this.logger.debug(
       `[saveAnswer] Attempt found - items count: ${attempt.items.length}, status: ${attempt.status}`,
     );
-
+    
     const idx = this.findItemIndex(attempt, payload);
     this.logger.debug(
       `[saveAnswer] Item index found: ${idx}, qType: ${(attempt.items[idx] as any)?.qType}`,
     );
-
+    
     const it: any = attempt.items[idx];
 
     if (it.qType === 'mcq') {
@@ -1038,7 +1057,7 @@ export class AttemptsService {
       let studentAnswer: boolean;
       // استخدام any للتغلب على مشكلة TypeScript type narrowing
       const answerValue: any = payload.studentAnswerBoolean;
-
+      
       if (typeof answerValue === 'boolean') {
         studentAnswer = answerValue;
       } else if (typeof answerValue === 'string') {
@@ -1136,20 +1155,20 @@ export class AttemptsService {
     if (it.qType === 'fill') {
       // تطبيع إجابة الطالب
       const ans = normalizeAnswer(it.studentAnswerText || '');
-
+      
       // دعم fillExact كـ string أو array
       const exactList = Array.isArray(it.fillExact)
         ? it.fillExact.map((e: string) => normalizeAnswer(e))
         : it.fillExact
-          ? [normalizeAnswer(it.fillExact)]
-          : [];
-
+        ? [normalizeAnswer(it.fillExact)]
+        : [];
+      
       this.logger.debug(
         `[scoreItem] FILL scoring - questionId: ${it.questionId}, studentAnswer: "${it.studentAnswerText}", normalized: "${ans}", fillExact: ${JSON.stringify(it.fillExact)}, normalizedExactList: [${exactList.map((e) => `"${e}"`).join(', ')}]`,
       );
-
+      
       const exactHit = exactList.length > 0 && exactList.includes(ans);
-
+      
       const regexHit = Array.isArray(it.regexList)
         ? it.regexList.some((rx: string) => {
             try {
@@ -1243,14 +1262,14 @@ export class AttemptsService {
     // إذا تم إرسال answers في body، احفظها أولاً
     if (answers && Array.isArray(answers) && answers.length > 0) {
       this.logger.log(`[submitAttempt] Saving ${answers.length} answers from request body`);
-
+      
       for (let answerIndex = 0; answerIndex < answers.length; answerIndex++) {
         const answer = answers[answerIndex];
-
+        
         // محاولة البحث عن item
         let item: any = null;
         let itemIndex: number = -1;
-
+        
         // الأولوية: itemIndex (الأكثر دقة)
         if (answer.itemIndex !== undefined && typeof answer.itemIndex === 'number') {
           const idx = answer.itemIndex;
@@ -1264,14 +1283,14 @@ export class AttemptsService {
             );
           }
         }
-
+        
         // الثاني: itemId (questionId أو index كـ string)
         if (!item && answer.itemId) {
           // البحث باستخدام questionId
           const foundIndex = (attempt.items as any[]).findIndex(
             (it: any) => it.questionId?.toString() === answer.itemId,
           );
-
+          
           if (foundIndex >= 0) {
             item = (attempt.items as any[])[foundIndex];
             itemIndex = foundIndex;
@@ -1292,7 +1311,7 @@ export class AttemptsService {
             }
           }
         }
-
+        
         // الأخير: استخدام answerIndex (فقط إذا لم نجد item) - ⚠️ قد يكون غير دقيق
         if (!item && answerIndex < (attempt.items as any[]).length) {
           item = (attempt.items as any[])[answerIndex];
@@ -1301,7 +1320,7 @@ export class AttemptsService {
             `[submitAttempt] Using answerIndex ${answerIndex} as itemIndex - this may be incorrect if answers are not in order!`,
           );
         }
-
+        
         if (item) {
           this.saveAnswerToItem(item, answer.userAnswer);
           this.logger.debug(
@@ -1313,7 +1332,7 @@ export class AttemptsService {
           );
         }
       }
-
+      
       await attempt.save();
     }
 
@@ -1326,12 +1345,12 @@ export class AttemptsService {
     let totalMax = 0;
     for (let i = 0; i < (attempt.items as any[]).length; i++) {
       const it = (attempt.items as any[])[i];
-
+      
       // Log تفصيلي قبل التصحيح
       this.logger.debug(
         `[submitAttempt] Before scoring Item ${i} - questionId: ${it.questionId}, qType: ${it.qType}, studentAnswerText: "${it.studentAnswerText}", studentAnswerBoolean: ${it.studentAnswerBoolean}, studentAnswerIndexes: [${(it.studentAnswerIndexes || []).join(', ')}]`,
       );
-
+      
       const itemScore = this.scoreItem(it);
       totalAuto += itemScore;
       totalMax += it.points || 0;
@@ -1418,7 +1437,7 @@ export class AttemptsService {
         // دعم "richtig"/"falsch" (ألماني) و "true"/"false" (إنجليزي) و "صح"/"خطأ" (عربي)
         const trueValues = ['true', 'richtig', 'صح', '1', 'yes', 'ja', 'نعم'];
         const falseValues = ['false', 'falsch', 'خطأ', '0', 'no', 'nein', 'لا'];
-
+        
         if (trueValues.includes(lower)) {
           item.studentAnswerBoolean = true;
         } else if (falseValues.includes(lower)) {
@@ -1499,7 +1518,7 @@ export class AttemptsService {
     }
 
     const scoreMap = new Map(items.map((i) => [i.questionId, i.score] as [string, number]));
-
+    
     for (const it of attempt.items as any[]) {
       if (scoreMap.has(String(it.questionId))) {
         it.manualScore = scoreMap.get(String(it.questionId)) || 0;
