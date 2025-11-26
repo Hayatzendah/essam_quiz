@@ -698,7 +698,7 @@ export class ExamsService {
 
     const QuestionModel = this.model.db.collection('questions');
     const debugInfo: any = {
-      examId: exam._id.toString(),
+      examId: (exam._id as Types.ObjectId).toString(),
       examTitle: exam.title,
       provider: exam.provider,
       level: exam.level,
@@ -751,7 +751,7 @@ export class ExamsService {
         // بدون توزيع صعوبة
         const available = await QuestionModel.countDocuments(baseQuery);
         sectionInfo.totalAvailable = available;
-        if (available < section.quota) {
+        if (section.quota && available < section.quota) {
           sectionInfo.issues.push(
             `Need ${section.quota} questions, but only ${available} available`,
           );
