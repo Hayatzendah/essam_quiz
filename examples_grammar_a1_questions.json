@@ -1,0 +1,438 @@
+[
+  {
+    "name": "MCQ - الحالة المنصوبة (Akkusativ) - der/die/das",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الإجابة الصحيحة: Ich sehe ____ Mann",
+        "qType": "mcq",
+        "options": [
+          { "text": "der", "isCorrect": false },
+          { "text": "den", "isCorrect": true },
+          { "text": "dem", "isCorrect": false },
+          { "text": "des", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["akkusativ", "der-die-das", "cases"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "MCQ - الحالة المنصوبة (Akkusativ) - die",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الإجابة الصحيحة: Ich sehe ____ Frau",
+        "qType": "mcq",
+        "options": [
+          { "text": "der", "isCorrect": false },
+          { "text": "die", "isCorrect": true },
+          { "text": "das", "isCorrect": false },
+          { "text": "den", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["akkusativ", "der-die-das", "cases"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "MCQ - الحالة المنصوبة (Akkusativ) - das",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الإجابة الصحيحة: Ich sehe ____ Kind",
+        "qType": "mcq",
+        "options": [
+          { "text": "der", "isCorrect": false },
+          { "text": "die", "isCorrect": false },
+          { "text": "das", "isCorrect": true },
+          { "text": "den", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["akkusativ", "der-die-das", "cases"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "TRUE_FALSE - الحالة المنصوبة",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "الجملة التالية صحيحة: 'Ich sehe der Mann'",
+        "qType": "true_false",
+        "answerKeyBoolean": false,
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["akkusativ", "true-false", "cases"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "TRUE_FALSE - الحالة المنصوبة (صحيح)",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "الجملة التالية صحيحة: 'Ich sehe den Mann'",
+        "qType": "true_false",
+        "answerKeyBoolean": true,
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["akkusativ", "true-false", "cases"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "FILL - الحالة المنصوبة (Akkusativ)",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "أكمل الفراغ: Ich sehe ____ Mann (der/den/dem)",
+        "qType": "fill",
+        "fillExact": "den",
+        "regexList": ["den"],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["akkusativ", "fill", "cases"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "FILL - الفعل sein",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "أكمل الفراغ: Ich ____ Student",
+        "qType": "fill",
+        "fillExact": "bin",
+        "regexList": ["bin"],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["sein", "verb", "conjugation"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "MCQ - الفعل sein (ich)",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الإجابة الصحيحة: Ich ____ Student",
+        "qType": "mcq",
+        "options": [
+          { "text": "bin", "isCorrect": true },
+          { "text": "bist", "isCorrect": false },
+          { "text": "ist", "isCorrect": false },
+          { "text": "sind", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["sein", "verb", "conjugation"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "MCQ - الفعل sein (du)",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الإجابة الصحيحة: Du ____ Student",
+        "qType": "mcq",
+        "options": [
+          { "text": "bin", "isCorrect": false },
+          { "text": "bist", "isCorrect": true },
+          { "text": "ist", "isCorrect": false },
+          { "text": "sind", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["sein", "verb", "conjugation"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "MCQ - الفعل sein (er/sie/es)",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الإجابة الصحيحة: Er ____ Student",
+        "qType": "mcq",
+        "options": [
+          { "text": "bin", "isCorrect": false },
+          { "text": "bist", "isCorrect": false },
+          { "text": "ist", "isCorrect": true },
+          { "text": "sind", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["sein", "verb", "conjugation"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "MCQ - الفعل haben (ich)",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الإجابة الصحيحة: Ich ____ ein Buch",
+        "qType": "mcq",
+        "options": [
+          { "text": "habe", "isCorrect": true },
+          { "text": "hast", "isCorrect": false },
+          { "text": "hat", "isCorrect": false },
+          { "text": "haben", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["haben", "verb", "conjugation"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "MCQ - الفعل haben (du)",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الإجابة الصحيحة: Du ____ ein Buch",
+        "qType": "mcq",
+        "options": [
+          { "text": "habe", "isCorrect": false },
+          { "text": "hast", "isCorrect": true },
+          { "text": "hat", "isCorrect": false },
+          { "text": "haben", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["haben", "verb", "conjugation"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "FILL - الفعل haben",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "أكمل الفراغ: Ich ____ ein Auto",
+        "qType": "fill",
+        "fillExact": "habe",
+        "regexList": ["habe"],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["haben", "verb", "conjugation"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "MCQ - الجمع (Plural) - der",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الإجابة الصحيحة: ____ Männer (الجمع)",
+        "qType": "mcq",
+        "options": [
+          { "text": "der", "isCorrect": false },
+          { "text": "die", "isCorrect": true },
+          { "text": "das", "isCorrect": false },
+          { "text": "den", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["plural", "der-die-das"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "TRUE_FALSE - الجمع",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "الجملة التالية صحيحة: 'Die Männer' (الجمع)",
+        "qType": "true_false",
+        "answerKeyBoolean": true,
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["plural", "true-false"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "FILL - الجمع",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "أكمل الفراغ: ____ Frauen (الجمع)",
+        "qType": "fill",
+        "fillExact": "die",
+        "regexList": ["die"],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["plural", "fill"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "MCQ - الجملة البسيطة (Satzbau)",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "اختر الترتيب الصحيح للجملة:",
+        "qType": "mcq",
+        "options": [
+          { "text": "Ich bin Student", "isCorrect": true },
+          { "text": "Bin ich Student", "isCorrect": false },
+          { "text": "Student ich bin", "isCorrect": false },
+          { "text": "Ich Student bin", "isCorrect": false }
+        ],
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["satzbau", "word-order"],
+        "status": "published"
+      }
+    }
+  },
+  {
+    "name": "TRUE_FALSE - الجملة البسيطة",
+    "request": {
+      "method": "POST",
+      "url": "{{baseUrl}}/questions",
+      "headers": {
+        "Authorization": "Bearer {{token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "prompt": "الجملة التالية صحيحة: 'Ich bin Student'",
+        "qType": "true_false",
+        "answerKeyBoolean": true,
+        "provider": "Grammatik",
+        "section": "grammar",
+        "level": "A1",
+        "tags": ["satzbau", "true-false"],
+        "status": "published"
+      }
+    }
+  }
+]
+
+
+
+

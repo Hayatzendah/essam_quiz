@@ -54,21 +54,21 @@ export class AttemptsController {
     this.logger.log(
       `[POST /attempts/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, sections: ${dto?.sections?.length || 0}`,
     );
-
+    
     try {
       const result = await this.service.startPracticeAttempt(dto, req.user);
       const attemptId =
         (result as any)?.attemptId || (result as any)?._id || (result as any)?.id || 'unknown';
       const itemsCount = (result as any)?.items?.length || 0;
-
+      
       this.logger.log(
         `[POST /attempts/practice] Practice attempt started successfully - attemptId: ${attemptId}, itemsCount: ${itemsCount}`,
       );
-
+      
       if (itemsCount === 0) {
         this.logger.error(`[POST /attempts/practice] WARNING: Attempt created with 0 items!`);
       }
-
+      
       return result;
     } catch (error: any) {
       this.logger.error(
@@ -103,7 +103,7 @@ export class AttemptsController {
     this.logger.debug(
       `[POST /attempts] Full request body: ${JSON.stringify(dto)}, user: ${JSON.stringify({ userId: req.user?.userId, role: req.user?.role })}`,
     );
-
+    
     if (!dto?.examId) {
       this.logger.error(
         `[POST /attempts] Missing examId in request body. Received: ${JSON.stringify(dto)}`,
@@ -122,31 +122,31 @@ export class AttemptsController {
       const attemptId =
         (result as any)?._id || (result as any)?.id || (result as any)?.attemptId || 'unknown';
       const itemsCount = (result as any)?.items?.length || 0;
-
+      
       this.logger.log(
         `[POST /attempts] Attempt created successfully - examId: ${dto.examId}, mode: ${mode}, attemptId: ${attemptId}, itemsCount: ${itemsCount}`,
       );
-
+      
       if (itemsCount === 0) {
         this.logger.error(
           `[POST /attempts] WARNING: Attempt created with 0 items! Response: ${JSON.stringify({
-            attemptId,
-            examId: result?.examId,
-            status: result?.status,
-            itemsCount: result?.items?.length || 0,
+          attemptId,
+          examId: result?.examId,
+          status: result?.status,
+          itemsCount: result?.items?.length || 0,
           })}`,
         );
       } else {
         this.logger.log(
           `[POST /attempts] Response contains ${itemsCount} items. First item: ${JSON.stringify({
-            questionId: result?.items?.[0]?.questionId,
-            qType: result?.items?.[0]?.qType,
-            hasPrompt: !!result?.items?.[0]?.prompt,
-            hasOptions: !!result?.items?.[0]?.options,
+          questionId: result?.items?.[0]?.questionId,
+          qType: result?.items?.[0]?.qType,
+          hasPrompt: !!result?.items?.[0]?.prompt,
+          hasOptions: !!result?.items?.[0]?.options,
           })}`,
         );
       }
-
+      
       // إرجاع attemptId + items + timeLimitMin
       // result يحتوي بالفعل على جميع الحقول المطلوبة
       return result;
@@ -182,7 +182,7 @@ export class AttemptsController {
   // حفظ إجابة أثناء المحاولة (طالب فقط)
   // يدعم: PATCH /attempts/:attemptId/answer (مع itemIndex في body)
   // و: PATCH /attempts/:attemptId/answer/:itemIndex (مع itemIndex في URL)
-
+  
   // Route with itemIndex in URL (must come before the route without it)
   @Patch(':attemptId/answer/:itemIndex')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -198,14 +198,14 @@ export class AttemptsController {
     if (!isNaN(parsedIndex)) {
       dto.itemIndex = parsedIndex;
     }
-
+    
     this.logger.log(
       `[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`,
     );
     this.logger.debug(
       `[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Request body: ${JSON.stringify(dto)}`,
     );
-
+    
     try {
       const result = await this.service.saveAnswer(req.user, attemptId, {
         itemIndex: dto.itemIndex,
@@ -217,7 +217,7 @@ export class AttemptsController {
         studentAnswerReorder: dto.studentAnswerReorder,
         studentAnswerAudioKey: dto.studentAnswerAudioKey,
       });
-
+      
       this.logger.log(
         `[PATCH /attempts/${attemptId}/answer/${itemIndexFromUrl}] Answer saved successfully`,
       );
@@ -239,7 +239,7 @@ export class AttemptsController {
       `[PATCH /attempts/${attemptId}/answer] Request received - itemIndex: ${dto?.itemIndex}, questionId: ${dto?.questionId}, userId: ${req.user?.userId}`,
     );
     this.logger.debug(`[PATCH /attempts/${attemptId}/answer] Request body: ${JSON.stringify(dto)}`);
-
+    
     try {
       const result = await this.service.saveAnswer(req.user, attemptId, {
         itemIndex: dto.itemIndex,
@@ -251,7 +251,7 @@ export class AttemptsController {
         studentAnswerReorder: dto.studentAnswerReorder,
         studentAnswerAudioKey: dto.studentAnswerAudioKey,
       });
-
+      
       this.logger.log(`[PATCH /attempts/${attemptId}/answer] Answer saved successfully`);
       return result;
     } catch (error: any) {

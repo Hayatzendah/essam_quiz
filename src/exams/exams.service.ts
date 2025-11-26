@@ -11,7 +11,7 @@ import { CreateExamDto, CreatePracticeExamDto } from './dto/create-exam.dto';
 import { QueryExamDto } from './dto/query-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
-import { Exam, ExamDocument, ExamStatus } from './schemas/exam.schema';
+import { Exam, ExamDocument, ExamStatus, ExamStatusEnum } from './schemas/exam.schema';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -142,7 +142,7 @@ export class ExamsService {
     const userId = user.userId || (user as any).sub || (user as any).id;
     const doc = await this.model.create({
       ...dto,
-      status: dto.status ?? ExamStatus.DRAFT,
+      status: dto.status ?? ExamStatusEnum.DRAFT,
       ownerId: new Types.ObjectId(userId),
     });
 
@@ -190,7 +190,7 @@ export class ExamsService {
     const doc = await this.model.create({
       ...dto,
       title,
-      status: ExamStatus.PUBLISHED, // دائماً published للطلاب
+      status: ExamStatusEnum.PUBLISHED, // دائماً published للطلاب
       ownerId: new Types.ObjectId(userId),
     });
 
@@ -212,8 +212,8 @@ export class ExamsService {
 
     // الطالب: يشوف فقط الامتحانات المنشورة
     if (user.role === 'student') {
-      filter.status = ExamStatus.PUBLISHED;
-
+      filter.status = ExamStatusEnum.PUBLISHED;
+      
       // فلترة حسب assignedStudentIds (غير مخصص أو مخصص له)
       const userId = user.userId || (user as any).sub || (user as any).id;
       const studentId = new Types.ObjectId(userId);
@@ -247,34 +247,34 @@ export class ExamsService {
     }
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
-
+    
     // للطلاب: فلترة حسب attemptLimit
     if (user.role === 'student') {
       const userId = user.userId || (user as any).sub || (user as any).id;
       const studentId = new Types.ObjectId(userId);
       const examIds = items.map((e: any) => e._id);
-
+      
       if (examIds.length > 0) {
         const attemptCounts = await this.model.db
           .collection('attempts')
           .aggregate([
-            {
-              $match: {
-                studentId,
-                examId: { $in: examIds },
-              },
+          {
+            $match: {
+              studentId,
+              examId: { $in: examIds },
             },
-            {
-              $group: {
-                _id: '$examId',
-                count: { $sum: 1 },
-              },
+          },
+          {
+            $group: {
+              _id: '$examId',
+              count: { $sum: 1 },
             },
+          },
           ])
           .toArray();
-
+        
         const attemptCountMap = new Map(attemptCounts.map((a: any) => [a._id.toString(), a.count]));
-
+        
         const availableExams: any[] = [];
         for (const exam of items) {
           const attemptCount = attemptCountMap.get(exam._id.toString()) || 0;
@@ -299,7 +299,7 @@ export class ExamsService {
     const studentId = new Types.ObjectId(userId);
 
     const filter: any = {
-      status: ExamStatus.PUBLISHED,
+      status: ExamStatusEnum.PUBLISHED,
       $or: [
         { assignedStudentIds: { $exists: false } }, // غير مخصص لأحد
         { assignedStudentIds: { $size: 0 } }, // قائمة فارغة
@@ -311,32 +311,32 @@ export class ExamsService {
     if (q?.provider) filter.provider = q.provider;
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
-
+    
     // فلترة حسب attemptLimit
     const availableExams: any[] = [];
     const examIds = items.map((e: any) => e._id);
-
+    
     if (examIds.length > 0) {
       const attemptCounts = await this.model.db
         .collection('attempts')
         .aggregate([
-          {
-            $match: {
-              studentId,
-              examId: { $in: examIds },
-            },
+        {
+          $match: {
+            studentId,
+            examId: { $in: examIds },
           },
-          {
-            $group: {
-              _id: '$examId',
-              count: { $sum: 1 },
-            },
+        },
+        {
+          $group: {
+            _id: '$examId',
+            count: { $sum: 1 },
           },
+        },
         ])
         .toArray();
-
+      
       const attemptCountMap = new Map(attemptCounts.map((a: any) => [a._id.toString(), a.count]));
-
+      
       for (const exam of items) {
         const attemptCount = attemptCountMap.get(exam._id.toString()) || 0;
         const attemptLimit = exam.attemptLimit || 0;
@@ -362,7 +362,7 @@ export class ExamsService {
       this.logger.log(`[findPublicExams] Starting - level: ${q?.level}, provider: ${q?.provider}`);
 
       const filter: any = {
-        status: ExamStatus.PUBLISHED,
+        status: ExamStatusEnum.PUBLISHED,
       };
 
       // فلترة حسب level و provider
@@ -496,7 +496,7 @@ export class ExamsService {
     if (!doc) throw new NotFoundException('Exam not found');
 
     // التحقق من أن الامتحان منشور
-    if (doc.status !== ExamStatus.PUBLISHED) {
+    if (doc.status !== ExamStatusEnum.PUBLISHED) {
       throw new NotFoundException('Exam not found');
     }
 
@@ -542,7 +542,7 @@ export class ExamsService {
     const isAdmin = user.role === 'admin';
 
     if (user.role === 'student') {
-      if (doc.status !== ExamStatus.PUBLISHED) {
+      if (doc.status !== ExamStatusEnum.PUBLISHED) {
         throw new ForbiddenException('Students can view published exams only');
       }
       // إخفاء التفاصيل الحساسة لو كانت عشوائية
@@ -579,9 +579,9 @@ export class ExamsService {
 
     // قيود بعد النشر
     const goingToPublish =
-      dto.status === ExamStatus.PUBLISHED && doc.status !== ExamStatus.PUBLISHED;
+      dto.status === ExamStatusEnum.PUBLISHED && doc.status !== ExamStatusEnum.PUBLISHED;
 
-    if (doc.status === ExamStatus.PUBLISHED && !isAdmin) {
+    if (doc.status === ExamStatusEnum.PUBLISHED && !isAdmin) {
       // بعد النشر نقيّد التعديلات الجذرية
       const structuralChange = typeof dto.sections !== 'undefined';
       if (structuralChange) {
@@ -658,7 +658,7 @@ export class ExamsService {
     // التحقق من وجود محاولات مرتبطة بالامتحان
     const AttemptModel = this.model.db.collection('attempts');
     const attemptCount = await AttemptModel.countDocuments({ examId: new Types.ObjectId(id) });
-
+    
     if (attemptCount > 0 && !hard) {
       throw new BadRequestException({
         code: 'EXAM_HAS_ATTEMPTS',
@@ -673,7 +673,7 @@ export class ExamsService {
       return { message: 'Exam deleted permanently', id };
     } else {
       // Soft delete: تغيير الحالة إلى archived
-      doc.status = ExamStatus.ARCHIVED;
+      doc.status = 'archived' as any;
       await doc.save();
       return { message: 'Exam archived successfully', id: doc._id, status: doc.status };
     }

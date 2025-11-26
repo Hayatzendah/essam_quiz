@@ -8,7 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Attempt, AttemptDocument, AttemptStatus } from './schemas/attempt.schema';
-import { Exam, ExamDocument, ExamStatus } from '../exams/schemas/exam.schema';
+import { Exam, ExamDocument, ExamStatus, ExamStatusEnum } from '../exams/schemas/exam.schema';
 import { Question, QuestionDocument, QuestionStatus } from '../questions/schemas/question.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { MediaService } from '../modules/media/media.service';
@@ -620,7 +620,7 @@ export class AttemptsService {
     const studentState = (student as any)?.state;
     this.logger.debug(`Student state: ${studentState || 'not set'}`);
 
-    if (exam.status !== ExamStatus.PUBLISHED) {
+    if (exam.status !== ExamStatusEnum.PUBLISHED) {
       this.logger.warn(`Exam is not published - examId: ${examIdStr}, status: ${exam.status}`);
       throw new BadRequestException({
         code: 'EXAM_NOT_AVAILABLE',
@@ -631,7 +631,12 @@ export class AttemptsService {
     }
 
     if (typeof exam.attemptLimit === 'number' && exam.attemptLimit > 0) {
-      const current = await this.AttemptModel.countDocuments({ examId, studentId }).exec();
+      // نحسب فقط المحاولات المكتملة (submitted أو graded) - لا نحسب in_progress
+      const current = await this.AttemptModel.countDocuments({
+        examId,
+        studentId,
+        status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] },
+      }).exec();
       if (current >= exam.attemptLimit) {
         this.logger.warn(
           `Attempt limit reached - examId: ${examIdStr}, userId: ${userId}, current: ${current}, limit: ${exam.attemptLimit}`,

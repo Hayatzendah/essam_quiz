@@ -22,4 +22,9 @@ export type QuestionStatus = 'draft' | 'published' | 'archived';
 
 export type ExamStatus = 'draft' | 'published';
 
+export const ExamStatusEnum = {
+  DRAFT: 'draft' as const,
+  PUBLISHED: 'published' as const,
+} as const;
+
 export type AttemptStatus = 'in_progress' | 'submitted' | 'graded';

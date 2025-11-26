@@ -10,3 +10,4 @@ export class AssignExamDto {
   @IsMongoId({ each: true })
   studentIds?: string[];
 }
+

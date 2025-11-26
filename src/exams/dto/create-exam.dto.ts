@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsIn,
   IsMongoId,
   IsNotEmpty,
@@ -12,7 +13,8 @@ import {
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
-import { ExamStatus } from '../schemas/exam.schema';
+import type { ExamStatus } from '../schemas/exam.schema';
+import { ExamStatusEnum } from '../schemas/exam.schema';
 
 class SectionItemDto {
   @IsMongoId() questionId: string;
@@ -110,6 +112,7 @@ export class CreateExamDto {
 
   // اختياري: في حال أردت بدءًا بحالة غير الـ draft
   @IsOptional()
+  @IsEnum(ExamStatusEnum)
   status?: ExamStatus;
 }
 

@@ -1,170 +1,119 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import type {
+  ExamStatus,
+  QuestionLevel,
+  QuestionProvider,
+  QuestionSection,
+} from '../../common/enums';
+import {
+  ExamStatusEnum,
+  QuestionLevel as QuestionLevelEnum,
+  QuestionProvider as QuestionProviderEnum,
+  QuestionSection as QuestionSectionEnum,
+} from '../../common/enums';
 
 export type ExamDocument = Exam & Document;
+export type { ExamStatus };
+export { ExamStatusEnum };
 
-export enum ExamStatus {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
-  ARCHIVED = 'archived',
-}
-
-@Schema({ _id: false })
-export class SectionItem {
+class SectionItem {
   @Prop({ type: Types.ObjectId, ref: 'Question', required: true })
   questionId: Types.ObjectId;
 
-  @Prop({ type: Number, default: 1, min: 0 })
+  @Prop({ type: Number, default: 1 })
   points: number;
 }
 const SectionItemSchema = SchemaFactory.createForClass(SectionItem);
 
-@Schema({ _id: false })
-export class DifficultyDistribution {
-  @Prop({ type: Number, min: 0, default: 0 }) easy: number;
-  @Prop({ type: Number, min: 0, default: 0 }) medium: number;
-  @Prop({ type: Number, min: 0, default: 0 }) hard: number;
+class SectionQuota {
+  @Prop({ type: Number, required: true, min: 1 })
+  count: number;
 }
-const DifficultyDistributionSchema = SchemaFactory.createForClass(DifficultyDistribution);
+const SectionQuotaSchema = SchemaFactory.createForClass(SectionQuota);
 
-@Schema({ _id: false })
-export class ExamSection {
-  @Prop({ required: true, trim: true }) name: string;
+class ExamSection {
+  @Prop({ type: String, trim: true })
+  name?: string;
 
-  // مهارة القسم: HOEREN, LESEN, SCHREIBEN, SPRECHEN
-  @Prop({
-    type: String,
-    enum: ['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'],
-    trim: true,
-  })
+  @Prop({ type: String, enum: ['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRACHEN'], trim: true })
   skill?: 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
 
-  // تسمية القسم (يمكن استخدام name أو label)
-  @Prop({ trim: true })
+  @Prop({ type: String, trim: true })
   label?: string;
 
-  // مدة القسم بالدقائق
   @Prop({ type: Number, min: 0 })
   durationMin?: number;
 
-  // عدد الأجزاء في القسم (يمكن حسابه من items/quota)
   @Prop({ type: Number, min: 0 })
   partsCount?: number;
 
-  // طريقة 1: أسئلة ثابتة
-  @Prop({ type: [SectionItemSchema], default: undefined })
+  @Prop({ type: String, enum: ['LanguageBlocks', 'Listening', 'Reading', 'Writing', 'Speaking'] })
+  section?: QuestionSection;
+
+  // واحد من الاتنين: items ثابتة أو quota
+  @Prop({ type: [SectionItemSchema], default: [], _id: false })
   items?: SectionItem[];
 
-  // طريقة 2: حصص عشوائية
   @Prop({ type: Number, min: 1 })
   quota?: number;
 
-  @Prop({ type: DifficultyDistributionSchema })
-  difficultyDistribution?: DifficultyDistribution;
-
-  // عشوائية ترتيب الأسئلة داخل هذا السكشن (لما يكون فيه items)
-  @Prop({ type: Boolean, default: false })
-  randomize?: boolean;
-
-  // Tags للفلترة عند اختيار الأسئلة العشوائية (مثل: ["Bayern"], ["300-Fragen"], ["Hören", "Teil-1"])
   @Prop({ type: [String], default: [] })
   tags?: string[];
+
+  @Prop({ type: Object, _id: false })
+  difficultyDistribution?: { easy?: number; medium?: number; hard?: number };
+
+  @Prop({ type: Boolean, default: false })
+  randomize?: boolean;
 }
 const ExamSectionSchema = SchemaFactory.createForClass(ExamSection);
 
-@Schema({ timestamps: true })
-export class Exam {
-  @Prop({ required: true, trim: true }) title: string;
-  @Prop({ trim: true }) description?: string;
-  @Prop({ trim: true }) level?: string;
-  @Prop({ trim: true }) provider?: string; // telc, Goethe, ÖSD, ECL, DTB, DTZ, Deutschland-in-Leben, Grammatik, Wortschatz
+class DifficultyDistribution {
+  @Prop({ type: Number, default: 0 }) easy?: number;
+  @Prop({ type: Number, default: 0 }) med?: number;
+  @Prop({ type: Number, default: 0 }) hard?: number;
+}
+const DifficultyDistributionSchema = SchemaFactory.createForClass(DifficultyDistribution);
 
-  @Prop({ type: String, enum: Object.values(ExamStatus), default: ExamStatus.DRAFT })
+@Schema({ timestamps: true, collection: 'exams' })
+export class Exam {
+  @Prop({ required: true, trim: true })
+  title: string;
+
+  @Prop({ trim: true })
+  description?: string;
+
+  @Prop({ type: String, enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], index: true })
+  level?: QuestionLevel | string;
+
+  @Prop({ type: String, index: true })
+  provider?: QuestionProvider | string;
+
+  @Prop({ type: String, enum: Object.values(ExamStatusEnum), default: ExamStatusEnum.DRAFT, index: true })
   status: ExamStatus;
 
-  @Prop({ type: [ExamSectionSchema], required: true })
+  @Prop({ type: [ExamSectionSchema], default: [], _id: false })
   sections: ExamSection[];
 
   // إعدادات عامة
-  @Prop({ type: Boolean, default: false })
-  randomizeQuestions: boolean;
+  @Prop() timeLimitMin?: number;
+  @Prop() attemptLimit?: number;
+  @Prop({ default: true }) randomizeQuestions?: boolean;
+  @Prop({ default: true }) randomizeOptions?: boolean;
 
-  // 0 أو undefined = غير محدود
-  @Prop({ type: Number, default: 0, min: 0 })
-  attemptLimit: number;
+  @Prop({ type: DifficultyDistributionSchema, _id: false })
+  difficultyDistribution?: DifficultyDistribution;
 
-  // زمن الامتحان بالدقائق (0 = غير محدود)
-  @Prop({ type: Number, default: 0, min: 0 })
-  timeLimitMin: number;
-
-  // سياسة عرض النتائج للطالب بعد التسليم
-  @Prop({
-    type: String,
-    enum: ['only_scores', 'correct_with_scores', 'explanations_with_scores', 'release_delayed'],
-    default: 'only_scores',
-  })
-  resultsPolicy:
-    | 'only_scores'
-    | 'correct_with_scores'
-    | 'explanations_with_scores'
-    | 'release_delayed';
-
-  // مالك الامتحان (المعلم الذي أنشأه)
   @Prop({ type: Types.ObjectId, ref: 'User', index: true })
-  ownerId: Types.ObjectId;
+  ownerId?: Types.ObjectId;
 
-  // إسناد اختياري
   @Prop({ type: Types.ObjectId, ref: 'Class' })
   assignedClassId?: Types.ObjectId;
 
-  @Prop({ type: [Types.ObjectId], ref: 'User', default: undefined })
+  @Prop({ type: [Types.ObjectId], ref: 'User', default: [] })
   assignedStudentIds?: Types.ObjectId[];
 }
 
 export const ExamSchema = SchemaFactory.createForClass(Exam);
-
-// فهارس
-ExamSchema.index({ ownerId: 1, status: 1 });
-ExamSchema.index({ status: 1, level: 1 });
-
-// تحققات أساسية على تعريف السكاشن
-ExamSchema.pre('validate', function (next) {
-  const exam = this as ExamDocument;
-
-  if (!Array.isArray(exam.sections) || exam.sections.length === 0) {
-    return next(new Error('Exam must include at least one section'));
-  }
-
-  for (const s of exam.sections) {
-    const hasItems = Array.isArray(s.items) && s.items.length > 0;
-    const hasQuota = typeof s.quota === 'number' && s.quota > 0;
-
-    // لا نسمح بالجمع داخل نفس السكشن
-    if (hasItems && hasQuota) {
-      return next(new Error(`Section "${s.name}" cannot have both items and quota`));
-    }
-    if (!hasItems && !hasQuota) {
-      return next(new Error(`Section "${s.name}" must have either items or quota`));
-    }
-
-    if (hasItems) {
-      for (const it of s.items!) {
-        if (!it.questionId) {
-          return next(new Error(`Section "${s.name}" has item without questionId`));
-        }
-      }
-    }
-
-    if (hasQuota && s.difficultyDistribution) {
-      const sum =
-        (s.difficultyDistribution.easy || 0) +
-        (s.difficultyDistribution.medium || 0) +
-        (s.difficultyDistribution.hard || 0);
-      if (sum !== s.quota) {
-        return next(new Error(`Section "${s.name}" difficultyDistribution must sum to quota`));
-      }
-    }
-  }
-
-  next();
-});
+ExamSchema.index({ level: 1, provider: 1, status: 1 });

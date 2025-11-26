@@ -27,10 +27,20 @@ export class MediaService {
     this.useMockMode = missingVars.length > 0 || process.env.MEDIA_USE_MOCK === 'true';
 
     if (this.useMockMode) {
+      // طباعة التحذيرات فقط في development أو debug mode
+      const isProduction = process.env.NODE_ENV === 'production';
+      const logLevel = isProduction ? 'debug' : 'warn';
+      
+      if (!isProduction) {
       this.logger.warn(
         '⚠️ MediaService running in MOCK MODE (no S3). Files will not be actually stored.',
       );
       this.logger.warn('⚠️ This is for testing only. Set S3 environment variables for production.');
+      } else {
+        this.logger.debug(
+          'MediaService running in MOCK MODE (no S3). Set S3 environment variables to enable file storage.',
+        );
+      }
     } else {
       this.s3 = new S3Client({
         region: process.env.S3_REGION,
@@ -52,7 +62,12 @@ export class MediaService {
 
     // وضع Mock للاختبار بدون S3
     if (this.useMockMode) {
+      // طباعة التحذيرات فقط في development
+      if (process.env.NODE_ENV !== 'production') {
       this.logger.warn(`⚠️ MOCK MODE: Simulating upload for ${key} (${opts.buffer.length} bytes)`);
+      } else {
+        this.logger.debug(`MOCK MODE: Simulating upload for ${key} (${opts.buffer.length} bytes)`);
+      }
       const baseUrl =
         process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
       const mockUrl = `${baseUrl}/media/mock/${key}`;
@@ -117,7 +132,12 @@ export class MediaService {
   async getPresignedUrl(key: string, expiresSec?: number) {
     // وضع Mock للاختبار بدون S3
     if (this.useMockMode) {
+      // طباعة التحذيرات فقط في development
+      if (process.env.NODE_ENV !== 'production') {
       this.logger.warn(`⚠️ MOCK MODE: Generating mock presigned URL for ${key}`);
+      } else {
+        this.logger.debug(`MOCK MODE: Generating mock presigned URL for ${key}`);
+      }
       const baseUrl =
         process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
       return `${baseUrl}/media/mock/${key}?expires=${Date.now() + (expiresSec ?? this.defaultExpires) * 1000}`;

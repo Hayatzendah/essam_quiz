@@ -1,10 +1,11 @@
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ExamStatus } from '../schemas/exam.schema';
+import type { ExamStatus } from '../schemas/exam.schema';
+import { ExamStatusEnum } from '../schemas/exam.schema';
 
 export class QueryExamDto {
   @IsOptional()
-  @IsEnum(ExamStatus)
+  @IsEnum(ExamStatusEnum)
   status?: ExamStatus;
 
   @IsOptional()

@@ -23,3 +23,4 @@ export async function runBatchAttemptsTest(app: INestApplication, token: string,
   console.log(`Failed: ${failedCount}`);
   console.log(`Avg time per request: ${(t1 - t0) / N}ms`);
 }
+
