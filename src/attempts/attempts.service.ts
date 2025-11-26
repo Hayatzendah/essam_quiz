@@ -351,7 +351,11 @@ export class AttemptsService {
         }
 
         if (candidates.length === 0) {
-          // محاولة البحث بدون tags أولاً لمعرفة ما إذا كانت المشكلة في tags
+          // 🔄 Fallback: محاولة البحث بفلترة أقل صرامة
+          this.logger.warn(`[generateQuestionListForAttempt] ⚠️ No questions found with strict filter for section "${(sec as any).name || sec.section}". Trying fallback filters...`);
+          this.logger.warn(`[generateQuestionListForAttempt] 📋 Strict filter used: ${JSON.stringify(filter, null, 2)}`);
+          
+          // Fallback 1: البحث بدون tags (provider + level فقط)
           const filterWithoutTags: any = { status: QuestionStatus.PUBLISHED };
           if (exam.level) filterWithoutTags.level = exam.level;
           if ((exam as any).provider) {
@@ -363,102 +367,98 @@ export class AttemptsService {
             }
           }
           
-          const candidatesWithoutTags = await this.QuestionModel.find(filterWithoutTags)
+          let fallbackCandidates = await this.QuestionModel.find(filterWithoutTags)
             .lean(false)
             .exec();
           
-          // البحث عن أسئلة تحتوي على section tags (حتى لو كانت لها tags أخرى)
-          const candidatesWithTags =
-            sectionTags.length > 0
-            ? await this.QuestionModel.find({ 
-                status: QuestionStatus.PUBLISHED,
-                  tags: { $in: sectionTags },
+          if (fallbackCandidates.length > 0) {
+            this.logger.warn(
+              `[generateQuestionListForAttempt] ✅ Fallback 1 SUCCESS: Found ${fallbackCandidates.length} questions without tags filter (provider + level only). Using these questions.`,
+            );
+            candidates.push(...fallbackCandidates);
+          } else {
+            // Fallback 2: البحث بدون provider (level فقط)
+            const filterLevelOnly: any = { 
+              status: QuestionStatus.PUBLISHED,
+              level: exam.level,
+            };
+            
+            fallbackCandidates = await this.QuestionModel.find(filterLevelOnly)
+              .lean(false)
+              .exec();
+            
+            if (fallbackCandidates.length > 0) {
+              this.logger.warn(
+                `[generateQuestionListForAttempt] ✅ Fallback 2 SUCCESS: Found ${fallbackCandidates.length} questions with level only (${exam.level}). Using these questions.`,
+              );
+              candidates.push(...fallbackCandidates);
+            } else {
+              // Fallback 3: البحث مع tags فقط (بدون provider/level)
+              if (sectionTags.length > 0) {
+                const normalizedTags: string[] = [];
+                for (const tag of sectionTags) {
+                  normalizedTags.push(tag);
+                  const tagLower = tag.toLowerCase();
+                  if (tagLower.includes('fragen') && tagLower.includes('300')) {
+                    normalizedTags.push(
+                      '300-Fragen', 'fragen-300', 'Fragen-300', '300-fragen',
+                      '300 Fragen', 'Fragen 300', '300_Fragen', 'Fragen_300',
+                    );
+                  }
+                }
+                const uniqueTags = Array.from(new Set(normalizedTags));
+                
+                fallbackCandidates = await this.QuestionModel.find({
+                  status: QuestionStatus.PUBLISHED,
+                  tags: { $in: uniqueTags },
                 })
                   .lean(false)
-                  .limit(10)
-                  .exec()
-            : [];
-          
-          // البحث عن جميع الأسئلة المنشورة لنفس المستوى (بدون provider) لمعرفة ما هو موجود
-          const allPublishedForLevel = await this.QuestionModel.find({ 
-            status: QuestionStatus.PUBLISHED,
-            level: exam.level,
-          })
-            .lean(false)
-            .limit(10)
-            .exec();
-          
-          // البحث عن جميع الأسئلة المنشورة (بدون أي فلترة) لمعرفة ما هو موجود
-          const allPublished = await this.QuestionModel.find({ 
-            status: QuestionStatus.PUBLISHED,
-          })
-            .lean(false)
-            .limit(10)
-            .exec();
-          
-          this.logger.warn(`[generateQuestionListForAttempt] ⚠️ No questions found for section "${(sec as any).name || sec.section}". Skipping this section.`);
-          this.logger.warn(`[generateQuestionListForAttempt] 📋 Filter used: ${JSON.stringify(filter, null, 2)}`);
-          this.logger.warn(
-            `[generateQuestionListForAttempt] 🔍 Questions found without tags filter (provider + level only): ${candidatesWithoutTags.length}`,
-          );
-          this.logger.warn(
-            `[generateQuestionListForAttempt] 🏷️  Questions found with section tags only (${JSON.stringify(sectionTags)}): ${candidatesWithTags.length}`,
-          );
-          this.logger.warn(
-            `[generateQuestionListForAttempt] 📊 Total published questions for level "${exam.level}": ${allPublishedForLevel.length}`,
-          );
-          this.logger.warn(`[generateQuestionListForAttempt] 📊 Total published questions (any level): ${allPublished.length}`);
-          
-          if (candidatesWithoutTags.length > 0) {
-            this.logger.warn(
-              `[generateQuestionListForAttempt] 📝 Sample questions (provider + level match, tags may differ): ${JSON.stringify(
-                candidatesWithoutTags.slice(0, 5).map((q: any) => ({
-              id: q._id, 
-              tags: q.tags, 
-              provider: q.provider, 
-              level: q.level,
-                  status: q.status,
-                })),
-                null,
-                2,
-              )}`,
-            );
+                  .exec();
+                
+                if (fallbackCandidates.length > 0) {
+                  this.logger.warn(
+                    `[generateQuestionListForAttempt] ✅ Fallback 3 SUCCESS: Found ${fallbackCandidates.length} questions with tags only (${JSON.stringify(sectionTags)}). Using these questions.`,
+                  );
+                  candidates.push(...fallbackCandidates);
+                }
+              }
+            }
           }
           
-          if (candidatesWithTags.length > 0) {
-            this.logger.warn(
-              `[generateQuestionListForAttempt] 📝 Sample questions with section tags (${JSON.stringify(sectionTags)}): ${JSON.stringify(
-                candidatesWithTags.slice(0, 5).map((q: any) => ({
-              id: q._id, 
-              tags: q.tags, 
-              provider: q.provider, 
-              level: q.level,
-                  status: q.status,
-                })),
-                null,
-                2,
-              )}`,
+          // إذا لم نجد أي أسئلة بعد جميع المحاولات، نطبع معلومات التشخيص
+          if (candidates.length === 0) {
+            const allPublishedForLevel = await this.QuestionModel.find({ 
+              status: QuestionStatus.PUBLISHED,
+              level: exam.level,
+            })
+              .lean(false)
+              .limit(10)
+              .exec();
+            
+            this.logger.error(`[generateQuestionListForAttempt] ❌ All fallbacks failed. No questions found for section "${(sec as any).name || sec.section}". Skipping this section.`);
+            this.logger.error(
+              `[generateQuestionListForAttempt] 📊 Total published questions for level "${exam.level}": ${allPublishedForLevel.length}`,
             );
+            
+            if (allPublishedForLevel.length > 0) {
+              this.logger.error(
+                `[generateQuestionListForAttempt] 📝 Sample questions for level "${exam.level}": ${JSON.stringify(
+                  allPublishedForLevel.slice(0, 5).map((q: any) => ({
+                    id: q._id, 
+                    provider: q.provider, 
+                    level: q.level, 
+                    tags: q.tags,
+                    status: q.status,
+                  })),
+                  null,
+                  2,
+                )}`,
+              );
+            }
+            
+            // Skip this section instead of throwing
+            continue;
           }
-          
-          if (allPublishedForLevel.length > 0) {
-            this.logger.warn(
-              `[generateQuestionListForAttempt] 📝 Sample questions for level "${exam.level}": ${JSON.stringify(
-                allPublishedForLevel.slice(0, 5).map((q: any) => ({
-              id: q._id, 
-              provider: q.provider, 
-              level: q.level, 
-              tags: q.tags,
-                  status: q.status,
-                })),
-                null,
-                2,
-              )}`,
-            );
-          }
-          
-          // Skip this section instead of throwing
-          continue;
         }
 
         let pickList: QuestionDocument[] = [];
