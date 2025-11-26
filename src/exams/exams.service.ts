@@ -189,12 +189,21 @@ export class ExamsService {
     const title = dto.title || `Practice Exam - ${new Date().toLocaleDateString()}`;
 
     const userId = user.userId || (user as any).sub || (user as any).id;
+    
+    this.logger.log(
+      `[createPracticeExam] Creating exam - title: ${title}, sections count: ${dto.sections?.length || 0}, sections: ${JSON.stringify(dto.sections?.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0 })))}`,
+    );
+    
     const doc = await this.model.create({
       ...dto,
       title,
       status: ExamStatusEnum.PUBLISHED, // دائماً published للطلاب
       ownerId: new Types.ObjectId(userId),
     });
+
+    this.logger.log(
+      `[createPracticeExam] Exam created - id: ${doc._id}, sections count: ${doc.sections?.length || 0}, sections: ${JSON.stringify(doc.sections?.map((s: any) => ({ name: s?.name, itemsCount: s?.items?.length || 0, hasItems: Array.isArray(s?.items) && s.items.length > 0 })))}`,
+    );
 
     return {
       id: String(doc._id),
