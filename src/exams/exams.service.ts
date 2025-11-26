@@ -637,7 +637,14 @@ export class ExamsService {
     }
 
     // تطبيق التحديث
-    Object.assign(doc, dto);
+    // معالجة خاصة لـ sections لأن Object.assign قد لا يعمل بشكل صحيح مع nested arrays
+    if ((dto as any).sections !== undefined) {
+      doc.sections = (dto as any).sections;
+    }
+    
+    // تطبيق باقي التحديثات
+    const { sections, ...restDto } = dto as any;
+    Object.assign(doc, restDto);
 
     // لو في تعديل في البنية قبل النشر، عادي — سيؤثر على اختيار الأسئلة لاحقًا في attempts
     await doc.save();
