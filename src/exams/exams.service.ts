@@ -808,7 +808,7 @@ export class ExamsService {
       .map((exam: any) => {
         if (!Array.isArray(exam.sections) || exam.sections.length === 0) {
           return {
-            examId: exam._id.toString(),
+            examId: exam._id?.toString() || String(exam._id),
             title: exam.title,
             level: exam.level,
             provider: exam.provider,
@@ -848,7 +848,7 @@ export class ExamsService {
         }
 
         return {
-          examId: exam._id.toString(),
+          examId: exam._id?.toString() || String(exam._id),
           title: exam.title,
           level: exam.level,
           provider: exam.provider,
@@ -875,7 +875,7 @@ export class ExamsService {
     }
 
     const allExams = await this.model.find({}).exec();
-    const results = [];
+    const results: Array<{ examId: string; title: string; status: string }> = [];
 
     for (const exam of allExams) {
       let hasEmptySections = false;
@@ -909,7 +909,7 @@ export class ExamsService {
         await exam.save();
 
         results.push({
-          examId: exam._id.toString(),
+          examId: exam._id?.toString() || String(exam._id),
           title: exam.title,
           status: 'fixed',
         });
