@@ -770,23 +770,58 @@ export class AttemptsService {
     
     // 🔍 Only throw NO_QUESTIONS_AVAILABLE if there are literally no questions at all
     if (!picked || !picked.length) {
+      const sectionsDetails = exam.sections.map((s: any) => {
+        const hasItems = Array.isArray(s.items) && s.items.length > 0;
+        const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+        let reason = '';
+        
+        if (!hasItems && !hasQuota) {
+          reason = 'Section has no items and no quota - skipped';
+        } else if (hasItems) {
+          reason = `Section has ${s.items.length} items but none were found or published`;
+        } else if (hasQuota) {
+          reason = `Section requires ${s.quota} questions but none matched the filter (provider: ${(exam as any).provider}, level: ${exam.level}, tags: ${JSON.stringify(s.tags || [])}, state: ${studentState || 'any'})`;
+        }
+        
+        return {
+          name: s.name || s.section,
+          section: s.section,
+          quota: s.quota,
+          tags: s.tags,
+          itemsCount: s.items?.length || 0,
+          hasItems,
+          hasQuota,
+          reason,
+        };
+      });
+      
       this.logger.error(
         `[startAttempt] ❌ NO_QUESTIONS_AVAILABLE - examId: ${examIdStr}, examTitle: ${exam.title}, provider: ${(exam as any).provider}, level: ${exam.level}, studentState: ${studentState || 'not set'}`,
       );
       this.logger.error(
-        `[startAttempt] Exam sections details: ${JSON.stringify(exam.sections.map((s: any) => ({ 
-          name: s.name || s.section, 
-          section: s.section,
-          quota: s.quota, 
-          tags: s.tags, 
-          itemsCount: s.items?.length || 0,
-          hasItems: Array.isArray(s.items) && s.items.length > 0,
-          hasQuota: typeof s.quota === 'number' && s.quota > 0,
-        })), null, 2)}`,
+        `[startAttempt] Exam sections details: ${JSON.stringify(sectionsDetails, null, 2)}`,
       );
+      
+      // تحديد السبب الرئيسي
+      const emptySections = sectionsDetails.filter((s: any) => !s.hasItems && !s.hasQuota);
+      const itemsSections = sectionsDetails.filter((s: any) => s.hasItems && s.itemsCount === 0);
+      const quotaSections = sectionsDetails.filter((s: any) => s.hasQuota);
+      
+      let detailedMessage = 'No questions available for this exam. ';
+      if (emptySections.length > 0) {
+        detailedMessage += `Sections without items/quota: ${emptySections.map((s: any) => s.name).join(', ')}. `;
+      }
+      if (itemsSections.length > 0) {
+        detailedMessage += `Sections with empty items: ${itemsSections.map((s: any) => s.name).join(', ')}. `;
+      }
+      if (quotaSections.length > 0) {
+        detailedMessage += `Sections with quota but no matching questions: ${quotaSections.map((s: any) => s.name).join(', ')}. `;
+      }
+      detailedMessage += 'Please check that sections have valid items or that questions exist in the database matching the filter criteria.';
+      
       throw new BadRequestException({
         code: 'NO_QUESTIONS_AVAILABLE',
-        message: 'No questions available for this exam',
+        message: detailedMessage,
         path: '/attempts',
         statusCode: 400,
         examId: examIdStr,
@@ -794,13 +829,7 @@ export class AttemptsService {
         provider: (exam as any).provider,
         level: exam.level,
         studentState: studentState || null,
-        sections: exam.sections.map((s: any) => ({
-          name: s.name || s.section,
-          quota: s.quota,
-          tags: s.tags,
-          hasItems: Array.isArray(s.items) && s.items.length > 0,
-          itemsCount: s.items?.length || 0,
-        })),
+        sections: sectionsDetails,
       });
     }
 
