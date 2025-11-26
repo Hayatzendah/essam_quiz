@@ -689,4 +689,83 @@ export class ExamsService {
       return { message: 'Exam archived successfully', id: doc._id, status: doc.status };
     }
   }
+
+  async debugExamStructure(id: string) {
+    const exam = await this.model.findById(id).exec();
+    if (!exam) {
+      throw new NotFoundException('Exam not found');
+    }
+
+    const QuestionModel = this.model.db.collection('questions');
+    const debugInfo: any = {
+      examId: exam._id.toString(),
+      examTitle: exam.title,
+      provider: exam.provider,
+      level: exam.level,
+      status: exam.status,
+      sections: [],
+      totalQuestionsAvailable: 0,
+      issues: [],
+    };
+
+    if (!exam.sections || exam.sections.length === 0) {
+      debugInfo.issues.push('No sections defined in exam');
+      return debugInfo;
+    }
+
+    for (const section of exam.sections) {
+      const sectionInfo: any = {
+        name: section.name,
+        quota: section.quota,
+        tags: section.tags || [],
+        difficultyDistribution: section.difficultyDistribution,
+        availableQuestions: {},
+        totalAvailable: 0,
+        issues: [],
+      };
+
+      // البحث عن الأسئلة المتاحة لكل مستوى صعوبة
+      const baseQuery: any = {
+        status: 'published',
+        level: exam.level,
+      };
+
+      if (section.tags && section.tags.length > 0) {
+        baseQuery.tags = { $in: section.tags };
+      }
+
+      if (section.difficultyDistribution) {
+        for (const [difficulty, count] of Object.entries(section.difficultyDistribution)) {
+          const query = { ...baseQuery, difficulty };
+          const available = await QuestionModel.countDocuments(query);
+          sectionInfo.availableQuestions[difficulty] = available;
+          sectionInfo.totalAvailable += available;
+
+          if (available < count) {
+            sectionInfo.issues.push(
+              `Need ${count} ${difficulty} questions, but only ${available} available`,
+            );
+          }
+        }
+      } else {
+        // بدون توزيع صعوبة
+        const available = await QuestionModel.countDocuments(baseQuery);
+        sectionInfo.totalAvailable = available;
+        if (available < section.quota) {
+          sectionInfo.issues.push(
+            `Need ${section.quota} questions, but only ${available} available`,
+          );
+        }
+      }
+
+      debugInfo.sections.push(sectionInfo);
+      debugInfo.totalQuestionsAvailable += sectionInfo.totalAvailable;
+
+      if (sectionInfo.issues.length > 0) {
+        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${section.name}": ${i}`));
+      }
+    }
+
+    return debugInfo;
+  }
 }
