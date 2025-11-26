@@ -810,20 +810,34 @@ export class AttemptsService {
       const itemsSections = sectionsDetails.filter((s: any) => s.hasItems && s.itemsCount === 0);
       const quotaSections = sectionsDetails.filter((s: any) => s.hasQuota);
       
-      let detailedMessage = 'No questions available for this exam. ';
+      let detailedMessage = '❌ No questions available for this exam.\n\n';
+      
       if (emptySections.length > 0) {
         const sectionNames = emptySections.map((s: any) => s.displayName || s.name || s.section || 'Unknown').join(', ');
-        detailedMessage += `Found ${emptySections.length} section(s) without items/quota: ${sectionNames}. `;
+        detailedMessage += `🔴 Problem: Found ${emptySections.length} section(s) without items/quota: "${sectionNames}".\n\n`;
+        detailedMessage += `💡 Solution: Each section must have either:\n`;
+        detailedMessage += `   • items: [{"questionId": "...", "points": 1}] (specific questions), OR\n`;
+        detailedMessage += `   • quota: 5 (number of questions to select from database)\n\n`;
+        detailedMessage += `📝 To fix: Update the exam using PATCH /exams/{examId} and add items or quota to section(s): ${sectionNames}\n\n`;
       }
+      
       if (itemsSections.length > 0) {
         const sectionNames = itemsSections.map((s: any) => s.displayName || s.name || s.section || 'Unknown').join(', ');
-        detailedMessage += `Found ${itemsSections.length} section(s) with empty items: ${sectionNames}. `;
+        detailedMessage += `🔴 Problem: Found ${itemsSections.length} section(s) with empty items: "${sectionNames}".\n\n`;
+        detailedMessage += `💡 Solution: Add valid questionIds to the items array for these sections.\n\n`;
       }
+      
       if (quotaSections.length > 0) {
         const sectionNames = quotaSections.map((s: any) => s.displayName || s.name || s.section || 'Unknown').join(', ');
-        detailedMessage += `Found ${quotaSections.length} section(s) with quota but no matching questions: ${sectionNames}. `;
+        detailedMessage += `🔴 Problem: Found ${quotaSections.length} section(s) with quota but no matching questions: "${sectionNames}".\n\n`;
+        detailedMessage += `💡 Solution: Add questions to the database that match:\n`;
+        detailedMessage += `   • provider: ${(exam as any).provider || 'any'}\n`;
+        detailedMessage += `   • level: ${exam.level || 'any'}\n`;
+        detailedMessage += `   • tags: ${quotaSections.map((s: any) => JSON.stringify(s.tags || [])).join(', ')}\n`;
+        detailedMessage += `   • status: published\n\n`;
       }
-      detailedMessage += 'Please check that sections have valid items or that questions exist in the database matching the filter criteria.';
+      
+      detailedMessage += `⚠️ Note: Even one empty section will prevent the exam from starting.`;
       
       throw new BadRequestException({
         code: 'NO_QUESTIONS_AVAILABLE',
