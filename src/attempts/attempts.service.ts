@@ -770,24 +770,27 @@ export class AttemptsService {
     
     // 🔍 Only throw NO_QUESTIONS_AVAILABLE if there are literally no questions at all
     if (!picked || !picked.length) {
-      const sectionsDetails = exam.sections.map((s: any) => {
+      const sectionsDetails = exam.sections.map((s: any, index: number) => {
         const hasItems = Array.isArray(s.items) && s.items.length > 0;
         const hasQuota = typeof s.quota === 'number' && s.quota > 0;
         let reason = '';
         
+        const displayName = s.name || s.section || `Section ${index + 1}`;
+        
         if (!hasItems && !hasQuota) {
-          reason = 'Section has no items and no quota - skipped';
+          reason = `Section "${displayName}" has no items and no quota - skipped`;
         } else if (hasItems) {
-          reason = `Section has ${s.items.length} items but none were found or published`;
+          reason = `Section "${displayName}" has ${s.items.length} items but none were found or published`;
         } else if (hasQuota) {
-          reason = `Section requires ${s.quota} questions but none matched the filter (provider: ${(exam as any).provider}, level: ${exam.level}, tags: ${JSON.stringify(s.tags || [])}, state: ${studentState || 'any'})`;
+          reason = `Section "${displayName}" requires ${s.quota} questions but none matched the filter (provider: ${(exam as any).provider}, level: ${exam.level}, tags: ${JSON.stringify(s.tags || [])}, state: ${studentState || 'any'})`;
         }
         
         return {
-          name: s.name || s.section,
-          section: s.section,
-          quota: s.quota,
-          tags: s.tags,
+          name: s.name || s.section || null,
+          displayName,
+          section: s.section || null,
+          quota: s.quota || null,
+          tags: s.tags || [],
           itemsCount: s.items?.length || 0,
           hasItems,
           hasQuota,
@@ -809,13 +812,16 @@ export class AttemptsService {
       
       let detailedMessage = 'No questions available for this exam. ';
       if (emptySections.length > 0) {
-        detailedMessage += `Sections without items/quota: ${emptySections.map((s: any) => s.name).join(', ')}. `;
+        const sectionNames = emptySections.map((s: any) => s.displayName || s.name || s.section || 'Unknown').join(', ');
+        detailedMessage += `Found ${emptySections.length} section(s) without items/quota: ${sectionNames}. `;
       }
       if (itemsSections.length > 0) {
-        detailedMessage += `Sections with empty items: ${itemsSections.map((s: any) => s.name).join(', ')}. `;
+        const sectionNames = itemsSections.map((s: any) => s.displayName || s.name || s.section || 'Unknown').join(', ');
+        detailedMessage += `Found ${itemsSections.length} section(s) with empty items: ${sectionNames}. `;
       }
       if (quotaSections.length > 0) {
-        detailedMessage += `Sections with quota but no matching questions: ${quotaSections.map((s: any) => s.name).join(', ')}. `;
+        const sectionNames = quotaSections.map((s: any) => s.displayName || s.name || s.section || 'Unknown').join(', ');
+        detailedMessage += `Found ${quotaSections.length} section(s) with quota but no matching questions: ${sectionNames}. `;
       }
       detailedMessage += 'Please check that sections have valid items or that questions exist in the database matching the filter criteria.';
       
