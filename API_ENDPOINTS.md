@@ -1346,6 +1346,119 @@ const handleStartTraining = () => {
 
 ---
 
+### `POST /exams/:id/fix-sections`
+**الوصف:** إصلاح الامتحان تلقائياً - إضافة quota للأقسام الفارغة  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** admin فقط
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+```
+
+**Path Parameters:**
+- `id`: معرف الامتحان (MongoDB ObjectId)
+
+**الوصف:**
+- يفحص كل section في الامتحان
+- إذا كان section فارغاً (لا `items` ولا `quota`): يضيف `quota: 5` تلقائياً
+- إذا كان section `null`: ينشئ section جديد مع `quota: 5`
+- مفيد لإصلاح الامتحانات التي لا يمكن بدءها بسبب sections فارغة
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Exam sections fixed successfully",
+  "examId": "6926380f721cf4b27545857e",
+  "sections": [
+    {
+      "name": "Section 1",
+      "quota": 5,
+      "tags": []
+    }
+  ],
+  "fixedSections": [
+    {
+      "name": "Section 1",
+      "quota": 5
+    }
+  ]
+}
+```
+
+**Response (200) - إذا كان الامتحان صحيح:**
+```json
+{
+  "success": true,
+  "message": "Exam is already valid - no empty sections found",
+  "examId": "6926380f721cf4b27545857e",
+  "sections": [...]
+}
+```
+
+**Response (403):**
+```json
+{
+  "statusCode": 403,
+  "message": "Only admin can fix exams"
+}
+```
+
+**Response (404):**
+```json
+{
+  "statusCode": 404,
+  "message": "Exam not found"
+}
+```
+
+**أمثلة على الاستخدام:**
+
+**1. إصلاح امتحان:**
+```javascript
+// إصلاح امتحان تلقائياً
+const fixExam = async (examId) => {
+  try {
+    const response = await api.post(`/exams/${examId}/fix-sections`);
+    console.log('Exam fixed:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fixing exam:', error.response?.data);
+    throw error;
+  }
+};
+
+// استخدام
+await fixExam('6926380f721cf4b27545857e');
+```
+
+**2. استخدام في React/Vue:**
+```javascript
+const handleFixExam = async (examId) => {
+  try {
+    const response = await api.post(`/exams/${examId}/fix-sections`);
+    if (response.data.success) {
+      alert('تم إصلاح الامتحان بنجاح!');
+      // تحديث قائمة الامتحانات
+      fetchExams();
+    }
+  } catch (error) {
+    if (error.response?.status === 403) {
+      alert('ليس لديك صلاحية لإصلاح الامتحانات');
+    } else {
+      alert('حدث خطأ أثناء إصلاح الامتحان');
+    }
+  }
+};
+```
+
+**الاستخدام:**
+- **لإصلاح الامتحانات التي sections فارغة:** استخدم هذا الـ endpoint لإصلاح الامتحانات تلقائياً
+- **للمسؤولين فقط:** يتطلب role: admin
+
+---
+
 ### `PATCH /exams/:id`
 **الوصف:** تحديث امتحان  
 **المصادقة:** مطلوبة (Bearer Token)  
