@@ -204,6 +204,24 @@ export class ExamsController {
     return this.service.updateExam(id, dto, req.user);
   }
 
+  // إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة (admin فقط)
+  @Post(':id/fix-sections')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Fix empty sections in exam (admin only)',
+    description: 'إصلاح الامتحان تلقائياً: إضافة quota=5 للأقسام الفارغة (لا items ولا quota)',
+  })
+  @ApiResponse({ status: 200, description: 'Exam sections fixed successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  @ApiResponse({ status: 404, description: 'Exam not found' })
+  fixSections(@Param('id') id: string, @Req() req: any) {
+    this.logger.log(
+      `[POST /exams/${id}/fix-sections] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
+    );
+    return this.service.fixEmptySections(id, req.user);
+  }
+
   // حذف امتحان (المالك أو الأدمن)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -707,6 +707,92 @@ export class ExamsService {
     return doc.toObject();
   }
 
+  /**
+   * إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة
+   * - للاستخدام من قبل admin فقط
+   * - يفحص كل section وإذا كان فارغاً (لا items ولا quota) يضيف quota = 5
+   */
+  async fixEmptySections(examId: string, user: ReqUser) {
+    if (!user || user.role !== 'admin') {
+      throw new ForbiddenException('Only admin can fix exams');
+    }
+
+    if (!Types.ObjectId.isValid(examId)) {
+      throw new BadRequestException(`Invalid exam ID format: ${examId}`);
+    }
+
+    const doc = await this.model.findById(examId).exec();
+    if (!doc) throw new NotFoundException('Exam not found');
+
+    this.logger.log(
+      `[fixEmptySections] Fixing exam - examId: ${examId}, current sections: ${JSON.stringify(doc.sections.map((s: any) => ({ name: s?.name, hasItems: Array.isArray(s?.items) && s.items.length > 0, hasQuota: typeof s?.quota === 'number' && s.quota > 0 })))}`,
+    );
+
+    let fixed = false;
+    const updatedSections = doc.sections.map((s: any, index: number) => {
+      if (!s || s === null) {
+        // Section is null - create new section with quota
+        this.logger.warn(`[fixEmptySections] Section ${index + 1} is null - creating new section with quota=5`);
+        fixed = true;
+        return {
+          name: `Section ${index + 1}`,
+          quota: 5,
+          tags: [],
+        };
+      }
+
+      const hasItems = Array.isArray(s.items) && s.items.length > 0;
+      const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+
+      if (!hasItems && !hasQuota) {
+        // Section is empty - add quota
+        this.logger.warn(`[fixEmptySections] Section "${s.name || `Section ${index + 1}`}" is empty - adding quota=5`);
+        fixed = true;
+        return {
+          ...s,
+          quota: 5,
+        };
+      }
+
+      // Section is valid - keep as is
+      return s;
+    });
+
+    if (!fixed) {
+      this.logger.log(`[fixEmptySections] No empty sections found - exam is already valid`);
+      return {
+        success: true,
+        message: 'Exam is already valid - no empty sections found',
+        examId,
+        sections: doc.sections,
+      };
+    }
+
+    // Update exam with fixed sections
+    doc.set('sections', updatedSections);
+    doc.markModified('sections');
+    await doc.save();
+
+    this.logger.log(
+      `[fixEmptySections] Exam fixed successfully - examId: ${examId}, updated sections: ${JSON.stringify(updatedSections.map((s: any) => ({ name: s?.name, quota: s?.quota, itemsCount: s?.items?.length || 0 })))}`,
+    );
+
+    return {
+      success: true,
+      message: 'Exam sections fixed successfully',
+      examId,
+      sections: doc.sections,
+      fixedSections: updatedSections.filter((s: any, index: number) => {
+        const original = doc.sections[index];
+        const hasItems = Array.isArray(s.items) && s.items.length > 0;
+        const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+        const originalHasItems = Array.isArray(original?.items) && original.items.length > 0;
+        const originalHasQuota = typeof original?.quota === 'number' && original.quota > 0;
+        return (hasItems || hasQuota) && !(originalHasItems || originalHasQuota);
+      }),
+    };
+  }
+
   async assignExam(id: string, dto: AssignExamDto, user: ReqUser) {
     if (!user) throw new ForbiddenException();
     const doc = await this.model.findById(id).exec();
