@@ -727,10 +727,26 @@ export class ExamsService {
     // التحقق من أن المعلم هو مالك الامتحان
     if (user.role === 'teacher') {
       const userId = user.userId || (user as any).sub || (user as any).id;
-      const isOwner = doc.ownerId?.toString() === userId;
+      const ownerIdStr = doc.ownerId?.toString();
+      const userIdStr = String(userId);
+      
+      this.logger.log(
+        `[fixEmptySections] Checking ownership - examId: ${examId}, ownerId: ${ownerIdStr}, userId: ${userIdStr}`,
+      );
+      
+      // مقارنة مرنة: ObjectId vs string
+      const isOwner = ownerIdStr === userIdStr || 
+                      (doc.ownerId && String(doc.ownerId) === userIdStr) ||
+                      (ownerIdStr && ownerIdStr === String(userId));
+      
       if (!isOwner) {
+        this.logger.warn(
+          `[fixEmptySections] Access denied - examId: ${examId}, ownerId: ${ownerIdStr}, userId: ${userIdStr}`,
+        );
         throw new ForbiddenException('Only the exam owner can fix this exam');
       }
+      
+      this.logger.log(`[fixEmptySections] Ownership verified - examId: ${examId}`);
     }
 
     this.logger.log(
@@ -815,12 +831,33 @@ export class ExamsService {
     const isAdmin = user.role === 'admin';
     
     // Admin: جميع الامتحانات، Teacher: امتحاناته فقط
-    const query = isAdmin ? {} : { ownerId: new Types.ObjectId(userId) };
+    // نستخدم $or للبحث في ownerId سواء كان ObjectId أو string
+    const query = isAdmin 
+      ? {} 
+      : {
+          $or: [
+            { ownerId: new Types.ObjectId(userId) },
+            { ownerId: userId },
+          ],
+        };
+    this.logger.log(
+      `[findExamsWithEmptySections] userId: ${userId}, role: ${user.role}, isAdmin: ${isAdmin}`,
+    );
     const allExams = await this.model.find(query).lean().exec();
+    this.logger.log(
+      `[findExamsWithEmptySections] Found ${allExams.length} exam(s)`,
+    );
     
     const examsWithEmptySections = allExams
       .map((exam: any) => {
+        this.logger.log(
+          `[findExamsWithEmptySections] Checking exam: ${exam._id?.toString() || String(exam._id)}, title: ${exam.title}, sections count: ${exam.sections?.length || 0}`,
+        );
+        
         if (!Array.isArray(exam.sections) || exam.sections.length === 0) {
+          this.logger.warn(
+            `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} has no sections`,
+          );
           return {
             examId: exam._id?.toString() || String(exam._id),
             title: exam.title,
@@ -835,6 +872,9 @@ export class ExamsService {
         const emptySections = exam.sections
           .map((s: any, index: number) => {
             if (!s || s === null) {
+              this.logger.warn(
+                `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} - Section ${index + 1} is null`,
+              );
               return {
                 index: index + 1,
                 name: `Section ${index + 1}`,
@@ -846,6 +886,9 @@ export class ExamsService {
             const hasQuota = typeof s.quota === 'number' && s.quota > 0;
 
             if (!hasItems && !hasQuota) {
+              this.logger.warn(
+                `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} - Section "${s.name || `Section ${index + 1}`}" is empty (no items, no quota)`,
+              );
               return {
                 index: index + 1,
                 name: s.name || `Section ${index + 1}`,
@@ -860,6 +903,10 @@ export class ExamsService {
         if (emptySections.length === 0) {
           return null;
         }
+
+        this.logger.warn(
+          `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} has ${emptySections.length} empty section(s)`,
+        );
 
         return {
           examId: exam._id?.toString() || String(exam._id),
