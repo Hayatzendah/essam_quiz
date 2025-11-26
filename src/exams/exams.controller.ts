@@ -173,23 +173,8 @@ export class ExamsController {
     }
   }
 
-  // تفاصيل امتحان معين للطالب (Public endpoint)
-  // Public endpoint - لا يحتاج JWT
-  @Get(':examId/public')
-  @ApiOperation({
-    summary: 'Get exam details for students',
-    description:
-      'عرض تفاصيل الامتحان المتاحة للطالب - لا يعرض الأسئلة، فقط هيكل الأقسام - Public endpoint (لا يحتاج JWT)',
-  })
-  @ApiResponse({ status: 200, description: 'Exam details' })
-  @ApiResponse({ status: 404, description: 'Exam not found' })
-  findPublicById(@Param('examId') examId: string) {
-    this.logger.log(`[GET /exams/${examId}/public] Request received`);
-    return this.service.findPublicExamById(examId);
-  }
-
   // إيجاد جميع الامتحانات التي sections فارغة (admin فقط)
-  // ⚠️ يجب أن يكون قبل @Get(':id') لتجنب التعارض
+  // ⚠️ يجب أن يكون قبل جميع الـ routes الديناميكية (:id, :examId) لتجنب التعارض
   @Get('empty-sections')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -204,6 +189,21 @@ export class ExamsController {
       `[GET /exams/empty-sections] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
     );
     return this.service.findExamsWithEmptySections(req.user);
+  }
+
+  // تفاصيل امتحان معين للطالب (Public endpoint)
+  // Public endpoint - لا يحتاج JWT
+  @Get(':examId/public')
+  @ApiOperation({
+    summary: 'Get exam details for students',
+    description:
+      'عرض تفاصيل الامتحان المتاحة للطالب - لا يعرض الأسئلة، فقط هيكل الأقسام - Public endpoint (لا يحتاج JWT)',
+  })
+  @ApiResponse({ status: 200, description: 'Exam details' })
+  @ApiResponse({ status: 404, description: 'Exam not found' })
+  findPublicById(@Param('examId') examId: string) {
+    this.logger.log(`[GET /exams/${examId}/public] Request received`);
+    return this.service.findPublicExamById(examId);
   }
 
   // إصلاح جميع الامتحانات التي sections فارغة (admin فقط)
