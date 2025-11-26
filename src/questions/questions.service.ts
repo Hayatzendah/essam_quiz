@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { QueryQuestionDto } from './dto/query-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
@@ -174,7 +174,16 @@ export class QuestionsService {
   }
 
   async findById(id: string) {
-    const question = await this.model.findById(id).lean().exec();
+    // تنظيف الـ ID من أي رموز غير صالحة (< > أو مسافات)
+    const cleanId = id.trim().replace(/[<>]/g, '');
+    
+    if (!Types.ObjectId.isValid(cleanId)) {
+      throw new BadRequestException(
+        `Invalid question ID format: "${id}". Expected a valid MongoDB ObjectId (24 hex characters). Cleaned ID: "${cleanId}"`,
+      );
+    }
+    
+    const question = await this.model.findById(cleanId).lean().exec();
     if (!question) {
       throw new NotFoundException('Question not found');
     }
