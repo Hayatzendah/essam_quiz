@@ -126,44 +126,58 @@ ExamSchema.pre('save', function (next) {
   } else {
     // Filter out null, undefined, and completely empty objects from sections
     // BUT keep sections that have items (even if empty array) or quota or name
-    this.sections = this.sections.filter((s: any) => {
-      // Remove null or undefined
-      if (s === null || s === undefined) {
-        return false;
-      }
-      // Remove completely empty objects {} (objects with no keys at all)
-      if (typeof s === 'object' && !Array.isArray(s)) {
-        const keys = Object.keys(s);
-        // If object has no keys at all, it's completely empty {}
-        if (keys.length === 0) {
+    this.sections = this.sections
+      .filter((s: any) => {
+        // Remove null or undefined
+        if (s === null || s === undefined) {
           return false;
         }
-        // Keep section if it has:
-        // - name (even if empty string, we'll keep it)
-        // - items (even if empty array)
-        // - quota (even if 0, but validation should catch that)
-        // - any other meaningful property
-        const hasName = 'name' in s;
-        const hasItems = 'items' in s;
-        const hasQuota = 'quota' in s;
-        const hasSkill = 'skill' in s;
-        const hasLabel = 'label' in s;
-        const hasTags = 'tags' in s;
-        
-        // Keep if it has at least one of these properties
-        if (hasName || hasItems || hasQuota || hasSkill || hasLabel || hasTags) {
-          return true;
+        // Remove completely empty objects {} (objects with no keys at all)
+        if (typeof s === 'object' && !Array.isArray(s)) {
+          const keys = Object.keys(s);
+          // If object has no keys at all, it's completely empty {}
+          if (keys.length === 0) {
+            return false;
+          }
+          // Keep section if it has:
+          // - name (even if empty string, we'll keep it)
+          // - items (even if empty array)
+          // - quota (even if 0, but validation should catch that)
+          // - any other meaningful property
+          const hasName = 'name' in s;
+          const hasItems = 'items' in s;
+          const hasQuota = 'quota' in s;
+          const hasSkill = 'skill' in s;
+          const hasLabel = 'label' in s;
+          const hasTags = 'tags' in s;
+          
+          // Keep if it has at least one of these properties
+          if (hasName || hasItems || hasQuota || hasSkill || hasLabel || hasTags) {
+            return true;
+          }
+          
+          // Otherwise check if it has any meaningful value
+          const hasValidValue = keys.some((key) => {
+            const value = s[key];
+            return value !== null && value !== undefined && value !== '';
+          });
+          return hasValidValue;
         }
-        
-        // Otherwise check if it has any meaningful value
-        const hasValidValue = keys.some((key) => {
-          const value = s[key];
-          return value !== null && value !== undefined && value !== '';
-        });
-        return hasValidValue;
-      }
-      return true;
-    });
+        return true;
+      })
+      .map((s: any) => {
+        // التأكد من أن items موجودة ومحفوظة بشكل صحيح
+        if (s && typeof s === 'object' && !Array.isArray(s)) {
+          // إذا كان section يحتوي على items، تأكد من أنها محفوظة
+          if ('items' in s && Array.isArray(s.items)) {
+            // تنظيف items من null/undefined فقط، لكن احتفظ بالباقي
+            s.items = s.items.filter((item: any) => {
+              return item !== null && item !== undefined && item !== '';
+            });
+          }
+        }
+        return s;
+      });
   }
   next();
 });

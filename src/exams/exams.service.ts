@@ -175,23 +175,45 @@ export class ExamsService {
       processedDto.sections = processedDto.sections
         .filter((section: any) => section !== null && section !== undefined)
         .map((section: any) => {
-          if (section.items && Array.isArray(section.items)) {
-            // إزالة null/undefined items
-            section.items = section.items
-              .filter((item: any) => item !== null && item !== undefined)
-              .map((item: any) => {
-                if (item.questionId) {
-                  return {
-                    ...item,
-                    questionId: item.questionId instanceof Types.ObjectId 
-                      ? item.questionId 
-                      : new Types.ObjectId(item.questionId),
-                  };
+          // إنشاء نسخة جديدة من section لتجنب تعديل الـ original
+          const processedSection = { ...section };
+          
+          if (processedSection.items && Array.isArray(processedSection.items)) {
+            // إزالة null/undefined items وتحويل questionId إلى ObjectId
+            processedSection.items = processedSection.items
+              .filter((item: any) => {
+                // إزالة items بدون questionId
+                if (!item || item === null || item === undefined || !item.questionId) {
+                  return false;
                 }
-                return item;
+                // التحقق من أن questionId صالح
+                try {
+                  // محاولة تحويل questionId إلى ObjectId للتحقق من صحته
+                  if (item.questionId instanceof Types.ObjectId) {
+                    return true;
+                  }
+                  // التحقق من أن questionId string صالح
+                  if (typeof item.questionId === 'string' && Types.ObjectId.isValid(item.questionId)) {
+                    return true;
+                  }
+                  this.logger.warn(`[createExam] Invalid questionId: ${item.questionId} - skipping item`);
+                  return false;
+                } catch (error) {
+                  this.logger.warn(`[createExam] Error validating questionId ${item.questionId}: ${error.message} - skipping item`);
+                  return false;
+                }
+              })
+              .map((item: any) => {
+                // تحويل questionId إلى ObjectId
+                return {
+                  ...item,
+                  questionId: item.questionId instanceof Types.ObjectId 
+                    ? item.questionId 
+                    : new Types.ObjectId(item.questionId),
+                };
               });
           }
-          return section;
+          return processedSection;
         });
       
       // التحقق من أن هناك sections صحيحة بعد التنظيف
@@ -209,6 +231,13 @@ export class ExamsService {
     this.logger.log(
       `[createExam] Creating exam - title: ${dto.title}, sections count: ${normalizedSections.length}, sections with items: ${normalizedSections.filter((s: any) => Array.isArray(s.items) && s.items.length > 0).length}`,
     );
+    
+    // Log detailed section info before saving
+    normalizedSections.forEach((s: any, index: number) => {
+      this.logger.log(
+        `[createExam] Section ${index + 1}: name="${s?.name}", items count=${s?.items?.length || 0}, items=${JSON.stringify(s?.items?.map((i: any) => ({ questionId: String(i?.questionId), points: i?.points })) || [])}`,
+      );
+    });
     
     const doc = await this.model.create({
       ...processedDto,
