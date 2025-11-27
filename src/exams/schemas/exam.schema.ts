@@ -117,3 +117,53 @@ export class Exam {
 
 export const ExamSchema = SchemaFactory.createForClass(Exam);
 ExamSchema.index({ level: 1, provider: 1, status: 1 });
+
+// Pre-save hook to ensure sections is always an array and never contains null or empty objects
+ExamSchema.pre('save', function (next) {
+  // Ensure sections is always an array
+  if (!Array.isArray(this.sections)) {
+    this.sections = [];
+  } else {
+    // Filter out null, undefined, and completely empty objects from sections
+    // BUT keep sections that have items (even if empty array) or quota or name
+    this.sections = this.sections.filter((s: any) => {
+      // Remove null or undefined
+      if (s === null || s === undefined) {
+        return false;
+      }
+      // Remove completely empty objects {} (objects with no keys at all)
+      if (typeof s === 'object' && !Array.isArray(s)) {
+        const keys = Object.keys(s);
+        // If object has no keys at all, it's completely empty {}
+        if (keys.length === 0) {
+          return false;
+        }
+        // Keep section if it has:
+        // - name (even if empty string, we'll keep it)
+        // - items (even if empty array)
+        // - quota (even if 0, but validation should catch that)
+        // - any other meaningful property
+        const hasName = 'name' in s;
+        const hasItems = 'items' in s;
+        const hasQuota = 'quota' in s;
+        const hasSkill = 'skill' in s;
+        const hasLabel = 'label' in s;
+        const hasTags = 'tags' in s;
+        
+        // Keep if it has at least one of these properties
+        if (hasName || hasItems || hasQuota || hasSkill || hasLabel || hasTags) {
+          return true;
+        }
+        
+        // Otherwise check if it has any meaningful value
+        const hasValidValue = keys.some((key) => {
+          const value = s[key];
+          return value !== null && value !== undefined && value !== '';
+        });
+        return hasValidValue;
+      }
+      return true;
+    });
+  }
+  next();
+});
