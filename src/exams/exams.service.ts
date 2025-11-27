@@ -200,8 +200,14 @@ export class ExamsService {
       }
     }
     
+    // Ensure sections is always an array (never null or undefined)
+    const normalizedSections = Array.isArray(processedDto.sections) 
+      ? processedDto.sections.filter((s: any) => s !== null && s !== undefined)
+      : [];
+    
     const doc = await this.model.create({
       ...processedDto,
+      sections: normalizedSections, // Explicitly set sections to ensure no null values
       status: processedDto.status ?? ExamStatusEnum.DRAFT,
       ownerId: new Types.ObjectId(userId),
     });
@@ -301,13 +307,19 @@ export class ExamsService {
       }
     }
     
+    // Ensure sections is always an array (never null or undefined)
+    const normalizedSections = Array.isArray(processedDto.sections) 
+      ? processedDto.sections.filter((s: any) => s !== null && s !== undefined)
+      : [];
+    
     this.logger.log(
-      `[createPracticeExam] Creating exam - title: ${title}, sections count: ${processedDto.sections?.length || 0}, sections: ${JSON.stringify(processedDto.sections?.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0 })))}`,
+      `[createPracticeExam] Creating exam - title: ${title}, sections count: ${normalizedSections.length}, sections: ${JSON.stringify(normalizedSections.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0 })))}`,
     );
     
     const doc = await this.model.create({
       ...processedDto,
       title,
+      sections: normalizedSections, // Explicitly set sections to ensure no null values
       status: ExamStatusEnum.PUBLISHED, // دائماً published للطلاب
       ownerId: new Types.ObjectId(userId),
     });
@@ -701,6 +713,13 @@ export class ExamsService {
     // التحكم بالوصول
     if (!user) throw new ForbiddenException();
 
+    // Normalize sections: ensure it's an array and filter out null values
+    const normalizedSections = Array.isArray(doc.sections) 
+      ? doc.sections.filter((s: any) => s !== null && s !== undefined)
+      : [];
+    
+    const docWithNormalizedSections = { ...doc, sections: normalizedSections };
+
     const userId = user.userId || (user as any).sub || (user as any).id;
     const isOwner = doc.ownerId?.toString() === userId;
     const isAdmin = user.role === 'admin';
@@ -710,8 +729,7 @@ export class ExamsService {
         throw new ForbiddenException('Students can view published exams only');
       }
       // إخفاء التفاصيل الحساسة لو كانت عشوائية
-      const safeSections = doc.sections
-        .filter((s: any) => s !== null && s !== undefined)
+      const safeSections = normalizedSections
         .map((s: any) => {
           const hasQuota = typeof s?.quota === 'number' && s.quota > 0;
           if (hasQuota || doc.randomizeQuestions) {
@@ -720,10 +738,10 @@ export class ExamsService {
           // لو ثابتة ومش عشوائية ممكن برضه نخفي الـ questionIds لو بتحبي (حسب سياستك)
           return { ...s, items: undefined };
         });
-      return { ...doc, sections: safeSections };
+      return { ...docWithNormalizedSections, sections: safeSections };
     }
 
-    if (isOwner || isAdmin) return doc;
+    if (isOwner || isAdmin) return docWithNormalizedSections;
 
     // مدرس غير مالك: ما نسمحش
     if (user.role === 'teacher') {
@@ -830,12 +848,19 @@ export class ExamsService {
         throw new BadRequestException('Exam must have at least one valid section');
       }
       
+      // Final normalization: ensure no null values
+      const normalizedSections = processedSections.filter((s: any) => s !== null && s !== undefined);
+      
+      if (normalizedSections.length === 0) {
+        throw new BadRequestException('Exam must have at least one valid section (after filtering null values)');
+      }
+      
       this.logger.log(
-        `[updateExam] Processed sections with ObjectId conversion - sections: ${JSON.stringify(processedSections.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0, items: s.items?.map((i: any) => ({ questionId: String(i.questionId) })) || [] })))}`,
+        `[updateExam] Processed sections with ObjectId conversion - sections: ${JSON.stringify(normalizedSections.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0, items: s.items?.map((i: any) => ({ questionId: String(i.questionId) })) || [] })))}`,
       );
       
       // استخدام set() و markModified لضمان أن Mongoose يحدث الحقل بشكل صحيح
-      doc.set('sections', processedSections);
+      doc.set('sections', normalizedSections);
       doc.markModified('sections');
     }
     

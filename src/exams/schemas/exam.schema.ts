@@ -117,3 +117,15 @@ export class Exam {
 
 export const ExamSchema = SchemaFactory.createForClass(Exam);
 ExamSchema.index({ level: 1, provider: 1, status: 1 });
+
+// Pre-save hook to ensure sections is always an array and never contains null
+ExamSchema.pre('save', function (next) {
+  // Ensure sections is always an array
+  if (!Array.isArray(this.sections)) {
+    this.sections = [];
+  } else {
+    // Filter out any null or undefined values from sections
+    this.sections = this.sections.filter((s: any) => s !== null && s !== undefined);
+  }
+  next();
+});

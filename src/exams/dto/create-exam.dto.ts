@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -12,9 +12,16 @@ import {
   Min,
   ValidateNested,
   ArrayMinSize,
+  ValidateIf,
 } from 'class-validator';
 import type { ExamStatus } from '../schemas/exam.schema';
 import { ExamStatusEnum } from '../schemas/exam.schema';
+
+// Custom validator to ensure sections array doesn't contain null values
+function validateNoNullSections(sections: any[]): boolean {
+  if (!Array.isArray(sections)) return false;
+  return sections.every((s) => s !== null && s !== undefined);
+}
 
 class SectionItemDto {
   @IsMongoId() questionId: string;
@@ -86,6 +93,13 @@ export class CreateExamDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => ExamSectionDto)
+  @Transform(({ value }) => {
+    // Filter out null/undefined values from sections array
+    if (Array.isArray(value)) {
+      return value.filter((s) => s !== null && s !== undefined);
+    }
+    return value;
+  })
   sections: ExamSectionDto[];
 
   @IsOptional()
@@ -127,6 +141,13 @@ export class CreatePracticeExamDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => ExamSectionDto)
+  @Transform(({ value }) => {
+    // Filter out null/undefined values from sections array
+    if (Array.isArray(value)) {
+      return value.filter((s) => s !== null && s !== undefined);
+    }
+    return value;
+  })
   sections: ExamSectionDto[];
 
   @IsOptional()
