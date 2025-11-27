@@ -1,0 +1,29 @@
+{
+  "title": "امتحان مع Quota - Exam with Quota",
+  "description": "امتحان يستخدم quota لاختيار الأسئلة تلقائياً",
+  "level": "A1",
+  "provider": "goethe",
+  "sections": [
+    {
+      "name": "قسم القراءة - Reading Section",
+      "quota": 5,
+      "tags": ["reading", "A1"],
+      "difficultyDistribution": {
+        "easy": 2,
+        "medium": 2,
+        "hard": 1
+      }
+    },
+    {
+      "name": "قسم الاستماع - Listening Section",
+      "quota": 3,
+      "tags": ["listening", "A1"]
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "timeLimitMin": 45,
+  "resultsPolicy": "explanations_with_scores",
+  "status": "published"
+}
+

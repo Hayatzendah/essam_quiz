@@ -1,0 +1,32 @@
+{
+  "title": "امتحان تجريبي - Test Exam",
+  "description": "امتحان تجريبي للاختبار",
+  "level": "A1",
+  "provider": "goethe",
+  "sections": [
+    {
+      "name": "قسم الاختبار - Test Section",
+      "skill": "LESEN",
+      "label": "القراءة - Reading",
+      "durationMin": 20,
+      "partsCount": 1,
+      "items": [
+        {
+          "questionId": "YOUR_QUESTION_ID_1_HERE",
+          "points": 1
+        },
+        {
+          "questionId": "YOUR_QUESTION_ID_2_HERE",
+          "points": 1
+        }
+      ],
+      "tags": ["test", "reading"]
+    }
+  ],
+  "randomizeQuestions": false,
+  "attemptLimit": 3,
+  "timeLimitMin": 30,
+  "resultsPolicy": "explanations_with_scores",
+  "status": "published"
+}
+
