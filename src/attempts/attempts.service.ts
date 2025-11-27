@@ -88,6 +88,11 @@ export class AttemptsService {
       throw new ForbiddenException('Exam is not published');
     }
 
+    // التحقق من وجود sections
+    if (!exam.sections || !Array.isArray(exam.sections) || exam.sections.length === 0) {
+      throw new BadRequestException('Exam has no sections');
+    }
+
     // 2. التحقق من attemptLimit
     const existingAttempts = await this.attemptModel
       .countDocuments({
@@ -143,7 +148,7 @@ export class AttemptsService {
 
     // 9. إرجاع البيانات (بدون answer keys)
     const attemptObj = attempt.toObject();
-    const responseItems = attemptObj.items.map((item: any) => {
+    const responseItems = (attemptObj.items || []).map((item: any) => {
       const { answerKeyBoolean, fillExact, regexList, correctOptionIndexes, answerKeyMatch, answerKeyReorder, ...rest } = item;
       return rest;
     });
@@ -167,10 +172,17 @@ export class AttemptsService {
   private async selectQuestions(exam: any, attemptCount: number): Promise<AttemptItem[]> {
     const items: AttemptItem[] = [];
 
-    for (const section of exam.sections || []) {
-      if (section.items && section.items.length > 0) {
+    if (!exam || !exam.sections || !Array.isArray(exam.sections)) {
+      return items;
+    }
+
+    for (const section of exam.sections) {
+      if (!section) continue;
+
+      if (section.items && Array.isArray(section.items) && section.items.length > 0) {
         // أسئلة ثابتة
         for (const sectionItem of section.items) {
+          if (!sectionItem || !sectionItem.questionId) continue;
           items.push({
             questionId: new Types.ObjectId(sectionItem.questionId),
             qType: '', // سيتم ملؤه من السؤال
@@ -775,3 +787,4 @@ export class AttemptsService {
     return result;
   }
 }
+
