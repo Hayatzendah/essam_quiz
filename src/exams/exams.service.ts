@@ -130,7 +130,8 @@ export class ExamsService {
         throw new BadRequestException('Each section must be a valid object');
       }
       
-      // تنظيف items من null
+      // تنظيف items من null - لكن لا نحذف items إذا كانت فارغة بعد التنظيف
+      // سنتحقق من ذلك بعد التحويل إلى ObjectId
       if (s.items && Array.isArray(s.items)) {
         s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
       }
@@ -180,7 +181,7 @@ export class ExamsService {
           
           if (processedSection.items && Array.isArray(processedSection.items)) {
             // إزالة null/undefined items وتحويل questionId إلى ObjectId
-            processedSection.items = processedSection.items
+            const validItems = processedSection.items
               .filter((item: any) => {
                 // إزالة items بدون questionId
                 if (!item || item === null || item === undefined || !item.questionId) {
@@ -212,6 +213,15 @@ export class ExamsService {
                     : new Types.ObjectId(item.questionId),
                 };
               });
+            
+            // إذا كانت items فارغة بعد التنظيف، نرمي خطأ
+            if (validItems.length === 0 && !processedSection.quota) {
+              throw new BadRequestException(
+                `Section "${processedSection.name || 'unnamed'}" has no valid items (all questionIds are invalid) and no quota. Please provide valid questionIds or use quota instead.`,
+              );
+            }
+            
+            processedSection.items = validItems;
           }
           return processedSection;
         });
