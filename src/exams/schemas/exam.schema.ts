@@ -118,14 +118,34 @@ export class Exam {
 export const ExamSchema = SchemaFactory.createForClass(Exam);
 ExamSchema.index({ level: 1, provider: 1, status: 1 });
 
-// Pre-save hook to ensure sections is always an array and never contains null
+// Pre-save hook to ensure sections is always an array and never contains null or empty objects
 ExamSchema.pre('save', function (next) {
   // Ensure sections is always an array
   if (!Array.isArray(this.sections)) {
     this.sections = [];
   } else {
-    // Filter out any null or undefined values from sections
-    this.sections = this.sections.filter((s: any) => s !== null && s !== undefined);
+    // Filter out null, undefined, and empty objects from sections
+    this.sections = this.sections.filter((s: any) => {
+      // Remove null or undefined
+      if (s === null || s === undefined) {
+        return false;
+      }
+      // Remove empty objects {} (objects with no keys or only undefined/null values)
+      if (typeof s === 'object' && !Array.isArray(s)) {
+        const keys = Object.keys(s);
+        // If object has no keys, it's empty {}
+        if (keys.length === 0) {
+          return false;
+        }
+        // Check if object has any meaningful values (not all undefined/null)
+        const hasValidValue = keys.some((key) => {
+          const value = s[key];
+          return value !== null && value !== undefined && value !== '';
+        });
+        return hasValidValue;
+      }
+      return true;
+    });
   }
   next();
 });

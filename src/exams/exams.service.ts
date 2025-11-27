@@ -307,9 +307,29 @@ export class ExamsService {
       }
     }
     
-    // Ensure sections is always an array (never null or undefined)
+    // Ensure sections is always an array (never null, undefined, or empty objects)
     const normalizedSections = Array.isArray(processedDto.sections) 
-      ? processedDto.sections.filter((s: any) => s !== null && s !== undefined)
+      ? processedDto.sections.filter((s: any) => {
+          // Remove null or undefined
+          if (s === null || s === undefined) {
+            return false;
+          }
+          // Remove empty objects {} (objects with no keys or only undefined/null values)
+          if (typeof s === 'object' && !Array.isArray(s)) {
+            const keys = Object.keys(s);
+            // If object has no keys, it's empty {}
+            if (keys.length === 0) {
+              return false;
+            }
+            // Check if object has any meaningful values (not all undefined/null)
+            const hasValidValue = keys.some((key) => {
+              const value = s[key];
+              return value !== null && value !== undefined && value !== '';
+            });
+            return hasValidValue;
+          }
+          return true;
+        })
       : [];
     
     this.logger.log(
@@ -713,9 +733,29 @@ export class ExamsService {
     // التحكم بالوصول
     if (!user) throw new ForbiddenException();
 
-    // Normalize sections: ensure it's an array and filter out null values
+    // Normalize sections: ensure it's an array and filter out null, undefined, and empty objects
     const normalizedSections = Array.isArray(doc.sections) 
-      ? doc.sections.filter((s: any) => s !== null && s !== undefined)
+      ? doc.sections.filter((s: any) => {
+          // Remove null or undefined
+          if (s === null || s === undefined) {
+            return false;
+          }
+          // Remove empty objects {} (objects with no keys or only undefined/null values)
+          if (typeof s === 'object' && !Array.isArray(s)) {
+            const keys = Object.keys(s);
+            // If object has no keys, it's empty {}
+            if (keys.length === 0) {
+              return false;
+            }
+            // Check if object has any meaningful values (not all undefined/null)
+            const hasValidValue = keys.some((key) => {
+              const value = s[key];
+              return value !== null && value !== undefined && value !== '';
+            });
+            return hasValidValue;
+          }
+          return true;
+        })
       : [];
     
     const docWithNormalizedSections = { ...doc, sections: normalizedSections };
@@ -848,11 +888,31 @@ export class ExamsService {
         throw new BadRequestException('Exam must have at least one valid section');
       }
       
-      // Final normalization: ensure no null values
-      const normalizedSections = processedSections.filter((s: any) => s !== null && s !== undefined);
+      // Final normalization: ensure no null, undefined, or empty objects
+      const normalizedSections = processedSections.filter((s: any) => {
+        // Remove null or undefined
+        if (s === null || s === undefined) {
+          return false;
+        }
+        // Remove empty objects {} (objects with no keys or only undefined/null values)
+        if (typeof s === 'object' && !Array.isArray(s)) {
+          const keys = Object.keys(s);
+          // If object has no keys, it's empty {}
+          if (keys.length === 0) {
+            return false;
+          }
+          // Check if object has any meaningful values (not all undefined/null)
+          const hasValidValue = keys.some((key) => {
+            const value = s[key];
+            return value !== null && value !== undefined && value !== '';
+          });
+          return hasValidValue;
+        }
+        return true;
+      });
       
       if (normalizedSections.length === 0) {
-        throw new BadRequestException('Exam must have at least one valid section (after filtering null values)');
+        throw new BadRequestException('Exam must have at least one valid section (after filtering null/empty values)');
       }
       
       this.logger.log(
