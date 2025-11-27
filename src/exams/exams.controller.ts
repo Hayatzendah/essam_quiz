@@ -191,6 +191,24 @@ export class ExamsController {
     return this.service.findExamsWithEmptySections(req.user);
   }
 
+  // 🔍 DEBUG: فحص تفاصيل الامتحان (admin/teacher)
+  @Get('check-sections/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Check exam sections details (admin/teacher)',
+    description: 'فحص تفاصيل sections الامتحان - للتحقق من حالة الـ sections',
+  })
+  @ApiResponse({ status: 200, description: 'Exam sections details' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin or teacher only' })
+  @ApiResponse({ status: 404, description: 'Exam not found' })
+  async checkExamSections(@Param('id') id: string, @Req() req: any) {
+    this.logger.log(
+      `[GET /exams/check-sections/${id}] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
+    );
+    return this.service.checkExamSections(id, req.user);
+  }
+
   // تفاصيل امتحان معين للطالب (Public endpoint)
   // Public endpoint - لا يحتاج JWT
   @Get(':examId/public')
