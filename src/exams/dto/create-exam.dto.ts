@@ -1,4 +1,4 @@
-import { Type, Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -12,16 +12,9 @@ import {
   Min,
   ValidateNested,
   ArrayMinSize,
-  ValidateIf,
 } from 'class-validator';
 import type { ExamStatus } from '../schemas/exam.schema';
 import { ExamStatusEnum } from '../schemas/exam.schema';
-
-// Custom validator to ensure sections array doesn't contain null values
-function validateNoNullSections(sections: any[]): boolean {
-  if (!Array.isArray(sections)) return false;
-  return sections.every((s) => s !== null && s !== undefined);
-}
 
 class SectionItemDto {
   @IsMongoId() questionId: string;
@@ -93,33 +86,6 @@ export class CreateExamDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => ExamSectionDto)
-  @Transform(({ value }) => {
-    // Filter out null, undefined, and empty objects from sections array
-    if (Array.isArray(value)) {
-      return value.filter((s) => {
-        // Remove null or undefined
-        if (s === null || s === undefined) {
-          return false;
-        }
-        // Remove empty objects {} (objects with no keys or only undefined/null values)
-        if (typeof s === 'object' && !Array.isArray(s)) {
-          const keys = Object.keys(s);
-          // If object has no keys, it's empty {}
-          if (keys.length === 0) {
-            return false;
-          }
-          // Check if object has any meaningful values (not all undefined/null)
-          const hasValidValue = keys.some((key) => {
-            const value = s[key];
-            return value !== null && value !== undefined && value !== '';
-          });
-          return hasValidValue;
-        }
-        return true;
-      });
-    }
-    return value;
-  })
   sections: ExamSectionDto[];
 
   @IsOptional()
@@ -161,33 +127,6 @@ export class CreatePracticeExamDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => ExamSectionDto)
-  @Transform(({ value }) => {
-    // Filter out null, undefined, and empty objects from sections array
-    if (Array.isArray(value)) {
-      return value.filter((s) => {
-        // Remove null or undefined
-        if (s === null || s === undefined) {
-          return false;
-        }
-        // Remove empty objects {} (objects with no keys or only undefined/null values)
-        if (typeof s === 'object' && !Array.isArray(s)) {
-          const keys = Object.keys(s);
-          // If object has no keys, it's empty {}
-          if (keys.length === 0) {
-            return false;
-          }
-          // Check if object has any meaningful values (not all undefined/null)
-          const hasValidValue = keys.some((key) => {
-            const value = s[key];
-            return value !== null && value !== undefined && value !== '';
-          });
-          return hasValidValue;
-        }
-        return true;
-      });
-    }
-    return value;
-  })
   sections: ExamSectionDto[];
 
   @IsOptional()
