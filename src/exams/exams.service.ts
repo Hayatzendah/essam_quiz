@@ -453,35 +453,35 @@ export class ExamsService {
 
             const sections = validSections
               .map((s: any) => {
-                // حساب partsCount من items أو quota
-                let partsCount = 0;
-                if (Array.isArray(s.items) && s.items.length > 0) {
-                  partsCount = s.items.length;
-                } else if (typeof s.quota === 'number' && s.quota > 0) {
-                  partsCount = s.quota;
-                }
+                    // حساب partsCount من items أو quota
+                    let partsCount = 0;
+                    if (Array.isArray(s.items) && s.items.length > 0) {
+                      partsCount = s.items.length;
+                    } else if (typeof s.quota === 'number' && s.quota > 0) {
+                      partsCount = s.quota;
+                    }
 
-                // استخدام partsCount من الحقل إذا كان موجوداً، وإلا استخدم المحسوب
-                const finalPartsCount = typeof s.partsCount === 'number' && s.partsCount > 0 
-                  ? s.partsCount 
-                  : partsCount;
+                    // استخدام partsCount من الحقل إذا كان موجوداً، وإلا استخدم المحسوب
+                    const finalPartsCount = typeof s.partsCount === 'number' && s.partsCount > 0 
+                      ? s.partsCount 
+                      : partsCount;
 
-                // بناء object مع جميع الحقول المطلوبة
-                const sectionObj: any = {
-                  skill: s.skill || undefined,
-                  label: s.label || s.name || '', // label مطلوب دائماً
-                };
+                    // بناء object مع جميع الحقول المطلوبة
+                    const sectionObj: any = {
+                      skill: s.skill || undefined,
+                      label: s.label || s.name || '', // label مطلوب دائماً
+                    };
 
-                // إضافة durationMin إذا كان موجوداً
-                if (typeof s.durationMin === 'number' && s.durationMin > 0) {
-                  sectionObj.durationMin = s.durationMin;
-                }
+                    // إضافة durationMin إذا كان موجوداً
+                    if (typeof s.durationMin === 'number' && s.durationMin > 0) {
+                      sectionObj.durationMin = s.durationMin;
+                    }
 
-                // إضافة partsCount دائماً (حتى لو كان 0)
-                sectionObj.partsCount = finalPartsCount;
+                    // إضافة partsCount دائماً (حتى لو كان 0)
+                    sectionObj.partsCount = finalPartsCount;
 
-                return sectionObj;
-              })
+                    return sectionObj;
+                  })
               .filter((s: any) => s !== null);
 
             if (sections.length === 0) {
@@ -599,14 +599,16 @@ export class ExamsService {
         throw new ForbiddenException('Students can view published exams only');
       }
       // إخفاء التفاصيل الحساسة لو كانت عشوائية
-      const safeSections = doc.sections.map((s: any) => {
-        const hasQuota = typeof s.quota === 'number' && s.quota > 0;
-        if (hasQuota || doc.randomizeQuestions) {
-          return { name: s.name, quota: s.quota, difficultyDistribution: s.difficultyDistribution };
-        }
-        // لو ثابتة ومش عشوائية ممكن برضه نخفي الـ questionIds لو بتحبي (حسب سياستك)
-        return { ...s, items: undefined };
-      });
+      const safeSections = doc.sections
+        .filter((s: any) => s !== null && s !== undefined)
+        .map((s: any) => {
+          const hasQuota = typeof s?.quota === 'number' && s.quota > 0;
+          if (hasQuota || doc.randomizeQuestions) {
+            return { name: s?.name || 'Unnamed Section', quota: s?.quota, difficultyDistribution: s?.difficultyDistribution };
+          }
+          // لو ثابتة ومش عشوائية ممكن برضه نخفي الـ questionIds لو بتحبي (حسب سياستك)
+          return { ...s, items: undefined };
+        });
       return { ...doc, sections: safeSections };
     }
 
@@ -649,9 +651,9 @@ export class ExamsService {
         });
         
         if (!hasEmptySections) {
-          throw new BadRequestException(
+        throw new BadRequestException(
             'Cannot change sections after publish. Only admin can modify sections of published exams with existing content.',
-          );
+        );
         }
         // إذا كانت الأقسام فارغة، نسمح للمعلم المالك بتعديلها
       }
@@ -854,9 +856,10 @@ export class ExamsService {
           `[findExamsWithEmptySections] Checking exam: ${exam._id?.toString() || String(exam._id)}, title: ${exam.title}, sections count: ${exam.sections?.length || 0}`,
         );
         
+        // التحقق من وجود sections
         if (!Array.isArray(exam.sections) || exam.sections.length === 0) {
           this.logger.warn(
-            `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} has no sections`,
+            `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} has no sections array or empty array`,
           );
           return {
             examId: exam._id?.toString() || String(exam._id),
@@ -865,20 +868,41 @@ export class ExamsService {
             provider: exam.provider,
             status: exam.status,
             emptySections: [],
-            reason: 'No sections at all',
+            reason: 'No sections array or empty array',
+          };
+        }
+
+        // التحقق من أن جميع الـ sections ليست null
+        const allSectionsAreNull = exam.sections.every((s: any) => s === null || s === undefined);
+        if (allSectionsAreNull) {
+          this.logger.warn(
+            `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} has all sections as null`,
+          );
+          return {
+            examId: exam._id?.toString() || String(exam._id),
+            title: exam.title,
+            level: exam.level,
+            provider: exam.provider,
+            status: exam.status,
+            emptySections: exam.sections.map((s: any, index: number) => ({
+              index: index + 1,
+              name: `Section ${index + 1}`,
+              reason: 'Section is null',
+            })),
+            reason: 'All sections are null',
           };
         }
 
         const emptySections = exam.sections
           .map((s: any, index: number) => {
-            if (!s || s === null) {
+            if (!s || s === null || s === undefined) {
               this.logger.warn(
-                `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} - Section ${index + 1} is null`,
+                `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} - Section ${index + 1} is null/undefined`,
               );
               return {
                 index: index + 1,
                 name: `Section ${index + 1}`,
-                reason: 'Section is null',
+                reason: 'Section is null or undefined',
               };
             }
 
@@ -887,11 +911,11 @@ export class ExamsService {
 
             if (!hasItems && !hasQuota) {
               this.logger.warn(
-                `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} - Section "${s.name || `Section ${index + 1}`}" is empty (no items, no quota)`,
+                `[findExamsWithEmptySections] Exam ${exam._id?.toString() || String(exam._id)} - Section "${s.name || s.section || `Section ${index + 1}`}" is empty (no items, no quota)`,
               );
               return {
                 index: index + 1,
-                name: s.name || `Section ${index + 1}`,
+                name: s.name || s.section || `Section ${index + 1}`,
                 reason: 'No items and no quota',
               };
             }
@@ -923,6 +947,71 @@ export class ExamsService {
       totalExams: allExams.length,
       examsWithEmptySections: examsWithEmptySections.length,
       exams: examsWithEmptySections,
+    };
+  }
+
+  /**
+   * فحص تفاصيل sections الامتحان
+   * - للاستخدام من قبل admin/teacher
+   */
+  async checkExamSections(examId: string, user: ReqUser) {
+    if (!user || (user.role !== 'admin' && user.role !== 'teacher')) {
+      throw new ForbiddenException('Only admin or teacher can view this information');
+    }
+
+    if (!Types.ObjectId.isValid(examId)) {
+      throw new BadRequestException(`Invalid exam ID format: ${examId}`);
+    }
+
+    const exam = await this.model.findById(examId).lean().exec();
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    // التحقق من أن المعلم هو مالك الامتحان
+    if (user.role === 'teacher') {
+      const userId = user.userId || (user as any).sub || (user as any).id;
+      const ownerIdStr = (exam as any).ownerId?.toString();
+      const userIdStr = String(userId);
+      
+      const isOwner = ownerIdStr === userIdStr || 
+                      ((exam as any).ownerId && String((exam as any).ownerId) === userIdStr) ||
+                      (ownerIdStr && ownerIdStr === String(userId));
+      
+      if (!isOwner) {
+        throw new ForbiddenException('Only the exam owner can view this information');
+      }
+    }
+
+    const sectionsDetails = (exam as any).sections?.map((s: any, index: number) => {
+      const hasItems = Array.isArray(s?.items) && s.items.length > 0;
+      const hasQuota = typeof s?.quota === 'number' && s.quota > 0;
+      const isEmpty = !s || s === null || (!hasItems && !hasQuota);
+
+      return {
+        index: index + 1,
+        name: s?.name || `Section ${index + 1}`,
+        isNull: !s || s === null,
+        hasItems,
+        itemsCount: s?.items?.length || 0,
+        hasQuota,
+        quota: s?.quota || null,
+        isEmpty,
+        reason: isEmpty 
+          ? (!s || s === null 
+              ? 'Section is null' 
+              : 'No items and no quota')
+          : 'Valid section',
+        raw: s,
+      };
+    }) || [];
+
+    return {
+      examId: (exam as any)._id?.toString() || String((exam as any)._id),
+      title: exam.title,
+      ownerId: (exam as any).ownerId?.toString() || String((exam as any).ownerId),
+      sectionsCount: (exam as any).sections?.length || 0,
+      sections: sectionsDetails,
+      hasEmptySections: sectionsDetails.some((s: any) => s.isEmpty),
+      emptySectionsCount: sectionsDetails.filter((s: any) => s.isEmpty).length,
     };
   }
 
