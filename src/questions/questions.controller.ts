@@ -16,6 +16,7 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QueryQuestionDto } from './dto/query-question.dto';
 import { FindVocabDto } from './dto/find-vocab.dto';
+import { GetGrammarQuestionsDto } from './dto/get-grammar-questions.dto';
 import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -78,13 +79,13 @@ export class QuestionsController {
   @ApiOperation({ summary: 'Find grammar questions (Grammatik)' })
   @ApiResponse({
     status: 200,
-    description: 'Returns grammar questions filtered by level, tags, and search',
+    description: 'Returns grammar questions filtered by level and tags',
   })
   @Get('grammar')
   @UseGuards(JwtAuthGuard)
-  findGrammar(@Query() dto: FindVocabDto) {
+  getGrammarQuestions(@Query() dto: GetGrammarQuestionsDto) {
     // متاح للجميع (طلاب ومعلمين) - فقط الأسئلة المنشورة
-    return this.service.findGrammar(dto);
+    return this.service.getGrammarQuestions(dto);
   }
 
   // GET /questions

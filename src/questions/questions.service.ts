@@ -10,6 +10,7 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { QueryQuestionDto } from './dto/query-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { FindVocabDto } from './dto/find-vocab.dto';
+import { GetGrammarQuestionsDto } from './dto/get-grammar-questions.dto';
 import {
   Question,
   QuestionDocument,
@@ -287,8 +288,42 @@ export class QuestionsService {
 
   /**
    * البحث عن أسئلة القواعد النحوية (Grammatik)
-   * - section = "grammar"
-   * - فلترة حسب level, tags, search
+   * - فلترة حسب level و tags فقط
+   * - فقط الأسئلة المنشورة
+   * - لا يعتمد على exams أو sections
+   */
+  async getGrammarQuestions(dto: GetGrammarQuestionsDto) {
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    // بناء query للبحث عن أسئلة القواعد النحوية
+    const query: FilterQuery<QuestionDocument> = {
+      status: QuestionStatus.PUBLISHED, // فقط الأسئلة المنشورة
+      level: dto.level,
+    };
+
+    // فلترة حسب tags - يجب أن يحتوي السؤال على كل الـ tags المطلوبة
+    if (dto.tags && dto.tags.length > 0) {
+      query.tags = { $all: dto.tags };
+    }
+
+    const [items, total] = await Promise.all([
+      this.model.find(query).skip(skip).limit(limit).sort({ createdAt: 1 }).lean().exec(),
+      this.model.countDocuments(query),
+    ]);
+
+    return {
+      page,
+      limit,
+      total,
+      items,
+    };
+  }
+
+  /**
+   * البحث عن أسئلة القواعد النحوية (Grammatik) - للتوافق مع الكود القديم
+   * @deprecated Use getGrammarQuestions instead
    */
   async findGrammar(dto: FindVocabDto) {
     const page = Math.max(parseInt(dto.page ?? '1', 10), 1);
