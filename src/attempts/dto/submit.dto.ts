@@ -1,5 +1,6 @@
 import {
   IsArray,
+  ArrayMinSize,
   IsBoolean,
   IsMongoId,
   IsNumber,
@@ -22,6 +23,13 @@ export class SubmitAnswerDto {
   userAnswer?: string | number | boolean | number[];
 }
 
+class SubmitAttemptAnswerDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true }) // بدل IsMongoId - لأن option IDs هي custom strings
+  selectedOptionIds: string[];
+}
+
 export class SubmitAttemptDto {
   // attemptId يأتي من URL parameter
   @IsOptional()
@@ -29,4 +37,11 @@ export class SubmitAttemptDto {
   @ValidateNested({ each: true })
   @Type(() => SubmitAnswerDto)
   answers?: SubmitAnswerDto[]; // اختياري - إذا تم إرسال الإجابات هنا، سيتم حفظها قبل التصحيح
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => SubmitAttemptAnswerDto)
+  selectedOptions?: SubmitAttemptAnswerDto[]; // للإجابات باستخدام selectedOptionIds
 }
