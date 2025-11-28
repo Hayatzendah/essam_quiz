@@ -10,6 +10,7 @@ import { Model } from 'mongoose';
 import { GrammarTopic, GrammarTopicDocument } from './schemas/grammar-topic.schema';
 import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
 import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
+import { StartGrammarExerciseDto } from './dto/start-grammar-exercise.dto';
 import { AttemptsService } from '../../attempts/attempts.service';
 import { QuestionsService } from '../../questions/questions.service';
 
@@ -135,7 +136,9 @@ export class GrammarTopicsService {
    * - إنشاء exam ديناميكي من هذه الأسئلة
    * - بدء attempt على هذا exam
    */
-  async startPracticeAttempt(slug: string, level?: string, questionsCount?: number, user?: any) {
+  async startPracticeAttempt(slug: string, dto: StartGrammarExerciseDto, user?: any) {
+    const { level, questionsCount } = dto;
+
     // 1. البحث عن grammar topic
     const topic = await this.findBySlug(slug, level);
 
@@ -151,7 +154,7 @@ export class GrammarTopicsService {
     const questionsResult = await this.questionsService.findGrammar({
       level: topic.level as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | undefined,
       tags: tags,
-      limit: questionsCount ? questionsCount.toString() : '20',
+      limit: questionsCount.toString(),
       page: '1',
     });
 

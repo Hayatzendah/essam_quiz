@@ -7,16 +7,17 @@ import {
   Body,
   Query,
   NotFoundException,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { GrammarTopicsService } from './grammar-topics.service';
 import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
 import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
+import { StartGrammarExerciseDto } from './dto/start-grammar-exercise.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Grammar Topics')
 @ApiBearerAuth('JWT-auth')
@@ -73,11 +74,9 @@ export class GrammarTopicsController {
   @ApiResponse({ status: 404, description: 'Grammar topic not found' })
   async startAttempt(
     @Param('slug') slug: string,
-    @Req() req: any,
-    @Query('level') level?: string,
-    @Query('questionsCount') questionsCount?: string,
+    @Body() dto: StartGrammarExerciseDto,
+    @CurrentUser() user: any,
   ) {
-    const count = questionsCount ? parseInt(questionsCount, 10) : undefined;
-    return this.grammarTopicsService.startPracticeAttempt(slug, level, count, req.user);
+    return this.grammarTopicsService.startPracticeAttempt(slug, dto, user);
   }
 }
