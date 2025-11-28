@@ -8,9 +8,11 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { GrammarTopic, GrammarTopicDocument } from './schemas/grammar-topic.schema';
+import { Exam, ExamDocument } from '../../exams/schemas/exam.schema';
 import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
 import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
 import { StartGrammarExerciseDto } from './dto/start-grammar-exercise.dto';
+import { LinkExamDto } from './dto/link-exam.dto';
 import { AttemptsService } from '../../attempts/attempts.service';
 import { QuestionsService } from '../../questions/questions.service';
 
@@ -18,6 +20,7 @@ import { QuestionsService } from '../../questions/questions.service';
 export class GrammarTopicsService {
   constructor(
     @InjectModel(GrammarTopic.name) private readonly model: Model<GrammarTopicDocument>,
+    @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
     @Inject(forwardRef(() => AttemptsService))
     private readonly attemptsService: AttemptsService,
     private readonly questionsService: QuestionsService,
@@ -214,5 +217,56 @@ export class GrammarTopicsService {
 
     // 5. بدء attempt على هذا exam
     return this.attemptsService.startPracticeAttempt(examDto, user);
+  }
+
+  /**
+   * ربط Grammar Topic مع Exam
+   * - التحقق من وجود الـ exam
+   * - ربط الـ topic مع الـ exam
+   * - إرجاع success message
+   */
+  async linkExam(slug: string, dto: LinkExamDto, level?: string) {
+    // 1. البحث عن grammar topic
+    const topic = await this.model.findOne({
+      slug: slug.toLowerCase().trim(),
+      ...(level && { level }),
+    }).exec();
+
+    if (!topic) {
+      throw new NotFoundException(
+        `Grammar topic with slug "${slug}"${level ? ` and level "${level}"` : ''} not found`,
+      );
+    }
+
+    // 2. التحقق من وجود الـ exam
+    const examId = new Types.ObjectId(dto.examId);
+    const exam = await this.examModel.findById(examId).lean().exec();
+
+    if (!exam) {
+      throw new NotFoundException(`Exam with ID "${dto.examId}" not found`);
+    }
+
+    // 3. البحث عن section title من الـ exam (أول section أو null)
+    let sectionTitle: string | null = null;
+    if (exam.sections && Array.isArray(exam.sections) && exam.sections.length > 0) {
+      const firstSection = exam.sections.find((sec: any) => sec && typeof sec === 'object');
+      if (firstSection) {
+        sectionTitle = firstSection.title || firstSection.name || null;
+      }
+    }
+
+    // 4. تحديث الـ topic بربطه مع الـ exam
+    topic.examId = examId;
+    if (sectionTitle) {
+      topic.sectionTitle = sectionTitle;
+    }
+    await topic.save();
+
+    return {
+      success: true,
+      topicId: topic._id.toString(),
+      examId: dto.examId,
+      sectionTitle: sectionTitle || undefined,
+    };
   }
 }

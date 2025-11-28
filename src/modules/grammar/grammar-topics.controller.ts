@@ -15,6 +15,7 @@ import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
 import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
 import { StartGrammarExerciseDto } from './dto/start-grammar-exercise.dto';
 import { GrammarTopicResponseDto } from './dto/grammar-topic-response.dto';
+import { LinkExamDto } from './dto/link-exam.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -62,6 +63,39 @@ export class GrammarTopicsController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateGrammarTopicDto) {
     return this.grammarTopicsService.update(id, dto);
+  }
+
+  // ربط Grammar Topic مع Exam
+  @Patch(':slug/link-exam')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Link grammar topic with an exam',
+    description: 'ربط موضوع قواعد نحوية مع امتحان - للمدرسين والأدمن فقط',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Grammar topic linked with exam successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        topicId: { type: 'string', example: '69218b1bcdedded1d2b5ebbb' },
+        examId: { type: 'string', example: '6929bfed58d67e05dec3deb6' },
+        sectionTitle: { type: 'string', nullable: true, example: 'Grammar Section' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Grammar topic or exam not found' })
+  async linkExam(
+    @Param('slug') slug: string,
+    @Body() dto: LinkExamDto,
+    @Query('level') level?: string,
+  ) {
+    return this.grammarTopicsService.linkExam(slug, dto, level);
   }
 
   // بدء محاولة تمرين على grammar topic (للطلاب)
