@@ -1,0 +1,26 @@
+{
+  "title": "امتحان القواعد - المستوى الأول A1",
+  "description": "امتحان قواعد اللغة الألمانية للمستوى الأول A1",
+  "level": "A1",
+  "provider": "Grammatik",
+  "sections": [
+    {
+      "name": "قواعد أساسية - Basic Grammar A1",
+      "label": "قواعد اللغة الألمانية - A1",
+      "quota": 10,
+      "tags": ["grammar", "A1", "basic", "Grammatik"],
+      "difficultyDistribution": {
+        "easy": 5,
+        "medium": 3,
+        "hard": 2
+      }
+    }
+  ],
+  "randomizeQuestions": true,
+  "attemptLimit": 0,
+  "timeLimitMin": 30,
+  "resultsPolicy": "explanations_with_scores",
+  "status": "published"
+}
+
+

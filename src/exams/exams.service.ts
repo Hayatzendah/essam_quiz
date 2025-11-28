@@ -493,6 +493,63 @@ export class ExamsService {
     return { items, count: items.length };
   }
 
+  /**
+   * جلب قائمة مبسطة من الامتحانات
+   * يرجع فقط: _id, title, level
+   */
+  async findAllSimple(user: ReqUser, q: QueryExamDto) {
+    const filter: any = {};
+
+    // الطالب: يشوف فقط الامتحانات المنشورة
+    if (user.role === 'student') {
+      filter.status = ExamStatusEnum.PUBLISHED;
+      
+      // فلترة حسب assignedStudentIds (غير مخصص أو مخصص له)
+      const userId = user.userId || (user as any).sub || (user as any).id;
+      const studentId = new Types.ObjectId(userId);
+      filter.$or = [
+        { assignedStudentIds: { $exists: false } },
+        { assignedStudentIds: { $size: 0 } },
+        { assignedStudentIds: studentId },
+      ];
+    }
+    // المدرس: يشوف امتحاناته فقط
+    else if (user.role === 'teacher') {
+      const userId = user.userId || (user as any).sub || (user as any).id;
+      filter.ownerId = new Types.ObjectId(userId);
+      if (q?.status) filter.status = q.status;
+    }
+    // الأدمن: يشوف الكل (يمكنه الفلترة حسب status)
+    else if (user.role === 'admin') {
+      if (q?.status) filter.status = q.status;
+    }
+
+    // فلترة مشتركة
+    if (q?.level) filter.level = q.level;
+    if (q?.provider) filter.provider = q.provider;
+
+    // فلترة حسب state (الولاية) - البحث في sections.tags
+    if (q?.state) {
+      filter['sections.tags'] = { $in: [q.state] };
+    }
+
+    const items = await this.model
+      .find(filter)
+      .select('_id title level')
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+
+    // تحويل _id إلى string للتوافق
+    const simplifiedItems = items.map((exam: any) => ({
+      _id: exam._id.toString(),
+      title: exam.title,
+      level: exam.level,
+    }));
+
+    return simplifiedItems;
+  }
+
   async findAvailableForStudent(user: ReqUser, q: QueryExamDto) {
     if (!user || user.role !== 'student') {
       throw new ForbiddenException('Only students can access available exams');

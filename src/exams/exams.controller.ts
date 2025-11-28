@@ -121,13 +121,20 @@ export class ExamsController {
   // - admin: جميع الامتحانات
   // - teacher: امتحاناته فقط
   // - student: الامتحانات المنشورة المتاحة
+  // - يمكن استخدام ?simple=true للحصول على قائمة مبسطة (_id, title, level فقط)
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher', 'student')
-  findAll(@Query() q: QueryExamDto, @Req() req: any) {
+  findAll(@Query() q: QueryExamDto & { simple?: string }, @Req() req: any) {
     this.logger.log(
-      `[GET /exams] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, user object: ${JSON.stringify(req.user)}`,
+      `[GET /exams] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, simple: ${q?.simple}`,
     );
+    
+    // إذا كان simple=true، أرجع قائمة مبسطة
+    if (q?.simple === 'true') {
+      return this.service.findAllSimple(req.user, q);
+    }
+    
     return this.service.findAll(req.user, q);
   }
 

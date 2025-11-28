@@ -16,6 +16,7 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QueryQuestionDto } from './dto/query-question.dto';
 import { FindVocabDto } from './dto/find-vocab.dto';
+import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -39,6 +40,25 @@ export class QuestionsController {
   create(@Body() dto: CreateQuestionDto, @Req() req: any) {
     const userId = req.user?.userId || req.user?.sub || req.user?.id;
     return this.service.createQuestion(dto, userId);
+  }
+
+  @ApiOperation({
+    summary: 'Create a new question and link it to an exam (teacher/admin only)',
+    description:
+      'إنشاء سؤال جديد وربطه بامتحان في section محدد. يتم تحديد correctAnswer تلقائياً من أول option مع isCorrect = true',
+  })
+  @ApiResponse({ status: 201, description: 'Question created and linked to exam successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed or no correct option' })
+  @ApiResponse({ status: 404, description: 'Exam not found' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - only teachers and admins can create questions',
+  })
+  @Post('with-exam')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  createWithExam(@Body() dto: CreateQuestionWithExamDto) {
+    return this.service.createQuestionWithExam(dto);
   }
 
   // GET /questions/vocab - البحث عن أسئلة المفردات (Wortschatz)

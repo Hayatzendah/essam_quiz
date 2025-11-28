@@ -15,11 +15,17 @@ import {
   QuestionDocument,
   QuestionStatus,
   QuestionType,
+  QuestionDifficulty,
 } from './schemas/question.schema';
+import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
+import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
 
 @Injectable()
 export class QuestionsService {
-  constructor(@InjectModel(Question.name) private readonly model: Model<QuestionDocument>) {}
+  constructor(
+    @InjectModel(Question.name) private readonly model: Model<QuestionDocument>,
+    @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
+  ) {}
 
   // التحقق الخاص (حسب نوع السؤال)
   private validateCreatePayload(dto: CreateQuestionDto) {
@@ -321,6 +327,102 @@ export class QuestionsService {
       limit,
       total,
       items,
+    };
+  }
+
+  /**
+   * إنشاء سؤال جديد وربطه بامتحان
+   * - ينشئ Question جديد
+   * - يحدد correctAnswer تلقائياً من أول option مع isCorrect = true
+   * - يربط السؤال بامتحان في section محدد
+   */
+  async createQuestionWithExam(dto: CreateQuestionWithExamDto) {
+    // التحقق من وجود option صحيح
+    const correctOption = dto.options.find((opt) => opt.isCorrect === true);
+    if (!correctOption) {
+      throw new BadRequestException(
+        'At least one option must have isCorrect = true',
+      );
+    }
+
+    // تحديد correctAnswer تلقائياً
+    const correctAnswer = correctOption.text;
+
+    // تحويل examId إلى ObjectId
+    if (!Types.ObjectId.isValid(dto.examId)) {
+      throw new BadRequestException('Invalid examId format');
+    }
+    const examObjectId = new Types.ObjectId(dto.examId);
+
+    // جلب الامتحان
+    const exam = await this.examModel.findById(examObjectId).exec();
+    if (!exam) {
+      throw new NotFoundException('Exam not found');
+    }
+
+    // إنشاء السؤال
+    const questionData = {
+      text: dto.text,
+      prompt: dto.text, // للحفاظ على التوافق مع الحقول الموجودة
+      qType: QuestionType.MCQ,
+      options: dto.options.map((opt) => ({
+        text: opt.text,
+        isCorrect: opt.isCorrect || false,
+      })),
+      correctAnswer,
+      explanation: dto.explanation,
+      difficulty: dto.difficulty as QuestionDifficulty,
+      level: dto.level,
+      status: dto.status as QuestionStatus,
+      tags: dto.tags,
+    };
+
+    const createdQuestion = await this.model.create(questionData);
+
+    // ربط السؤال بالامتحان
+    const points = dto.points ?? 1;
+    const sectionItem = {
+      questionId: createdQuestion._id,
+      points,
+    };
+
+    // البحث عن section بالاسم
+    const sectionIndex = exam.sections.findIndex(
+      (section) => section.name === dto.sectionTitle,
+    );
+
+    if (sectionIndex !== -1) {
+      // Section موجود - إضافة item جديد
+      if (!exam.sections[sectionIndex].items) {
+        exam.sections[sectionIndex].items = [];
+      }
+      exam.sections[sectionIndex].items.push(sectionItem as any);
+    } else {
+      // Section غير موجود - إنشاء section جديد
+      exam.sections.push({
+        name: dto.sectionTitle,
+        items: [sectionItem as any],
+      } as any);
+    }
+
+    // حفظ التعديلات على الامتحان
+    await exam.save();
+
+    // حساب عدد الأسئلة في السكشن بعد الإضافة
+    const updatedSection = exam.sections.find(
+      (section) => section.name === dto.sectionTitle,
+    );
+    const questionsCount = updatedSection?.items?.length || 0;
+
+    // إرجاع النتيجة
+    const questionDoc = createdQuestion.toObject();
+    const { __v, ...questionWithoutV } = questionDoc;
+
+    return {
+      question: questionWithoutV,
+      examId: dto.examId,
+      sectionTitle: dto.sectionTitle,
+      questionsCountInSection: questionsCount,
     };
   }
 }

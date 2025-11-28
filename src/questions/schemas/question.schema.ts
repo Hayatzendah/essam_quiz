@@ -17,6 +17,12 @@ export enum QuestionStatus {
   ARCHIVED = 'archived',
 }
 
+export enum QuestionDifficulty {
+  EASY = 'easy',
+  MEDIUM = 'medium',
+  HARD = 'hard',
+}
+
 @Schema({ _id: false })
 export class McqOption {
   @Prop({ required: true, trim: true })
@@ -52,12 +58,28 @@ export class Question {
   @Prop({ required: true, trim: true })
   prompt: string;
 
+  // حقل text كبديل لـ prompt (للتوافق مع التنسيق الجديد)
+  @Prop({ trim: true })
+  text?: string;
+
   @Prop({ type: String, enum: Object.values(QuestionType), required: true })
   qType: QuestionType;
 
   // MCQ
   @Prop({ type: [McqOptionSchema], default: undefined })
   options?: McqOption[];
+
+  // الإجابة الصحيحة (يتم تحديدها تلقائياً من أول option مع isCorrect = true)
+  @Prop({ trim: true })
+  correctAnswer?: string;
+
+  // شرح السؤال
+  @Prop({ trim: true })
+  explanation?: string;
+
+  // مستوى الصعوبة
+  @Prop({ type: String, enum: Object.values(QuestionDifficulty) })
+  difficulty?: QuestionDifficulty;
 
   // TRUE/FALSE
   @Prop()
