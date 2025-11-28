@@ -32,12 +32,13 @@ export class CreateQuestionWithExamDto {
   @Type(() => QuestionOptionDto)
   options: QuestionOptionDto[];
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  explanation: string;
+  explanation?: string;
 
+  @IsOptional()
   @IsEnum(['easy', 'medium', 'hard'])
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty?: 'easy' | 'medium' | 'hard';
 
   @IsEnum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'])
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';

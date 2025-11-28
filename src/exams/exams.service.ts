@@ -130,21 +130,19 @@ export class ExamsService {
         throw new BadRequestException('Each section must be a valid object');
       }
       
+      // التحقق من وجود title
+      if (!s.title && !s.name) {
+        throw new BadRequestException('Each section must have a title');
+      }
+      
       // تنظيف items من null - لكن لا نحذف items إذا كانت فارغة بعد التنظيف
       // سنتحقق من ذلك بعد التحويل إلى ObjectId
       if (s.items && Array.isArray(s.items)) {
         s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
       }
       
-      const hasItems = Array.isArray(s.items) && s.items.length > 0;
+      // التحقق من quota فقط إذا كان موجود (للتوافق مع الكود القديم)
       const hasQuota = typeof s.quota === 'number' && s.quota > 0;
-      
-      if (hasItems && hasQuota) {
-        throw new BadRequestException(`Section "${s.name || 'unnamed'}" cannot have both items and quota`);
-      }
-      if (!hasItems && !hasQuota) {
-        throw new BadRequestException(`Section "${s.name || 'unnamed'}" must have either items or quota`);
-      }
       if (hasQuota && s.difficultyDistribution) {
         const sum =
           (s.difficultyDistribution.easy || 0) +
@@ -152,7 +150,7 @@ export class ExamsService {
           (s.difficultyDistribution.hard || 0);
         if (sum !== s.quota) {
           throw new BadRequestException(
-            `Section "${s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
+            `Section "${s.title || s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
           );
         }
       }
@@ -179,9 +177,16 @@ export class ExamsService {
           // إنشاء نسخة جديدة من section لتجنب تعديل الـ original
           const processedSection = { ...section };
           
-          if (processedSection.items && Array.isArray(processedSection.items)) {
+          // التأكد من وجود title (استخدام name كـ fallback للتوافق)
+          if (!processedSection.title && processedSection.name) {
+            processedSection.title = processedSection.name;
+          }
+          
+          // معالجة items - يمكن أن تكون فارغة أو undefined
+          const sectionItems = processedSection.items ?? [];
+          if (Array.isArray(sectionItems) && sectionItems.length > 0) {
             // إزالة null/undefined items وتحويل questionId إلى ObjectId
-            const validItems = processedSection.items
+            const validItems = sectionItems
               .filter((item: any) => {
                 // إزالة items بدون questionId
                 if (!item || item === null || item === undefined || !item.questionId) {
@@ -214,15 +219,12 @@ export class ExamsService {
                 };
               });
             
-            // إذا كانت items فارغة بعد التنظيف، نرمي خطأ
-            if (validItems.length === 0 && !processedSection.quota) {
-              throw new BadRequestException(
-                `Section "${processedSection.name || 'unnamed'}" has no valid items (all questionIds are invalid) and no quota. Please provide valid questionIds or use quota instead.`,
-              );
-            }
-            
             processedSection.items = validItems;
+          } else {
+            // items فارغة أو undefined - هذا مسموح الآن
+            processedSection.items = [];
           }
+          
           return processedSection;
         });
       
@@ -245,7 +247,7 @@ export class ExamsService {
     // Log detailed section info before saving
     normalizedSections.forEach((s: any, index: number) => {
       this.logger.log(
-        `[createExam] Section ${index + 1}: name="${s?.name}", items count=${s?.items?.length || 0}, items=${JSON.stringify(s?.items?.map((i: any) => ({ questionId: String(i?.questionId), points: i?.points })) || [])}`,
+        `[createExam] Section ${index + 1}: title="${s?.title || s?.name || 'unnamed'}", items count=${s?.items?.length || 0}, items=${JSON.stringify(s?.items?.map((i: any) => ({ questionId: String(i?.questionId), points: i?.points })) || [])}`,
       );
     });
     
