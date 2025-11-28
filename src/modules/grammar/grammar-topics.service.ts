@@ -172,7 +172,7 @@ export class GrammarTopicsService {
       provider: 'Grammatik',
       sections: [
         {
-          name: topic.title,
+          title: topic.title,
           items: questionsResult.items.map((q: any) => ({
             questionId: q._id || q.id,
             points: 1,
