@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, MinLength, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsArray, MinLength, IsEnum, IsMongoId } from 'class-validator';
 
 export class CreateGrammarTopicDto {
   @IsString()
@@ -26,6 +26,14 @@ export class CreateGrammarTopicDto {
   @IsOptional()
   @IsString()
   contentHtml?: string;
+
+  @IsOptional()
+  @IsMongoId()
+  examId?: string;
+
+  @IsOptional()
+  @IsString()
+  sectionTitle?: string;
 }
 
 

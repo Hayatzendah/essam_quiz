@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type GrammarTopicDocument = GrammarTopic & Document;
 
@@ -22,6 +22,12 @@ export class GrammarTopic {
 
   @Prop({ type: String })
   contentHtml?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Exam', required: false })
+  examId?: Types.ObjectId;
+
+  @Prop({ type: String, required: false })
+  sectionTitle?: string;
 }
 
 export const GrammarTopicSchema = SchemaFactory.createForClass(GrammarTopic);

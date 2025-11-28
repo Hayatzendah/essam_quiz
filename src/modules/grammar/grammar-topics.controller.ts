@@ -14,6 +14,7 @@ import { GrammarTopicsService } from './grammar-topics.service';
 import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
 import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
 import { StartGrammarExerciseDto } from './dto/start-grammar-exercise.dto';
+import { GrammarTopicResponseDto } from './dto/grammar-topic-response.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -26,14 +27,22 @@ export class GrammarTopicsController {
   constructor(private readonly grammarTopicsService: GrammarTopicsService) {}
 
   @ApiOperation({ summary: 'List all grammar topics, optionally filtered by level' })
-  @ApiResponse({ status: 200, description: 'Returns list of grammar topics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns list of grammar topics',
+    type: [GrammarTopicResponseDto],
+  })
   @Get()
   findAll(@Query('level') level?: string) {
     return this.grammarTopicsService.findAll({ level });
   }
 
   @ApiOperation({ summary: 'Get a grammar topic by slug' })
-  @ApiResponse({ status: 200, description: 'Returns the grammar topic' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the grammar topic',
+    type: GrammarTopicResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Grammar topic not found' })
   @Get(':slug')
   findBySlug(@Param('slug') slug: string, @Query('level') level?: string) {

@@ -6,7 +6,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { GrammarTopic, GrammarTopicDocument } from './schemas/grammar-topic.schema';
 import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
 import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
@@ -24,6 +24,22 @@ export class GrammarTopicsService {
   ) {}
 
   /**
+   * Helper method to map topic document to response format
+   */
+  private mapToResponse(topic: any): any {
+    return {
+      ...topic,
+      _id: topic._id?.toString() || topic.id?.toString() || topic._id,
+      examId: topic.examId
+        ? typeof topic.examId === 'object' && topic.examId.toString
+          ? topic.examId.toString()
+          : topic.examId
+        : null,
+      sectionTitle: topic.sectionTitle ?? null,
+    };
+  }
+
+  /**
    * Find all grammar topics, optionally filtered by level
    */
   async findAll(filter: { level?: string }) {
@@ -34,7 +50,9 @@ export class GrammarTopicsService {
 
     const items = await this.model.find(query).sort({ level: 1, title: 1 }).lean().exec();
 
-    return { items };
+    return {
+      items: items.map((item) => this.mapToResponse(item)),
+    };
   }
 
   /**
@@ -53,7 +71,7 @@ export class GrammarTopicsService {
       );
     }
 
-    return topic;
+    return this.mapToResponse(topic);
   }
 
   /**
@@ -83,9 +101,10 @@ export class GrammarTopicsService {
     const topic = await this.model.create({
       ...dto,
       slug,
+      ...(dto.examId && { examId: new Types.ObjectId(dto.examId) }),
     });
 
-    return topic.toObject();
+    return this.mapToResponse(topic.toObject());
   }
 
   /**
@@ -121,12 +140,18 @@ export class GrammarTopicsService {
       }
     }
 
-    const updated = await this.model.findByIdAndUpdate(id, dto, { new: true }).lean().exec();
+    // Prepare update data with ObjectId conversion for examId
+    const updateData: any = { ...dto };
+    if (dto.examId) {
+      updateData.examId = new Types.ObjectId(dto.examId);
+    }
+
+    const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).lean().exec();
     if (!updated) {
       throw new NotFoundException(`Grammar topic with id "${id}" not found`);
     }
 
-    return updated;
+    return this.mapToResponse(updated);
   }
 
   /**
