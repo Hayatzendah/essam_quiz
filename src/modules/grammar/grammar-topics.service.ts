@@ -275,7 +275,7 @@ export class GrammarTopicsService {
 
     return {
       success: true,
-      topicId: topic._id.toString(),
+      topicId: (topic._id as any)?.toString() || String(topic._id),
       examId: dto.examId,
       sectionTitle: sectionTitle || undefined,
     };

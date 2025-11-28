@@ -1533,7 +1533,7 @@ export class ExamsService {
 
       if (sectionAny?.difficultyDistribution) {
         for (const [difficulty, count] of Object.entries(sectionAny.difficultyDistribution)) {
-          const countNum = typeof count === 'number' ? count : 0;
+          const countNum = typeof count === 'number' ? (count as number) : 0;
           const query = { ...baseQuery, difficulty };
           const available = await QuestionModel.countDocuments(query);
           sectionInfo.availableQuestions[difficulty] = available;
