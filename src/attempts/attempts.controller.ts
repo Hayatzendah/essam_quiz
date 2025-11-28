@@ -15,7 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { AttemptsService } from './attempts.service';
 import { StartAttemptDto } from './dto/start-attempt.dto';
 import { AnswerOneDto } from './dto/answer.dto';
-import { SubmitAttemptDto } from './dto/submit.dto';
+import { SubmitAttemptSubmitDto } from './dto/submit.dto';
 import { GradeAttemptDto } from './dto/grade.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -143,9 +143,9 @@ export class AttemptsController {
         this.logger.log(
           `[POST /attempts] Response contains ${itemsCount} items. First item: ${JSON.stringify({
           questionId: result?.items?.[0]?.questionId,
-          qType: result?.items?.[0]?.questionSnapshot?.qType,
-          hasPrompt: !!result?.items?.[0]?.questionSnapshot?.prompt,
-          hasOptions: !!result?.items?.[0]?.questionSnapshot?.options,
+          qType: result?.items?.[0]?.qType,
+          hasPrompt: !!result?.items?.[0]?.prompt,
+          hasOptions: !!result?.items?.[0]?.options,
           })}`,
         );
       }
@@ -269,11 +269,11 @@ export class AttemptsController {
   @Post(':attemptId/submit')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  submit(@Param('attemptId') attemptId: string, @Body() dto: SubmitAttemptDto, @Req() req: any) {
+  submit(@Param('attemptId') attemptId: string, @Body() body: SubmitAttemptSubmitDto, @Req() req: any) {
     this.logger.log(
-      `[POST /attempts/${attemptId}/submit] Request received - userId: ${req.user?.userId}, answersCount: ${dto?.answers?.length || 0}`,
+      `[POST /attempts/${attemptId}/submit] Request received - userId: ${req.user?.userId}, answersCount: ${body?.answers?.length || 0}`,
     );
-    return this.service.submitAttempt(req.user, attemptId, dto.answers);
+    return this.service.submitAttempt(req.user, attemptId, body.answers);
   }
 
   // إدخال درجات يدوية (معلم مالك أو أدمن)

@@ -1,47 +1,26 @@
-import {
-  IsArray,
-  ArrayMinSize,
-  IsBoolean,
-  IsMongoId,
-  IsNumber,
-  IsOptional,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsMongoId, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class SubmitAnswerDto {
-  @IsOptional()
-  @IsString()
-  itemId?: string; // questionId أو itemIndex (string)
-
-  @IsOptional()
-  @IsNumber()
-  itemIndex?: number; // رقم السؤال في attempt (0-based) - أفضل من itemId
-
-  @IsOptional()
-  userAnswer?: string | number | boolean | number[];
-}
-
 class SubmitAttemptAnswerDto {
+  @IsMongoId()
+  questionId: string;
+
   @IsArray()
-  @ArrayMinSize(1)
-  @IsString({ each: true }) // بدل IsMongoId - لأن option IDs هي custom strings
+  @IsString({ each: true }) // 👈 مهم جداً: string مش MongoId
   selectedOptionIds: string[];
 }
 
-export class SubmitAttemptDto {
-  // attemptId يأتي من URL parameter
-  @IsOptional()
+export class SubmitAttemptSubmitDto {
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SubmitAnswerDto)
-  answers?: SubmitAnswerDto[]; // اختياري - إذا تم إرسال الإجابات هنا، سيتم حفظها قبل التصحيح
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => SubmitAttemptAnswerDto)
-  selectedOptions?: SubmitAttemptAnswerDto[]; // للإجابات باستخدام selectedOptionIds
+  answers: SubmitAttemptAnswerDto[];
+}
+
+// للتوافق مع الكود القديم
+export class SubmitAttemptDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SubmitAttemptAnswerDto)
+  answers?: SubmitAttemptAnswerDto[];
 }
