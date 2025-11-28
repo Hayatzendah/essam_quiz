@@ -336,104 +336,91 @@ export class QuestionsService {
    * - يحدد correctAnswer تلقائياً من أول option مع isCorrect = true
    * - يربط السؤال بامتحان في section محدد
    */
-  async createQuestionWithExam(dto: CreateQuestionWithExamDto) {
-    // 1) التحقق من وجود option صحيح
-    const correctOption = dto.options.find((opt) => opt.isCorrect === true);
+  async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
+    const { examId, sectionTitle, points, ...questionData } = dto;
+
+    // 1) تأكيد وجود خيار صحيح
+    const correctOption = questionData.options.find((opt) => opt.isCorrect);
     if (!correctOption) {
       throw new BadRequestException(
-        'At least one option must have isCorrect = true',
+        'At least one option must be marked as correct',
       );
     }
 
-    // 2) تحديد correctAnswer تلقائياً
-    const correctAnswer = correctOption.text;
-
-    // 3) تحويل examId إلى ObjectId
-    if (!Types.ObjectId.isValid(dto.examId)) {
-      throw new BadRequestException('Invalid examId format');
-    }
-    const examObjectId = new Types.ObjectId(dto.examId);
-
-    // 4) جلب الامتحان
-    const exam = await this.examModel.findById(examObjectId).exec();
-    if (!exam) {
-      throw new NotFoundException('Exam not found');
-    }
-
-    // 5) تأمين sections (إزالة nulls + التأكد إنها Array)
-    if (!Array.isArray(exam.sections)) {
-      exam.sections = [];
-    } else {
-      // شيل أي null أو قيم فاضية من الداتا القديمة
-      exam.sections = exam.sections.filter((sec: any) => sec !== null && sec !== undefined);
-    }
-
-    // 6) إنشاء السؤال
-    const questionData = {
-      text: dto.text,
-      prompt: dto.text, // للحفاظ على التوافق مع الحقول الموجودة
+    // 2) إنشاء السؤال
+    const question = await this.model.create({
+      text: questionData.text,
+      prompt: questionData.text, // للحفاظ على التوافق مع الحقول الموجودة
       qType: QuestionType.MCQ,
-      options: dto.options.map((opt) => ({
+      options: questionData.options.map((opt) => ({
         text: opt.text,
         isCorrect: opt.isCorrect || false,
       })),
-      correctAnswer,
-      explanation: dto.explanation,
-      difficulty: dto.difficulty as QuestionDifficulty,
-      level: dto.level,
-      status: dto.status as QuestionStatus,
-      tags: dto.tags,
-    };
+      correctAnswer: correctOption.text,
+      explanation: questionData.explanation,
+      difficulty: questionData.difficulty as QuestionDifficulty,
+      level: questionData.level,
+      status: questionData.status as QuestionStatus,
+      tags: questionData.tags,
+      // لو عندك createdBy/ownerId حطيه هنا
+      // createdBy: userId ? new Types.ObjectId(userId) : undefined,
+    });
 
-    const createdQuestion = await this.model.create(questionData);
+    // 3) جلب الامتحان
+    const exam = await this.examModel.findById(examId).exec();
+    if (!exam) {
+      // عشان ما نسيبش سؤال لوحده لو الامتحان مش موجود
+      await this.model.findByIdAndDelete(question._id).catch(() => undefined);
+      throw new NotFoundException('Exam not found');
+    }
 
-    // 7) ربط السؤال بالامتحان
-    const points = dto.points ?? 1;
-    const sectionItem = {
-      questionId: createdQuestion._id,
-      points,
-    };
+    // 4) تنظيف sections من null أو قيم غريبة
+    const cleanSections: any[] = Array.isArray(exam.sections)
+      ? exam.sections.filter((sec: any) => !!sec && typeof sec === 'object')
+      : [];
 
-    // 8) البحث عن section بالاسم (name في الـ schema)
-    let section: any = exam.sections.find(
-      (sec: any) => sec && sec.name === dto.sectionTitle,
+    // 5) البحث عن سكشن بالعنوان
+    let sectionIndex = cleanSections.findIndex(
+      (sec: any) => sec.title === sectionTitle,
     );
 
-    // 9) لو مش موجود → نضيف سكشن جديد
-    if (!section) {
-      section = {
-        name: dto.sectionTitle,
-        items: [],
-      };
-      exam.sections.push(section);
+    if (sectionIndex === -1) {
+      // 6) لو مش موجود → نضيف سكشن جديد فيه السؤال
+      cleanSections.push({
+        title: sectionTitle,
+        items: [
+          {
+            questionId: question._id,
+            points: points ?? 1,
+          },
+        ],
+      });
+    } else {
+      // 7) لو موجود → نضيف السؤال في items
+      const items = Array.isArray(cleanSections[sectionIndex].items)
+        ? cleanSections[sectionIndex].items
+        : [];
+      items.push({
+        questionId: question._id,
+        points: points ?? 1,
+      });
+      cleanSections[sectionIndex].items = items;
     }
 
-    // 10) تأمين items
-    if (!Array.isArray(section.items)) {
-      section.items = [];
-    }
-
-    // 11) إضافة السؤال للسكشن
-    section.items.push(sectionItem);
-
-    // 12) حفظ التعديلات على الامتحان
+    // 8) حفظ السكاشن المعدّلة في الامتحان
+    exam.sections = cleanSections as any;
     await exam.save();
 
-    // 13) حساب عدد الأسئلة في السكشن بعد الإضافة
-    const updatedSection = exam.sections.find(
-      (sec: any) => sec && sec.name === dto.sectionTitle,
-    );
-    const questionsCount = updatedSection?.items?.length || 0;
-
-    // 14) إرجاع النتيجة
-    const questionDoc = createdQuestion.toObject();
+    // إرجاع النتيجة
+    const questionDoc = question.toObject();
     const { __v, ...questionWithoutV } = questionDoc;
 
     return {
+      message: 'Question created and added to exam',
       question: questionWithoutV,
-      examId: dto.examId,
-      sectionTitle: dto.sectionTitle,
-      questionsCountInSection: questionsCount,
+      questionId: question._id,
+      examId: exam._id,
+      sectionTitle,
     };
   }
 }

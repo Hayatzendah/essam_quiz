@@ -33,6 +33,9 @@ class SectionQuota {
 const SectionQuotaSchema = SchemaFactory.createForClass(SectionQuota);
 
 class ExamSection {
+  @Prop({ type: String, required: true, trim: true })
+  title: string;
+
   @Prop({ type: String, trim: true })
   name?: string;
 
