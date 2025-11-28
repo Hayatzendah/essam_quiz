@@ -35,12 +35,43 @@ const SectionQuotaSchema = SchemaFactory.createForClass(SectionQuota);
 
 @Schema({ _id: false })
 export class ExamSection {
-  // 🔥 استخدمي title فقط، بدون name
+  // 🔥 title هو الحقل الأساسي (required) - الكود الجديد يستخدمه
   @Prop({ type: String, required: true, trim: true })
   title: string;
 
   @Prop({ type: [SectionItemSchema], default: [] })
   items: SectionItem[];
+
+  // الحقول التالية optional للتوافق مع الكود القديم
+  @Prop({ type: String, trim: true })
+  name?: string;
+
+  @Prop({ type: String, enum: ['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'], trim: true })
+  skill?: 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
+
+  @Prop({ type: String, trim: true })
+  label?: string;
+
+  @Prop({ type: Number, min: 0 })
+  durationMin?: number;
+
+  @Prop({ type: Number, min: 0 })
+  partsCount?: number;
+
+  @Prop({ type: String, enum: ['LanguageBlocks', 'Listening', 'Reading', 'Writing', 'Speaking'] })
+  section?: QuestionSection;
+
+  @Prop({ type: Number, min: 1 })
+  quota?: number;
+
+  @Prop({ type: [String], default: [] })
+  tags?: string[];
+
+  @Prop({ type: Object, _id: false })
+  difficultyDistribution?: { easy?: number; medium?: number; hard?: number };
+
+  @Prop({ type: Boolean, default: false })
+  randomize?: boolean;
 }
 export const ExamSectionSchema = SchemaFactory.createForClass(ExamSection);
 

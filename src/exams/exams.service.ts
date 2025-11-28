@@ -1505,7 +1505,7 @@ export class ExamsService {
 
     for (const section of exam.sections) {
       const sectionInfo: any = {
-        name: section.name,
+        name: section.title || section.name,
         quota: section.quota,
         tags: section.tags || [],
         difficultyDistribution: section.difficultyDistribution,
@@ -1526,14 +1526,15 @@ export class ExamsService {
 
       if (section.difficultyDistribution) {
         for (const [difficulty, count] of Object.entries(section.difficultyDistribution)) {
+          const countNum = typeof count === 'number' ? count : 0;
           const query = { ...baseQuery, difficulty };
           const available = await QuestionModel.countDocuments(query);
           sectionInfo.availableQuestions[difficulty] = available;
           sectionInfo.totalAvailable += available;
 
-          if (available < count) {
+          if (available < countNum) {
             sectionInfo.issues.push(
-              `Need ${count} ${difficulty} questions, but only ${available} available`,
+              `Need ${countNum} ${difficulty} questions, but only ${available} available`,
             );
           }
         }
@@ -1552,7 +1553,7 @@ export class ExamsService {
       debugInfo.totalQuestionsAvailable += sectionInfo.totalAvailable;
 
       if (sectionInfo.issues.length > 0) {
-        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${section.name}": ${i}`));
+        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${sectionInfo.name || section.title || 'Unnamed'}": ${i}`));
       }
     }
 
