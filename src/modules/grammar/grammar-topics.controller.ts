@@ -66,12 +66,12 @@ export class GrammarTopicsController {
   }
 
   // ربط Grammar Topic مع Exam
-  @Patch(':slug/link-exam')
+  @Patch(':identifier/link-exam')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
   @ApiOperation({
     summary: 'Link grammar topic with an exam',
-    description: 'ربط موضوع قواعد نحوية مع امتحان - للمدرسين والأدمن فقط',
+    description: 'ربط موضوع قواعد نحوية مع امتحان - للمدرسين والأدمن فقط. يدعم كلاً من slug و topicId',
   })
   @ApiResponse({
     status: 200,
@@ -91,11 +91,11 @@ export class GrammarTopicsController {
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Grammar topic or exam not found' })
   async linkExam(
-    @Param('slug') slug: string,
+    @Param('identifier') identifier: string,
     @Body() dto: LinkExamDto,
     @Query('level') level?: string,
   ) {
-    return this.grammarTopicsService.linkExam(slug, dto, level);
+    return this.grammarTopicsService.linkExam(identifier, dto, level);
   }
 
   // بدء محاولة تمرين على grammar topic (للطلاب)

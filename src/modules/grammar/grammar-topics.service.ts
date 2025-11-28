@@ -225,16 +225,27 @@ export class GrammarTopicsService {
    * - ربط الـ topic مع الـ exam
    * - إرجاع success message
    */
-  async linkExam(slug: string, dto: LinkExamDto, level?: string) {
-    // 1. البحث عن grammar topic
-    const topic = await this.model.findOne({
-      slug: slug.toLowerCase().trim(),
-      ...(level && { level }),
-    }).exec();
+  async linkExam(identifier: string, dto: LinkExamDto, level?: string) {
+    // 1. البحث عن grammar topic (يدعم كلاً من slug و topicId)
+    let topic: GrammarTopicDocument | null = null;
+    
+    // محاولة البحث بالـ ID أولاً (إذا كان ObjectId صحيح)
+    if (Types.ObjectId.isValid(identifier)) {
+      topic = await this.model.findById(identifier).exec();
+    }
+    
+    // إذا لم يُعثر عليه بالـ ID، البحث بالـ slug
+    if (!topic) {
+      const query: any = { slug: identifier.toLowerCase().trim() };
+      if (level) {
+        query.level = level;
+      }
+      topic = await this.model.findOne(query).exec();
+    }
 
     if (!topic) {
       throw new NotFoundException(
-        `Grammar topic with slug "${slug}"${level ? ` and level "${level}"` : ''} not found`,
+        `Grammar topic with identifier "${identifier}"${level ? ` and level "${level}"` : ''} not found`,
       );
     }
 
