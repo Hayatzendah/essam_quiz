@@ -1164,9 +1164,11 @@ export class ExamsService {
       fixedSections: updatedSections.filter((s: any, index: number) => {
         const original = doc.sections[index];
         const hasItems = Array.isArray(s.items) && s.items.length > 0;
-        const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+        const sAny = s as any;
+        const originalAny = original as any;
+        const hasQuota = typeof sAny?.quota === 'number' && sAny.quota > 0;
         const originalHasItems = Array.isArray(original?.items) && original.items.length > 0;
-        const originalHasQuota = typeof original?.quota === 'number' && original.quota > 0;
+        const originalHasQuota = typeof originalAny?.quota === 'number' && originalAny.quota > 0;
         return (hasItems || hasQuota) && !(originalHasItems || originalHasQuota);
       }),
     };
@@ -1385,19 +1387,21 @@ export class ExamsService {
         if (!s || s === null) {
           hasEmptySections = true;
           return {
-            name: `Section ${index + 1}`,
+            title: `Section ${index + 1}`,
             quota: 5,
             tags: [],
           };
         }
 
+        const sAny = s as any;
         const hasItems = Array.isArray(s.items) && s.items.length > 0;
-        const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+        const hasQuota = typeof sAny?.quota === 'number' && sAny.quota > 0;
 
         if (!hasItems && !hasQuota) {
           hasEmptySections = true;
           return {
             ...s,
+            title: s.title || sAny?.name || `Section ${index + 1}`,
             quota: 5,
           };
         }
@@ -1506,11 +1510,12 @@ export class ExamsService {
     }
 
     for (const section of exam.sections) {
+      const sectionAny = section as any;
       const sectionInfo: any = {
-        name: section.title || section.name,
-        quota: section.quota,
-        tags: section.tags || [],
-        difficultyDistribution: section.difficultyDistribution,
+        name: section.title || sectionAny?.name,
+        quota: sectionAny?.quota,
+        tags: sectionAny?.tags || [],
+        difficultyDistribution: sectionAny?.difficultyDistribution,
         availableQuestions: {},
         totalAvailable: 0,
         issues: [],
@@ -1522,12 +1527,12 @@ export class ExamsService {
         level: exam.level,
       };
 
-      if (section.tags && section.tags.length > 0) {
-        baseQuery.tags = { $in: section.tags };
+      if (sectionAny?.tags && Array.isArray(sectionAny.tags) && sectionAny.tags.length > 0) {
+        baseQuery.tags = { $in: sectionAny.tags };
       }
 
-      if (section.difficultyDistribution) {
-        for (const [difficulty, count] of Object.entries(section.difficultyDistribution)) {
+      if (sectionAny?.difficultyDistribution) {
+        for (const [difficulty, count] of Object.entries(sectionAny.difficultyDistribution)) {
           const countNum = typeof count === 'number' ? count : 0;
           const query = { ...baseQuery, difficulty };
           const available = await QuestionModel.countDocuments(query);
@@ -1544,9 +1549,9 @@ export class ExamsService {
         // بدون توزيع صعوبة
         const available = await QuestionModel.countDocuments(baseQuery);
         sectionInfo.totalAvailable = available;
-        if (section.quota && available < section.quota) {
+        if (sectionAny?.quota && typeof sectionAny.quota === 'number' && available < sectionAny.quota) {
           sectionInfo.issues.push(
-            `Need ${section.quota} questions, but only ${available} available`,
+            `Need ${sectionAny.quota} questions, but only ${available} available`,
           );
         }
       }
