@@ -15,6 +15,7 @@ import {
 } from 'class-validator';
 import type { ExamStatus } from '../schemas/exam.schema';
 import { ExamStatusEnum } from '../schemas/exam.schema';
+import { ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
 
 class SectionItemDto {
   @IsMongoId() questionId: string;
@@ -32,6 +33,32 @@ class ExamSectionDto {
   @IsNotEmpty()
   title: string;
 
+  // للحقول الجديدة لدعم Prüfungen
+  @IsOptional()
+  @IsString()
+  key?: string; // مثال: 'hoeren_teil1'
+
+  @IsOptional()
+  @IsEnum(ExamSkillEnum)
+  skill?: ExamSkillEnum; // 'hoeren' | 'lesen' | 'schreiben' | 'sprechen'
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  teilNumber?: number; // 1 أو 2 أو 3...
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  timeLimitMin?: number; // وقت هذا القسم (اختياري)
+
+  // للـ Provider exams: استخدام quota
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  quota?: number;
+
+  // للـ Grammar exams: استخدام items
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
@@ -42,11 +69,6 @@ class ExamSectionDto {
   @IsOptional()
   @IsString()
   name?: string;
-
-  @IsOptional()
-  @IsString()
-  @IsIn(['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'])
-  skill?: 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
 
   @IsOptional()
   @IsString()
@@ -61,11 +83,6 @@ class ExamSectionDto {
   @IsNumber()
   @Min(0)
   partsCount?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  quota?: number;
 
   @IsOptional()
   @ValidateNested()
@@ -87,6 +104,18 @@ export class CreateExamDto {
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() level?: string;
   @IsOptional() @IsString() provider?: string;
+  
+  @IsEnum(ExamCategoryEnum)
+  examCategory: ExamCategoryEnum;
+
+  @IsOptional()
+  @IsEnum(ExamSkillEnum)
+  mainSkill?: ExamSkillEnum; // 'mixed' | 'hoeren' | 'lesen' | 'schreiben' | 'sprechen'
+
+  // للحقول الخاصة بالقواعد (optional)
+  @IsOptional()
+  @IsMongoId()
+  grammarTopicId?: string;
 
   @IsArray()
   @ArrayMinSize(1)

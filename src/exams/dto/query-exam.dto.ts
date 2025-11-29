@@ -2,6 +2,7 @@ import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import type { ExamStatus } from '../schemas/exam.schema';
 import { ExamStatusEnum } from '../schemas/exam.schema';
+import { ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
 
 export class QueryExamDto {
   @IsOptional()
@@ -17,12 +18,12 @@ export class QueryExamDto {
   provider?: string;
 
   @IsOptional()
-  @IsEnum(['provider_exam', 'grammar_exam', 'vocab_exam', 'lid_exam', 'other'])
-  examCategory?: 'provider_exam' | 'grammar_exam' | 'vocab_exam' | 'lid_exam' | 'other';
+  @IsEnum(ExamCategoryEnum)
+  examCategory?: ExamCategoryEnum;
 
   @IsOptional()
-  @IsEnum(['mixed', 'hoeren', 'lesen', 'schreiben', 'sprechen'])
-  mainSkill?: 'mixed' | 'hoeren' | 'lesen' | 'schreiben' | 'sprechen';
+  @IsEnum(ExamSkillEnum)
+  mainSkill?: ExamSkillEnum;
 
   @IsOptional()
   @IsString()

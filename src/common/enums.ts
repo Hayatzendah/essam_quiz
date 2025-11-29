@@ -28,3 +28,19 @@ export const ExamStatusEnum = {
 } as const;
 
 export type AttemptStatus = 'in_progress' | 'submitted' | 'graded';
+
+export enum ExamCategoryEnum {
+  GRAMMAR = 'grammar_exam',
+  LID = 'lid_exam',
+  PROVIDER = 'provider_exam',
+  VOCAB = 'vocab_exam',
+  OTHER = 'other',
+}
+
+export enum ExamSkillEnum {
+  HOEREN = 'hoeren',
+  LESEN = 'lesen',
+  SCHREIBEN = 'schreiben',
+  SPRECHEN = 'sprechen',
+  MIXED = 'mixed',
+}

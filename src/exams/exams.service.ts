@@ -14,6 +14,7 @@ import { AssignExamDto } from './dto/assign-exam.dto';
 import { Exam, ExamDocument } from './schemas/exam.schema';
 import type { ExamStatus } from './schemas/exam.schema';
 import { ExamStatusEnum } from './schemas/exam.schema';
+import { ExamCategoryEnum } from '../common/enums';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -113,6 +114,16 @@ export class ExamsService {
   async createExam(dto: CreateExamDto, user: ReqUser) {
     this.assertTeacherOrAdmin(user);
 
+    // التحقق من examCategory
+    if (!dto.examCategory) {
+      throw new BadRequestException('examCategory is required');
+    }
+
+    // التحقق من grammarTopicId للامتحانات النحوية
+    if (dto.examCategory === 'grammar_exam' && !dto.grammarTopicId) {
+      throw new BadRequestException('grammarTopicId is required for grammar_exam');
+    }
+
     // تنظيف sections من null/undefined قبل التحقق
     if (!dto.sections || !Array.isArray(dto.sections)) {
       throw new BadRequestException('Exam must have at least one section');
@@ -135,24 +146,45 @@ export class ExamsService {
         throw new BadRequestException('Each section must have a title');
       }
       
-      // تنظيف items من null - لكن لا نحذف items إذا كانت فارغة بعد التنظيف
-      // سنتحقق من ذلك بعد التحويل إلى ObjectId
-      if (s.items && Array.isArray(s.items)) {
-        s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
-      }
-      
-      // التحقق من quota فقط إذا كان موجود (للتوافق مع الكود القديم)
-      const hasQuota = typeof s.quota === 'number' && s.quota > 0;
-      if (hasQuota && s.difficultyDistribution) {
-        const sum =
-          (s.difficultyDistribution.easy || 0) +
-          (s.difficultyDistribution.medium || 0) +
-          (s.difficultyDistribution.hard || 0);
-        if (sum !== s.quota) {
+      // التحقق حسب examCategory
+      if (dto.examCategory === 'provider_exam') {
+        // للـ Provider exams: يجب أن يكون هناك quota (بدون items)
+        if (!s.quota || typeof s.quota !== 'number' || s.quota <= 0) {
           throw new BadRequestException(
-            `Section "${s.title || s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
+            `Section "${s.title || s.name || 'unnamed'}" must have quota for provider_exam`,
           );
         }
+        // التحقق من difficultyDistribution إذا كان موجود
+        if (s.difficultyDistribution) {
+          const sum =
+            (s.difficultyDistribution.easy || 0) +
+            (s.difficultyDistribution.medium || 0) +
+            (s.difficultyDistribution.hard || 0);
+          if (sum !== s.quota) {
+            throw new BadRequestException(
+              `Section "${s.title || s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
+            );
+          }
+        }
+      } else if (dto.examCategory === 'grammar_exam') {
+        // للـ Grammar exams: يجب أن يكون هناك items (بدون quota)
+        if (!s.items || !Array.isArray(s.items) || s.items.length === 0) {
+          throw new BadRequestException(
+            `Section "${s.title || s.name || 'unnamed'}" must have items for grammar_exam`,
+          );
+        }
+        // تنظيف items من null
+        s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
+        if (s.items.length === 0) {
+          throw new BadRequestException(
+            `Section "${s.title || s.name || 'unnamed'}" must have at least one valid item with questionId`,
+          );
+        }
+      }
+      
+      // للتوافق مع الكود القديم: تنظيف items إذا كانت موجودة
+      if (s.items && Array.isArray(s.items)) {
+        s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
       }
     }
     

@@ -11,6 +11,8 @@ import {
   QuestionLevel as QuestionLevelEnum,
   QuestionProvider as QuestionProviderEnum,
   QuestionSection as QuestionSectionEnum,
+  ExamCategoryEnum,
+  ExamSkillEnum,
 } from '../../common/enums';
 
 export type ExamDocument = Exam & Document;
@@ -50,8 +52,8 @@ export class ExamSection {
   items: SectionItem[];
 
   // skill بدعم lowercase و uppercase للتوافق
-  @Prop({ type: String, enum: ['hoeren', 'lesen', 'schreiben', 'sprechen', 'HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'], trim: true })
-  skill?: 'hoeren' | 'lesen' | 'schreiben' | 'sprechen' | 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
+  @Prop({ type: String, enum: [...Object.values(ExamSkillEnum), 'HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'], trim: true })
+  skill?: ExamSkillEnum | 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
 
   @Prop({ type: Number, min: 1 })
   teilNumber?: number; // 1 أو 2 أو 3...
@@ -112,17 +114,17 @@ export class Exam {
 
   @Prop({ 
     type: String, 
-    enum: ['provider_exam', 'grammar_exam', 'vocab_exam', 'lid_exam', 'other'],
+    enum: Object.values(ExamCategoryEnum),
     index: true 
   })
-  examCategory?: 'provider_exam' | 'grammar_exam' | 'vocab_exam' | 'lid_exam' | 'other';
+  examCategory?: ExamCategoryEnum;
 
   @Prop({ 
     type: String, 
-    enum: ['mixed', 'hoeren', 'lesen', 'schreiben', 'sprechen'],
+    enum: Object.values(ExamSkillEnum),
     index: true 
   })
-  mainSkill?: 'mixed' | 'hoeren' | 'lesen' | 'schreiben' | 'sprechen';
+  mainSkill?: ExamSkillEnum;
 
   @Prop({ type: String, enum: Object.values(ExamStatusEnum), default: ExamStatusEnum.DRAFT, index: true })
   status: ExamStatus;
