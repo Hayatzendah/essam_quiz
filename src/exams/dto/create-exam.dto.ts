@@ -3,13 +3,14 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
-  IsIn,
+  IsInt,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Min,
+  ValidateIf,
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
@@ -19,66 +20,78 @@ import { ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
 
 class SectionItemDto {
   @IsMongoId() questionId: string;
-  @IsOptional() @IsNumber() @Min(0) points?: number;
+  @IsOptional() @IsInt() @Min(0) points?: number;
 }
 
 class DifficultyDistributionDto {
-  @IsOptional() @IsNumber() @Min(0) easy?: number;
-  @IsOptional() @IsNumber() @Min(0) medium?: number;
-  @IsOptional() @IsNumber() @Min(0) hard?: number;
+  @IsOptional() @IsInt() @Min(0) easy?: number;
+  @IsOptional() @IsInt() @Min(0) medium?: number;
+  @IsOptional() @IsInt() @Min(0) hard?: number;
 }
 
 class ExamSectionDto {
+  // يطابق name اللي جاي من الفرونت
   @IsString()
   @IsNotEmpty()
-  name: string; // يطابق name اللي جاية من الفرونت
+  name: string; // "Hören – Teil 1"
 
-  // للحقول الجديدة لدعم Prüfungen
-  @IsOptional()
-  @IsString()
-  key?: string; // مثال: 'hoeren_teil1'
-
-  // للحفاظ على التوافق مع الكود القديم
-  @IsOptional()
-  @IsString()
-  title?: string; // للتوافق مع الكود القديم
-
-  // لو حابة تحتفظي بـ "section" كاسم تاني ممكن تخليه اختياري
+  // حقل section اللي إنتِ تبعتيه: "Hören – Teil 1"
   @IsOptional()
   @IsString()
   section?: string;
 
+  // المهارة (hoeren / lesen / ...)
   @IsOptional()
   @IsEnum(ExamSkillEnum)
-  skill?: ExamSkillEnum; // 'hoeren' | 'lesen' | 'schreiben' | 'sprechen'
+  skill?: ExamSkillEnum;
 
+  // Teil 1 / 2 / 3 ...
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(1)
-  teilNumber?: number; // 1 أو 2 أو 3...
+  teilNumber?: number;
 
+  // عدد الأسئلة العشوائية لهذا القسم
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  timeLimitMin?: number; // وقت هذا القسم (اختياري)
-
-  // للـ Provider exams: استخدام quota
-  @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(1)
   quota?: number;
 
-  // للـ Grammar exams: استخدام items (اختياري بدون إجبار)
+  // توزيع الصعوبة (اختياري)
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DifficultyDistributionDto)
+  difficultyDistribution?: DifficultyDistributionDto;
+
+  // Tags للقسم نفسه (اختياري)
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  // للسِناريو القديم (القواعد): قائمة أسئلة ثابتة
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => SectionItemDto)
-  items?: SectionItemDto[]; // بدون @ArrayMinSize(1) عشان ما يجبرك تبعتي items
+  items?: SectionItemDto[];
 
   // Optional fields for backward compatibility
   @IsOptional()
   @IsString()
+  key?: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
   label?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  timeLimitMin?: number;
 
   @IsOptional()
   @IsNumber()
@@ -91,38 +104,62 @@ class ExamSectionDto {
   partsCount?: number;
 
   @IsOptional()
-  @ValidateNested()
-  @Type(() => DifficultyDistributionDto)
-  difficultyDistribution?: DifficultyDistributionDto;
-
-  @IsOptional()
   @IsBoolean()
   randomize?: boolean;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
 }
 
 export class CreateExamDto {
-  @IsString() @IsNotEmpty() title: string;
-  @IsOptional() @IsString() description?: string;
-  @IsOptional() @IsString() level?: string;
-  @IsOptional() @IsString() provider?: string;
-  
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  level?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  timeLimitMin?: number;
+
+  @IsOptional()
+  @IsEnum(ExamStatusEnum)
+  status?: ExamStatus;
+
   @IsEnum(ExamCategoryEnum)
   examCategory: ExamCategoryEnum;
 
   @IsOptional()
-  @IsEnum(ExamSkillEnum)
-  mainSkill?: ExamSkillEnum; // 'mixed' | 'hoeren' | 'lesen' | 'schreiben' | 'sprechen'
+  @IsBoolean()
+  randomizeQuestions?: boolean;
 
-  // للحقول الخاصة بالقواعد (optional)
-  @IsOptional()
+  // ====== الحقول الخاصة بالقواعد فقط ======
+  @ValidateIf((o) => o.examCategory === ExamCategoryEnum.GRAMMAR)
   @IsMongoId()
   grammarTopicId?: string;
 
+  // ====== الحقول الخاصة بـ Prüfungen (provider_exam) ======
+  @ValidateIf((o) => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @IsString()
+  @IsNotEmpty()
+  provider?: string; // "goethe" / "telc" ...
+
+  @ValidateIf((o) => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @IsString()
+  @IsNotEmpty()
+  mainSkill?: string; // "hoeren" / "lesen" ... (حسب ما اتفقتوا)
+
+  // الوسوم العامة للامتحان
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  // الأقسام – تنطبق على كل الأنواع، بس تحققهم يكون موحّد
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
@@ -130,18 +167,9 @@ export class CreateExamDto {
   sections: ExamSectionDto[];
 
   @IsOptional()
-  @IsBoolean()
-  randomizeQuestions?: boolean;
-
-  @IsOptional()
   @IsNumber()
   @Min(0)
   attemptLimit?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  timeLimitMin?: number;
 
   @IsOptional()
   @IsString()
@@ -150,16 +178,6 @@ export class CreateExamDto {
     | 'correct_with_scores'
     | 'explanations_with_scores'
     | 'release_delayed';
-
-  // اختياري: في حال أردت بدءًا بحالة غير الـ draft
-  @IsOptional()
-  @IsEnum(ExamStatusEnum)
-  status?: ExamStatus;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
 }
 
 // DTO للـ practice exam - يجعل title اختياري
