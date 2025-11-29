@@ -876,6 +876,40 @@ Authorization: Bearer <accessToken>
 
 ---
 
+### `GET /exams/providers`
+**الوصف:** الحصول على قائمة مزوّدي الامتحانات المتاحة + مستوياتهم  
+**المصادقة:** غير مطلوبة (Public endpoint)  
+**الأدوار المسموحة:** جميع المستخدمين
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**ملاحظة:** هذا endpoint Public - لا يحتاج JWT Token
+
+**Response (200):**
+```json
+[
+  {
+    "provider": "goethe",
+    "levels": ["A1", "A2", "B1", "B2"]
+  },
+  {
+    "provider": "telc",
+    "levels": ["A1", "B1", "B2"]
+  },
+  {
+    "provider": "osd",
+    "levels": ["A1", "A2", "B1"]
+  }
+]
+```
+
+**الاستخدام:** لبناء كروت المعاهد في صفحة Prüfungen الرئيسية، ولكي أستخرج تحت كل كرت المستويات المتاحة.
+
+---
+
 ### `GET /exams`
 **الوصف:** الحصول على قائمة الامتحانات  
 **المصادقة:** مطلوبة (Bearer Token)  
@@ -889,8 +923,27 @@ Authorization: Bearer <accessToken>
 **Query Parameters:**
 - `status`: فلترة حسب الحالة (draft/published/archived) - **للطلاب: يتم تجاهل هذا الحقل وفرض 'published'**
 - `level`: فلترة حسب المستوى (A1, A2, B1, B2, C1)
-- `provider`: فلترة حسب المزود (telc, Goethe, ÖSD, Deutschland-in-Leben, etc.)
+- `provider`: فلترة حسب المزود (goethe, telc, osd, ecl, dtb, dtz, Deutschland-in-Leben, etc.)
+- `examCategory`: فلترة حسب نوع الامتحان - `'provider_exam' | 'grammar_exam' | 'vocab_exam' | 'lid_exam' | 'other'`
+- `mainSkill`: فلترة حسب المهارة الرئيسية - `'mixed' | 'hoeren' | 'lesen' | 'schreiben' | 'sprechen'`
 - `state`: فلترة حسب الولاية الألمانية (Bayern, Berlin, etc.) - يتم البحث في sections.tags
+
+**أمثلة:**
+
+1. جلب كل امتحانات Goethe B1 (full + skills):
+```
+GET /exams?examCategory=provider_exam&provider=goethe&level=B1&status=published
+```
+
+2. جلب امتحانات الاستماع فقط لـ Goethe B1:
+```
+GET /exams?examCategory=provider_exam&provider=goethe&level=B1&mainSkill=hoeren&status=published
+```
+
+3. جلب كل الامتحانات الرسمية المنشورة لأي مزوّد:
+```
+GET /exams?examCategory=provider_exam&status=published
+```
 
 **Response (200):**
 ```json
@@ -1174,12 +1227,31 @@ const fetchExamDetails = async (examId) => {
 Authorization: Bearer <accessToken>
 ```
 
+**Path Parameters:**
+- `id`: معرف الامتحان (MongoDB ObjectId)
+
 **Response (200):**
 ```json
 {
   "id": "...",
   "title": "...",
   "description": "...",
+  "provider": "goethe",
+  "level": "B1",
+  "examCategory": "provider_exam",
+  "mainSkill": "mixed",
+  "status": "published",
+  "sections": [
+    {
+      "key": "hoeren_teil1",
+      "title": "Hören – Teil 1",
+      "skill": "hoeren",
+      "teilNumber": 1,
+      "timeLimitMin": 20,
+      "quota": 5,
+      "items": [...]
+    }
+  ],
   "questions": [
     {
       "id": "...",
@@ -2728,36 +2800,90 @@ Authorization: Bearer <accessToken>
 **Headers:**
 ```
 Authorization: Bearer <accessToken>
+Content-Type: application/json
 ```
 
 **Body:**
 ```json
-{} // فارغ
+{
+  "answers": [
+    {
+      "questionId": "questionId123",
+      "selectedOptionIds": ["0", "2"]  // للـ MCQ: indexes كـ strings (0-based)
+    },
+    {
+      "questionId": "questionId456",
+      "studentAnswerText": "الإجابة النصية"  // للـ Fill
+    },
+    {
+      "questionId": "questionId789",
+      "studentAnswerBoolean": true  // للـ True/False
+    }
+  ]
+}
 ```
+
+**ملاحظة:** الـ Body اختياري (يمكن إرسال `{}` فارغ إذا تم حفظ الإجابات مسبقاً)
 
 **Response (200):**
 ```json
 {
-  "id": "attemptId123",
+  "attemptId": "attemptId123",
+  "examId": "examId123",
   "status": "submitted",
+  "attemptCount": 1,
+  "startedAt": "2024-01-01T10:00:00.000Z",
   "submittedAt": "2024-01-01T10:45:00.000Z",
-  "score": 75, // إذا كان التصحيح تلقائي
-  "totalPoints": 100,
+  "finalScore": 75,              // ⭐ النتيجة النهائية
+  "totalMaxScore": 100,          // ⭐ مجموع النقاط الكلي
+  "totalAutoScore": 75,          // ⭐ النقاط من التصحيح الآلي
+  "totalManualScore": 0,         // ⭐ النقاط من التصحيح اليدوي
   "items": [
     {
-      "questionId": "...",
-      "studentAnswer": {...},
-      "correctAnswer": {...},
-      "isCorrect": true,
+      "questionId": "questionId123",
+      "qType": "mcq",            // نوع السؤال: mcq, fill, true_false, match, reorder
+      "promptSnapshot": "ما هي عاصمة فرنسا؟",
+      "optionsText": ["باريس", "لندن", "برلين", "مدريد"],
+      "points": 10,              // ⭐ نقاط السؤال
+      "autoScore": 10,           // ⭐ النقاط المحصلة (من التصحيح الآلي)
+      "manualScore": 0,          // ⭐ النقاط المحصلة (من التصحيح اليدوي)
+      "studentAnswerIndexes": [0],  // إجابة الطالب (indexes)
+      "correctOptionIndexes": [0],  // الإجابة الصحيحة (إذا كان policy يسمح)
+      "isCorrect": true          // ⭐ هل الإجابة صحيحة (في correct_with_scores policy)
+    },
+    {
+      "questionId": "questionId456",
+      "qType": "fill",
+      "promptSnapshot": "اكمل: عاصمة مصر هي _____",
       "points": 10,
-      "maxPoints": 10
+      "autoScore": 0,
+      "manualScore": 0,
+      "studentAnswerText": "القاهرة",
+      "fillExact": "القاهرة",    // الإجابة الصحيحة (إذا كان policy يسمح)
+      "isCorrect": false
+    },
+    {
+      "questionId": "questionId789",
+      "qType": "true_false",
+      "promptSnapshot": "2 + 2 = 4",
+      "points": 5,
+      "autoScore": 5,
+      "manualScore": 0,
+      "studentAnswerBoolean": true,
+      "answerKeyBoolean": true,  // الإجابة الصحيحة (إذا كان policy يسمح)
+      "isCorrect": true
     }
-  ],
-  ...
+  ]
 }
 ```
 
 **الاستخدام:** للطالب لتسليم المحاولة (يتم التصحيح التلقائي للأسئلة الموضوعية)
+
+**ملاحظات مهمة:**
+- `finalScore` = `totalAutoScore` + `totalManualScore` - هذا هو الحقل الرئيسي للنتيجة الإجمالية
+- `selectedOptionIds` يجب أن تكون indexes (0-based) كـ strings
+- `correctOptionIndexes` / `answerKeyBoolean` / `fillExact` تظهر فقط إذا كان `resultsPolicy = 'explanations_with_scores'` أو إذا كان المستخدم معلم/أدمن
+- `isCorrect` يظهر فقط في `correct_with_scores` policy
 
 ---
 

@@ -1575,11 +1575,7 @@ export class ExamsService {
     for (const section of exam.sections) {
       const sectionAny = section as any;
       const sectionInfo: any = {
-<<<<<<< HEAD
         name: sectionAny?.title || sectionAny?.name || 'Unnamed',
-=======
-        name: section.title || sectionAny?.name,
->>>>>>> 2cc526b920b1e4e6fa6ac9cc1edbf2cd70c627d8
         quota: sectionAny?.quota,
         tags: sectionAny?.tags || [],
         difficultyDistribution: sectionAny?.difficultyDistribution,
@@ -1627,11 +1623,7 @@ export class ExamsService {
       debugInfo.totalQuestionsAvailable += sectionInfo.totalAvailable;
 
       if (sectionInfo.issues.length > 0) {
-<<<<<<< HEAD
         debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${sectionInfo.name || sectionAny?.title || 'Unnamed'}": ${i}`));
-=======
-        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${sectionInfo.name || section.title || 'Unnamed'}": ${i}`));
->>>>>>> 2cc526b920b1e4e6fa6ac9cc1edbf2cd70c627d8
       }
     }
 

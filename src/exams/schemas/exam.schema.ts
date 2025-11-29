@@ -35,23 +35,19 @@ const SectionQuotaSchema = SchemaFactory.createForClass(SectionQuota);
 
 @Schema({ _id: false })
 export class ExamSection {
-  // 🔥 title هو الحقل الأساسي (required) - الكود الجديد يستخدمه
-  @Prop({ type: String, required: true, trim: true })
-  title: string;
-
-  @Prop({ type: [SectionItemSchema], default: [] })
-  items: SectionItem[];
-
-  // الحقول التالية optional للتوافق مع الكود القديم
-  @Prop({ type: String, trim: true })
-  name?: string;
-
   // للحقول الجديدة لدعم Prüfungen
   @Prop({ type: String, trim: true })
   key?: string; // مثال: 'hoeren_teil1'
 
   @Prop({ type: String, trim: true })
   title?: string; // مثال: 'Hören – Teil 1'
+
+  // الحقول التالية optional للتوافق مع الكود القديم
+  @Prop({ type: String, trim: true })
+  name?: string;
+
+  @Prop({ type: [SectionItemSchema], default: [] })
+  items: SectionItem[];
 
   // skill بدعم lowercase و uppercase للتوافق
   @Prop({ type: String, enum: ['hoeren', 'lesen', 'schreiben', 'sprechen', 'HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'], trim: true })
