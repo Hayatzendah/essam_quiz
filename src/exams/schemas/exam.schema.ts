@@ -36,14 +36,28 @@ class ExamSection {
   @Prop({ type: String, trim: true })
   name?: string;
 
-  @Prop({ type: String, enum: ['HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'], trim: true })
-  skill?: 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
+  // للحقول الجديدة لدعم Prüfungen
+  @Prop({ type: String, trim: true })
+  key?: string; // مثال: 'hoeren_teil1'
+
+  @Prop({ type: String, trim: true })
+  title?: string; // مثال: 'Hören – Teil 1'
+
+  // skill بدعم lowercase و uppercase للتوافق
+  @Prop({ type: String, enum: ['hoeren', 'lesen', 'schreiben', 'sprechen', 'HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN'], trim: true })
+  skill?: 'hoeren' | 'lesen' | 'schreiben' | 'sprechen' | 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN';
+
+  @Prop({ type: Number, min: 1 })
+  teilNumber?: number; // 1 أو 2 أو 3...
+
+  @Prop({ type: Number, min: 0 })
+  timeLimitMin?: number; // وقت هذا القسم (اختياري)
 
   @Prop({ type: String, trim: true })
   label?: string;
 
   @Prop({ type: Number, min: 0 })
-  durationMin?: number;
+  durationMin?: number; // للتوافق مع الكود القديم
 
   @Prop({ type: Number, min: 0 })
   partsCount?: number;
@@ -87,8 +101,26 @@ export class Exam {
   @Prop({ type: String, enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], index: true })
   level?: string;
 
-  @Prop({ type: String, index: true })
-  provider?: QuestionProvider | string;
+  @Prop({ 
+    type: String, 
+    enum: ['goethe', 'telc', 'osd', 'ecl', 'dtb', 'dtz', 'General', 'DTZ', 'Other'], 
+    index: true 
+  })
+  provider?: 'goethe' | 'telc' | 'osd' | 'ecl' | 'dtb' | 'dtz' | QuestionProvider | string;
+
+  @Prop({ 
+    type: String, 
+    enum: ['provider_exam', 'grammar_exam', 'vocab_exam', 'lid_exam', 'other'],
+    index: true 
+  })
+  examCategory?: 'provider_exam' | 'grammar_exam' | 'vocab_exam' | 'lid_exam' | 'other';
+
+  @Prop({ 
+    type: String, 
+    enum: ['mixed', 'hoeren', 'lesen', 'schreiben', 'sprechen'],
+    index: true 
+  })
+  mainSkill?: 'mixed' | 'hoeren' | 'lesen' | 'schreiben' | 'sprechen';
 
   @Prop({ type: String, enum: Object.values(ExamStatusEnum), default: ExamStatusEnum.DRAFT, index: true })
   status: ExamStatus;
@@ -117,6 +149,8 @@ export class Exam {
 
 export const ExamSchema = SchemaFactory.createForClass(Exam);
 ExamSchema.index({ level: 1, provider: 1, status: 1 });
+ExamSchema.index({ examCategory: 1, provider: 1, level: 1, status: 1 });
+ExamSchema.index({ examCategory: 1, mainSkill: 1, status: 1 });
 
 // Pre-save hook to ensure sections is always an array and never contains null or empty objects
 ExamSchema.pre('save', function (next) {

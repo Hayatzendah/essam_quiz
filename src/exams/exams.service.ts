@@ -391,6 +391,8 @@ export class ExamsService {
     // فلترة مشتركة
     if (q?.level) filter.level = q.level;
     if (q?.provider) filter.provider = q.provider;
+    if (q?.examCategory) filter.examCategory = q.examCategory;
+    if (q?.mainSkill) filter.mainSkill = q.mainSkill;
 
     // فلترة حسب state (الولاية) - البحث في sections.tags
     // يجب أن يكون هناك قسم واحد على الأقل يحتوي على الولاية المطلوبة
@@ -463,6 +465,8 @@ export class ExamsService {
 
     if (q?.level) filter.level = q.level;
     if (q?.provider) filter.provider = q.provider;
+    if (q?.examCategory) filter.examCategory = q.examCategory;
+    if (q?.mainSkill) filter.mainSkill = q.mainSkill;
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
     
@@ -530,6 +534,14 @@ export class ExamsService {
         const escapedProvider = q.provider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         filter.provider = { $regex: `^${escapedProvider}$`, $options: 'i' };
         this.logger.debug(`[findPublicExams] Filter by provider (case-insensitive): ${q.provider}`);
+      }
+      if (q?.examCategory) {
+        filter.examCategory = q.examCategory;
+        this.logger.debug(`[findPublicExams] Filter by examCategory: ${q.examCategory}`);
+      }
+      if (q?.mainSkill) {
+        filter.mainSkill = q.mainSkill;
+        this.logger.debug(`[findPublicExams] Filter by mainSkill: ${q.mainSkill}`);
       }
 
       this.logger.debug(`[findPublicExams] Filter: ${JSON.stringify(filter)}`);
@@ -721,6 +733,57 @@ export class ExamsService {
       attemptLimit: doc.attemptLimit,
       sections,
     };
+  }
+
+  /**
+   * الحصول على قائمة مزوّدي الامتحانات المتاحة + مستوياتهم
+   * يرجع قائمة بالـ providers الموجود لهم امتحانات منشورة من نوع provider_exam
+   */
+  async getProviders() {
+    const filter: any = {
+      status: ExamStatusEnum.PUBLISHED,
+      examCategory: 'provider_exam',
+    };
+
+    const exams = await this.model
+      .find(filter)
+      .select('provider level')
+      .lean()
+      .exec();
+
+    // تجميع providers و levels
+    const providerMap = new Map<string, Set<string>>();
+
+    for (const exam of exams) {
+      const provider = exam.provider as string;
+      const level = exam.level as string;
+
+      if (provider && level) {
+        if (!providerMap.has(provider)) {
+          providerMap.set(provider, new Set());
+        }
+        providerMap.get(provider)!.add(level);
+      }
+    }
+
+    // تحويل إلى array
+    const result = Array.from(providerMap.entries()).map(([provider, levelsSet]) => ({
+      provider: provider as 'goethe' | 'telc' | 'osd' | 'ecl' | 'dtb' | 'dtz',
+      levels: Array.from(levelsSet).sort(),
+    }));
+
+    // ترتيب حسب provider
+    const providerOrder = ['goethe', 'telc', 'osd', 'ecl', 'dtb', 'dtz'];
+    result.sort((a, b) => {
+      const aIndex = providerOrder.indexOf(a.provider);
+      const bIndex = providerOrder.indexOf(b.provider);
+      if (aIndex === -1 && bIndex === -1) return a.provider.localeCompare(b.provider);
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+
+    return result;
   }
 
   async findById(id: string, user?: ReqUser) {
@@ -1042,9 +1105,11 @@ export class ExamsService {
       fixedSections: updatedSections.filter((s: any, index: number) => {
         const original = doc.sections[index];
         const hasItems = Array.isArray(s.items) && s.items.length > 0;
-        const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+        const sAny = s as any;
+        const originalAny = original as any;
+        const hasQuota = typeof sAny?.quota === 'number' && sAny.quota > 0;
         const originalHasItems = Array.isArray(original?.items) && original.items.length > 0;
-        const originalHasQuota = typeof original?.quota === 'number' && original.quota > 0;
+        const originalHasQuota = typeof originalAny?.quota === 'number' && originalAny.quota > 0;
         return (hasItems || hasQuota) && !(originalHasItems || originalHasQuota);
       }),
     };
@@ -1384,11 +1449,12 @@ export class ExamsService {
     }
 
     for (const section of exam.sections) {
+      const sectionAny = section as any;
       const sectionInfo: any = {
-        name: section.name,
-        quota: section.quota,
-        tags: section.tags || [],
-        difficultyDistribution: section.difficultyDistribution,
+        name: sectionAny?.title || sectionAny?.name || 'Unnamed',
+        quota: sectionAny?.quota,
+        tags: sectionAny?.tags || [],
+        difficultyDistribution: sectionAny?.difficultyDistribution,
         availableQuestions: {},
         totalAvailable: 0,
         issues: [],
@@ -1400,20 +1466,21 @@ export class ExamsService {
         level: exam.level,
       };
 
-      if (section.tags && section.tags.length > 0) {
-        baseQuery.tags = { $in: section.tags };
+      if (sectionAny?.tags && Array.isArray(sectionAny.tags) && sectionAny.tags.length > 0) {
+        baseQuery.tags = { $in: sectionAny.tags };
       }
 
-      if (section.difficultyDistribution) {
-        for (const [difficulty, count] of Object.entries(section.difficultyDistribution)) {
+      if (sectionAny?.difficultyDistribution) {
+        for (const [difficulty, count] of Object.entries(sectionAny.difficultyDistribution)) {
+          const countNum = typeof count === 'number' ? (count as number) : 0;
           const query = { ...baseQuery, difficulty };
           const available = await QuestionModel.countDocuments(query);
           sectionInfo.availableQuestions[difficulty] = available;
           sectionInfo.totalAvailable += available;
 
-          if (available < count) {
+          if (available < countNum) {
             sectionInfo.issues.push(
-              `Need ${count} ${difficulty} questions, but only ${available} available`,
+              `Need ${countNum} ${difficulty} questions, but only ${available} available`,
             );
           }
         }
@@ -1421,9 +1488,9 @@ export class ExamsService {
         // بدون توزيع صعوبة
         const available = await QuestionModel.countDocuments(baseQuery);
         sectionInfo.totalAvailable = available;
-        if (section.quota && available < section.quota) {
+        if (sectionAny?.quota && typeof sectionAny.quota === 'number' && available < sectionAny.quota) {
           sectionInfo.issues.push(
-            `Need ${section.quota} questions, but only ${available} available`,
+            `Need ${sectionAny.quota} questions, but only ${available} available`,
           );
         }
       }
@@ -1432,7 +1499,7 @@ export class ExamsService {
       debugInfo.totalQuestionsAvailable += sectionInfo.totalAvailable;
 
       if (sectionInfo.issues.length > 0) {
-        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${section.name}": ${i}`));
+        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${sectionInfo.name || sectionAny?.title || 'Unnamed'}": ${i}`));
       }
     }
 

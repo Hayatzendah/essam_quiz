@@ -117,6 +117,18 @@ export class ExamsController {
     return this.service.createPracticeExam(dto, req.user);
   }
 
+  // قائمة مزوّدي الامتحانات المتاحة + مستوياتهم
+  @Get('providers')
+  @ApiOperation({
+    summary: 'Get exam providers and their available levels',
+    description: 'إرجاع قائمة بالـ providers الموجود لهم امتحانات منشورة من نوع provider_exam مع المستويات المتاحة لكل provider',
+  })
+  @ApiResponse({ status: 200, description: 'List of providers with their levels' })
+  getProviders() {
+    this.logger.log(`[GET /exams/providers] Request received`);
+    return this.service.getProviders();
+  }
+
   // قائمة الامتحانات
   // - admin: جميع الامتحانات
   // - teacher: امتحاناته فقط

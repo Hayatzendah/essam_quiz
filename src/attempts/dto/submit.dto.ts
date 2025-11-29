@@ -1,32 +1,57 @@
-import {
-  IsArray,
-  IsBoolean,
-  IsMongoId,
-  IsNumber,
-  IsOptional,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsMongoId, IsString, ValidateNested, IsOptional, IsBoolean, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class SubmitAnswerDto {
-  @IsOptional()
-  @IsString()
-  itemId?: string; // questionId أو itemIndex (string)
+class SubmitAttemptAnswerDto {
+  @IsMongoId()
+  questionId: string;
 
-  @IsOptional()
-  @IsNumber()
-  itemIndex?: number; // رقم السؤال في attempt (0-based) - أفضل من itemId
-
-  @IsOptional()
-  userAnswer?: string | number | boolean | number[];
-}
-
-export class SubmitAttemptDto {
-  // attemptId يأتي من URL parameter
+  // للـ MCQ: indexes كـ strings (0-based)
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
+  selectedOptionIds?: string[];
+
+  // للـ Fill: النص
+  @IsOptional()
+  @IsString()
+  studentAnswerText?: string;
+
+  // للـ True/False: boolean
+  @IsOptional()
+  @IsBoolean()
+  studentAnswerBoolean?: boolean;
+
+  // للـ Match: أزواج [left, right]
+  @IsOptional()
+  @IsArray()
+  studentAnswerMatch?: [string, string][];
+
+  // للـ Reorder: ترتيب
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  studentAnswerReorder?: string[];
+
+  // للتوافق مع الكود القديم
+  @IsOptional()
+  @IsNumber()
+  itemIndex?: number;
+
+  @IsOptional()
+  userAnswer?: any;
+}
+
+export class SubmitAttemptSubmitDto {
+  @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SubmitAnswerDto)
-  answers?: SubmitAnswerDto[]; // اختياري - إذا تم إرسال الإجابات هنا، سيتم حفظها قبل التصحيح
+  @Type(() => SubmitAttemptAnswerDto)
+  answers: SubmitAttemptAnswerDto[];
+}
+
+// للتوافق مع الكود القديم
+export class SubmitAttemptDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SubmitAttemptAnswerDto)
+  answers?: SubmitAttemptAnswerDto[];
 }

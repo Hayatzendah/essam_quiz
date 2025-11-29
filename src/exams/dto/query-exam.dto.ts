@@ -17,6 +17,14 @@ export class QueryExamDto {
   provider?: string;
 
   @IsOptional()
+  @IsEnum(['provider_exam', 'grammar_exam', 'vocab_exam', 'lid_exam', 'other'])
+  examCategory?: 'provider_exam' | 'grammar_exam' | 'vocab_exam' | 'lid_exam' | 'other';
+
+  @IsOptional()
+  @IsEnum(['mixed', 'hoeren', 'lesen', 'schreiben', 'sprechen'])
+  mainSkill?: 'mixed' | 'hoeren' | 'lesen' | 'schreiben' | 'sprechen';
+
+  @IsOptional()
   @IsString()
   state?: string; // الولاية الألمانية (Bundesland) - للفلترة حسب tags في sections
 
