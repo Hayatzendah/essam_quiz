@@ -141,9 +141,9 @@ export class ExamsService {
         throw new BadRequestException('Each section must be a valid object');
       }
       
-      // التحقق من وجود title
-      if (!s.title && !s.name) {
-        throw new BadRequestException('Each section must have a title');
+      // التحقق من وجود name (الحقل الأساسي)
+      if (!s.name) {
+        throw new BadRequestException('Each section must have a name');
       }
       
       // التحقق حسب examCategory
@@ -209,9 +209,13 @@ export class ExamsService {
           // إنشاء نسخة جديدة من section لتجنب تعديل الـ original
           const processedSection = { ...section };
           
-          // التأكد من وجود title (استخدام name كـ fallback للتوافق)
+          // التأكد من وجود title (استخدام name كـ fallback للتوافق مع الكود القديم)
           if (!processedSection.title && processedSection.name) {
             processedSection.title = processedSection.name;
+          }
+          // التأكد من وجود name (الحقل الأساسي)
+          if (!processedSection.name && processedSection.title) {
+            processedSection.name = processedSection.title;
           }
           
           // معالجة items - يمكن أن تكون فارغة أو undefined

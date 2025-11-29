@@ -31,12 +31,22 @@ class DifficultyDistributionDto {
 class ExamSectionDto {
   @IsString()
   @IsNotEmpty()
-  title: string;
+  name: string; // يطابق name اللي جاية من الفرونت
 
   // للحقول الجديدة لدعم Prüfungen
   @IsOptional()
   @IsString()
   key?: string; // مثال: 'hoeren_teil1'
+
+  // للحفاظ على التوافق مع الكود القديم
+  @IsOptional()
+  @IsString()
+  title?: string; // للتوافق مع الكود القديم
+
+  // لو حابة تحتفظي بـ "section" كاسم تاني ممكن تخليه اختياري
+  @IsOptional()
+  @IsString()
+  section?: string;
 
   @IsOptional()
   @IsEnum(ExamSkillEnum)
@@ -58,18 +68,14 @@ class ExamSectionDto {
   @Min(1)
   quota?: number;
 
-  // للـ Grammar exams: استخدام items
+  // للـ Grammar exams: استخدام items (اختياري بدون إجبار)
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SectionItemDto)
-  items?: SectionItemDto[];
+  items?: SectionItemDto[]; // بدون @ArrayMinSize(1) عشان ما يجبرك تبعتي items
 
   // Optional fields for backward compatibility
-  @IsOptional()
-  @IsString()
-  name?: string;
-
   @IsOptional()
   @IsString()
   label?: string;
