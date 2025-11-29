@@ -149,6 +149,9 @@ export class Exam {
 
   @Prop({ type: [Types.ObjectId], ref: 'User', default: [] })
   assignedStudentIds?: Types.ObjectId[];
+
+  @Prop({ type: [String], default: [] })
+  tags?: string[];
 }
 
 export const ExamSchema = SchemaFactory.createForClass(Exam);

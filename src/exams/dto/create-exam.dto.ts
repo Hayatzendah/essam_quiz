@@ -149,6 +149,11 @@ export class CreateExamDto {
   @IsOptional()
   @IsEnum(ExamStatusEnum)
   status?: ExamStatus;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }
 
 // DTO للـ practice exam - يجعل title اختياري
