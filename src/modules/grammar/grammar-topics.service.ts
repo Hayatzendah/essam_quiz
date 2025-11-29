@@ -6,10 +6,13 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { GrammarTopic, GrammarTopicDocument } from './schemas/grammar-topic.schema';
+import { Exam, ExamDocument } from '../../exams/schemas/exam.schema';
 import { CreateGrammarTopicDto } from './dto/create-grammar-topic.dto';
 import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
+import { StartGrammarExerciseDto } from './dto/start-grammar-exercise.dto';
+import { LinkExamDto } from './dto/link-exam.dto';
 import { AttemptsService } from '../../attempts/attempts.service';
 import { QuestionsService } from '../../questions/questions.service';
 
@@ -17,10 +20,27 @@ import { QuestionsService } from '../../questions/questions.service';
 export class GrammarTopicsService {
   constructor(
     @InjectModel(GrammarTopic.name) private readonly model: Model<GrammarTopicDocument>,
+    @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
     @Inject(forwardRef(() => AttemptsService))
     private readonly attemptsService: AttemptsService,
     private readonly questionsService: QuestionsService,
   ) {}
+
+  /**
+   * Helper method to map topic document to response format
+   */
+  private mapToResponse(topic: any): any {
+    return {
+      ...topic,
+      _id: topic._id?.toString() || topic.id?.toString() || topic._id,
+      examId: topic.examId
+        ? typeof topic.examId === 'object' && topic.examId.toString
+          ? topic.examId.toString()
+          : topic.examId
+        : null,
+      sectionTitle: topic.sectionTitle ?? null,
+    };
+  }
 
   /**
    * Find all grammar topics, optionally filtered by level
@@ -33,7 +53,9 @@ export class GrammarTopicsService {
 
     const items = await this.model.find(query).sort({ level: 1, title: 1 }).lean().exec();
 
-    return { items };
+    return {
+      items: items.map((item) => this.mapToResponse(item)),
+    };
   }
 
   /**
@@ -52,7 +74,7 @@ export class GrammarTopicsService {
       );
     }
 
-    return topic;
+    return this.mapToResponse(topic);
   }
 
   /**
@@ -82,9 +104,10 @@ export class GrammarTopicsService {
     const topic = await this.model.create({
       ...dto,
       slug,
+      ...(dto.examId && { examId: new Types.ObjectId(dto.examId) }),
     });
 
-    return topic.toObject();
+    return this.mapToResponse(topic.toObject());
   }
 
   /**
@@ -120,12 +143,18 @@ export class GrammarTopicsService {
       }
     }
 
-    const updated = await this.model.findByIdAndUpdate(id, dto, { new: true }).lean().exec();
+    // Prepare update data with ObjectId conversion for examId
+    const updateData: any = { ...dto };
+    if (dto.examId) {
+      updateData.examId = new Types.ObjectId(dto.examId);
+    }
+
+    const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).lean().exec();
     if (!updated) {
       throw new NotFoundException(`Grammar topic with id "${id}" not found`);
     }
 
-    return updated;
+    return this.mapToResponse(updated);
   }
 
   /**
@@ -135,7 +164,9 @@ export class GrammarTopicsService {
    * - إنشاء exam ديناميكي من هذه الأسئلة
    * - بدء attempt على هذا exam
    */
-  async startPracticeAttempt(slug: string, level?: string, questionsCount?: number, user?: any) {
+  async startPracticeAttempt(slug: string, dto: StartGrammarExerciseDto, user?: any) {
+    const { level, questionsCount } = dto;
+
     // 1. البحث عن grammar topic
     const topic = await this.findBySlug(slug, level);
 
@@ -151,7 +182,7 @@ export class GrammarTopicsService {
     const questionsResult = await this.questionsService.findGrammar({
       level: topic.level as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | undefined,
       tags: tags,
-      limit: questionsCount ? questionsCount.toString() : '20',
+      limit: questionsCount.toString(),
       page: '1',
     });
 
@@ -172,7 +203,7 @@ export class GrammarTopicsService {
       provider: 'Grammatik',
       sections: [
         {
-          name: topic.title,
+          title: topic.title,
           items: questionsResult.items.map((q: any) => ({
             questionId: q._id || q.id,
             points: 1,
@@ -186,5 +217,67 @@ export class GrammarTopicsService {
 
     // 5. بدء attempt على هذا exam
     return this.attemptsService.startPracticeAttempt(examDto, user);
+  }
+
+  /**
+   * ربط Grammar Topic مع Exam
+   * - التحقق من وجود الـ exam
+   * - ربط الـ topic مع الـ exam
+   * - إرجاع success message
+   */
+  async linkExam(identifier: string, dto: LinkExamDto, level?: string) {
+    // 1. البحث عن grammar topic (يدعم كلاً من slug و topicId)
+    let topic: GrammarTopicDocument | null = null;
+    
+    // محاولة البحث بالـ ID أولاً (إذا كان ObjectId صحيح)
+    if (Types.ObjectId.isValid(identifier)) {
+      topic = await this.model.findById(identifier).exec();
+    }
+    
+    // إذا لم يُعثر عليه بالـ ID، البحث بالـ slug
+    if (!topic) {
+      const query: any = { slug: identifier.toLowerCase().trim() };
+      if (level) {
+        query.level = level;
+      }
+      topic = await this.model.findOne(query).exec();
+    }
+
+    if (!topic) {
+      throw new NotFoundException(
+        `Grammar topic with identifier "${identifier}"${level ? ` and level "${level}"` : ''} not found`,
+      );
+    }
+
+    // 2. التحقق من وجود الـ exam
+    const examId = new Types.ObjectId(dto.examId);
+    const exam = await this.examModel.findById(examId).lean().exec();
+
+    if (!exam) {
+      throw new NotFoundException(`Exam with ID "${dto.examId}" not found`);
+    }
+
+    // 3. البحث عن section title من الـ exam (أول section أو null)
+    let sectionTitle: string | null = null;
+    if (exam.sections && Array.isArray(exam.sections) && exam.sections.length > 0) {
+      const firstSection = exam.sections.find((sec: any) => sec && typeof sec === 'object');
+      if (firstSection) {
+        sectionTitle = firstSection.title || firstSection.name || null;
+      }
+    }
+
+    // 4. تحديث الـ topic بربطه مع الـ exam
+    topic.examId = examId;
+    if (sectionTitle) {
+      topic.sectionTitle = sectionTitle;
+    }
+    await topic.save();
+
+    return {
+      success: true,
+      topicId: (topic._id as any)?.toString() || String(topic._id),
+      examId: dto.examId,
+      sectionTitle: sectionTitle || undefined,
+    };
   }
 }

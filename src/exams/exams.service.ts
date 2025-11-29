@@ -130,20 +130,19 @@ export class ExamsService {
         throw new BadRequestException('Each section must be a valid object');
       }
       
-      // تنظيف items من null
+      // التحقق من وجود title
+      if (!s.title && !s.name) {
+        throw new BadRequestException('Each section must have a title');
+      }
+      
+      // تنظيف items من null - لكن لا نحذف items إذا كانت فارغة بعد التنظيف
+      // سنتحقق من ذلك بعد التحويل إلى ObjectId
       if (s.items && Array.isArray(s.items)) {
         s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
       }
       
-      const hasItems = Array.isArray(s.items) && s.items.length > 0;
+      // التحقق من quota فقط إذا كان موجود (للتوافق مع الكود القديم)
       const hasQuota = typeof s.quota === 'number' && s.quota > 0;
-      
-      if (hasItems && hasQuota) {
-        throw new BadRequestException(`Section "${s.name || 'unnamed'}" cannot have both items and quota`);
-      }
-      if (!hasItems && !hasQuota) {
-        throw new BadRequestException(`Section "${s.name || 'unnamed'}" must have either items or quota`);
-      }
       if (hasQuota && s.difficultyDistribution) {
         const sum =
           (s.difficultyDistribution.easy || 0) +
@@ -151,7 +150,7 @@ export class ExamsService {
           (s.difficultyDistribution.hard || 0);
         if (sum !== s.quota) {
           throw new BadRequestException(
-            `Section "${s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
+            `Section "${s.title || s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
           );
         }
       }
@@ -175,23 +174,58 @@ export class ExamsService {
       processedDto.sections = processedDto.sections
         .filter((section: any) => section !== null && section !== undefined)
         .map((section: any) => {
-          if (section.items && Array.isArray(section.items)) {
-            // إزالة null/undefined items
-            section.items = section.items
-              .filter((item: any) => item !== null && item !== undefined)
-              .map((item: any) => {
-                if (item.questionId) {
-                  return {
-                    ...item,
-                    questionId: item.questionId instanceof Types.ObjectId 
-                      ? item.questionId 
-                      : new Types.ObjectId(item.questionId),
-                  };
-                }
-                return item;
-              });
+          // إنشاء نسخة جديدة من section لتجنب تعديل الـ original
+          const processedSection = { ...section };
+          
+          // التأكد من وجود title (استخدام name كـ fallback للتوافق)
+          if (!processedSection.title && processedSection.name) {
+            processedSection.title = processedSection.name;
           }
-          return section;
+          
+          // معالجة items - يمكن أن تكون فارغة أو undefined
+          const sectionItems = processedSection.items ?? [];
+          if (Array.isArray(sectionItems) && sectionItems.length > 0) {
+            // إزالة null/undefined items وتحويل questionId إلى ObjectId
+            const validItems = sectionItems
+              .filter((item: any) => {
+                // إزالة items بدون questionId
+                if (!item || item === null || item === undefined || !item.questionId) {
+                  return false;
+                }
+                // التحقق من أن questionId صالح
+                try {
+                  // محاولة تحويل questionId إلى ObjectId للتحقق من صحته
+                  if (item.questionId instanceof Types.ObjectId) {
+                    return true;
+                  }
+                  // التحقق من أن questionId string صالح
+                  if (typeof item.questionId === 'string' && Types.ObjectId.isValid(item.questionId)) {
+                    return true;
+                  }
+                  this.logger.warn(`[createExam] Invalid questionId: ${item.questionId} - skipping item`);
+                  return false;
+                } catch (error) {
+                  this.logger.warn(`[createExam] Error validating questionId ${item.questionId}: ${error.message} - skipping item`);
+                  return false;
+                }
+              })
+              .map((item: any) => {
+                // تحويل questionId إلى ObjectId
+                return {
+                  ...item,
+                  questionId: item.questionId instanceof Types.ObjectId 
+                    ? item.questionId 
+                    : new Types.ObjectId(item.questionId),
+                };
+              });
+            
+            processedSection.items = validItems;
+          } else {
+            // items فارغة أو undefined - هذا مسموح الآن
+            processedSection.items = [];
+          }
+          
+          return processedSection;
         });
       
       // التحقق من أن هناك sections صحيحة بعد التنظيف
@@ -205,12 +239,29 @@ export class ExamsService {
       ? processedDto.sections.filter((s: any) => s !== null && s !== undefined)
       : [];
     
+    // Log sections before creation
+    this.logger.log(
+      `[createExam] Creating exam - title: ${dto.title}, sections count: ${normalizedSections.length}, sections with items: ${normalizedSections.filter((s: any) => Array.isArray(s.items) && s.items.length > 0).length}`,
+    );
+    
+    // Log detailed section info before saving
+    normalizedSections.forEach((s: any, index: number) => {
+      this.logger.log(
+        `[createExam] Section ${index + 1}: title="${s?.title || s?.name || 'unnamed'}", items count=${s?.items?.length || 0}, items=${JSON.stringify(s?.items?.map((i: any) => ({ questionId: String(i?.questionId), points: i?.points })) || [])}`,
+      );
+    });
+    
     const doc = await this.model.create({
       ...processedDto,
       sections: normalizedSections, // Explicitly set sections to ensure no null values
       status: processedDto.status ?? ExamStatusEnum.DRAFT,
       ownerId: new Types.ObjectId(userId),
     });
+
+    // Log sections after creation
+    this.logger.log(
+      `[createExam] Exam created - id: ${doc._id}, sections count: ${doc.sections?.length || 0}, sections: ${JSON.stringify(doc.sections?.map((s: any) => ({ name: s?.name, itemsCount: s?.items?.length || 0, hasItems: Array.isArray(s?.items) && s.items.length > 0, quota: s?.quota })))}`,
+    );
 
     return {
       id: doc._id,
@@ -444,6 +495,63 @@ export class ExamsService {
     }
 
     return { items, count: items.length };
+  }
+
+  /**
+   * جلب قائمة مبسطة من الامتحانات
+   * يرجع فقط: _id, title, level
+   */
+  async findAllSimple(user: ReqUser, q: QueryExamDto) {
+    const filter: any = {};
+
+    // الطالب: يشوف فقط الامتحانات المنشورة
+    if (user.role === 'student') {
+      filter.status = ExamStatusEnum.PUBLISHED;
+      
+      // فلترة حسب assignedStudentIds (غير مخصص أو مخصص له)
+      const userId = user.userId || (user as any).sub || (user as any).id;
+      const studentId = new Types.ObjectId(userId);
+      filter.$or = [
+        { assignedStudentIds: { $exists: false } },
+        { assignedStudentIds: { $size: 0 } },
+        { assignedStudentIds: studentId },
+      ];
+    }
+    // المدرس: يشوف امتحاناته فقط
+    else if (user.role === 'teacher') {
+      const userId = user.userId || (user as any).sub || (user as any).id;
+      filter.ownerId = new Types.ObjectId(userId);
+      if (q?.status) filter.status = q.status;
+    }
+    // الأدمن: يشوف الكل (يمكنه الفلترة حسب status)
+    else if (user.role === 'admin') {
+      if (q?.status) filter.status = q.status;
+    }
+
+    // فلترة مشتركة
+    if (q?.level) filter.level = q.level;
+    if (q?.provider) filter.provider = q.provider;
+
+    // فلترة حسب state (الولاية) - البحث في sections.tags
+    if (q?.state) {
+      filter['sections.tags'] = { $in: [q.state] };
+    }
+
+    const items = await this.model
+      .find(filter)
+      .select('_id title level')
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+
+    // تحويل _id إلى string للتوافق
+    const simplifiedItems = items.map((exam: any) => ({
+      _id: exam._id.toString(),
+      title: exam.title,
+      level: exam.level,
+    }));
+
+    return simplifiedItems;
   }
 
   async findAvailableForStudent(user: ReqUser, q: QueryExamDto) {
@@ -827,6 +935,23 @@ export class ExamsService {
     const isOwner = doc.ownerId?.toString() === userId;
     const isAdmin = user.role === 'admin';
 
+    // للمدرسين والأدمن: إرجاع كل البيانات بما فيها items (الأسئلة)
+    if (isOwner || isAdmin) {
+      this.logger.log(
+        `[findById] Returning full exam data for ${isAdmin ? 'admin' : 'owner'} - examId: ${id}, sections count: ${normalizedSections.length}`,
+      );
+      // التأكد من أن sections تحتوي على items
+      const sectionsWithItems = normalizedSections.map((s: any) => {
+        if (!s) return s;
+        // إرجاع القسم كاملاً مع items
+        return {
+          ...s,
+          items: s.items || [], // التأكد من أن items موجودة حتى لو كانت فارغة
+        };
+      });
+      return { ...docWithNormalizedSections, sections: sectionsWithItems };
+    }
+
     if (user.role === 'student') {
       if (doc.status !== ExamStatusEnum.PUBLISHED) {
         throw new ForbiddenException('Students can view published exams only');
@@ -838,14 +963,11 @@ export class ExamsService {
           if (hasQuota || doc.randomizeQuestions) {
             return { name: s?.name || 'Unnamed Section', quota: s?.quota, difficultyDistribution: s?.difficultyDistribution };
           }
-          // لو ثابتة ومش عشوائية ممكن برضه نخفي الـ questionIds لو بتحبي (حسب سياستك)
+          // للطلاب: إخفاء questionIds (الأسئلة) لأسباب أمنية
           return { ...s, items: undefined };
         });
       return { ...docWithNormalizedSections, sections: safeSections };
     }
-
-    if (isOwner || isAdmin) return docWithNormalizedSections;
-
     // مدرس غير مالك: ما نسمحش
     if (user.role === 'teacher') {
       throw new ForbiddenException('Only owner teacher or admin can view');
@@ -1328,19 +1450,21 @@ export class ExamsService {
         if (!s || s === null) {
           hasEmptySections = true;
           return {
-            name: `Section ${index + 1}`,
+            title: `Section ${index + 1}`,
             quota: 5,
             tags: [],
           };
         }
 
+        const sAny = s as any;
         const hasItems = Array.isArray(s.items) && s.items.length > 0;
-        const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+        const hasQuota = typeof sAny?.quota === 'number' && sAny.quota > 0;
 
         if (!hasItems && !hasQuota) {
           hasEmptySections = true;
           return {
             ...s,
+            title: s.title || sAny?.name || `Section ${index + 1}`,
             quota: 5,
           };
         }
@@ -1451,7 +1575,11 @@ export class ExamsService {
     for (const section of exam.sections) {
       const sectionAny = section as any;
       const sectionInfo: any = {
+<<<<<<< HEAD
         name: sectionAny?.title || sectionAny?.name || 'Unnamed',
+=======
+        name: section.title || sectionAny?.name,
+>>>>>>> 2cc526b920b1e4e6fa6ac9cc1edbf2cd70c627d8
         quota: sectionAny?.quota,
         tags: sectionAny?.tags || [],
         difficultyDistribution: sectionAny?.difficultyDistribution,
@@ -1499,7 +1627,11 @@ export class ExamsService {
       debugInfo.totalQuestionsAvailable += sectionInfo.totalAvailable;
 
       if (sectionInfo.issues.length > 0) {
+<<<<<<< HEAD
         debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${sectionInfo.name || sectionAny?.title || 'Unnamed'}": ${i}`));
+=======
+        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${sectionInfo.name || section.title || 'Unnamed'}": ${i}`));
+>>>>>>> 2cc526b920b1e4e6fa6ac9cc1edbf2cd70c627d8
       }
     }
 

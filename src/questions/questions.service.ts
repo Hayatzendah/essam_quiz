@@ -10,16 +10,23 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { QueryQuestionDto } from './dto/query-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { FindVocabDto } from './dto/find-vocab.dto';
+import { GetGrammarQuestionsDto } from './dto/get-grammar-questions.dto';
 import {
   Question,
   QuestionDocument,
   QuestionStatus,
   QuestionType,
+  QuestionDifficulty,
 } from './schemas/question.schema';
+import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
+import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
 
 @Injectable()
 export class QuestionsService {
-  constructor(@InjectModel(Question.name) private readonly model: Model<QuestionDocument>) {}
+  constructor(
+    @InjectModel(Question.name) private readonly model: Model<QuestionDocument>,
+    @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
+  ) {}
 
   // التحقق الخاص (حسب نوع السؤال)
   private validateCreatePayload(dto: CreateQuestionDto) {
@@ -281,8 +288,42 @@ export class QuestionsService {
 
   /**
    * البحث عن أسئلة القواعد النحوية (Grammatik)
-   * - section = "grammar"
-   * - فلترة حسب level, tags, search
+   * - فلترة حسب level و tags فقط
+   * - فقط الأسئلة المنشورة
+   * - لا يعتمد على exams أو sections
+   */
+  async getGrammarQuestions(dto: GetGrammarQuestionsDto) {
+    const page = dto.page ?? 1;
+    const limit = dto.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    // بناء query للبحث عن أسئلة القواعد النحوية
+    const query: FilterQuery<QuestionDocument> = {
+      status: QuestionStatus.PUBLISHED, // فقط الأسئلة المنشورة
+      level: dto.level,
+    };
+
+    // فلترة حسب tags - يجب أن يحتوي السؤال على كل الـ tags المطلوبة
+    if (dto.tags && dto.tags.length > 0) {
+      query.tags = { $all: dto.tags };
+    }
+
+    const [items, total] = await Promise.all([
+      this.model.find(query).skip(skip).limit(limit).sort({ createdAt: 1 }).lean().exec(),
+      this.model.countDocuments(query),
+    ]);
+
+    return {
+      page,
+      limit,
+      total,
+      items,
+    };
+  }
+
+  /**
+   * البحث عن أسئلة القواعد النحوية (Grammatik) - للتوافق مع الكود القديم
+   * @deprecated Use getGrammarQuestions instead
    */
   async findGrammar(dto: FindVocabDto) {
     const page = Math.max(parseInt(dto.page ?? '1', 10), 1);
@@ -321,6 +362,100 @@ export class QuestionsService {
       limit,
       total,
       items,
+    };
+  }
+
+  /**
+   * إنشاء سؤال جديد وربطه بامتحان
+   * - ينشئ Question جديد
+   * - يحدد correctAnswer تلقائياً من أول option مع isCorrect = true
+   * - يربط السؤال بامتحان في section محدد
+   */
+  async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
+    const { examId, sectionTitle, points, ...questionData } = dto;
+
+    // 1) تأكيد وجود خيار صحيح
+    const correctOption = questionData.options.find((opt) => opt.isCorrect);
+    if (!correctOption) {
+      throw new BadRequestException(
+        'At least one option must be marked as correct',
+      );
+    }
+
+    // 2) إنشاء السؤال
+    const question = await this.model.create({
+      text: questionData.text,
+      prompt: questionData.text, // للحفاظ على التوافق مع الحقول الموجودة
+      qType: QuestionType.MCQ,
+      options: questionData.options.map((opt) => ({
+        text: opt.text,
+        isCorrect: opt.isCorrect || false,
+      })),
+      correctAnswer: correctOption.text,
+      ...(questionData.explanation && { explanation: questionData.explanation }),
+      ...(questionData.difficulty && { difficulty: questionData.difficulty as QuestionDifficulty }),
+      level: questionData.level,
+      status: questionData.status as QuestionStatus,
+      tags: questionData.tags,
+      // لو عندك createdBy/ownerId حطيه هنا
+      // createdBy: userId ? new Types.ObjectId(userId) : undefined,
+    });
+
+    // 3) جلب الامتحان
+    const exam = await this.examModel.findById(examId).exec();
+    if (!exam) {
+      // عشان ما نسيبش سؤال لوحده لو الامتحان مش موجود
+      await this.model.findByIdAndDelete(question._id).catch(() => undefined);
+      throw new NotFoundException('Exam not found');
+    }
+
+    // 4) تنظيف sections من null أو قيم غريبة
+    const cleanSections: any[] = Array.isArray(exam.sections)
+      ? exam.sections.filter((sec: any) => !!sec && typeof sec === 'object')
+      : [];
+
+    // 5) البحث عن سكشن بالعنوان
+    let sectionIndex = cleanSections.findIndex(
+      (sec: any) => sec.title === sectionTitle,
+    );
+
+    if (sectionIndex === -1) {
+      // 6) لو مش موجود → نضيف سكشن جديد فيه السؤال
+      cleanSections.push({
+        title: sectionTitle,
+        items: [
+          {
+            questionId: question._id,
+            points: points ?? 1,
+          },
+        ],
+      });
+    } else {
+      // 7) لو موجود → نضيف السؤال في items
+      const items = Array.isArray(cleanSections[sectionIndex].items)
+        ? cleanSections[sectionIndex].items
+        : [];
+      items.push({
+        questionId: question._id,
+        points: points ?? 1,
+      });
+      cleanSections[sectionIndex].items = items;
+    }
+
+    // 8) حفظ السكاشن المعدّلة في الامتحان
+    exam.sections = cleanSections as any;
+    await exam.save();
+
+    // إرجاع النتيجة
+    const questionDoc = question.toObject();
+    const { __v, ...questionWithoutV } = questionDoc;
+
+    return {
+      message: 'Question created and added to exam',
+      question: questionWithoutV,
+      questionId: question._id,
+      examId: exam._id,
+      sectionTitle,
     };
   }
 }

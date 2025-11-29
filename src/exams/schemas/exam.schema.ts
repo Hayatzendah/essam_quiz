@@ -17,14 +17,15 @@ export type ExamDocument = Exam & Document;
 export type { ExamStatus };
 export { ExamStatusEnum };
 
-class SectionItem {
+@Schema({ _id: false })
+export class SectionItem {
   @Prop({ type: Types.ObjectId, ref: 'Question', required: true })
   questionId: Types.ObjectId;
 
-  @Prop({ type: Number, default: 1 })
-  points: number;
+  @Prop({ type: Number, default: 1, min: 0 })
+  points?: number;
 }
-const SectionItemSchema = SchemaFactory.createForClass(SectionItem);
+export const SectionItemSchema = SchemaFactory.createForClass(SectionItem);
 
 class SectionQuota {
   @Prop({ type: Number, required: true, min: 1 })
@@ -32,7 +33,16 @@ class SectionQuota {
 }
 const SectionQuotaSchema = SchemaFactory.createForClass(SectionQuota);
 
-class ExamSection {
+@Schema({ _id: false })
+export class ExamSection {
+  // 🔥 title هو الحقل الأساسي (required) - الكود الجديد يستخدمه
+  @Prop({ type: String, required: true, trim: true })
+  title: string;
+
+  @Prop({ type: [SectionItemSchema], default: [] })
+  items: SectionItem[];
+
+  // الحقول التالية optional للتوافق مع الكود القديم
   @Prop({ type: String, trim: true })
   name?: string;
 
@@ -65,10 +75,6 @@ class ExamSection {
   @Prop({ type: String, enum: ['LanguageBlocks', 'Listening', 'Reading', 'Writing', 'Speaking'] })
   section?: QuestionSection;
 
-  // واحد من الاتنين: items ثابتة أو quota
-  @Prop({ type: [SectionItemSchema], default: [], _id: false })
-  items?: SectionItem[];
-
   @Prop({ type: Number, min: 1 })
   quota?: number;
 
@@ -81,7 +87,7 @@ class ExamSection {
   @Prop({ type: Boolean, default: false })
   randomize?: boolean;
 }
-const ExamSectionSchema = SchemaFactory.createForClass(ExamSection);
+export const ExamSectionSchema = SchemaFactory.createForClass(ExamSection);
 
 class DifficultyDistribution {
   @Prop({ type: Number, default: 0 }) easy?: number;
@@ -158,28 +164,30 @@ ExamSchema.pre('save', function (next) {
   if (!Array.isArray(this.sections)) {
     this.sections = [];
   } else {
-    // Filter out null, undefined, and empty objects from sections
-    this.sections = this.sections.filter((s: any) => {
-      // Remove null or undefined
-      if (s === null || s === undefined) {
-        return false;
-      }
-      // Remove empty objects {} (objects with no keys or only undefined/null values)
-      if (typeof s === 'object' && !Array.isArray(s)) {
-        const keys = Object.keys(s);
-        // If object has no keys, it's empty {}
-        if (keys.length === 0) {
+    // Filter out ONLY null and undefined - DO NOT filter out sections with empty items
+    // The validation in service layer should handle empty sections
+    this.sections = this.sections
+      .filter((s: any) => {
+        // Remove ONLY null or undefined - nothing else!
+        if (s === null || s === undefined) {
           return false;
         }
-        // Check if object has any meaningful values (not all undefined/null)
-        const hasValidValue = keys.some((key) => {
-          const value = s[key];
-          return value !== null && value !== undefined && value !== '';
-        });
-        return hasValidValue;
-      }
-      return true;
-    });
+        // Keep everything else - even empty objects {} (service validation will catch them)
+        return true;
+      })
+      .map((s: any) => {
+        // التأكد من أن items موجودة ومحفوظة بشكل صحيح
+        if (s && typeof s === 'object' && !Array.isArray(s)) {
+          // إذا كان section يحتوي على items، تأكد من أنها محفوظة
+          if ('items' in s && Array.isArray(s.items)) {
+            // تنظيف items من null/undefined فقط، لكن احتفظ بالباقي
+            s.items = s.items.filter((item: any) => {
+              return item !== null && item !== undefined && item !== '';
+            });
+          }
+        }
+        return s;
+      });
   }
   next();
 });

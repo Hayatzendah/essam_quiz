@@ -16,6 +16,8 @@ import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QueryQuestionDto } from './dto/query-question.dto';
 import { FindVocabDto } from './dto/find-vocab.dto';
+import { GetGrammarQuestionsDto } from './dto/get-grammar-questions.dto';
+import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -41,6 +43,25 @@ export class QuestionsController {
     return this.service.createQuestion(dto, userId);
   }
 
+  @ApiOperation({
+    summary: 'Create a new question and link it to an exam (teacher/admin only)',
+    description:
+      'إنشاء سؤال جديد وربطه بامتحان في section محدد. يتم تحديد correctAnswer تلقائياً من أول option مع isCorrect = true',
+  })
+  @ApiResponse({ status: 201, description: 'Question created and linked to exam successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed or no correct option' })
+  @ApiResponse({ status: 404, description: 'Exam not found' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - only teachers and admins can create questions',
+  })
+  @Post('with-exam')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  createWithExam(@Body() dto: CreateQuestionWithExamDto) {
+    return this.service.createQuestionWithExam(dto);
+  }
+
   // GET /questions/vocab - البحث عن أسئلة المفردات (Wortschatz)
   @ApiOperation({ summary: 'Find vocabulary questions (Wortschatz)' })
   @ApiResponse({
@@ -58,13 +79,13 @@ export class QuestionsController {
   @ApiOperation({ summary: 'Find grammar questions (Grammatik)' })
   @ApiResponse({
     status: 200,
-    description: 'Returns grammar questions filtered by level, tags, and search',
+    description: 'Returns grammar questions filtered by level and tags',
   })
   @Get('grammar')
   @UseGuards(JwtAuthGuard)
-  findGrammar(@Query() dto: FindVocabDto) {
+  getGrammarQuestions(@Query() dto: GetGrammarQuestionsDto) {
     // متاح للجميع (طلاب ومعلمين) - فقط الأسئلة المنشورة
-    return this.service.findGrammar(dto);
+    return this.service.getGrammarQuestions(dto);
   }
 
   // GET /questions

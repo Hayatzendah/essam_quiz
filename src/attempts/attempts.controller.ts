@@ -143,9 +143,9 @@ export class AttemptsController {
         this.logger.log(
           `[POST /attempts] Response contains ${itemsCount} items. First item: ${JSON.stringify({
           questionId: result?.items?.[0]?.questionId,
-          qType: result?.items?.[0]?.questionSnapshot?.qType,
-          hasPrompt: !!result?.items?.[0]?.questionSnapshot?.prompt,
-          hasOptions: !!result?.items?.[0]?.questionSnapshot?.options,
+          qType: (result?.items?.[0] as any)?.qType,
+          hasPrompt: !!(result?.items?.[0] as any)?.promptSnapshot,
+          hasOptions: !!(result?.items?.[0] as any)?.optionsText,
           })}`,
         );
       }

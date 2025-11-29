@@ -1,10 +1,15 @@
+<<<<<<< HEAD
 import { IsArray, IsMongoId, IsString, ValidateNested, IsOptional, IsBoolean, IsNumber } from 'class-validator';
+=======
+import { IsArray, IsMongoId, IsString, ValidateNested } from 'class-validator';
+>>>>>>> 2cc526b920b1e4e6fa6ac9cc1edbf2cd70c627d8
 import { Type } from 'class-transformer';
 
 class SubmitAttemptAnswerDto {
   @IsMongoId()
   questionId: string;
 
+<<<<<<< HEAD
   // للـ MCQ: indexes كـ strings (0-based)
   @IsOptional()
   @IsArray()
@@ -43,6 +48,15 @@ class SubmitAttemptAnswerDto {
 
 export class SubmitAttemptSubmitDto {
   @IsArray()
+=======
+  @IsArray()
+  @IsString({ each: true }) // 👈 مهم جداً: string مش MongoId
+  selectedOptionIds: string[];
+}
+
+export class SubmitAttemptSubmitDto {
+  @IsArray()
+>>>>>>> 2cc526b920b1e4e6fa6ac9cc1edbf2cd70c627d8
   @ValidateNested({ each: true })
   @Type(() => SubmitAttemptAnswerDto)
   answers: SubmitAttemptAnswerDto[];

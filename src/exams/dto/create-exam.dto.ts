@@ -28,7 +28,20 @@ class DifficultyDistributionDto {
 }
 
 class ExamSectionDto {
-  @IsString() @IsNotEmpty() name: string;
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SectionItemDto)
+  items?: SectionItemDto[];
+
+  // Optional fields for backward compatibility
+  @IsOptional()
+  @IsString()
+  name?: string;
 
   @IsOptional()
   @IsString()
@@ -48,13 +61,6 @@ class ExamSectionDto {
   @IsNumber()
   @Min(0)
   partsCount?: number;
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => SectionItemDto)
-  items?: SectionItemDto[];
 
   @IsOptional()
   @IsNumber()
