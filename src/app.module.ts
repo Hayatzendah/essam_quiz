@@ -8,6 +8,7 @@ import { Connection } from 'mongoose';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 import { UsersModule } from './users/users.module';
 import { QuestionsModule } from './questions/questions.module';
@@ -127,6 +128,9 @@ export class AppModule implements OnModuleInit {
   constructor(@InjectConnection() private connection: Connection) {}
 
   onModuleInit() {
+    // إنشاء مجلدات uploads إذا لم تكن موجودة
+    this.ensureUploadsDirectories();
+
     this.connection.on('connected', () => {
       this.logger.log('✅ Connected to MongoDB successfully');
     });
@@ -154,6 +158,40 @@ export class AppModule implements OnModuleInit {
       this.logger.log('✅ Connected to MongoDB successfully');
     } else if (this.connection.readyState === 0) {
       this.logger.warn('⚠️ MongoDB connection not established yet');
+    }
+  }
+
+  /**
+   * التأكد من وجود مجلدات uploads
+   */
+  private ensureUploadsDirectories() {
+    const uploadsDir = join(process.cwd(), 'uploads');
+    const audioDir = join(uploadsDir, 'audio');
+    const recordingsDir = join(uploadsDir, 'recordings');
+
+    try {
+      // إنشاء مجلد uploads إذا لم يكن موجوداً
+      if (!existsSync(uploadsDir)) {
+        mkdirSync(uploadsDir, { recursive: true });
+        this.logger.log(`✅ Created uploads directory: ${uploadsDir}`);
+      }
+
+      // إنشاء مجلد audio إذا لم يكن موجوداً
+      if (!existsSync(audioDir)) {
+        mkdirSync(audioDir, { recursive: true });
+        this.logger.log(`✅ Created audio directory: ${audioDir}`);
+      }
+
+      // إنشاء مجلد recordings إذا لم يكن موجوداً
+      if (!existsSync(recordingsDir)) {
+        mkdirSync(recordingsDir, { recursive: true });
+        this.logger.log(`✅ Created recordings directory: ${recordingsDir}`);
+      }
+
+      this.logger.log(`✅ Uploads directories ready: ${uploadsDir}`);
+    } catch (error) {
+      this.logger.error(`❌ Failed to create uploads directories: ${error}`);
+      this.logger.error('Please ensure the application has write permissions to create directories');
     }
   }
 }
