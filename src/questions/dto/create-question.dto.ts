@@ -100,4 +100,9 @@ export class CreateQuestionDto {
   @ValidateNested()
   @Type(() => QuestionMediaDto)
   media?: QuestionMediaDto;
+
+  // رابط ملف الصوت (لأسئلة الاستماع)
+  @IsOptional()
+  @IsString()
+  audioUrl?: string;
 }

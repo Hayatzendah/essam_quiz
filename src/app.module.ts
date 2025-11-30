@@ -15,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { MediaModule } from './modules/media/media.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { GrammarModule } from './modules/grammar/grammar.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -98,6 +99,7 @@ import { AppController } from './app.controller';
     MediaModule,
     AnalyticsModule,
     GrammarModule,
+    UploadsModule,
   ],
 
   controllers: [AppController, HealthController],

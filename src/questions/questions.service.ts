@@ -402,6 +402,7 @@ export class QuestionsService {
       tags: questionData.tags,
       provider: provider,
       section: section || sectionTitle,
+      ...(questionData.audioUrl && { audioUrl: questionData.audioUrl }),
       // لو عندك createdBy/ownerId حطيه هنا
       // createdBy: userId ? new Types.ObjectId(userId) : undefined,
     });

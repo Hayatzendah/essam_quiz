@@ -124,6 +124,10 @@ export class Question {
   // وسائط
   @Prop({ type: QuestionMediaSchema, required: false })
   media?: QuestionMedia;
+
+  // رابط ملف الصوت (لأسئلة الاستماع)
+  @Prop({ trim: true })
+  audioUrl?: string;
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);

@@ -8,6 +8,8 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
 import basicAuth from 'express-basic-auth';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -86,9 +88,14 @@ async function bootstrap() {
       }
     }
 
-    const app = await NestFactory.create(AppModule, {
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
       abortOnError: false, // Don't abort on errors, let the app start
+    });
+
+    // Serve static files from uploads directory
+    app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+      prefix: '/uploads/',
     });
 
     // Configure helmet - disable CSP for test page, enable for others

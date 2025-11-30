@@ -105,4 +105,9 @@ export class CreateQuestionWithExamDto {
   @IsOptional()
   @IsString()
   sectionTitle?: string;     // للحفاظ على التوافق
+
+  // ====== رابط ملف الصوت (لأسئلة الاستماع) ======
+  @IsOptional()
+  @IsString()
+  audioUrl?: string;
 }
