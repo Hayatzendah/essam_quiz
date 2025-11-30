@@ -100,6 +100,7 @@ import { AppController } from './app.controller';
       serveRoot: '/uploads',
       serveStaticOptions: {
         index: false, // لا تبحث عن index.html
+        fallthrough: false, // لا تمرر الطلب للـ route التالي إذا لم يجد الملف
         setHeaders: (res) => {
           res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
           res.setHeader('Access-Control-Allow-Origin', '*');
