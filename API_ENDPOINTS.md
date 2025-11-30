@@ -156,7 +156,8 @@ axios.get(url); // ❌ قد ينتج: api.deutsch-tests.co_eben&state=Bayern
 6. [Attempts (المحاولات)](#attempts-المحاولات)
 7. [Analytics (التحليلات)](#analytics-التحليلات)
 8. [Media (الوسائط)](#media-الوسائط)
-9. [Health & App (الصحة والتطبيق)](#health--app-الصحة-والتطبيق)
+9. [Uploads (رفع الملفات)](#uploads-رفع-الملفات)
+10. [Health & App (الصحة والتطبيق)](#health--app-الصحة-والتطبيق)
 
 ---
 
@@ -3179,6 +3180,83 @@ file: <Audio File>
 **الوصف:** في وضع Mock، يعيد رسالة توضيحية بدل الملف الفعلي  
 **المصادقة:** غير مطلوبة  
 **الاستخدام:** للتطوير فقط (عند عدم تكوين S3)
+
+---
+
+## 📤 Uploads (رفع الملفات)
+
+### `POST /uploads/audio`
+**الوصف:** رفع ملف صوتي للأسئلة (خاص بأسئلة الاستماع - Hören)  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** teacher, admin
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+Content-Type: multipart/form-data
+```
+
+**Body (FormData):**
+```
+file: <Audio File>
+```
+
+**Response (201):**
+```json
+{
+  "audioUrl": "/uploads/audio/audio-1234567890-987654321.mp3"
+}
+```
+
+**الاستخدام:** للمعلمين لرفع ملفات صوتية لاستخدامها في أسئلة الاستماع (Hören)
+
+**ملاحظات:**
+- الحد الأقصى لحجم الملف: 10MB
+- الأنواع المدعومة: audio/* فقط
+- الملفات تُحفظ في مجلد `uploads/audio/` على الخادم
+- استخدم الـ `audioUrl` في حقل `audioUrl` عند إنشاء السؤال
+- الملفات متاحة مباشرة على `/uploads/audio/<filename>`
+
+**مثال الاستخدام:**
+1. المعلم يرفع ملف صوتي عبر `POST /uploads/audio`
+2. يحصل على `audioUrl` مثل `/uploads/audio/audio-1234567890.mp3`
+3. ينشئ السؤال عبر `POST /questions/with-exam` مع `audioUrl` في الـ payload
+
+**مثال Request:**
+```javascript
+const formData = new FormData();
+formData.append('file', audioFile);
+
+const response = await fetch('http://localhost:4000/uploads/audio', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <accessToken>'
+  },
+  body: formData
+});
+
+const { audioUrl } = await response.json();
+// audioUrl: "/uploads/audio/audio-1234567890.mp3"
+```
+
+**مثال استخدام audioUrl في إنشاء السؤال:**
+```json
+{
+  "prompt": "Sie hören jetzt drei Gespräche...",
+  "qType": "mcq",
+  "options": [
+    { "text": "Antwort A", "isCorrect": false },
+    { "text": "Antwort B", "isCorrect": true }
+  ],
+  "audioUrl": "/uploads/audio/audio-1234567890.mp3",
+  "provider": "Goethe",
+  "skill": "hoeren",
+  "teilNumber": 1,
+  "level": "A1",
+  "examId": "...",
+  "status": "published"
+}
+```
 
 ---
 
