@@ -154,18 +154,7 @@ export class ExamsService {
             `Section "${s.name || 'unnamed'}" must have quota for provider_exam`,
           );
         }
-        // التحقق من difficultyDistribution إذا كان موجود
-        if (s.difficultyDistribution) {
-          const sum =
-            (s.difficultyDistribution.easy || 0) +
-            (s.difficultyDistribution.medium || 0) +
-            (s.difficultyDistribution.hard || 0);
-          if (sum !== s.quota) {
-            throw new BadRequestException(
-              `Section "${s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
-            );
-          }
-        }
+        // لا نتحقق من difficultyDistribution لامتحانات Provider (اختياري)
       } else if (dto.examCategory === 'grammar_exam') {
         // للـ Grammar exams: يجب أن يكون هناك items (بدون quota)
         if (!s.items || !Array.isArray(s.items) || s.items.length === 0) {
@@ -179,6 +168,16 @@ export class ExamsService {
           throw new BadRequestException(
             `Section "${s.name || 'unnamed'}" must have at least one valid item with questionId`,
           );
+        }
+        // التحقق من difficultyDistribution للقواعد فقط (إذا كان موجوداً وquota موجود)
+        if (s.quota && s.difficultyDistribution) {
+          const { easy = 0, medium = 0, hard = 0 } = s.difficultyDistribution;
+          const total = easy + medium + hard;
+          if (total !== s.quota) {
+            throw new BadRequestException(
+              `Section "${s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
+            );
+          }
         }
       }
       
@@ -1049,15 +1048,20 @@ export class ExamsService {
       }
     }
 
-    // تحققات قبل النشر: لكل سكشن بquota لازم quota>0، والتوزيع يساوي الكوتا
+    // تحققات قبل النشر: لكل سكشن بquota لازم quota>0، والتوزيع يساوي الكوتا (فقط لامتحانات القواعد)
     if (goingToPublish && (dto as any).sections) {
+      const examCategory = (dto as any).examCategory || doc.examCategory;
       for (const s of (dto as any).sections) {
-        if (typeof s.quota === 'number' && s.quota > 0 && s.difficultyDistribution) {
-          const sum =
-            (s.difficultyDistribution.easy || 0) +
-            (s.difficultyDistribution.medium || 0) +
-            (s.difficultyDistribution.hard || 0);
-          if (sum !== s.quota) {
+        // التحقق من difficultyDistribution فقط لامتحانات القواعد
+        if (
+          examCategory === ExamCategoryEnum.GRAMMAR &&
+          typeof s.quota === 'number' &&
+          s.quota > 0 &&
+          s.difficultyDistribution
+        ) {
+          const { easy = 0, medium = 0, hard = 0 } = s.difficultyDistribution;
+          const total = easy + medium + hard;
+          if (total !== s.quota) {
             throw new BadRequestException(
               `Section "${s.name}" difficultyDistribution must sum to quota`,
             );
