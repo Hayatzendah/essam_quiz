@@ -53,6 +53,11 @@ export class AttemptItem {
   @Prop({ type: [String], default: undefined }) studentAnswerReorder?: string[]; // reorder: ترتيب الطالب
   @Prop() studentAnswerAudioKey?: string; // Sprechen: مفتاح الملف الصوتي المسجل من الطالب
   @Prop() studentAnswerAudioUrl?: string; // Sprechen: رابط الملف الصوتي (presigned URL)
+  @Prop({ type: Object, _id: false }) studentRecording?: {
+    url: string;
+    mime: string;
+    durationMs?: number;
+  }; // تسجيل صوت الطالب للإجابة
 
   // نتيجة هذا السؤال
   @Prop({ type: Number, default: 0 }) autoScore: number;

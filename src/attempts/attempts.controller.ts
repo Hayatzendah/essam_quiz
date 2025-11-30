@@ -10,8 +10,13 @@ import {
   UseGuards,
   Logger,
   BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { AttemptsService } from './attempts.service';
 import { StartAttemptDto } from './dto/start-attempt.dto';
 import { AnswerOneDto } from './dto/answer.dto';
@@ -282,6 +287,75 @@ export class AttemptsController {
   @Roles('teacher', 'admin')
   grade(@Param('attemptId') attemptId: string, @Body() dto: GradeAttemptDto, @Req() req: any) {
     return this.service.gradeAttempt(req.user, attemptId, dto.items);
+  }
+
+  // رفع تسجيل صوت الطالب
+  @Post(':attemptId/items/:itemId/recording')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: join(process.cwd(), 'uploads', 'recordings'),
+        filename: (req, file, cb) => {
+          const timestamp = Date.now();
+          const random = Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname) || '.webm';
+          cb(null, `recording-${timestamp}-${random}${ext}`);
+        },
+      }),
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+      fileFilter: (req, file, callback) => {
+        if (!/^audio\//.test(file.mimetype)) {
+          return callback(
+            new BadRequestException('Only audio files are allowed') as any,
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  @ApiOperation({
+    summary: 'Upload student audio recording for an attempt item',
+    description: 'رفع تسجيل صوتي لإجابة الطالب على سؤال معين في المحاولة',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Recording uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid file or item not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not the owner of the attempt' })
+  @ApiResponse({ status: 404, description: 'Attempt or item not found' })
+  async uploadRecording(
+    @Param('attemptId') attemptId: string,
+    @Param('itemId') itemId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No audio file uploaded');
+    }
+
+    console.log('Saved student recording at', file.path);
+
+    const audioUrl = `/uploads/recordings/${file.filename}`;
+
+    await this.service.attachStudentRecording(req.user, attemptId, itemId, {
+      url: audioUrl,
+      mime: file.mimetype,
+    });
+
+    return { audioUrl, mime: file.mimetype };
   }
 
   // عرض المحاولة (الطالب مالكها | المعلم المالك للامتحان | الأدمن)
