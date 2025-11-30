@@ -16,6 +16,7 @@ import { MediaModule } from './modules/media/media.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { GrammarModule } from './modules/grammar/grammar.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { ListeningClipsModule } from './listening-clips/listening-clips.module';
 
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -100,6 +101,7 @@ import { AppController } from './app.controller';
     AnalyticsModule,
     GrammarModule,
     UploadsModule,
+    ListeningClipsModule,
   ],
 
   controllers: [AppController, HealthController],

@@ -372,9 +372,18 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, prompt, qType, provider, skill, teilNumber, usageCategory, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, prompt, qType, provider, skill, teilNumber, usageCategory, listeningClipId, ...questionData } = dto;
 
-    // 1) تأكيد وجود خيار صحيح (فقط لـ MCQ)
+    // 1) التحقق من listeningClipId لأسئلة Hören
+    if (usageCategory === 'provider' && skill && skill.toLowerCase() === 'hoeren') {
+      if (!listeningClipId) {
+        throw new BadRequestException(
+          'listeningClipId is required for Hören questions with provider usage category',
+        );
+      }
+    }
+
+    // 2) تأكيد وجود خيار صحيح (فقط لـ MCQ)
     let correctOption: any = null;
     if (qType === 'mcq' && questionData.options) {
       correctOption = questionData.options.find((opt) => opt.isCorrect);
@@ -385,7 +394,7 @@ export class QuestionsService {
       }
     }
 
-    // 2) إنشاء السؤال
+    // 3) إنشاء السؤال
     const question = await this.model.create({
       prompt: prompt,
       text: questionData.text || prompt, // للحفاظ على التوافق مع الحقول الموجودة
@@ -403,6 +412,7 @@ export class QuestionsService {
       provider: provider,
       section: section || sectionTitle,
       ...(questionData.audioUrl && { audioUrl: questionData.audioUrl }),
+      ...(listeningClipId && { listeningClipId: new Types.ObjectId(listeningClipId) }),
       // لو عندك createdBy/ownerId حطيه هنا
       // createdBy: userId ? new Types.ObjectId(userId) : undefined,
     });

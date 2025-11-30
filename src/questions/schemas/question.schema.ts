@@ -125,9 +125,13 @@ export class Question {
   @Prop({ type: QuestionMediaSchema, required: false })
   media?: QuestionMedia;
 
-  // رابط ملف الصوت (لأسئلة الاستماع)
+  // رابط ملف الصوت (لأسئلة الاستماع) - للتوافق مع الكود القديم
   @Prop({ trim: true })
   audioUrl?: string;
+
+  // ربط بكليب الاستماع (لأسئلة Hören)
+  @Prop({ type: Types.ObjectId, ref: 'ListeningClip', required: false, index: true })
+  listeningClipId?: Types.ObjectId;
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);

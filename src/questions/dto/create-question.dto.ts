@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsEnum,
   IsIn,
+  IsMongoId,
   IsOptional,
   IsString,
   MinLength,
@@ -101,8 +102,13 @@ export class CreateQuestionDto {
   @Type(() => QuestionMediaDto)
   media?: QuestionMediaDto;
 
-  // رابط ملف الصوت (لأسئلة الاستماع)
+  // رابط ملف الصوت (لأسئلة الاستماع) - للتوافق مع الكود القديم
   @IsOptional()
   @IsString()
   audioUrl?: string;
+
+  // ربط بكليب الاستماع (لأسئلة Hören)
+  @IsOptional()
+  @IsMongoId()
+  listeningClipId?: string;
 }

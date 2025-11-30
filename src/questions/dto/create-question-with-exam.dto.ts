@@ -106,8 +106,13 @@ export class CreateQuestionWithExamDto {
   @IsString()
   sectionTitle?: string;     // للحفاظ على التوافق
 
-  // ====== رابط ملف الصوت (لأسئلة الاستماع) ======
+  // ====== رابط ملف الصوت (لأسئلة الاستماع) - للتوافق مع الكود القديم ======
   @IsOptional()
   @IsString()
   audioUrl?: string;
+
+  // ====== ربط بكليب الاستماع (لأسئلة Hören) ======
+  @IsOptional()
+  @IsMongoId()
+  listeningClipId?: string;
 }

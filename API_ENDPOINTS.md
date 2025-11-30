@@ -157,7 +157,8 @@ axios.get(url); // ❌ قد ينتج: api.deutsch-tests.co_eben&state=Bayern
 7. [Analytics (التحليلات)](#analytics-التحليلات)
 8. [Media (الوسائط)](#media-الوسائط)
 9. [Uploads (رفع الملفات)](#uploads-رفع-الملفات)
-10. [Health & App (الصحة والتطبيق)](#health--app-الصحة-والتطبيق)
+10. [Listening Clips (كليبات الاستماع)](#-listening-clips-كليبات-الاستماع)
+11. [Health & App (الصحة والتطبيق)](#health--app-الصحة-والتطبيق)
 
 ---
 
@@ -1693,6 +1694,8 @@ Authorization: Bearer <accessToken>
     "key": "questions/audio123.mp3",
     "mime": "audio/mpeg"
   },
+  "audioUrl": "/uploads/audio/audio-1234567890.mp3", // اختياري: رابط ملف صوتي (للتوافق مع الكود القديم)
+  "listeningClipId": "507f1f77bcf86cd799439011", // اختياري: ربط بكليب استماع (لأسئلة Hören)
   "status": "published" // اختياري: draft | published | archived (افتراضي: draft)
 }
 ```
@@ -1703,6 +1706,7 @@ Authorization: Bearer <accessToken>
 - للحقول matching: استخدم `answerKeyMatch` (مصفوفة من الأزواج)
 - للحقول reorder: استخدم `answerKeyReorder` (مصفوفة من النصوص)
 - للصعوبة: استخدم `tags: ["easy"]` أو `tags: ["medium"]` أو `tags: ["hard"]`
+- لأسئلة Hören: استخدم `listeningClipId` لربط السؤال بكليب استماع (مفضل) أو `audioUrl` (للتوافق مع الكود القديم)
 
 **Response (201):**
 ```json
@@ -3257,6 +3261,141 @@ const { audioUrl } = await response.json();
   "status": "published"
 }
 ```
+
+---
+
+## 🎧 Listening Clips (كليبات الاستماع)
+
+### `POST /listening-clips`
+**الوصف:** إنشاء كليب استماع جديد مع رفع ملف صوتي  
+**المصادقة:** مطلوبة (Bearer Token)  
+**الأدوار المسموحة:** teacher, admin
+
+**Headers:**
+```
+Authorization: Bearer <accessToken>
+Content-Type: multipart/form-data
+```
+
+**Body (FormData):**
+```
+file: <Audio File>
+provider: "goethe" | "telc" | "oesd" | "ecl" | "dtb" | "dtz"
+level: "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+skill: "hoeren" | "lesen" | "schreiben" | "sprechen" (اختياري، افتراضي: "hoeren")
+teil: number (مثال: 1, 2, 3...)
+title: string (اختياري)
+```
+
+**Response (201):**
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "provider": "goethe",
+  "level": "A1",
+  "skill": "hoeren",
+  "teil": 1,
+  "title": "Goethe A1 - Hören - Teil 1",
+  "audioUrl": "/uploads/audio/listening-1234567890-987654321.mp3",
+  "createdAt": "2025-01-15T10:30:00.000Z",
+  "updatedAt": "2025-01-15T10:30:00.000Z"
+}
+```
+
+**الاستخدام:** إنشاء كليب استماع يمكن ربطه بعدة أسئلة Hören
+
+**ملاحظات:**
+- الحد الأقصى لحجم الملف: 20MB
+- الأنواع المدعومة: audio/* فقط
+- الملفات تُحفظ في مجلد `uploads/audio/` على الخادم
+- استخدم الـ `_id` في حقل `listeningClipId` عند إنشاء السؤال
+
+---
+
+### `GET /listening-clips`
+**الوصف:** الحصول على جميع كليبات الاستماع مع إمكانية الفلترة  
+**المصادقة:** مطلوبة (Bearer Token)
+
+**Query Parameters (جميعها اختيارية):**
+```
+provider: string
+level: string
+skill: string
+teil: number
+```
+
+**Response (200):**
+```json
+[
+  {
+    "_id": "507f1f77bcf86cd799439011",
+    "provider": "goethe",
+    "level": "A1",
+    "skill": "hoeren",
+    "teil": 1,
+    "title": "Goethe A1 - Hören - Teil 1",
+    "audioUrl": "/uploads/audio/listening-1234567890.mp3",
+    "createdAt": "2025-01-15T10:30:00.000Z",
+    "updatedAt": "2025-01-15T10:30:00.000Z"
+  }
+]
+```
+
+---
+
+### `GET /listening-clips/:id`
+**الوصف:** الحصول على كليب استماع محدد  
+**المصادقة:** مطلوبة (Bearer Token)
+
+**Response (200):**
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "provider": "goethe",
+  "level": "A1",
+  "skill": "hoeren",
+  "teil": 1,
+  "title": "Goethe A1 - Hören - Teil 1",
+  "audioUrl": "/uploads/audio/listening-1234567890.mp3",
+  "createdAt": "2025-01-15T10:30:00.000Z",
+  "updatedAt": "2025-01-15T10:30:00.000Z"
+}
+```
+
+**Response (404):**
+```json
+{
+  "statusCode": 404,
+  "message": "ListeningClip with ID 507f1f77bcf86cd799439011 not found"
+}
+```
+
+---
+
+**مثال استخدام listeningClipId في إنشاء السؤال:**
+```json
+{
+  "prompt": "Sie hören jetzt drei Gespräche...",
+  "qType": "mcq",
+  "options": [
+    { "text": "Antwort A", "isCorrect": false },
+    { "text": "Antwort B", "isCorrect": true }
+  ],
+  "provider": "Goethe",
+  "skill": "hoeren",
+  "teilNumber": 1,
+  "level": "A1",
+  "usageCategory": "provider",
+  "listeningClipId": "507f1f77bcf86cd799439011",
+  "examId": "...",
+  "status": "published"
+}
+```
+
+**ملاحظات مهمة:**
+- لأسئلة Hören مع `usageCategory = "provider"`، حقل `listeningClipId` **مطلوب**
+- يمكن ربط عدة أسئلة بنفس الكليب
+- الكليب يحتوي على الملف الصوتي والميتاداتا (provider, level, skill, teil)
 
 ---
 
