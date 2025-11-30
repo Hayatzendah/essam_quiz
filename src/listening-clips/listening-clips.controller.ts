@@ -94,6 +94,8 @@ export class ListeningClipsController {
       throw new BadRequestException('No audio file uploaded');
     }
 
+    console.log('Saved listening clip at', file.path); // خلي الباك يطبع ده
+
     const baseUrl = process.env.API_BASE_URL || '';
     const audioUrl = baseUrl 
       ? `${baseUrl}/uploads/audio/${file.filename}`

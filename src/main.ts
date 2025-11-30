@@ -177,6 +177,12 @@ async function bootstrap() {
       allowedHeaders: ['Content-Type', 'Authorization'],
     });
 
+    // تأمين الـ resources cross-origin
+    app.use((req, res, next) => {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      next();
+    });
+
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,

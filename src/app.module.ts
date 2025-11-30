@@ -93,13 +93,13 @@ import { AppController } from './app.controller';
       max: 100, // maximum number of items in cache
     }),
 
-    // Serve static files from uploads directory
+    // Serve static files from uploads/audio directory
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'), // الفولدر اللي جواته audio
-      serveRoot: '/uploads', // يعني /uploads/audio/... الخ
+      // لو فولدر uploads جنب package.json
+      rootPath: join(process.cwd(), 'uploads', 'audio'),
+      serveRoot: '/uploads/audio',
       serveStaticOptions: {
         setHeaders: (res) => {
-          // عشان مشكلة NotSameOrigin
           res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
           res.setHeader('Access-Control-Allow-Origin', '*');
         },

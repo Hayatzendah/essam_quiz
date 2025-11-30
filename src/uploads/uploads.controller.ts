@@ -66,6 +66,8 @@ export class UploadsController {
       throw new BadRequestException('No file uploaded');
     }
 
+    console.log('Saved audio file at', file.path); // خلي الباك يطبع ده
+
     // بناء URL كامل للملف
     // في production، استخدم domain كامل
     const baseUrl = process.env.API_BASE_URL || '';
