@@ -10,6 +10,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 import { AuthModule } from '../auth/auth.module';
 import { MediaModule } from '../modules/media/media.module';
 import { ExamsModule } from '../exams/exams.module';
+import { ListeningClipsModule } from '../listening-clips/listening-clips.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ExamsModule } from '../exams/exams.module';
     ]),
     AuthModule,
     MediaModule,
+    ListeningClipsModule,
     forwardRef(() => ExamsModule),
   ],
   controllers: [AttemptsController],

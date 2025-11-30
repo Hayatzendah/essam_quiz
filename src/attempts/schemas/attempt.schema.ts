@@ -30,6 +30,12 @@ export class AttemptItem {
   @Prop() mediaType?: 'audio' | 'image' | 'video';
   @Prop() mediaUrl?: string; // presigned URL أو public URL
   @Prop() mediaMime?: string;
+  @Prop({ type: Object, _id: false }) mediaSnapshot?: {
+    type: 'audio' | 'image' | 'video';
+    key: string;
+    mime: string;
+    url?: string;
+  };
 
   // مفاتيح للتصحيح الآلي (لا تُرسل للطالب)
   @Prop() answerKeyBoolean?: boolean; // true_false

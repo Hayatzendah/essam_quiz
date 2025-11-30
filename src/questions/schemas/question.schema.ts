@@ -9,6 +9,7 @@ export enum QuestionType {
   TRUE_FALSE = 'true_false',
   MATCH = 'match',
   REORDER = 'reorder',
+  LISTEN = 'listen',
 }
 
 export enum QuestionStatus {
