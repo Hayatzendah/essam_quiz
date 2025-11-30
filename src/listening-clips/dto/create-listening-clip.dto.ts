@@ -1,4 +1,5 @@
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { LevelEnum, ProviderEnum, SkillEnum } from '../schemas/listening-clip.schema';
 
 export class CreateListeningClipDto {
@@ -14,6 +15,7 @@ export class CreateListeningClipDto {
   @IsOptional()
   skill?: SkillEnum;
 
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   teil: number;
