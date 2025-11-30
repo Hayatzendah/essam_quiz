@@ -93,26 +93,9 @@ async function bootstrap() {
       abortOnError: false, // Don't abort on errors, let the app start
     });
 
-    // Serve static files from uploads directory
-    app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-      prefix: '/uploads/',
-    });
-
-    // Configure helmet - disable CSP for test page, enable for others
-    const helmetMiddleware = helmet({
-      contentSecurityPolicy: false, // Disable CSP globally for now
-    });
-    app.use(helmetMiddleware);
-
-    // Body size limits (5MB for JSON and form data)
-    app.use(json({ limit: '5mb' }));
-    app.use(urlencoded({ limit: '5mb', extended: true }));
-
-    // CORS configuration
+    // CORS configuration (needed for static files middleware)
     const webAppOrigin = process.env.WEB_APP_ORIGIN || process.env.CORS_ORIGIN;
     const allowAllOrigins = process.env.CORS_ALLOW_ALL === 'true';
-
-    // Default allowed origins (production domains + localhost for development)
     const defaultAllowedOrigins = [
       'http://localhost:5173', // Frontend local development (Vite default)
       'http://localhost:5174', // Frontend local development
@@ -131,28 +114,68 @@ async function bootstrap() {
       'http://127.0.0.1:5177',
     ];
 
-    let allowedOrigins:
+    let allowedOrigins: string[];
+    if (allowAllOrigins) {
+      allowedOrigins = ['*'];
+    } else if (webAppOrigin) {
+      const customOrigins = webAppOrigin.split(',').map((origin) => origin.trim());
+      allowedOrigins = [...new Set([...defaultAllowedOrigins, ...customOrigins])];
+    } else {
+      allowedOrigins = defaultAllowedOrigins;
+    }
+
+    // Add CORS headers for static files (uploads)
+    app.use('/uploads', (req, res, next) => {
+      const origin = req.headers.origin;
+      if (allowAllOrigins || (origin && allowedOrigins.includes(origin))) {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        if (allowAllOrigins) {
+          res.setHeader('Access-Control-Allow-Origin', '*');
+        } else if (origin && allowedOrigins.includes(origin)) {
+          res.setHeader('Access-Control-Allow-Origin', origin);
+        }
+      }
+      next();
+    });
+
+    // Serve static files from uploads directory
+    app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+      prefix: '/uploads/',
+    });
+
+    // Configure helmet - disable CSP for test page, enable for others
+    const helmetMiddleware = helmet({
+      contentSecurityPolicy: false, // Disable CSP globally for now
+    });
+    app.use(helmetMiddleware);
+
+    // Body size limits (5MB for JSON and form data)
+    app.use(json({ limit: '5mb' }));
+    app.use(urlencoded({ limit: '5mb', extended: true }));
+
+    // CORS configuration for API routes
+    let corsAllowedOrigins:
       | string[]
       | boolean
       | ((origin: string, callback: (err: Error | null, allow?: boolean) => void) => void);
 
     if (allowAllOrigins) {
       // Allow all origins (for development/testing only)
-      allowedOrigins = true;
+      corsAllowedOrigins = true;
       logger.warn(
         '⚠️  CORS: Allowing all origins (CORS_ALLOW_ALL=true). Not recommended for production!',
       );
     } else if (webAppOrigin) {
       // Split by comma and trim each origin, then merge with default origins
       const customOrigins = webAppOrigin.split(',').map((origin) => origin.trim());
-      allowedOrigins = [...new Set([...defaultAllowedOrigins, ...customOrigins])]; // Remove duplicates
+      corsAllowedOrigins = [...new Set([...allowedOrigins, ...customOrigins])]; // Remove duplicates
     } else {
       // Use default allowed origins (includes production domains + localhost)
-      allowedOrigins = defaultAllowedOrigins;
+      corsAllowedOrigins = allowedOrigins;
     }
 
     app.enableCors({
-      origin: allowedOrigins,
+      origin: corsAllowedOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
@@ -250,8 +273,9 @@ async function bootstrap() {
 
     logger.log(`✅ Application is running on: http://0.0.0.0:${port}`);
     logger.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
-    if (webAppOrigin) {
-      logger.log(`✅ CORS enabled for: ${allowedOrigins}`);
+    logger.log(`✅ Static files (uploads) served with CORS headers at: /uploads/`);
+    if (webAppOrigin || allowAllOrigins) {
+      logger.log(`✅ CORS enabled for: ${allowAllOrigins ? 'all origins' : allowedOrigins.join(', ')}`);
     }
     logger.log(`✅ All routes mapped successfully`);
   } catch (error) {
