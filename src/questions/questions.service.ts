@@ -413,6 +413,7 @@ export class QuestionsService {
       section: section || sectionTitle,
       ...(questionData.audioUrl && { audioUrl: questionData.audioUrl }),
       ...(listeningClipId && { listeningClipId: new Types.ObjectId(listeningClipId) }),
+      ...(questionData.media && { media: questionData.media }),
       // لو عندك createdBy/ownerId حطيه هنا
       // createdBy: userId ? new Types.ObjectId(userId) : undefined,
     });

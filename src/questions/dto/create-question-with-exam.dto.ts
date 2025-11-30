@@ -2,6 +2,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsMongoId,
   IsNotEmpty,
@@ -26,6 +27,27 @@ class QuestionOptionDto {
 
   @IsBoolean()
   isCorrect: boolean;
+}
+
+class QuestionMediaDto {
+  @IsEnum(['audio', 'image', 'video'])
+  type: 'audio' | 'image' | 'video';
+
+  @IsString()
+  @IsNotEmpty()
+  key: string;
+
+  @IsOptional()
+  @IsString()
+  url?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  mime: string;
+
+  @IsOptional()
+  @IsIn(['s3', 'cloudinary'])
+  provider?: 's3' | 'cloudinary';
 }
 
 export class CreateQuestionWithExamDto {
@@ -115,4 +137,10 @@ export class CreateQuestionWithExamDto {
   @IsOptional()
   @IsMongoId()
   listeningClipId?: string;
+
+  // ====== وسائط (صوت، صورة، فيديو) ======
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => QuestionMediaDto)
+  media?: QuestionMediaDto;
 }
