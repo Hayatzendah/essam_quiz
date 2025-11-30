@@ -70,8 +70,8 @@ export class ExamSection {
   @Prop({ type: Number, min: 0 })
   partsCount?: number;
 
-  @Prop({ type: String, enum: ['LanguageBlocks', 'Listening', 'Reading', 'Writing', 'Speaking'] })
-  section?: QuestionSection;
+  @Prop({ type: String, trim: true })
+  section?: string;
 
   @Prop({ type: Number, min: 1 })
   quota?: number;
@@ -107,10 +107,9 @@ export class Exam {
 
   @Prop({ 
     type: String, 
-    enum: ['goethe', 'telc', 'osd', 'ecl', 'dtb', 'dtz', 'General', 'DTZ', 'Other'], 
     index: true 
   })
-  provider?: 'goethe' | 'telc' | 'osd' | 'ecl' | 'dtb' | 'dtz' | QuestionProvider | string;
+  provider?: string;
 
   @Prop({ 
     type: String, 
