@@ -372,31 +372,36 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, points, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, prompt, qType, provider, skill, teilNumber, usageCategory, ...questionData } = dto;
 
-    // 1) تأكيد وجود خيار صحيح
-    const correctOption = questionData.options.find((opt) => opt.isCorrect);
-    if (!correctOption) {
-      throw new BadRequestException(
-        'At least one option must be marked as correct',
-      );
+    // 1) تأكيد وجود خيار صحيح (فقط لـ MCQ)
+    let correctOption: any = null;
+    if (qType === 'mcq' && questionData.options) {
+      correctOption = questionData.options.find((opt) => opt.isCorrect);
+      if (!correctOption) {
+        throw new BadRequestException(
+          'At least one option must be marked as correct',
+        );
+      }
     }
 
     // 2) إنشاء السؤال
     const question = await this.model.create({
-      text: questionData.text,
-      prompt: questionData.text, // للحفاظ على التوافق مع الحقول الموجودة
-      qType: QuestionType.MCQ,
-      options: questionData.options.map((opt) => ({
+      prompt: prompt,
+      text: questionData.text || prompt, // للحفاظ على التوافق مع الحقول الموجودة
+      qType: qType,
+      options: questionData.options ? questionData.options.map((opt) => ({
         text: opt.text,
         isCorrect: opt.isCorrect || false,
-      })),
-      correctAnswer: correctOption.text,
+      })) : undefined,
+      correctAnswer: correctOption ? correctOption.text : undefined,
       ...(questionData.explanation && { explanation: questionData.explanation }),
       ...(questionData.difficulty && { difficulty: questionData.difficulty as QuestionDifficulty }),
       level: questionData.level,
       status: questionData.status as QuestionStatus,
       tags: questionData.tags,
+      provider: provider,
+      section: section || sectionTitle,
       // لو عندك createdBy/ownerId حطيه هنا
       // createdBy: userId ? new Types.ObjectId(userId) : undefined,
     });
@@ -414,15 +419,19 @@ export class QuestionsService {
       ? exam.sections.filter((sec: any) => !!sec && typeof sec === 'object')
       : [];
 
-    // 5) البحث عن سكشن بالعنوان
+    // 5) البحث عن سكشن بالاسم (استخدام section أو sectionTitle)
+    const sectionName = section || sectionTitle;
     let sectionIndex = cleanSections.findIndex(
-      (sec: any) => sec.title === sectionTitle,
+      (sec: any) => sec.name === sectionName || sec.title === sectionName,
     );
 
     if (sectionIndex === -1) {
       // 6) لو مش موجود → نضيف سكشن جديد فيه السؤال
       cleanSections.push({
-        title: sectionTitle,
+        name: sectionName,
+        title: sectionName, // للحفاظ على التوافق
+        skill: skill,
+        teilNumber: teilNumber,
         items: [
           {
             questionId: question._id,
@@ -455,7 +464,8 @@ export class QuestionsService {
       question: questionWithoutV,
       questionId: question._id,
       examId: exam._id,
-      sectionTitle,
+      sectionTitle: sectionName,
+      section: sectionName,
     };
   }
 }
