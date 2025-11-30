@@ -36,6 +36,7 @@ export class AttemptItem {
     mime: string;
     url?: string;
   };
+  @Prop({ type: Types.ObjectId, ref: 'ListeningClip' }) listeningClipId?: Types.ObjectId; // للرجوع إلى ListeningClip
 
   // مفاتيح للتصحيح الآلي (لا تُرسل للطالب)
   @Prop() answerKeyBoolean?: boolean; // true_false

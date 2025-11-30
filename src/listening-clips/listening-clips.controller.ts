@@ -104,7 +104,16 @@ export class ListeningClipsController {
     dto.audioUrl = audioUrl;
     const clip = await this.service.create(dto);
     
-    return { audioUrl: clip.audioUrl, id: clip._id };
+    // إرجاع كل البيانات المطلوبة
+    return {
+      _id: clip._id,
+      audioUrl: clip.audioUrl,
+      teil: clip.teil,
+      level: clip.level,
+      provider: clip.provider,
+      skill: clip.skill,
+      title: clip.title,
+    };
   }
 
   @Get()

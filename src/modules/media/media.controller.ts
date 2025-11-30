@@ -16,6 +16,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { MediaService } from './media.service';
 import * as multer from 'multer';
 import * as path from 'path';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
 import type { Response } from 'express';
 
 const storage = multer.memoryStorage();
@@ -308,5 +310,48 @@ export class MediaController {
       prefix: 'student-recordings', // مجلد منفصل لتسجيلات الطلاب
     });
     return { key: saved.key, mime: saved.mime, url: saved.url, private: true };
+  }
+
+  // للمعلمين: رفع ملف صوتي مباشرة إلى uploads/audio (لأسئلة الاستماع)
+  @Post('audio')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: join(process.cwd(), 'uploads', 'audio'),
+        filename: (req, file, cb) => {
+          const timestamp = Date.now();
+          const random = Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname) || '.opus';
+          cb(null, `listening-${timestamp}-${random}${ext}`);
+        },
+      }),
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+      fileFilter: (req, file, callback) => {
+        if (!/^audio\//.test(file.mimetype)) {
+          return callback(
+            new BadRequestException('Only audio files are allowed') as any,
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  async uploadAudio(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No audio file uploaded');
+    }
+
+    console.log('Saved audio file at', file.path);
+
+    const key = `/uploads/audio/${file.filename}`;
+    return {
+      type: 'audio',
+      key,
+      url: key,
+      mime: file.mimetype,
+    };
   }
 }
