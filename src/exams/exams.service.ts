@@ -151,7 +151,7 @@ export class ExamsService {
         // للـ Provider exams: يجب أن يكون هناك quota (بدون items)
         if (!s.quota || typeof s.quota !== 'number' || s.quota <= 0) {
           throw new BadRequestException(
-            `Section "${s.title || s.name || 'unnamed'}" must have quota for provider_exam`,
+            `Section "${s.name || 'unnamed'}" must have quota for provider_exam`,
           );
         }
         // التحقق من difficultyDistribution إذا كان موجود
@@ -162,7 +162,7 @@ export class ExamsService {
             (s.difficultyDistribution.hard || 0);
           if (sum !== s.quota) {
             throw new BadRequestException(
-              `Section "${s.title || s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
+              `Section "${s.name || 'unnamed'}" difficultyDistribution must sum to quota`,
             );
           }
         }
@@ -170,14 +170,14 @@ export class ExamsService {
         // للـ Grammar exams: يجب أن يكون هناك items (بدون quota)
         if (!s.items || !Array.isArray(s.items) || s.items.length === 0) {
           throw new BadRequestException(
-            `Section "${s.title || s.name || 'unnamed'}" must have items for grammar_exam`,
+            `Section "${s.name || 'unnamed'}" must have items for grammar_exam`,
           );
         }
         // تنظيف items من null
         s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
         if (s.items.length === 0) {
           throw new BadRequestException(
-            `Section "${s.title || s.name || 'unnamed'}" must have at least one valid item with questionId`,
+            `Section "${s.name || 'unnamed'}" must have at least one valid item with questionId`,
           );
         }
       }
@@ -283,7 +283,7 @@ export class ExamsService {
     // Log detailed section info before saving
     normalizedSections.forEach((s: any, index: number) => {
       this.logger.log(
-        `[createExam] Section ${index + 1}: title="${s?.title || s?.name || 'unnamed'}", items count=${s?.items?.length || 0}, items=${JSON.stringify(s?.items?.map((i: any) => ({ questionId: String(i?.questionId), points: i?.points })) || [])}`,
+        `[createExam] Section ${index + 1}: name="${s?.name || s?.title || 'unnamed'}", items count=${s?.items?.length || 0}, items=${JSON.stringify(s?.items?.map((i: any) => ({ questionId: String(i?.questionId), points: i?.points })) || [])}`,
       );
     });
     
@@ -1500,7 +1500,7 @@ export class ExamsService {
           hasEmptySections = true;
           return {
             ...s,
-            title: s.title || sAny?.name || `Section ${index + 1}`,
+            name: s.name || sAny?.name || s.title || `Section ${index + 1}`,
             quota: 5,
           };
         }
@@ -1611,7 +1611,7 @@ export class ExamsService {
     for (const section of exam.sections) {
       const sectionAny = section as any;
       const sectionInfo: any = {
-        name: sectionAny?.title || sectionAny?.name || 'Unnamed',
+        name: sectionAny?.name || sectionAny?.title || 'Unnamed',
         quota: sectionAny?.quota,
         tags: sectionAny?.tags || [],
         difficultyDistribution: sectionAny?.difficultyDistribution,
@@ -1659,7 +1659,7 @@ export class ExamsService {
       debugInfo.totalQuestionsAvailable += sectionInfo.totalAvailable;
 
       if (sectionInfo.issues.length > 0) {
-        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${sectionInfo.name || sectionAny?.title || 'Unnamed'}": ${i}`));
+        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${sectionInfo.name || sectionAny?.name || sectionAny?.title || 'Unnamed'}": ${i}`));
       }
     }
 
