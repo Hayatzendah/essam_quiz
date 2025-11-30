@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ListeningClipsService } from './listening-clips.service';
 import { CreateListeningClipDto } from './dto/create-listening-clip.dto';
@@ -32,10 +32,12 @@ export class ListeningClipsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/audio',
+        destination: join(process.cwd(), 'uploads', 'audio'),
         filename: (req, file, cb) => {
-          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, `listening-${unique}${extname(file.originalname)}`);
+          const timestamp = Date.now();
+          const random = Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname) || '.opus';
+          cb(null, `listening-${timestamp}-${random}${ext}`);
         },
       }),
       limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
@@ -96,13 +98,13 @@ export class ListeningClipsController {
 
     console.log('Saved listening clip at', file.path); // خلي الباك يطبع ده
 
-    const baseUrl = process.env.API_BASE_URL || '';
-    const audioUrl = baseUrl 
-      ? `${baseUrl}/uploads/audio/${file.filename}`
-      : `/uploads/audio/${file.filename}`;
+    // استخدام مسار نسبي فقط (بدون baseUrl) لأن الفرونت سيبني الـ URL الكامل
+    const audioUrl = `/uploads/audio/${file.filename}`;
 
     dto.audioUrl = audioUrl;
-    return this.service.create(dto);
+    const clip = await this.service.create(dto);
+    
+    return { audioUrl: clip.audioUrl, id: clip._id };
   }
 
   @Get()

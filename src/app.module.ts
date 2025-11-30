@@ -93,12 +93,12 @@ import { AppController } from './app.controller';
       max: 100, // maximum number of items in cache
     }),
 
-    // Serve static files from uploads/audio directory
+    // Serve static files from uploads directory
     ServeStaticModule.forRoot({
-      // لو فولدر uploads جنب package.json
-      rootPath: join(process.cwd(), 'uploads', 'audio'),
-      serveRoot: '/uploads/audio',
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
       serveStaticOptions: {
+        index: false, // لا تبحث عن index.html
         setHeaders: (res) => {
           res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
           res.setHeader('Access-Control-Allow-Origin', '*');
