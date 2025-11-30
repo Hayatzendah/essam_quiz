@@ -1,0 +1,45 @@
+{
+  "title": "Goethe-Zertifikat B1 - Hören",
+  "description": "امتحان Goethe-Zertifikat B1 للاستماع فقط - تدريب على مهارة Hören",
+  "level": "B1",
+  "provider": "goethe",
+  "examCategory": "provider_exam",
+  "mainSkill": "hoeren",
+  "status": "published",
+  "sections": [
+    {
+      "title": "Hören – Teil 1",
+      "key": "hoeren_teil1",
+      "skill": "hoeren",
+      "teilNumber": 1,
+      "timeLimitMin": 20,
+      "quota": 5,
+      "tags": ["goethe", "b1", "hoeren"],
+      "difficultyDistribution": {
+        "easy": 2,
+        "medium": 2,
+        "hard": 1
+      }
+    },
+    {
+      "title": "Hören – Teil 2",
+      "key": "hoeren_teil2",
+      "skill": "hoeren",
+      "teilNumber": 2,
+      "timeLimitMin": 15,
+      "quota": 5,
+      "tags": ["goethe", "b1", "hoeren"],
+      "difficultyDistribution": {
+        "easy": 1,
+        "medium": 2,
+        "hard": 2
+      }
+    }
+  ],
+  "randomizeQuestions": false,
+  "randomizeOptions": true,
+  "attemptLimit": 5,
+  "timeLimitMin": 35,
+  "resultsPolicy": "explanations_with_scores"
+}
+

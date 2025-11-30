@@ -125,6 +125,7 @@ async function bootstrap() {
     }
 
     // Add CORS headers for static files (uploads)
+    // Note: ServeStaticModule handles serving files, but we still need CORS headers
     app.use('/uploads', (req, res, next) => {
       const origin = req.headers.origin;
       if (allowAllOrigins || (origin && allowedOrigins.includes(origin))) {
@@ -136,11 +137,6 @@ async function bootstrap() {
         }
       }
       next();
-    });
-
-    // Serve static files from uploads directory
-    app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-      prefix: '/uploads/',
     });
 
     // Configure helmet - disable CSP for test page, enable for others

@@ -6,6 +6,8 @@ import { Logger } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 import { UsersModule } from './users/users.module';
 import { QuestionsModule } from './questions/questions.module';
@@ -89,6 +91,20 @@ import { AppController } from './app.controller';
     CacheModule.register({
       ttl: 10_000, // 10 seconds
       max: 100, // maximum number of items in cache
+    }),
+
+    // Serve static files from uploads directory
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+      serveStaticOptions: {
+        // Add CORS headers for static files
+        setHeaders: (res, path, stat) => {
+          // Add Cross-Origin-Resource-Policy header
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+          // Note: Access-Control-Allow-Origin is handled by middleware in main.ts
+        },
+      },
     }),
 
     // 🟢 هذه كانت ناقصة
