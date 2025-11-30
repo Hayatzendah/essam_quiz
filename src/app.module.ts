@@ -95,14 +95,13 @@ import { AppController } from './app.controller';
 
     // Serve static files from uploads directory
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads',
+      rootPath: join(__dirname, '..', 'uploads'), // الفولدر اللي جواته audio
+      serveRoot: '/uploads', // يعني /uploads/audio/... الخ
       serveStaticOptions: {
-        // Add CORS headers for static files
-        setHeaders: (res, path, stat) => {
-          // Add Cross-Origin-Resource-Policy header
+        setHeaders: (res) => {
+          // عشان مشكلة NotSameOrigin
           res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-          // Note: Access-Control-Allow-Origin is handled by middleware in main.ts
+          res.setHeader('Access-Control-Allow-Origin', '*');
         },
       },
     }),
