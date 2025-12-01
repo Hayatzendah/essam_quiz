@@ -296,7 +296,7 @@ export class AttemptsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: join(process.cwd(), 'uploads', 'recordings'),
+        destination: './uploads/recordings',
         filename: (req, file, cb) => {
           const timestamp = Date.now();
           const random = Math.round(Math.random() * 1e9);

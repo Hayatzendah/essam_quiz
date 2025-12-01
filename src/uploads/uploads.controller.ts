@@ -24,7 +24,7 @@ export class UploadsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: join(process.cwd(), 'uploads', 'audio'),
+        destination: './uploads/audio',
         filename: (req, file, callback) => {
           const timestamp = Date.now();
           const random = Math.round(Math.random() * 1e9);
