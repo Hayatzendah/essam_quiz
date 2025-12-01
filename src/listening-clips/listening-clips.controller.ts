@@ -22,7 +22,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Listening Clips')
 @ApiBearerAuth('JWT-auth')
-@Controller('listening-clips')
+@Controller(['listening-clips', 'listeningclips']) // دعم كلا المسارين
 export class ListeningClipsController {
   constructor(private readonly service: ListeningClipsService) {}
 
@@ -113,6 +113,64 @@ export class ListeningClipsController {
       provider: clip.provider,
       skill: clip.skill,
       title: clip.title,
+    };
+  }
+
+  @Post('upload-audio')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/audio',
+        filename: (req, file, cb) => {
+          const timestamp = Date.now();
+          const random = Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname) || '.opus';
+          cb(null, `listening-${timestamp}-${random}${ext}`);
+        },
+      }),
+      limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+      fileFilter: (req, file, callback) => {
+        if (!/^audio\//.test(file.mimetype)) {
+          return callback(
+            new BadRequestException('Only audio files are allowed') as any,
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  @ApiOperation({
+    summary: 'Upload audio file for listening clip',
+    description: 'رفع ملف صوتي لكليب استماع',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Audio file uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid file' })
+  async uploadAudio(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No audio file uploaded');
+    }
+
+    console.log('Saved listening clip audio at', file.path);
+
+    const audioUrl = `/uploads/audio/${file.filename}`;
+
+    return {
+      audioUrl,
     };
   }
 
