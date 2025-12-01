@@ -4,6 +4,7 @@ import { CreateExamDto } from './create-exam.dto';
 import { IsEnum, IsMongoId, IsOptional, IsArray, IsString } from 'class-validator';
 import type { ExamStatus } from '../schemas/exam.schema';
 import { ExamStatusEnum } from '../schemas/exam.schema';
+import { ProviderEnum } from '../../common/enums/provider.enum';
 
 export class UpdateExamDto extends PartialType(CreateExamDto) {
   // Override sections to ensure null values are filtered
@@ -58,7 +59,7 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
   description?: string;
 
   @IsOptional()
-  @IsString()
-  provider?: string;
+  @IsEnum(ProviderEnum)
+  provider?: ProviderEnum;
 }
 

@@ -15,6 +15,7 @@ import { StartGrammarExerciseDto } from './dto/start-grammar-exercise.dto';
 import { LinkExamDto } from './dto/link-exam.dto';
 import { AttemptsService } from '../../attempts/attempts.service';
 import { QuestionsService } from '../../questions/questions.service';
+import { ProviderEnum } from '../../common/enums/provider.enum';
 
 @Injectable()
 export class GrammarTopicsService {
@@ -200,7 +201,7 @@ export class GrammarTopicsService {
     const examDto = {
       title: `تمرين: ${topic.title} - ${topic.level}`,
       level: topic.level,
-      provider: 'Grammatik',
+      provider: ProviderEnum.GRAMMATIK,
       sections: [
         {
           name: topic.title,

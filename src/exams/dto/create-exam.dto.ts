@@ -179,7 +179,7 @@ export class CreatePracticeExamDto {
   @IsOptional() @IsString() title?: string;
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() level?: string;
-  @IsOptional() @IsString() provider?: string;
+  @IsOptional() @IsEnum(ProviderEnum) provider?: ProviderEnum;
 
   @IsArray()
   @ValidateNested({ each: true })
