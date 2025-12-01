@@ -14,6 +14,7 @@ import {
   ExamCategoryEnum,
   ExamSkillEnum,
 } from '../../common/enums';
+import { ProviderEnum } from '../../common/enums/provider.enum';
 
 export type ExamDocument = Exam & Document;
 export type { ExamStatus };
@@ -107,9 +108,10 @@ export class Exam {
 
   @Prop({ 
     type: String, 
+    enum: Object.values(ProviderEnum),
     index: true 
   })
-  provider?: string;
+  provider?: ProviderEnum | string;
 
   @Prop({ 
     type: String, 

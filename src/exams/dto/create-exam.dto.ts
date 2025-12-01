@@ -12,6 +12,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ProviderEnum } from '../../common/enums/provider.enum';
 
 /**
  * أنواع الامتحانات
@@ -151,9 +152,9 @@ export class CreateExamDto {
   // ========= حقول خاصة بـ Prüfungen =========
 
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
-  @IsString()
+  @IsEnum(ProviderEnum)
   @IsNotEmpty()
-  provider?: string;         // "Goethe" / "TELC" ...
+  provider?: ProviderEnum;         // "Goethe" / "telc" ...
 
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
   @IsString()

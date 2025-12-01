@@ -14,6 +14,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { QuestionType } from '../schemas/question.schema';
+import { ProviderEnum } from '../../common/enums/provider.enum';
 
 export enum QuestionUsageCategoryEnum {
   GRAMMAR = 'grammar',
@@ -77,9 +78,9 @@ export class CreateQuestionWithExamDto {
   usageCategory: QuestionUsageCategoryEnum; // "provider"
 
   // ====== ربطه بالامتحان الرسمي ======
-  @IsString()
+  @IsEnum(ProviderEnum)
   @IsNotEmpty()
-  provider: string;          // "Goethe"
+  provider: ProviderEnum;          // "Goethe"
 
   @IsString()
   @IsNotEmpty()

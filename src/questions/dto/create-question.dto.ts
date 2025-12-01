@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { QuestionStatus, QuestionType } from '../schemas/question.schema';
+import { ProviderEnum } from '../../common/enums/provider.enum';
 
 class McqOptionDto {
   @IsString()
@@ -86,7 +87,7 @@ export class CreateQuestionDto {
   answerKeyReorder?: string[];
 
   // فلاتر
-  @IsOptional() @IsString() provider?: string;
+  @IsOptional() @IsEnum(ProviderEnum) provider?: ProviderEnum;
   @IsOptional() @IsString() section?: string;
   @IsOptional() @IsString() level?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];

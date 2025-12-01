@@ -15,6 +15,7 @@ import { Exam, ExamDocument } from './schemas/exam.schema';
 import type { ExamStatus } from './schemas/exam.schema';
 import { ExamStatusEnum } from './schemas/exam.schema';
 import { ExamCategoryEnum } from '../common/enums';
+import { ProviderEnum } from '../common/enums/provider.enum';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -911,15 +912,22 @@ export class ExamsService {
 
     // تحويل إلى array
     const result = Array.from(providerMap.entries()).map(([provider, levelsSet]) => ({
-      provider: provider as 'goethe' | 'telc' | 'osd' | 'ecl' | 'dtb' | 'dtz',
+      provider: provider as ProviderEnum | string,
       levels: Array.from(levelsSet).sort(),
     }));
 
-    // ترتيب حسب provider
-    const providerOrder = ['goethe', 'telc', 'osd', 'ecl', 'dtb', 'dtz'];
+    // ترتيب حسب provider (استخدام القيم من الـ enum)
+    const providerOrder = [
+      ProviderEnum.GOETHE,
+      ProviderEnum.TELC,
+      ProviderEnum.OESD,
+      ProviderEnum.ECL,
+      ProviderEnum.DTB,
+      ProviderEnum.DTZ,
+    ];
     result.sort((a, b) => {
-      const aIndex = providerOrder.indexOf(a.provider);
-      const bIndex = providerOrder.indexOf(b.provider);
+      const aIndex = providerOrder.indexOf(a.provider as ProviderEnum);
+      const bIndex = providerOrder.indexOf(b.provider as ProviderEnum);
       if (aIndex === -1 && bIndex === -1) return a.provider.localeCompare(b.provider);
       if (aIndex === -1) return 1;
       if (bIndex === -1) return -1;

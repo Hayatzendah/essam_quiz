@@ -1,16 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { ProviderEnum } from '../../common/enums/provider.enum';
 
 export type ListeningClipDocument = ListeningClip & Document;
-
-export enum ProviderEnum {
-  GOETHE = 'goethe',
-  TELC = 'telc',
-  OESD = 'oesd',
-  ECL = 'ecl',
-  DTB = 'dtb',
-  DTZ = 'dtz',
-}
 
 export enum LevelEnum {
   A1 = 'A1',

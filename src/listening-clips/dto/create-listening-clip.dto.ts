@@ -1,6 +1,7 @@
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { LevelEnum, ProviderEnum, SkillEnum } from '../schemas/listening-clip.schema';
+import { LevelEnum, SkillEnum } from '../schemas/listening-clip.schema';
+import { ProviderEnum } from '../../common/enums/provider.enum';
 
 export class CreateListeningClipDto {
   @IsEnum(ProviderEnum)

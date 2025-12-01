@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { ProviderEnum } from '../../common/enums/provider.enum';
 
 export type QuestionDocument = Question & Document;
 
@@ -102,8 +103,11 @@ export class Question {
   answerKeyReorder?: string[]; // ترتيب صحيح
 
   // ميتاداتا وفلاتر
-  @Prop({ trim: true })
-  provider?: string;
+  @Prop({ 
+    trim: true,
+    enum: Object.values(ProviderEnum),
+  })
+  provider?: ProviderEnum | string;
 
   @Prop({ trim: true })
   section?: string;
