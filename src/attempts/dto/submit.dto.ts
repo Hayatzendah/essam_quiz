@@ -1,15 +1,29 @@
-import { IsArray, IsMongoId, IsString, ValidateNested, IsOptional, IsBoolean, IsNumber } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsMongoId,
+  IsString,
+  ValidateNested,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  IsNotEmpty,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
-class SubmitAttemptAnswerDto {
+export class SubmitAttemptAnswerDto {
   @IsMongoId()
+  @IsNotEmpty()
   questionId: string;
 
-  // للـ MCQ: indexes كـ strings (0-based)
+  // للـ MCQ: indexes كـ numbers (0-based)
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  selectedOptionIds?: string[];
+  @ArrayMinSize(1)
+  @IsNumber({}, { each: true })
+  @Min(0, { each: true })
+  studentAnswerIndexes?: number[];
 
   // للـ Fill: النص
   @IsOptional()
@@ -41,17 +55,13 @@ class SubmitAttemptAnswerDto {
   userAnswer?: any;
 }
 
-export class SubmitAttemptSubmitDto {
+export class SubmitAttemptDto {
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => SubmitAttemptAnswerDto)
   answers: SubmitAttemptAnswerDto[];
 }
 
-// للتوافق مع الكود القديم
-export class SubmitAttemptDto {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SubmitAttemptAnswerDto)
-  answers?: SubmitAttemptAnswerDto[];
-}
+// للتوافق مع الكود القديم - استخدام SubmitAttemptDto بدلاً من SubmitAttemptSubmitDto
+export class SubmitAttemptSubmitDto extends SubmitAttemptDto {}

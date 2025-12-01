@@ -20,7 +20,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody
 import { AttemptsService } from './attempts.service';
 import { StartAttemptDto } from './dto/start-attempt.dto';
 import { AnswerOneDto } from './dto/answer.dto';
-import { SubmitAttemptSubmitDto } from './dto/submit.dto';
+import { SubmitAttemptDto } from './dto/submit.dto';
 import { GradeAttemptDto } from './dto/grade.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -274,7 +274,7 @@ export class AttemptsController {
   @Post(':attemptId/submit')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student')
-  submit(@Param('attemptId') attemptId: string, @Body() body: SubmitAttemptSubmitDto, @Req() req: any) {
+  submit(@Param('attemptId') attemptId: string, @Body() body: SubmitAttemptDto, @Req() req: any) {
     this.logger.log(
       `[POST /attempts/${attemptId}/submit] Request received - userId: ${req.user?.userId}, answersCount: ${body?.answers?.length || 0}`,
     );
