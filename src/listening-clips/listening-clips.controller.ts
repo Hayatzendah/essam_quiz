@@ -16,6 +16,7 @@ import { extname, join } from 'path';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ListeningClipsService } from './listening-clips.service';
 import { CreateListeningClipDto } from './dto/create-listening-clip.dto';
+import { SkillEnum } from './schemas/listening-clip.schema';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -144,7 +145,7 @@ export class ListeningClipsController {
   )
   @ApiOperation({
     summary: 'Upload audio file for listening clip',
-    description: 'رفع ملف صوتي لكليب استماع',
+    description: 'رفع ملف صوتي لكليب استماع وإنشاء ListeningClip في MongoDB',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -155,21 +156,63 @@ export class ListeningClipsController {
           type: 'string',
           format: 'binary',
         },
+        provider: {
+          type: 'string',
+          enum: ['goethe', 'telc', 'oesd', 'ecl', 'dtb', 'dtz'],
+          description: 'Provider name',
+        },
+        level: {
+          type: 'string',
+          enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
+          description: 'Language level',
+        },
+        teil: {
+          type: 'number',
+          description: 'Teil number',
+        },
+      },
+      required: ['file', 'provider', 'level', 'teil'],
+    },
+  })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Audio file uploaded and ListeningClip created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        listeningClipId: { type: 'string' },
+        audioUrl: { type: 'string' },
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Audio file uploaded successfully' })
-  @ApiResponse({ status: 400, description: 'Bad request - invalid file' })
-  async uploadAudio(@UploadedFile() file: Express.Multer.File) {
+  @ApiResponse({ status: 400, description: 'Bad request - invalid file or missing data' })
+  async uploadAudio(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: { provider: string; level: string; teil: number },
+  ) {
     if (!file) {
       throw new BadRequestException('No audio file uploaded');
+    }
+
+    if (!dto.provider || !dto.level || !dto.teil) {
+      throw new BadRequestException('Missing required fields: provider, level, teil');
     }
 
     console.log('Saved listening clip audio at', file.path);
 
     const audioUrl = `/uploads/audio/${file.filename}`;
 
+    // إنشاء ListeningClip في MongoDB
+    const clip = await this.service.create({
+      provider: dto.provider as any,
+      level: dto.level as any,
+      skill: SkillEnum.HOEREN, // Default to hoeren
+      teil: Number(dto.teil),
+      audioUrl,
+    });
+
     return {
+      listeningClipId: String(clip._id),
       audioUrl,
     };
   }
