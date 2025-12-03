@@ -54,11 +54,21 @@ export class QuestionsService {
 
   async createQuestion(dto: CreateQuestionDto, createdBy?: string) {
     this.validateCreatePayload(dto);
+    
+    // استخراج examId من الـ dto قبل إنشاء السؤال
+    const { examId, ...questionData } = dto;
+    
     const doc = await this.model.create({
-      ...dto,
+      ...questionData,
       status: dto.status ?? QuestionStatus.DRAFT,
       createdBy,
     });
+
+    // إذا كان examId موجود، نربط السؤال بالامتحان
+    if (examId) {
+      await this.addQuestionToExam(examId, doc._id.toString(), dto.section);
+    }
+
     // رجّع أقل حاجة أساسية
     return {
       id: doc._id,
@@ -70,6 +80,91 @@ export class QuestionsService {
       section: doc.section,
       tags: doc.tags,
       createdAt: (doc as any).createdAt,
+      ...(examId && { examId }), // إرجاع examId لو موجود
+    };
+  }
+
+  /**
+   * إضافة سؤال لامتحان موجود
+   * - يبحث عن section بالاسم ويضيف السؤال فيه
+   * - لو Section مش موجود، ينشئ واحد جديد
+   */
+  async addQuestionToExam(examId: string, questionId: string, sectionName?: string) {
+    const exam = await this.examModel.findById(examId).exec();
+    if (!exam) {
+      throw new NotFoundException(`Exam with ID ${examId} not found`);
+    }
+
+    // تنظيف sections من null أو قيم غريبة
+    const cleanSections: any[] = Array.isArray(exam.sections)
+      ? exam.sections.filter((sec: any) => !!sec && typeof sec === 'object')
+      : [];
+
+    // البحث عن سكشن بالاسم (إذا تم تحديده)
+    let sectionIndex = -1;
+    if (sectionName) {
+      sectionIndex = cleanSections.findIndex(
+        (sec: any) => sec.name === sectionName || sec.title === sectionName,
+      );
+    }
+
+    if (sectionIndex === -1 && sectionName) {
+      // لو مش موجود → نضيف سكشن جديد فيه السؤال
+      cleanSections.push({
+        name: sectionName,
+        title: sectionName,
+        items: [
+          {
+            questionId: new Types.ObjectId(questionId),
+            points: 1,
+          },
+        ],
+      });
+    } else if (sectionIndex !== -1) {
+      // لو موجود → نضيف السؤال في items
+      const items = Array.isArray(cleanSections[sectionIndex].items)
+        ? cleanSections[sectionIndex].items
+        : [];
+      items.push({
+        questionId: new Types.ObjectId(questionId),
+        points: 1,
+      });
+      cleanSections[sectionIndex].items = items;
+    } else {
+      // لو مفيش sectionName محدد، نضيف لأول section موجود
+      if (cleanSections.length > 0) {
+        const items = Array.isArray(cleanSections[0].items)
+          ? cleanSections[0].items
+          : [];
+        items.push({
+          questionId: new Types.ObjectId(questionId),
+          points: 1,
+        });
+        cleanSections[0].items = items;
+      } else {
+        // لو مفيش sections خالص، ننشئ واحد default
+        cleanSections.push({
+          name: 'Default Section',
+          title: 'Default Section',
+          items: [
+            {
+              questionId: new Types.ObjectId(questionId),
+              points: 1,
+            },
+          ],
+        });
+      }
+    }
+
+    // حفظ السكاشن المعدّلة في الامتحان
+    exam.sections = cleanSections as any;
+    await exam.save();
+
+    return {
+      success: true,
+      examId: exam._id,
+      questionId,
+      sectionName: sectionName || cleanSections[0]?.name || 'Default Section',
     };
   }
 

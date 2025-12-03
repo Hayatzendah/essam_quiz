@@ -56,3 +56,4 @@ GET /exams/public?level=A1&provider=goethe
   - `quota`: اختيار عشوائي من الأسئلة المتاحة
 - **لا يمكن الجمع:** القسم لا يمكن أن يحتوي على `items` و `quota` معاً
 
+

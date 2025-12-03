@@ -112,4 +112,9 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsMongoId()
   listeningClipId?: string;
+
+  // ربط بامتحان (اختياري) - لإضافة السؤال لامتحان معين عند الإنشاء
+  @IsOptional()
+  @IsMongoId()
+  examId?: string;
 }
