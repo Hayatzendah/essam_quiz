@@ -9,6 +9,17 @@ export enum AttemptStatus {
   GRADED = 'graded',
 }
 
+// نص القراءة لقسم LESEN
+@Schema({ _id: false })
+export class ReadingText {
+  @Prop({ type: Number })
+  teil: number;
+
+  @Prop({ type: String })
+  content: string;
+}
+const ReadingTextSchema = SchemaFactory.createForClass(ReadingText);
+
 @Schema({ _id: false })
 export class AttemptItem {
   // تعاريف
@@ -106,6 +117,10 @@ export class Attempt {
 
   // للإصدار/السياسات (تنقرأ من الامتحان عند العرض)
   @Prop({ type: Boolean, default: false }) released?: boolean;
+
+  // نص القراءة لقسم LESEN (اختياري)
+  @Prop({ type: ReadingTextSchema, _id: false })
+  readingText?: ReadingText;
 }
 
 export const AttemptSchema = SchemaFactory.createForClass(Attempt);
