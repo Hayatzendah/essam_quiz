@@ -73,9 +73,18 @@ export class SectionItemDto {
  *  - نظام Prüfungen (quota + skill + teilNumber)
  */
 export class ExamSectionDto {
+  // يدعم title أو name - أحدهما مطلوب
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  name: string;              // "Hören – Teil 1"
+  title?: string;            // "Hören – Teil 1" - للفرونت الجديد
+
+  @IsOptional()
+  @IsString()
+  name?: string;             // "Hören – Teil 1" - للتوافق مع الكود القديم
+
+  @IsOptional()
+  @IsString()
+  description?: string;      // وصف السكشن أو نص القراءة (اختياري)
 
   @IsOptional()
   @IsString()
@@ -92,7 +101,7 @@ export class ExamSectionDto {
 
   @IsOptional()
   @IsInt()
-  @Min(1)
+  @Min(0)
   quota?: number;            // عدد الأسئلة العشوائي
 
   @IsOptional()

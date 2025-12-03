@@ -45,6 +45,9 @@ export class ExamSection {
   @Prop({ type: String, trim: true })
   title?: string; // مثال: 'Hören – Teil 1'
 
+  @Prop({ type: String, required: false, trim: true })
+  description?: string; // وصف السكشن (اختياري)
+
   // الحقول التالية optional للتوافق مع الكود القديم
   @Prop({ type: String, trim: true })
   name?: string;
@@ -74,7 +77,7 @@ export class ExamSection {
   @Prop({ type: String, trim: true })
   section?: string;
 
-  @Prop({ type: Number, min: 1 })
+  @Prop({ type: Number, min: 0 })
   quota?: number;
 
   @Prop({ type: [String], default: [] })
