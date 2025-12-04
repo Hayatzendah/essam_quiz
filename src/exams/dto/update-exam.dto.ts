@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { Transform } from 'class-transformer';
-import { CreateExamDto } from './create-exam.dto';
+import { CreateExamDto, ExamTypeEnum } from './create-exam.dto';
 import { IsEnum, IsMongoId, IsOptional, IsArray, IsString } from 'class-validator';
 import type { ExamStatus } from '../schemas/exam.schema';
 import { ExamStatusEnum } from '../schemas/exam.schema';
@@ -61,5 +61,9 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
   @IsOptional()
   @IsEnum(ProviderEnum)
   provider?: ProviderEnum;
+
+  @IsOptional()
+  @IsEnum(ExamTypeEnum)
+  examType?: ExamTypeEnum; // للتوافق مع الفرونت (leben_test)
 }
 

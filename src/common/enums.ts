@@ -33,6 +33,7 @@ export enum ExamCategoryEnum {
   GRAMMAR = 'grammar_exam',
   LID = 'lid_exam',
   PROVIDER = 'provider_exam',
+  LEBEN = 'leben_exam', // Leben in Deutschland Test
   VOCAB = 'vocab_exam',
   OTHER = 'other',
 }

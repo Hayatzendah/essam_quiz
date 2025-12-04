@@ -125,6 +125,13 @@ export class Exam {
 
   @Prop({ 
     type: String, 
+    enum: ['grammar_exam', 'provider_exam', 'leben_test'],
+    index: false 
+  })
+  examType?: string; // للتوافق مع الفرونت (leben_test)
+
+  @Prop({ 
+    type: String, 
     enum: Object.values(ExamSkillEnum),
     index: true 
   })

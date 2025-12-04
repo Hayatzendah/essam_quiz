@@ -13,14 +13,15 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProviderEnum } from '../../common/enums/provider.enum';
+import { ExamCategoryEnum } from '../../common/enums';
 
 /**
- * أنواع الامتحانات
+ * أنواع الامتحانات (اختياري - للتوافق مع الفرونت)
  */
-export enum ExamCategoryEnum {
+export enum ExamTypeEnum {
   GRAMMAR = 'grammar_exam',
-  LID = 'lid_exam',
   PROVIDER = 'provider_exam',
+  LEBEN_TEST = 'leben_test',
 }
 
 /**
@@ -147,6 +148,10 @@ export class CreateExamDto {
 
   @IsEnum(ExamCategoryEnum)
   examCategory: ExamCategoryEnum;
+
+  @IsOptional()
+  @IsEnum(ExamTypeEnum)
+  examType?: ExamTypeEnum; // للتوافق مع الفرونت (leben_test)
 
   @IsOptional()
   @IsBoolean()
