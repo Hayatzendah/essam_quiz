@@ -18,12 +18,6 @@ export class SubmitAttemptAnswerDto {
   @IsNotEmpty()
   questionId: string;
 
-  // لأسئلة الاختيار / صح وغلط - array of option IDs (MongoIds)
-  @IsOptional()
-  @IsArray()
-  @ArrayMinSize(1)
-  @IsMongoId({ each: true })
-  selectedOptionIds?: string[];
 
   // لأسئلة الكتابة (FREE_TEXT)
   @IsOptional()
@@ -31,11 +25,17 @@ export class SubmitAttemptAnswerDto {
   @MaxLength(2000, { message: 'textAnswer must not exceed 2000 characters' })
   textAnswer?: string;
 
+  // لأسئلة الاختيار / صح وغلط
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsMongoId({ each: true })
+  selectedOptionIds?: string[];
+
   // لأسئلة التحدث (SPEAKING) - رابط ملف الصوت المسجل
   @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  audioUrl?: string;
+  audioAnswer?: string; // أو audioUrl / recordingUrl
 
   // للتوافق مع الكود القديم - للـ MCQ: indexes كـ numbers (0-based)
   @IsOptional()
