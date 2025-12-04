@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProviderEnum } from '../../common/enums/provider.enum';
-import { ExamCategoryEnum } from '../../common/enums';
+import { ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
 
 /**
  * أنواع الامتحانات (اختياري - للتوافق مع الفرونت)
@@ -22,16 +22,6 @@ export enum ExamTypeEnum {
   GRAMMAR = 'grammar_exam',
   PROVIDER = 'provider_exam',
   LEBEN_TEST = 'leben_test',
-}
-
-/**
- * مهارات الامتحانات الرسمية
- */
-export enum ExamSkillEnum {
-  HOEREN = 'HOEREN',
-  LESEN = 'LESEN',
-  SCHREIBEN = 'SCHREIBEN',
-  SPRECHEN = 'SPRECHEN',
 }
 
 /**
@@ -182,12 +172,12 @@ export class CreateExamDto {
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
   @IsEnum(ProviderEnum)
   @IsNotEmpty()
-  provider?: ProviderEnum;         // "Goethe" / "telc" ...
+  provider?: ProviderEnum;         // "goethe" / "telc" ...
 
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
-  @IsString()
+  @IsEnum(ExamSkillEnum)
   @IsNotEmpty()
-  mainSkill?: string;        // "hoeren" / "lesen" ... (زي اللي جاي من الفرونت)
+  mainSkill?: ExamSkillEnum;       // "hoeren" / "lesen" / "leben_test" ...
 
   // ========= مشتركة =========
 

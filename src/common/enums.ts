@@ -44,4 +44,5 @@ export enum ExamSkillEnum {
   SCHREIBEN = 'schreiben',
   SPRECHEN = 'sprechen',
   MIXED = 'mixed',
+  LEBEN_TEST = 'leben_test', // Leben in Deutschland Test
 }
