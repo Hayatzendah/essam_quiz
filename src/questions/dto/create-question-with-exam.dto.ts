@@ -168,4 +168,22 @@ export class CreateQuestionWithExamDto {
   @IsNumber()
   @Min(1)
   maxWords?: number; // حد أقصى للكلمات
+
+  // ====== SPEAKING (أسئلة التحدث) ======
+  @ValidateIf((o) => o.qType === QuestionType.SPEAKING)
+  @IsOptional()
+  @IsString()
+  modelAnswerText?: string; // نموذج إجابة (للمعلم فقط)
+
+  @ValidateIf((o) => o.qType === QuestionType.SPEAKING)
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  minSeconds?: number; // حد أدنى للثواني
+
+  @ValidateIf((o) => o.qType === QuestionType.SPEAKING)
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  maxSeconds?: number; // حد أقصى للثواني
 }

@@ -31,6 +31,12 @@ export class SubmitAttemptAnswerDto {
   @MaxLength(2000, { message: 'textAnswer must not exceed 2000 characters' })
   textAnswer?: string;
 
+  // لأسئلة التحدث (SPEAKING) - رابط ملف الصوت المسجل
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  audioUrl?: string;
+
   // للتوافق مع الكود القديم - للـ MCQ: indexes كـ numbers (0-based)
   @IsOptional()
   @IsArray()

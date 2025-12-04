@@ -68,6 +68,12 @@ export class QuestionsService {
         ...(dto.minWords !== undefined && { minWords: dto.minWords }),
         ...(dto.maxWords !== undefined && { maxWords: dto.maxWords }),
       }),
+      // SPEAKING fields (إذا كانت موجودة)
+      ...(dto.qType === QuestionType.SPEAKING && {
+        ...(dto.modelAnswerText && { modelAnswerText: dto.modelAnswerText }),
+        ...(dto.minSeconds !== undefined && { minSeconds: dto.minSeconds }),
+        ...(dto.maxSeconds !== undefined && { maxSeconds: dto.maxSeconds }),
+      }),
     });
 
     // إذا كان examId موجود، نربط السؤال بالامتحان
@@ -519,6 +525,12 @@ export class QuestionsService {
         ...(questionData.sampleAnswer && { sampleAnswer: questionData.sampleAnswer }),
         ...(questionData.minWords !== undefined && { minWords: questionData.minWords }),
         ...(questionData.maxWords !== undefined && { maxWords: questionData.maxWords }),
+      }),
+      // SPEAKING fields
+      ...(qType === QuestionType.SPEAKING && {
+        ...(questionData.modelAnswerText && { modelAnswerText: questionData.modelAnswerText }),
+        ...(questionData.minSeconds !== undefined && { minSeconds: questionData.minSeconds }),
+        ...(questionData.maxSeconds !== undefined && { maxSeconds: questionData.maxSeconds }),
       }),
       ...(questionData.explanation && { explanation: questionData.explanation }),
       ...(questionData.difficulty && { difficulty: questionData.difficulty as QuestionDifficulty }),

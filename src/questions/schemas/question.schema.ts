@@ -12,6 +12,7 @@ export enum QuestionType {
   REORDER = 'reorder',
   LISTEN = 'listen',
   FREE_TEXT = 'free_text', // أسئلة الكتابة (Schreiben)
+  SPEAKING = 'speaking', // أسئلة التحدث (Sprechen)
 }
 
 export enum QuestionStatus {
@@ -112,6 +113,16 @@ export class Question {
 
   @Prop({ type: Number, min: 1 })
   maxWords?: number; // حد أقصى للكلمات (اختياري)
+
+  // SPEAKING (أسئلة التحدث)
+  @Prop({ trim: true })
+  modelAnswerText?: string; // نموذج إجابة (للمعلم فقط - للتصحيح اليدوي)
+
+  @Prop({ type: Number, min: 0 })
+  minSeconds?: number; // حد أدنى للثواني (اختياري)
+
+  @Prop({ type: Number, min: 1 })
+  maxSeconds?: number; // حد أقصى للثواني (اختياري)
 
   // ميتاداتا وفلاتر
   @Prop({ 
