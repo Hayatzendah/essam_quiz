@@ -66,6 +66,11 @@ export class CreateQuestionWithExamDto {
   @Type(() => QuestionOptionDto)
   options?: QuestionOptionDto[];
 
+  // ====== TRUE/FALSE ======
+  @ValidateIf((o) => o.qType === QuestionType.TRUE_FALSE)
+  @IsBoolean({ message: 'answerKeyBoolean must be a boolean when qType is true_false' })
+  answerKeyBoolean?: boolean;
+
   @IsInt()
   @Min(0)
   points: number;

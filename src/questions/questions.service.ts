@@ -467,7 +467,7 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, prompt, qType, provider, skill, teilNumber, usageCategory, listeningClipId, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, prompt, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, ...questionData } = dto;
 
     // 1) التحقق من listeningClipId لأسئلة Hören
     if (usageCategory === 'provider' && skill && skill.toLowerCase() === 'hoeren') {
@@ -489,6 +489,13 @@ export class QuestionsService {
       }
     }
 
+    // 2.1) التحقق من answerKeyBoolean لأسئلة TRUE_FALSE
+    if (qType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean !== 'boolean') {
+      throw new BadRequestException(
+        'answerKeyBoolean is required for true_false questions and must be a boolean',
+      );
+    }
+
     // 3) إنشاء السؤال
     const question = await this.model.create({
       prompt: prompt,
@@ -499,6 +506,8 @@ export class QuestionsService {
         isCorrect: opt.isCorrect || false,
       })) : undefined,
       correctAnswer: correctOption ? correctOption.text : undefined,
+      // TRUE_FALSE answer
+      ...(qType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean === 'boolean' && { answerKeyBoolean }),
       ...(questionData.explanation && { explanation: questionData.explanation }),
       ...(questionData.difficulty && { difficulty: questionData.difficulty as QuestionDifficulty }),
       level: questionData.level,
