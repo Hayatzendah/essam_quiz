@@ -13,6 +13,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -33,7 +34,10 @@ import { CreatePracticeExamDto } from '../exams/dto/create-exam.dto';
 export class AttemptsController {
   private readonly logger = new Logger(AttemptsController.name);
 
-  constructor(private readonly service: AttemptsService) {}
+  constructor(
+    private readonly service: AttemptsService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // قائمة محاولات الطالب
   @Get()
@@ -348,14 +352,24 @@ export class AttemptsController {
 
     console.log('Saved student recording at', file.path);
 
-    const audioUrl = `/uploads/recordings/${file.filename}`;
+    // الحصول على APP_URL من ConfigService
+    const baseUrl = this.configService.get<string>('APP_URL', 'http://localhost:4000');
+    const filesBasePath = this.configService.get<string>('FILES_BASE_PATH', '/uploads/audio');
+    
+    // بناء URL كامل مع الدومين
+    const relativePath = `${filesBasePath}/${file.filename}`;
+    const publicUrl = `${baseUrl}${relativePath}`;
 
     await this.service.attachStudentRecording(req.user, attemptId, itemId, {
-      url: audioUrl,
+      url: relativePath, // نحفظ المسار النسبي في DB
       mime: file.mimetype,
     });
 
-    return { audioUrl, mime: file.mimetype };
+    return {
+      filename: file.filename,
+      url: publicUrl, // نرجع URL كامل للفرونت
+      mime: file.mimetype,
+    };
   }
 
   // عرض المحاولة (الطالب مالكها | المعلم المالك للامتحان | الأدمن)

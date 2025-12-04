@@ -66,6 +66,9 @@ import { AppController } from './app.controller';
         S3_SECRET_KEY: Joi.string().optional(),
         S3_BUCKET: Joi.string().optional(),
         MEDIA_USE_MOCK: Joi.string().valid('true', 'false').optional(),
+        // App URL and file paths
+        APP_URL: Joi.string().uri().optional().default('http://localhost:4000'),
+        FILES_BASE_PATH: Joi.string().optional().default('/uploads/audio'),
       }),
     }),
 
