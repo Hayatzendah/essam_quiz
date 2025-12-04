@@ -72,7 +72,7 @@ export class QuestionsService {
 
     // إذا كان examId موجود، نربط السؤال بالامتحان
     if (examId) {
-      await this.addQuestionToExam(examId, doc._id.toString(), dto.section);
+      await this.addQuestionToExam(examId, String(doc._id), dto.section);
     }
 
     // رجّع أقل حاجة أساسية
