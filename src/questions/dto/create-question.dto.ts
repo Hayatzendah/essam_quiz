@@ -4,9 +4,12 @@ import {
   IsEnum,
   IsIn,
   IsMongoId,
+  IsNumber,
   IsOptional,
   IsString,
+  Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
@@ -112,6 +115,24 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsMongoId()
   listeningClipId?: string;
+
+  // ====== FREE_TEXT (أسئلة الكتابة) ======
+  @ValidateIf((o) => o.qType === QuestionType.FREE_TEXT)
+  @IsOptional()
+  @IsString()
+  sampleAnswer?: string; // نموذج إجابة (للمعلم فقط)
+
+  @ValidateIf((o) => o.qType === QuestionType.FREE_TEXT)
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  minWords?: number; // حد أدنى للكلمات
+
+  @ValidateIf((o) => o.qType === QuestionType.FREE_TEXT)
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  maxWords?: number; // حد أقصى للكلمات
 
   // ربط بامتحان (اختياري) - لإضافة السؤال لامتحان معين عند الإنشاء
   @IsOptional()

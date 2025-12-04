@@ -6,6 +6,7 @@ import {
   IsInt,
   IsMongoId,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Min,
@@ -149,4 +150,22 @@ export class CreateQuestionWithExamDto {
   @ValidateNested()
   @Type(() => QuestionMediaDto)
   media?: QuestionMediaDto;
+
+  // ====== FREE_TEXT (أسئلة الكتابة) ======
+  @ValidateIf((o) => o.qType === QuestionType.FREE_TEXT)
+  @IsOptional()
+  @IsString()
+  sampleAnswer?: string; // نموذج إجابة (للمعلم فقط)
+
+  @ValidateIf((o) => o.qType === QuestionType.FREE_TEXT)
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  minWords?: number; // حد أدنى للكلمات
+
+  @ValidateIf((o) => o.qType === QuestionType.FREE_TEXT)
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  maxWords?: number; // حد أقصى للكلمات
 }

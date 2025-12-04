@@ -58,7 +58,7 @@ export class AttemptItem {
   @Prop({ type: [String], default: undefined }) answerKeyReorder?: string[]; // reorder: ترتيب صحيح
 
   // إجابة الطالب (حسب النوع)
-  @Prop() studentAnswerText?: string; // fill / short
+  @Prop() studentAnswerText?: string; // fill / short / free_text
   @Prop({ type: [Number], default: undefined }) studentAnswerIndexes?: number[]; // mcq (مؤشرات للخيارات)
   @Prop() studentAnswerBoolean?: boolean; // true_false
   @Prop({ type: [[String, String]], default: undefined }) studentAnswerMatch?: [string, string][]; // match: أزواج [left, right]
@@ -74,6 +74,7 @@ export class AttemptItem {
   // نتيجة هذا السؤال
   @Prop({ type: Number, default: 0 }) autoScore: number;
   @Prop({ type: Number, default: 0 }) manualScore: number;
+  @Prop({ type: Boolean, default: false }) needsManualReview?: boolean; // يحتاج تصحيح يدوي (FREE_TEXT)
 }
 
 const AttemptItemSchema = SchemaFactory.createForClass(AttemptItem);
@@ -121,6 +122,9 @@ export class Attempt {
   // نص القراءة لقسم LESEN (اختياري)
   @Prop({ type: ReadingTextSchema, _id: false })
   readingText?: ReadingText;
+
+  // هل يحتوي على أسئلة تحتاج تصحيح يدوي (FREE_TEXT)
+  @Prop({ type: Boolean, default: false }) hasQuestionsNeedingManualReview?: boolean;
 }
 
 export const AttemptSchema = SchemaFactory.createForClass(Attempt);

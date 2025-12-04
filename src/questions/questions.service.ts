@@ -62,6 +62,12 @@ export class QuestionsService {
       ...questionData,
       status: dto.status ?? QuestionStatus.DRAFT,
       createdBy,
+      // FREE_TEXT fields (إذا كانت موجودة)
+      ...(dto.qType === QuestionType.FREE_TEXT && {
+        ...(dto.sampleAnswer && { sampleAnswer: dto.sampleAnswer }),
+        ...(dto.minWords !== undefined && { minWords: dto.minWords }),
+        ...(dto.maxWords !== undefined && { maxWords: dto.maxWords }),
+      }),
     });
 
     // إذا كان examId موجود، نربط السؤال بالامتحان
@@ -508,6 +514,12 @@ export class QuestionsService {
       correctAnswer: correctOption ? correctOption.text : undefined,
       // TRUE_FALSE answer
       ...(qType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean === 'boolean' && { answerKeyBoolean }),
+      // FREE_TEXT fields
+      ...(qType === QuestionType.FREE_TEXT && {
+        ...(questionData.sampleAnswer && { sampleAnswer: questionData.sampleAnswer }),
+        ...(questionData.minWords !== undefined && { minWords: questionData.minWords }),
+        ...(questionData.maxWords !== undefined && { maxWords: questionData.maxWords }),
+      }),
       ...(questionData.explanation && { explanation: questionData.explanation }),
       ...(questionData.difficulty && { difficulty: questionData.difficulty as QuestionDifficulty }),
       level: questionData.level,

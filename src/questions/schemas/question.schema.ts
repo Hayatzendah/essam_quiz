@@ -11,6 +11,7 @@ export enum QuestionType {
   MATCH = 'match',
   REORDER = 'reorder',
   LISTEN = 'listen',
+  FREE_TEXT = 'free_text', // أسئلة الكتابة (Schreiben)
 }
 
 export enum QuestionStatus {
@@ -102,6 +103,16 @@ export class Question {
   @Prop({ type: [String], default: undefined })
   answerKeyReorder?: string[]; // ترتيب صحيح
 
+  // FREE_TEXT (أسئلة الكتابة)
+  @Prop({ trim: true })
+  sampleAnswer?: string; // نموذج إجابة (للمعلم فقط - للتصحيح اليدوي)
+
+  @Prop({ type: Number, min: 0 })
+  minWords?: number; // حد أدنى للكلمات (اختياري)
+
+  @Prop({ type: Number, min: 1 })
+  maxWords?: number; // حد أقصى للكلمات (اختياري)
+
   // ميتاداتا وفلاتر
   @Prop({ 
     trim: true,
@@ -173,6 +184,23 @@ QuestionSchema.pre('validate', function (next) {
     const hasRegex = Array.isArray(q.regexList) && q.regexList.length > 0;
     if (!hasExact && !hasRegex) {
       return next(new Error('FILL requires fillExact or regexList'));
+    }
+  }
+
+  if (q.qType === QuestionType.FREE_TEXT) {
+    // FREE_TEXT: ممنوع يكون فيه options أو answerKeyBoolean
+    if (q.options && q.options.length > 0) {
+      return next(new Error('FREE_TEXT should not include options'));
+    }
+    if (q.answerKeyBoolean !== undefined) {
+      return next(new Error('FREE_TEXT should not have answerKeyBoolean'));
+    }
+    if (q.fillExact || (q.regexList && q.regexList.length > 0)) {
+      return next(new Error('FREE_TEXT should not have fillExact or regexList'));
+    }
+    // التحقق من minWords و maxWords إذا كانا موجودين
+    if (q.minWords !== undefined && q.maxWords !== undefined && q.minWords > q.maxWords) {
+      return next(new Error('FREE_TEXT minWords must be less than or equal to maxWords'));
     }
   }
 
