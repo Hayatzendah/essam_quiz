@@ -13,6 +13,17 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+// DTO لـ studentRecording
+class StudentRecordingDto {
+  @IsString()
+  @IsNotEmpty()
+  url: string; // "/uploads/audio/answer-123.webm"
+
+  @IsString()
+  @IsNotEmpty()
+  mime: string; // "audio/webm"
+}
+
 export class SubmitAttemptAnswerDto {
   @IsMongoId()
   @IsNotEmpty()
@@ -32,10 +43,16 @@ export class SubmitAttemptAnswerDto {
   @IsMongoId({ each: true })
   selectedOptionIds?: string[];
 
-  // لأسئلة التحدث (SPEAKING) - رابط ملف الصوت المسجل
+  // لأسئلة التحدث (SPEAKING) - تسجيل صوتي
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => StudentRecordingDto)
+  studentRecording?: StudentRecordingDto; // { url: string, mime: string }
+
+  // للتوافق مع الكود القديم - يمكن إرسال audioAnswer كـ string
   @IsOptional()
   @IsString()
-  audioAnswer?: string; // أو audioUrl / recordingUrl
+  audioAnswer?: string; // للتوافق مع الكود القديم
 
   // للتوافق مع الكود القديم - للـ MCQ: indexes كـ numbers (0-based)
   @IsOptional()
