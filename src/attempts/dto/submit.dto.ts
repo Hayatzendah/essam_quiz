@@ -9,6 +9,7 @@ import {
   IsNumber,
   IsNotEmpty,
   Min,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -17,7 +18,20 @@ export class SubmitAttemptAnswerDto {
   @IsNotEmpty()
   questionId: string;
 
-  // للـ MCQ: indexes كـ numbers (0-based)
+  // لأسئلة الاختيار / صح وغلط - array of option IDs (MongoIds)
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsMongoId({ each: true })
+  selectedOptionIds?: string[];
+
+  // لأسئلة الكتابة (FREE_TEXT)
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000, { message: 'textAnswer must not exceed 2000 characters' })
+  textAnswer?: string;
+
+  // للتوافق مع الكود القديم - للـ MCQ: indexes كـ numbers (0-based)
   @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
@@ -25,22 +39,22 @@ export class SubmitAttemptAnswerDto {
   @Min(0, { each: true })
   studentAnswerIndexes?: number[];
 
-  // للـ Fill: النص
+  // للتوافق مع الكود القديم - للـ Fill: النص
   @IsOptional()
   @IsString()
   studentAnswerText?: string;
 
-  // للـ True/False: boolean
+  // للتوافق مع الكود القديم - للـ True/False: boolean
   @IsOptional()
   @IsBoolean()
   studentAnswerBoolean?: boolean;
 
-  // للـ Match: أزواج [left, right]
+  // للتوافق مع الكود القديم - للـ Match: أزواج [left, right]
   @IsOptional()
   @IsArray()
   studentAnswerMatch?: [string, string][];
 
-  // للـ Reorder: ترتيب
+  // للتوافق مع الكود القديم - للـ Reorder: ترتيب
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
