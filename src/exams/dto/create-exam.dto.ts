@@ -70,18 +70,20 @@ export class SectionItemDto {
 
 /**
  * سكشن امتحان – يدعم:
- *  - نظام القواعد (items ثابتة)
+ *  - نظام القواعد (items ثابتة) - يستخدم name + items
  *  - نظام Prüfungen (quota + skill + teilNumber)
+ *  - Leben in Deutschland (title + quota + teil)
  */
 export class ExamSectionDto {
-  // يدعم title أو name - أحدهما مطلوب
-  @IsOptional()
+  // title مطلوب إذا لم يكن هناك items (للشكل الجديد)
+  @ValidateIf((o) => !o.items || o.items.length === 0)
   @IsString()
-  title?: string;            // "Hören – Teil 1" - للفرونت الجديد
+  @IsNotEmpty()
+  title?: string;            // "Leben in Deutschland – Teil 1" - مطلوب إذا لم يكن items
 
   @IsOptional()
   @IsString()
-  name?: string;             // "Hören – Teil 1" - للتوافق مع الكود القديم
+  name?: string;             // "Hören – Teil 1" - للتوافق مع الكود القديم (مع items)
 
   @IsOptional()
   @IsString()
@@ -95,15 +97,22 @@ export class ExamSectionDto {
   @IsEnum(ExamSkillEnum)
   skill?: ExamSkillEnum;     // HOEREN / LESEN / ...
 
-  @IsOptional()
+  // teil مطلوب إذا لم يكن هناك items (يدعم teil أو teilNumber)
+  @ValidateIf((o) => !o.items || o.items.length === 0)
   @IsInt()
   @Min(1)
-  teilNumber?: number;       // 1, 2, 3...
+  teil?: number;             // 1, 2, 3... - مطلوب إذا لم يكن items
 
   @IsOptional()
   @IsInt()
+  @Min(1)
+  teilNumber?: number;       // 1, 2, 3... - للتوافق مع الكود القديم
+
+  // quota مطلوب إذا لم يكن هناك items
+  @ValidateIf((o) => !o.items || o.items.length === 0)
+  @IsInt()
   @Min(0)
-  quota?: number;            // عدد الأسئلة العشوائي
+  quota?: number;            // عدد الأسئلة العشوائي - مطلوب إذا لم يكن items
 
   @IsOptional()
   @ValidateNested()
@@ -120,6 +129,11 @@ export class ExamSectionDto {
   @ValidateNested({ each: true })
   @Type(() => SectionItemDto)
   items?: SectionItemDto[];
+
+  // حقول إضافية للتوافق مع الكود القديم
+  @IsOptional()
+  @IsMongoId()
+  topicId?: string;          // للتوافق مع الكود القديم (اختياري)
 }
 
 /**

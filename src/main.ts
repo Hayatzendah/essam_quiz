@@ -190,18 +190,38 @@ async function bootstrap() {
         transformOptions: { enableImplicitConversion: true },
         forbidNonWhitelisted: true,
         exceptionFactory: (errors) => {
-          const messages = errors.map((error) => {
-            const constraints = error.constraints || {};
-            const property = error.property;
-            const value = error.value;
-            return {
-              property,
-              value,
-              constraints: Object.values(constraints),
-            };
-          });
+          // دالة مساعدة لجمع جميع الأخطاء (بما في ذلك children)
+          const collectErrors = (errorList: any[], parentPath = ''): any[] => {
+            const allErrors: any[] = [];
+            
+            errorList.forEach((error) => {
+              const currentPath = parentPath 
+                ? `${parentPath}.${error.property}` 
+                : error.property;
+              
+              // إضافة أخطاء الحقل الحالي
+              if (error.constraints) {
+                allErrors.push({
+                  property: currentPath,
+                  value: error.value,
+                  constraints: Object.values(error.constraints),
+                });
+              }
+              
+              // إضافة أخطاء children (مثل sections.0.quota)
+              if (error.children && error.children.length > 0) {
+                const childErrors = collectErrors(error.children, currentPath);
+                allErrors.push(...childErrors);
+              }
+            });
+            
+            return allErrors;
+          };
+          
+          const messages = collectErrors(errors);
           const logger = new Logger('ValidationPipe');
-          logger.error(`Validation failed: ${JSON.stringify(messages)}`);
+          logger.error(`Validation failed: ${JSON.stringify(messages, null, 2)}`);
+          
           return new HttpException(
             {
               status: 'error',

@@ -204,7 +204,7 @@ export class GrammarTopicsService {
       provider: ProviderEnum.GRAMMATIK,
       sections: [
         {
-          name: topic.title,
+          name: topic.title, // للتوافق مع الكود القديم (مع items)
           items: questionsResult.items.map((q: any) => ({
             questionId: q._id || q.id,
             points: 1,
