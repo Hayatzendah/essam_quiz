@@ -11,6 +11,7 @@ import {
   Req,
   Logger,
   ForbiddenException,
+  BadRequestException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -20,6 +21,7 @@ import { CreateExamDto, CreatePracticeExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { QueryExamDto } from './dto/query-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
+import { StartLebenExamDto } from './dto/start-leben-exam.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -335,5 +337,32 @@ export class ExamsController {
       `[POST /exams/${examId}/attempts] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}`,
     );
     return this.attemptsService.startAttempt(examId, req.user);
+  }
+
+  // بدء محاولة Leben in Deutschland exam (للطلاب)
+  @Post('leben/start')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  @ApiOperation({
+    summary: 'Start Leben in Deutschland exam attempt (for students)',
+    description:
+      'بدء محاولة على امتحان Leben in Deutschland - للطلاب فقط. Exam يجب أن يكون منشور (published) ومتاح للطلاب. يتم اختيار 30 سؤال عام و 3 أسئلة خاصة بالولاية عشوائياً.',
+  })
+  @ApiResponse({ status: 201, description: 'Leben exam attempt started successfully' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - exam not found, not a Leben exam, not published, or attempt limit reached',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  async startLebenExam(@Body() dto: StartLebenExamDto, @Req() req: any) {
+    this.logger.log(
+      `[POST /exams/leben/start] Request received - examId: ${dto.examId}, state: ${dto.state}, userId: ${req.user?.sub || req.user?.userId}, role: ${req.user?.role}`,
+    );
+    const studentId = req.user?.sub || req.user?.userId || req.user?.id;
+    if (!studentId) {
+      throw new BadRequestException('Student ID not found in token');
+    }
+    return this.attemptsService.startLebenExam(dto, studentId);
   }
 }
