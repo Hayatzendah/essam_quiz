@@ -16,6 +16,7 @@ import {
 import { Type } from 'class-transformer';
 import { QuestionStatus, QuestionType } from '../schemas/question.schema';
 import { ProviderEnum } from '../../common/enums/provider.enum';
+import { ExamSkillEnum } from '../../common/enums';
 
 class McqOptionDto {
   @IsString()
@@ -94,6 +95,11 @@ export class CreateQuestionDto {
   @IsOptional() @IsString() section?: string;
   @IsOptional() @IsString() level?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
+
+  // للحقول الخاصة بـ Leben in Deutschland
+  @IsOptional() @IsEnum(ExamSkillEnum) mainSkill?: ExamSkillEnum;
+  @IsOptional() @IsString() usageCategory?: string; // "common" | "state_specific"
+  @IsOptional() @IsString() state?: string; // للأسئلة الخاصة بالولايات
 
   // حالة ابتدائية اختيارية
   @IsOptional()

@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { ProviderEnum } from '../../common/enums/provider.enum';
+import { ExamSkillEnum } from '../../common/enums';
 
 export type QuestionDocument = Question & Document;
 
@@ -159,6 +160,16 @@ export class Question {
   // ربط بكليب الاستماع (لأسئلة Hören)
   @Prop({ type: Types.ObjectId, ref: 'ListeningClip', required: false, index: true })
   listeningClipId?: Types.ObjectId;
+
+  // للحقول الخاصة بـ Leben in Deutschland
+  @Prop({ type: String, enum: Object.values(ExamSkillEnum), trim: true })
+  mainSkill?: ExamSkillEnum;
+
+  @Prop({ trim: true })
+  usageCategory?: string; // "common" | "state_specific"
+
+  @Prop({ trim: true })
+  state?: string; // للأسئلة الخاصة بالولايات
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);
