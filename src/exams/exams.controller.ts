@@ -339,6 +339,19 @@ export class ExamsController {
     return this.attemptsService.startAttempt(examId, req.user);
   }
 
+  // جلب قائمة امتحانات Leben in Deutschland المتاحة
+  @Get('leben/available')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get available Leben in Deutschland exams',
+    description: 'جلب قائمة امتحانات Leben in Deutschland المنشورة والمتاحة',
+  })
+  @ApiResponse({ status: 200, description: 'List of available Leben exams' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getAvailableLebenExams() {
+    return this.service.getAvailableLebenExams();
+  }
+
   // بدء محاولة Leben in Deutschland exam (للطلاب)
   @Post('leben/start')
   @UseGuards(JwtAuthGuard, RolesGuard)

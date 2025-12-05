@@ -661,6 +661,23 @@ export class ExamsService {
   }
 
   /**
+   * جلب قائمة امتحانات Leben in Deutschland المتاحة
+   */
+  async getAvailableLebenExams() {
+    return this.model
+      .find({
+        status: ExamStatusEnum.PUBLISHED,
+        examCategory: 'leben_exam',
+        examType: 'leben_test',
+        provider: 'leben_in_deutschland',
+        mainSkill: 'leben_test',
+      })
+      .select('_id title timeLimitMin level')
+      .lean()
+      .exec();
+  }
+
+  /**
    * عرض قائمة الامتحانات المنشورة للطلاب (Public endpoint)
    * - يعرض فقط الامتحانات المنشورة (status = published)
    * - يفلتر حسب level و provider إذا تم إرسالهما
