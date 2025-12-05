@@ -97,8 +97,8 @@ export class QuestionsService {
   }
 
   async createBulkQuestions(questions: CreateQuestionDto[], createdBy?: string) {
-    const results = [];
-    const errors = [];
+    const results: Array<{ index: number; id: any; prompt: string; status: QuestionStatus }> = [];
+    const errors: Array<{ index: number; prompt: string; error: string }> = [];
 
     for (let i = 0; i < questions.length; i++) {
       try {
@@ -137,11 +137,12 @@ export class QuestionsService {
           prompt: doc.prompt,
           status: doc.status,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         errors.push({
           index: i,
           prompt: questions[i]?.prompt || 'Unknown',
-          error: error.message || 'Unknown error',
+          error: errorMessage,
         });
       }
     }
