@@ -96,6 +96,65 @@ export class QuestionsService {
     };
   }
 
+  async createBulkQuestions(questions: CreateQuestionDto[], createdBy?: string) {
+    const results = [];
+    const errors = [];
+
+    for (let i = 0; i < questions.length; i++) {
+      try {
+        const question = questions[i];
+        this.validateCreatePayload(question);
+        
+        // استخراج examId من الـ dto قبل إنشاء السؤال
+        const { examId, ...questionData } = question;
+        
+        const doc = await this.model.create({
+          ...questionData,
+          status: question.status ?? QuestionStatus.DRAFT,
+          createdBy,
+          // FREE_TEXT fields (إذا كانت موجودة)
+          ...(question.qType === QuestionType.FREE_TEXT && {
+            ...(question.sampleAnswer && { sampleAnswer: question.sampleAnswer }),
+            ...(question.minWords !== undefined && { minWords: question.minWords }),
+            ...(question.maxWords !== undefined && { maxWords: question.maxWords }),
+          }),
+          // SPEAKING fields (إذا كانت موجودة)
+          ...(question.qType === QuestionType.SPEAKING && {
+            ...(question.modelAnswerText && { modelAnswerText: question.modelAnswerText }),
+            ...(question.minSeconds !== undefined && { minSeconds: question.minSeconds }),
+            ...(question.maxSeconds !== undefined && { maxSeconds: question.maxSeconds }),
+          }),
+        });
+
+        // إذا كان examId موجود، نربط السؤال بالامتحان
+        if (examId) {
+          await this.addQuestionToExam(examId, String(doc._id), question.section);
+        }
+
+        results.push({
+          index: i,
+          id: doc._id,
+          prompt: doc.prompt,
+          status: doc.status,
+        });
+      } catch (error: any) {
+        errors.push({
+          index: i,
+          prompt: questions[i]?.prompt || 'Unknown',
+          error: error.message || 'Unknown error',
+        });
+      }
+    }
+
+    return {
+      success: results.length,
+      failed: errors.length,
+      total: questions.length,
+      results,
+      errors: errors.length > 0 ? errors : undefined,
+    };
+  }
+
   /**
    * إضافة سؤال لامتحان موجود
    * - يبحث عن section بالاسم ويضيف السؤال فيه

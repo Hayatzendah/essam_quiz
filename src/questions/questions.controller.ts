@@ -18,6 +18,7 @@ import { QueryQuestionDto } from './dto/query-question.dto';
 import { FindVocabDto } from './dto/find-vocab.dto';
 import { GetGrammarQuestionsDto } from './dto/get-grammar-questions.dto';
 import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
+import { CreateBulkQuestionsDto } from './dto/create-bulk-questions.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -60,6 +61,20 @@ export class QuestionsController {
   @Roles('admin', 'teacher')
   createWithExam(@Body() dto: CreateQuestionWithExamDto) {
     return this.service.createQuestionWithExam(dto);
+  }
+
+  @ApiOperation({ summary: 'Create multiple questions in bulk (teacher/admin only)' })
+  @ApiResponse({ status: 201, description: 'Questions created successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - only teachers and admins can create questions',
+  })
+  @Post('bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  createBulk(@Body() dto: CreateBulkQuestionsDto, @Req() req: any) {
+    const userId = req.user?.userId || req.user?.sub || req.user?.id;
+    return this.service.createBulkQuestions(dto.questions, userId);
   }
 
   // GET /questions/vocab - البحث عن أسئلة المفردات (Wortschatz)
