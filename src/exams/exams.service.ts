@@ -607,9 +607,16 @@ export class ExamsService {
       ],
     };
 
+    // فلترة حسب examCategory - يشمل grammar_exam و leben_exam
+    if (q?.examCategory) {
+      filter.examCategory = q.examCategory;
+    } else {
+      // إذا لم يتم تحديد examCategory، نعرض grammar_exam و leben_exam
+      filter.examCategory = { $in: ['grammar_exam', 'leben_exam'] };
+    }
+
     if (q?.level) filter.level = q.level;
     if (q?.provider) filter.provider = q.provider;
-    if (q?.examCategory) filter.examCategory = q.examCategory;
     if (q?.mainSkill) filter.mainSkill = q.mainSkill;
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
