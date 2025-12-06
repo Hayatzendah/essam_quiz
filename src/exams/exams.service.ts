@@ -477,7 +477,11 @@ export class ExamsService {
 
     // فلترة مشتركة
     if (q?.level) filter.level = q.level;
-    if (q?.provider) filter.provider = q.provider;
+    if (q?.provider) {
+      // استخدام regex للبحث case-insensitive (لأن provider قد يكون "Goethe" أو "goethe" أو "GOETHE")
+      const escapedProvider = q.provider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.provider = { $regex: `^${escapedProvider}$`, $options: 'i' };
+    }
     if (q?.examCategory) filter.examCategory = q.examCategory;
     if (q?.mainSkill) filter.mainSkill = q.mainSkill;
 
@@ -566,7 +570,11 @@ export class ExamsService {
 
     // فلترة مشتركة
     if (q?.level) filter.level = q.level;
-    if (q?.provider) filter.provider = q.provider;
+    if (q?.provider) {
+      // استخدام regex للبحث case-insensitive (لأن provider قد يكون "Goethe" أو "goethe" أو "GOETHE")
+      const escapedProvider = q.provider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.provider = { $regex: `^${escapedProvider}$`, $options: 'i' };
+    }
 
     // فلترة حسب state (الولاية) - البحث في sections.tags
     if (q?.state) {
@@ -616,7 +624,11 @@ export class ExamsService {
     }
 
     if (q?.level) filter.level = q.level;
-    if (q?.provider) filter.provider = q.provider;
+    if (q?.provider) {
+      // استخدام regex للبحث case-insensitive (لأن provider قد يكون "Goethe" أو "goethe" أو "GOETHE")
+      const escapedProvider = q.provider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.provider = { $regex: `^${escapedProvider}$`, $options: 'i' };
+    }
     if (q?.mainSkill) filter.mainSkill = q.mainSkill;
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();

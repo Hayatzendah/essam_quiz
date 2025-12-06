@@ -31,7 +31,11 @@ export class ListeningClipsService {
     teil?: number;
   }) {
     const query: any = {};
-    if (filters?.provider) query.provider = filters.provider;
+    if (filters?.provider) {
+      // استخدام regex للبحث case-insensitive (لأن provider قد يكون "Goethe" أو "goethe" أو "GOETHE")
+      const escapedProvider = filters.provider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.provider = { $regex: `^${escapedProvider}$`, $options: 'i' };
+    }
     if (filters?.level) query.level = filters.level;
     if (filters?.skill) query.skill = filters.skill;
     if (filters?.teil) query.teil = filters.teil;

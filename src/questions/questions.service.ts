@@ -242,7 +242,11 @@ export class QuestionsService {
 
   buildQuery(filters: QueryQuestionDto): FilterQuery<QuestionDocument> {
     const q: FilterQuery<QuestionDocument> = {};
-    if (filters.provider) q.provider = filters.provider;
+    if (filters.provider) {
+      // استخدام regex للبحث case-insensitive (لأن provider قد يكون "Goethe" أو "goethe" أو "GOETHE")
+      const escapedProvider = filters.provider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      q.provider = { $regex: `^${escapedProvider}$`, $options: 'i' };
+    }
     if (filters.level) q.level = filters.level;
     if (filters.section) q.section = filters.section;
     if (filters.qType) q.qType = filters.qType;
