@@ -108,6 +108,34 @@ export class AnalyticsController {
     return this.analytics.getExamPerformance(performanceType, req?.user);
   }
 
+  @Get('skills')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({ 
+    summary: 'Get skills analytics', 
+    description: 'أداء الطلاب حسب المهارة (Hören، Lesen، Schreiben، Sprechen، misc)' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'إحصائيات لكل مهارة',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          skill: { type: 'string', example: 'hoeren' },
+          skillLabel: { type: 'string', example: 'Hören' },
+          attemptsCount: { type: 'number', example: 120 },
+          avgScore: { type: 'number', example: 76 },
+          passRate: { type: 'number', example: 70 }
+        }
+      }
+    }
+  })
+  getSkills(@Req() req?: any) {
+    return this.analytics.getSkills(req?.user);
+  }
+
   @Get('exam/:examId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')

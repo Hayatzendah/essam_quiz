@@ -416,6 +416,128 @@ export class AnalyticsService {
 
     return result;
   }
+
+  /**
+   * الحصول على أداء الطلاب حسب المهارة
+   * @param user المستخدم الحالي
+   * @returns إحصائيات لكل مهارة (hoeren, lesen, schreiben, sprechen, misc)
+   */
+  async getSkills(user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    // جلب جميع المحاولات المصححة مع ربطها بالامتحانات
+    const attempts = await this.AttemptModel.aggregate([
+      {
+        $match: {
+          status: AttemptStatus.GRADED,
+        },
+      },
+      {
+        $lookup: {
+          from: 'exams',
+          localField: 'examId',
+          foreignField: '_id',
+          as: 'exam',
+        },
+      },
+      {
+        $unwind: {
+          path: '$exam',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          'exam.mainSkill': { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: '$exam.mainSkill',
+          attemptsCount: { $sum: 1 },
+          totalScore: {
+            $sum: {
+              $cond: [
+                { $gt: ['$totalMaxScore', 0] },
+                {
+                  $multiply: [
+                    {
+                      $divide: ['$finalScore', '$totalMaxScore'],
+                    },
+                    100, // تحويل إلى نسبة مئوية
+                  ],
+                },
+                0,
+              ],
+            },
+          },
+          passedCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $gt: ['$totalMaxScore', 0] },
+                    {
+                      $gte: [
+                        {
+                          $divide: ['$finalScore', '$totalMaxScore'],
+                        },
+                        0.6, // 60% كحد أدنى للنجاح
+                      ],
+                    },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]).exec();
+
+    // خريطة لتسميات المهارات
+    const skillLabels: Record<string, string> = {
+      hoeren: 'Hören',
+      lesen: 'Lesen',
+      schreiben: 'Schreiben',
+      sprechen: 'Sprechen',
+      misc: 'Misc',
+      mixed: 'Mixed',
+      leben_test: 'Leben Test',
+    };
+
+    // بناء النتيجة
+    const result = attempts.map((stat) => {
+      const skill = String(stat._id).toLowerCase();
+      const avgScore = stat.attemptsCount > 0 ? stat.totalScore / stat.attemptsCount : 0;
+      const passRate =
+        stat.attemptsCount > 0 ? (stat.passedCount / stat.attemptsCount) * 100 : 0;
+
+      return {
+        skill,
+        skillLabel: skillLabels[skill] || skill.charAt(0).toUpperCase() + skill.slice(1),
+        attemptsCount: stat.attemptsCount,
+        avgScore: Math.round(avgScore * 100) / 100,
+        passRate: Math.round(passRate * 100) / 100,
+      };
+    });
+
+    // ترتيب حسب المهارات الأساسية أولاً
+    const skillOrder = ['hoeren', 'lesen', 'schreiben', 'sprechen', 'misc', 'mixed', 'leben_test'];
+    result.sort((a, b) => {
+      const aIndex = skillOrder.indexOf(a.skill);
+      const bIndex = skillOrder.indexOf(b.skill);
+      if (aIndex === -1 && bIndex === -1) return 0;
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+
+    return result;
+  }
 }
 
 
