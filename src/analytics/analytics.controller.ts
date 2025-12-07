@@ -80,6 +80,34 @@ export class AnalyticsController {
     return this.analytics.getPassRate(daysNumber, req?.user);
   }
 
+  @Get('exam-performance')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({ 
+    summary: 'Get exam performance analytics', 
+    description: 'جلب أفضل أو أسوأ الامتحانات حسب متوسط الدرجات' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'قائمة بالامتحانات مع متوسط الدرجات وعدد المحاولات',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          examId: { type: 'string' },
+          examName: { type: 'string' },
+          avgScore: { type: 'number' },
+          attempts: { type: 'number' }
+        }
+      }
+    }
+  })
+  getExamPerformance(@Query('type') type?: string, @Req() req?: any) {
+    const performanceType = (type === 'worst' ? 'worst' : 'best') as 'best' | 'worst';
+    return this.analytics.getExamPerformance(performanceType, req?.user);
+  }
+
   @Get('exam/:examId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')

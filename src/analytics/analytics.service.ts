@@ -27,45 +27,26 @@ export class AnalyticsService {
     const userId = user.userId || (user as any).sub || (user as any).id;
     const isAdmin = user.role === 'admin';
 
-    // إحصائيات عامة
+    // إجمالي عدد الامتحانات
     const totalExams = await this.ExamModel.countDocuments(
       isAdmin ? {} : { ownerId: userId },
     ).exec();
 
-    const totalAttempts = await this.AttemptModel.countDocuments().exec();
-
+    // إجمالي عدد الأسئلة
     const totalQuestions = await this.QuestionModel.countDocuments({
       status: 'published',
     }).exec();
 
-    // متوسط الدرجات
-    const gradedAttempts = await this.AttemptModel.find({
-      status: AttemptStatus.GRADED,
-    })
-      .select('finalScore totalMaxScore')
-      .lean()
-      .exec();
-
-    const avgScore =
-      gradedAttempts.length > 0
-        ? gradedAttempts.reduce((sum, a) => sum + (a.finalScore || 0), 0) / gradedAttempts.length
-        : 0;
-
-    const avgPercentage =
-      gradedAttempts.length > 0
-        ? gradedAttempts.reduce(
-            (sum, a) => sum + (a.totalMaxScore > 0 ? (a.finalScore || 0) / a.totalMaxScore : 0),
-            0,
-          ) / gradedAttempts.length
-        : 0;
+    // عدد الامتحانات المنشورة
+    const publishedExams = await this.ExamModel.countDocuments({
+      ...(isAdmin ? {} : { ownerId: userId }),
+      status: 'published',
+    }).exec();
 
     return {
       totalExams,
-      totalAttempts,
       totalQuestions,
-      averageScore: Math.round(avgScore * 100) / 100,
-      averagePercentage: Math.round(avgPercentage * 10000) / 100, // كنسبة مئوية
-      totalGradedAttempts: gradedAttempts.length,
+      publishedExams,
     };
   }
 
@@ -357,6 +338,83 @@ export class AnalyticsService {
       overallPassRate,
       exams: perExam,
     };
+  }
+
+  /**
+   * الحصول على أفضل أو أسوأ الامتحانات حسب متوسط الدرجات
+   * @param type نوع الترتيب: 'best' (أعلى متوسط) أو 'worst' (أدنى متوسط)
+   * @param user المستخدم الحالي
+   * @returns قائمة بالامتحانات مع متوسط الدرجات وعدد المحاولات
+   */
+  async getExamPerformance(type: 'best' | 'worst' = 'best', user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    // تجميع المحاولات حسب examId وحساب متوسط الدرجات
+    const examStats = await this.AttemptModel.aggregate([
+      {
+        $match: {
+          status: AttemptStatus.GRADED, // فقط المحاولات المصححة
+        },
+      },
+      {
+        $group: {
+          _id: '$examId',
+          avgScore: {
+            $avg: {
+              $cond: [
+                { $gt: ['$totalMaxScore', 0] },
+                {
+                  $multiply: [
+                    {
+                      $divide: ['$finalScore', '$totalMaxScore'],
+                    },
+                    100, // تحويل إلى نسبة مئوية
+                  ],
+                },
+                0,
+              ],
+            },
+          },
+          attempts: { $sum: 1 },
+        },
+      },
+      {
+        $match: {
+          attempts: { $gt: 0 }, // فقط الامتحانات التي لديها محاولات
+        },
+      },
+      {
+        $sort: type === 'best' ? { avgScore: -1 } : { avgScore: 1 }, // ترتيب حسب النوع
+      },
+      {
+        $limit: 10, // أعلى/أدنى 10 امتحانات
+      },
+    ]).exec();
+
+    if (examStats.length === 0) {
+      return [];
+    }
+
+    // جلب معلومات الامتحانات
+    const examIds = examStats.map((stat) => stat._id);
+    const exams = await this.ExamModel.find({ _id: { $in: examIds } })
+      .select({ title: 1 })
+      .lean()
+      .exec();
+
+    const examsMap = new Map(exams.map((e) => [String(e._id), e.title]));
+
+    // بناء النتيجة
+    const result = examStats.map((stat) => ({
+      examId: String(stat._id),
+      examName: examsMap.get(String(stat._id)) ?? 'Unknown exam',
+      avgScore: Math.round(stat.avgScore * 100) / 100,
+      attempts: stat.attempts,
+    }));
+
+    return result;
   }
 }
 
