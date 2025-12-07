@@ -20,11 +20,12 @@ export type QuestionDifficulty = 'easy' | 'med' | 'hard';
 
 export type QuestionStatus = 'draft' | 'published' | 'archived';
 
-export type ExamStatus = 'draft' | 'published';
+export type ExamStatus = 'draft' | 'published' | 'archived';
 
 export const ExamStatusEnum = {
   DRAFT: 'draft' as const,
   PUBLISHED: 'published' as const,
+  ARCHIVED: 'archived' as const,
 } as const;
 
 export type AttemptStatus = 'in_progress' | 'submitted' | 'graded';

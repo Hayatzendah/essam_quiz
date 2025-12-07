@@ -1,0 +1,4805 @@
+{
+  "questions": [
+    {
+      "prompt": "Was ist die Hauptstadt von Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "München", "isCorrect": false },
+      { "text": "Berlin", "isCorrect": true },
+      { "text": "Hamburg", "isCorrect": false },
+      { "text": "Frankfurt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie viele Bundesländer hat Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "14", "isCorrect": false },
+      { "text": "15", "isCorrect": false },
+      { "text": "16", "isCorrect": true },
+      { "text": "17", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wer ist das Staatsoberhaupt von Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Der Bundeskanzler", "isCorrect": false },
+      { "text": "Der Bundespräsident", "isCorrect": true },
+      { "text": "Der Bundestagspräsident", "isCorrect": false },
+      { "text": "Der Ministerpräsident", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welche Farbe hat die deutsche Flagge?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Rot-Weiß-Grün", "isCorrect": false },
+      { "text": "Schwarz-Rot-Gold", "isCorrect": true },
+      { "text": "Blau-Weiß-Rot", "isCorrect": false },
+      { "text": "Schwarz-Weiß-Rot", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wann wurde die Bundesrepublik Deutschland gegründet?",
+    "qType": "mcq",
+    "options": [
+      { "text": "1945", "isCorrect": false },
+      { "text": "1949", "isCorrect": true },
+      { "text": "1955", "isCorrect": false },
+      { "text": "1961", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie heißt das deutsche Parlament?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Bundesrat", "isCorrect": false },
+      { "text": "Bundestag", "isCorrect": true },
+      { "text": "Bundesversammlung", "isCorrect": false },
+      { "text": "Bundesgerichtshof", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Recht haben alle deutschen Staatsbürger ab 18 Jahren?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Recht zu wählen", "isCorrect": true },
+      { "text": "Das Recht zu arbeiten", "isCorrect": false },
+      { "text": "Das Recht zu studieren", "isCorrect": false },
+      { "text": "Das Recht zu reisen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was bedeutet 'Grundgesetz'?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Verfassung Deutschlands", "isCorrect": true },
+      { "text": "Ein Gesetz über Grundstücke", "isCorrect": false },
+      { "text": "Ein Gesetz über Grundschulen", "isCorrect": false },
+      { "text": "Ein Gesetz über Grundrechte", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welche Religion ist in Deutschland am häufigsten?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Islam", "isCorrect": false },
+      { "text": "Judentum", "isCorrect": false },
+      { "text": "Christentum", "isCorrect": true },
+      { "text": "Buddhismus", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie heißt die deutsche Nationalhymne?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Deutschland über alles", "isCorrect": false },
+      { "text": "Das Lied der Deutschen", "isCorrect": true },
+      { "text": "Einigkeit und Recht und Freiheit", "isCorrect": false },
+      { "text": "Deutschlandlied", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wer wählt den Bundeskanzler?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Der Bundespräsident", "isCorrect": false },
+      { "text": "Der Bundestag", "isCorrect": true },
+      { "text": "Das Volk", "isCorrect": false },
+      { "text": "Der Bundesrat", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie oft finden Bundestagswahlen normalerweise statt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Alle 3 Jahre", "isCorrect": false },
+      { "text": "Alle 4 Jahre", "isCorrect": true },
+      { "text": "Alle 5 Jahre", "isCorrect": false },
+      { "text": "Alle 6 Jahre", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Aufgabe des Bundesrates?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Bundesregierung zu wählen", "isCorrect": false },
+      { "text": "Die Interessen der Bundesländer zu vertreten", "isCorrect": true },
+      { "text": "Gesetze zu erlassen", "isCorrect": false },
+      { "text": "Die Verfassung zu ändern", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht garantiert die Meinungsfreiheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 1", "isCorrect": false },
+      { "text": "Artikel 5", "isCorrect": true },
+      { "text": "Artikel 10", "isCorrect": false },
+      { "text": "Artikel 20", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was bedeutet 'Bundesrepublik'?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Bundesstaat mit republikanischer Verfassung", "isCorrect": true },
+      { "text": "Ein Königreich", "isCorrect": false },
+      { "text": "Eine Diktatur", "isCorrect": false },
+      { "text": "Ein Kaiserreich", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Organ kontrolliert die Einhaltung des Grundgesetzes?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Der Bundestag", "isCorrect": false },
+      { "text": "Das Bundesverfassungsgericht", "isCorrect": true },
+      { "text": "Der Bundesrat", "isCorrect": false },
+      { "text": "Die Bundesregierung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wann fiel die Berliner Mauer?",
+    "qType": "mcq",
+    "options": [
+      { "text": "1987", "isCorrect": false },
+      { "text": "1989", "isCorrect": true },
+      { "text": "1990", "isCorrect": false },
+      { "text": "1991", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wann wurde Deutschland wiedervereinigt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "1989", "isCorrect": false },
+      { "text": "1990", "isCorrect": true },
+      { "text": "1991", "isCorrect": false },
+      { "text": "1992", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welche Sprache ist die Amtssprache in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Englisch", "isCorrect": false },
+      { "text": "Deutsch", "isCorrect": true },
+      { "text": "Französisch", "isCorrect": false },
+      { "text": "Latein", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Währung in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Deutsche Mark", "isCorrect": false },
+      { "text": "Euro", "isCorrect": true },
+      { "text": "Pfund", "isCorrect": false },
+      { "text": "Dollar", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Land grenzt im Osten an Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Frankreich", "isCorrect": false },
+      { "text": "Polen", "isCorrect": true },
+      { "text": "Österreich", "isCorrect": false },
+      { "text": "Schweiz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Land grenzt im Süden an Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Dänemark", "isCorrect": false },
+      { "text": "Österreich", "isCorrect": true },
+      { "text": "Polen", "isCorrect": false },
+      { "text": "Belgien", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Land grenzt im Westen an Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Polen", "isCorrect": false },
+      { "text": "Frankreich", "isCorrect": true },
+      { "text": "Österreich", "isCorrect": false },
+      { "text": "Dänemark", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Land grenzt im Norden an Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Österreich", "isCorrect": false },
+      { "text": "Dänemark", "isCorrect": true },
+      { "text": "Polen", "isCorrect": false },
+      { "text": "Frankreich", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie heißt der längste Fluss in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Elbe", "isCorrect": false },
+      { "text": "Rhein", "isCorrect": true },
+      { "text": "Donau", "isCorrect": false },
+      { "text": "Weser", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie heißt der höchste Berg in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Brocken", "isCorrect": false },
+      { "text": "Zugspitze", "isCorrect": true },
+      { "text": "Feldberg", "isCorrect": false },
+      { "text": "Watzmann", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welche Stadt hat die meisten Einwohner in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Hamburg", "isCorrect": false },
+      { "text": "Berlin", "isCorrect": true },
+      { "text": "München", "isCorrect": false },
+      { "text": "Köln", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Bayern?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nürnberg", "isCorrect": false },
+      { "text": "München", "isCorrect": true },
+      { "text": "Augsburg", "isCorrect": false },
+      { "text": "Regensburg", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Nordrhein-Westfalen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Köln", "isCorrect": false },
+      { "text": "Düsseldorf", "isCorrect": true },
+      { "text": "Dortmund", "isCorrect": false },
+      { "text": "Essen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Hessen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Frankfurt", "isCorrect": false },
+      { "text": "Wiesbaden", "isCorrect": true },
+      { "text": "Kassel", "isCorrect": false },
+      { "text": "Darmstadt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Baden-Württemberg?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Mannheim", "isCorrect": false },
+      { "text": "Stuttgart", "isCorrect": true },
+      { "text": "Karlsruhe", "isCorrect": false },
+      { "text": "Freiburg", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Niedersachsen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Braunschweig", "isCorrect": false },
+      { "text": "Hannover", "isCorrect": true },
+      { "text": "Oldenburg", "isCorrect": false },
+      { "text": "Osnabrück", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Sachsen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Leipzig", "isCorrect": false },
+      { "text": "Dresden", "isCorrect": true },
+      { "text": "Chemnitz", "isCorrect": false },
+      { "text": "Zwickau", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Thüringen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Jena", "isCorrect": false },
+      { "text": "Erfurt", "isCorrect": true },
+      { "text": "Weimar", "isCorrect": false },
+      { "text": "Gera", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Sachsen-Anhalt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Halle", "isCorrect": false },
+      { "text": "Magdeburg", "isCorrect": true },
+      { "text": "Dessau", "isCorrect": false },
+      { "text": "Wittenberg", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Mecklenburg-Vorpommern?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Rostock", "isCorrect": false },
+      { "text": "Schwerin", "isCorrect": true },
+      { "text": "Greifswald", "isCorrect": false },
+      { "text": "Wismar", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Brandenburg?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Potsdam", "isCorrect": true },
+      { "text": "Cottbus", "isCorrect": false },
+      { "text": "Brandenburg", "isCorrect": false },
+      { "text": "Frankfurt (Oder)", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Schleswig-Holstein?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Lübeck", "isCorrect": false },
+      { "text": "Kiel", "isCorrect": true },
+      { "text": "Flensburg", "isCorrect": false },
+      { "text": "Neumünster", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Rheinland-Pfalz?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Mainz", "isCorrect": true },
+      { "text": "Koblenz", "isCorrect": false },
+      { "text": "Trier", "isCorrect": false },
+      { "text": "Ludwigshafen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Saarland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Saarbrücken", "isCorrect": true },
+      { "text": "Neunkirchen", "isCorrect": false },
+      { "text": "Homburg", "isCorrect": false },
+      { "text": "Völklingen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hauptstadt von Bremen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Bremen", "isCorrect": true },
+      { "text": "Bremerhaven", "isCorrect": false },
+      { "text": "Oldenburg", "isCorrect": false },
+      { "text": "Delmenhorst", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht schützt die Religionsfreiheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 3", "isCorrect": false },
+      { "text": "Artikel 4", "isCorrect": true },
+      { "text": "Artikel 5", "isCorrect": false },
+      { "text": "Artikel 6", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht garantiert die Gleichberechtigung von Mann und Frau?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 2", "isCorrect": false },
+      { "text": "Artikel 3", "isCorrect": true },
+      { "text": "Artikel 4", "isCorrect": false },
+      { "text": "Artikel 5", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht schützt die Unverletzlichkeit der Wohnung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 11", "isCorrect": false },
+      { "text": "Artikel 13", "isCorrect": true },
+      { "text": "Artikel 14", "isCorrect": false },
+      { "text": "Artikel 16", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht garantiert die Versammlungsfreiheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 7", "isCorrect": false },
+      { "text": "Artikel 8", "isCorrect": true },
+      { "text": "Artikel 9", "isCorrect": false },
+      { "text": "Artikel 10", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht schützt das Brief- und Postgeheimnis?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 9", "isCorrect": false },
+      { "text": "Artikel 10", "isCorrect": true },
+      { "text": "Artikel 11", "isCorrect": false },
+      { "text": "Artikel 12", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht garantiert die Freizügigkeit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 10", "isCorrect": false },
+      { "text": "Artikel 11", "isCorrect": true },
+      { "text": "Artikel 12", "isCorrect": false },
+      { "text": "Artikel 13", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht garantiert die Berufsfreiheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 11", "isCorrect": false },
+      { "text": "Artikel 12", "isCorrect": true },
+      { "text": "Artikel 13", "isCorrect": false },
+      { "text": "Artikel 14", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht schützt das Eigentum?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 13", "isCorrect": false },
+      { "text": "Artikel 14", "isCorrect": true },
+      { "text": "Artikel 15", "isCorrect": false },
+      { "text": "Artikel 16", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht garantiert die Asylberechtigung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 15", "isCorrect": false },
+      { "text": "Artikel 16a", "isCorrect": true },
+      { "text": "Artikel 17", "isCorrect": false },
+      { "text": "Artikel 18", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welches Grundrecht garantiert das Petitionsrecht?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Artikel 16", "isCorrect": false },
+      { "text": "Artikel 17", "isCorrect": true },
+      { "text": "Artikel 18", "isCorrect": false },
+      { "text": "Artikel 19", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Aufgabe des Bundesverfassungsgerichts?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Gesetze zu erlassen", "isCorrect": false },
+      { "text": "Die Verfassung zu schützen und zu interpretieren", "isCorrect": true },
+      { "text": "Die Regierung zu wählen", "isCorrect": false },
+      { "text": "Steuern zu erheben", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wo tagt der Bundestag?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Im Bundeskanzleramt", "isCorrect": false },
+      { "text": "Im Reichstagsgebäude in Berlin", "isCorrect": true },
+      { "text": "Im Bundesrat", "isCorrect": false },
+      { "text": "Im Bundesverfassungsgericht", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie viele Abgeordnete hat der Bundestag ungefähr?",
+    "qType": "mcq",
+    "options": [
+      { "text": "400-500", "isCorrect": false },
+      { "text": "600-700", "isCorrect": true },
+      { "text": "800-900", "isCorrect": false },
+      { "text": "1000-1100", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die 5-Prozent-Hürde?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Steuer", "isCorrect": false },
+      { "text": "Eine Mindeststimmenzahl für Parteien, um in den Bundestag einzuziehen", "isCorrect": true },
+      { "text": "Eine Altersgrenze", "isCorrect": false },
+      { "text": "Eine Bildungsvoraussetzung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was bedeutet 'Koalition' in der Politik?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Bündnis von Parteien zur Regierungsbildung", "isCorrect": true },
+      { "text": "Eine einzelne Partei", "isCorrect": false },
+      { "text": "Eine Wahl", "isCorrect": false },
+      { "text": "Ein Gesetz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Opposition?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Regierungsparteien", "isCorrect": false },
+      { "text": "Die Parteien, die nicht an der Regierung beteiligt sind", "isCorrect": true },
+      { "text": "Das Parlament", "isCorrect": false },
+      { "text": "Die Verwaltung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein 'Volksbegehren'?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Wahl", "isCorrect": false },
+      { "text": "Ein direktdemokratisches Instrument, bei dem Bürger Gesetze vorschlagen können", "isCorrect": true },
+      { "text": "Ein Gerichtsurteil", "isCorrect": false },
+      { "text": "Eine Regierungserklärung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welche Partei ist aktuell die größte im Bundestag?",
+    "qType": "mcq",
+    "options": [
+      { "text": "CDU/CSU", "isCorrect": false },
+      { "text": "SPD", "isCorrect": false },
+      { "text": "Die Antwort hängt von den aktuellen Wahlergebnissen ab", "isCorrect": true },
+      { "text": "Die Grünen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Aufgabe der Polizei?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Gesetze zu erlassen", "isCorrect": false },
+      { "text": "Die öffentliche Sicherheit und Ordnung zu gewährleisten", "isCorrect": true },
+      { "text": "Gerichtsurteile zu fällen", "isCorrect": false },
+      { "text": "Steuern zu erheben", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Notrufnummer in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "110", "isCorrect": false },
+      { "text": "112", "isCorrect": true },
+      { "text": "911", "isCorrect": false },
+      { "text": "999", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Polizeinotrufnummer in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "110", "isCorrect": true },
+      { "text": "112", "isCorrect": false },
+      { "text": "115", "isCorrect": false },
+      { "text": "116", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Feuerwehrnotrufnummer in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "110", "isCorrect": false },
+      { "text": "112", "isCorrect": true },
+      { "text": "115", "isCorrect": false },
+      { "text": "116", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Rettungsdienstnotrufnummer in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "110", "isCorrect": false },
+      { "text": "112", "isCorrect": true },
+      { "text": "115", "isCorrect": false },
+      { "text": "116", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Ab welchem Alter ist man in Deutschland volljährig?",
+    "qType": "mcq",
+    "options": [
+      { "text": "16 Jahre", "isCorrect": false },
+      { "text": "18 Jahre", "isCorrect": true },
+      { "text": "21 Jahre", "isCorrect": false },
+      { "text": "25 Jahre", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Ab welchem Alter darf man in Deutschland wählen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "16 Jahre", "isCorrect": false },
+      { "text": "18 Jahre", "isCorrect": true },
+      { "text": "21 Jahre", "isCorrect": false },
+      { "text": "25 Jahre", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Ab welchem Alter darf man in Deutschland Auto fahren?",
+    "qType": "mcq",
+    "options": [
+      { "text": "16 Jahre", "isCorrect": false },
+      { "text": "17 Jahre", "isCorrect": false },
+      { "text": "18 Jahre", "isCorrect": true },
+      { "text": "21 Jahre", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Schulpflicht in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "9 Jahre", "isCorrect": false },
+      { "text": "10 Jahre", "isCorrect": false },
+      { "text": "12 Jahre", "isCorrect": false },
+      { "text": "Die Dauer variiert je nach Bundesland, meist 9-10 Jahre", "isCorrect": true }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Welche Schulform gibt es in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Gymnasium", "isCorrect": false },
+      { "text": "Hauptschule, Realschule, Gymnasium, Gesamtschule", "isCorrect": true },
+      { "text": "Nur Gesamtschule", "isCorrect": false },
+      { "text": "Nur Hauptschule", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die duale Ausbildung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Theorie in der Schule", "isCorrect": false },
+      { "text": "Eine Kombination aus betrieblicher Praxis und Berufsschule", "isCorrect": true },
+      { "text": "Nur Praxis im Betrieb", "isCorrect": false },
+      { "text": "Ein Studium", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie lange dauert eine duale Ausbildung normalerweise?",
+    "qType": "mcq",
+    "options": [
+      { "text": "1-2 Jahre", "isCorrect": false },
+      { "text": "2-3,5 Jahre", "isCorrect": true },
+      { "text": "4-5 Jahre", "isCorrect": false },
+      { "text": "6-7 Jahre", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Arbeitslosenversicherung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Versicherung gegen Krankheit", "isCorrect": false },
+      { "text": "Eine Versicherung, die bei Arbeitslosigkeit Geld zahlt", "isCorrect": true },
+      { "text": "Eine Versicherung für Rentner", "isCorrect": false },
+      { "text": "Eine Versicherung für Autos", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Krankenversicherung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Versicherung gegen Arbeitslosigkeit", "isCorrect": false },
+      { "text": "Eine Versicherung, die medizinische Kosten übernimmt", "isCorrect": true },
+      { "text": "Eine Versicherung für Autos", "isCorrect": false },
+      { "text": "Eine Versicherung für Wohnungen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Rentenversicherung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Versicherung gegen Krankheit", "isCorrect": false },
+      { "text": "Eine Versicherung, die im Alter eine Rente zahlt", "isCorrect": true },
+      { "text": "Eine Versicherung für Autos", "isCorrect": false },
+      { "text": "Eine Versicherung für Arbeitslosigkeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Pflegeversicherung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Versicherung gegen Krankheit", "isCorrect": false },
+      { "text": "Eine Versicherung, die bei Pflegebedürftigkeit hilft", "isCorrect": true },
+      { "text": "Eine Versicherung für Autos", "isCorrect": false },
+      { "text": "Eine Versicherung für Arbeitslosigkeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Unfallversicherung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Versicherung gegen Krankheit", "isCorrect": false },
+      { "text": "Eine Versicherung, die bei Arbeitsunfällen hilft", "isCorrect": true },
+      { "text": "Eine Versicherung für Autos", "isCorrect": false },
+      { "text": "Eine Versicherung für Arbeitslosigkeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die gesetzliche Krankenversicherung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine private Versicherung", "isCorrect": false },
+      { "text": "Eine staatlich geregelte Krankenversicherung für alle", "isCorrect": true },
+      { "text": "Eine Versicherung nur für Beamte", "isCorrect": false },
+      { "text": "Eine Versicherung nur für Rentner", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Mindestlohn in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Er wird regelmäßig angepasst und beträgt aktuell etwa 12 Euro pro Stunde", "isCorrect": true },
+      { "text": "5 Euro pro Stunde", "isCorrect": false },
+      { "text": "20 Euro pro Stunde", "isCorrect": false },
+      { "text": "Es gibt keinen Mindestlohn", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie viele Stunden darf man pro Woche maximal arbeiten?",
+    "qType": "mcq",
+    "options": [
+      { "text": "40 Stunden", "isCorrect": false },
+      { "text": "48 Stunden", "isCorrect": true },
+      { "text": "60 Stunden", "isCorrect": false },
+      { "text": "Es gibt keine Begrenzung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie viele Urlaubstage hat man in Deutschland mindestens?",
+    "qType": "mcq",
+    "options": [
+      { "text": "15 Tage", "isCorrect": false },
+      { "text": "20 Tage", "isCorrect": true },
+      { "text": "30 Tage", "isCorrect": false },
+      { "text": "40 Tage", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Gewerkschaft?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Eine Organisation, die Arbeitnehmerinteressen vertritt", "isCorrect": true },
+      { "text": "Eine Firma", "isCorrect": false },
+      { "text": "Eine Behörde", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Betriebsrat?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Der Chef des Betriebs", "isCorrect": false },
+      { "text": "Eine gewählte Vertretung der Arbeitnehmer im Betrieb", "isCorrect": true },
+      { "text": "Eine Behörde", "isCorrect": false },
+      { "text": "Eine Partei", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Kündigungsfrist?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zeit, die man arbeiten muss, bevor man kündigen kann", "isCorrect": false },
+      { "text": "Die Zeit zwischen Kündigung und Arbeitsende", "isCorrect": true },
+      { "text": "Die Zeit, die man Urlaub hat", "isCorrect": false },
+      { "text": "Die Zeit, die man krank sein darf", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Probezeit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zeit nach der Kündigung", "isCorrect": false },
+      { "text": "Eine Testphase zu Beginn eines Arbeitsverhältnisses", "isCorrect": true },
+      { "text": "Die Zeit im Urlaub", "isCorrect": false },
+      { "text": "Die Zeit der Ausbildung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie lange dauert die Probezeit normalerweise?",
+    "qType": "mcq",
+    "options": [
+      { "text": "1 Monat", "isCorrect": false },
+      { "text": "3-6 Monate", "isCorrect": true },
+      { "text": "1 Jahr", "isCorrect": false },
+      { "text": "2 Jahre", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Arbeitsvertrag?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Vertrag über eine Wohnung", "isCorrect": false },
+      { "text": "Ein Vertrag zwischen Arbeitgeber und Arbeitnehmer", "isCorrect": true },
+      { "text": "Ein Vertrag über ein Auto", "isCorrect": false },
+      { "text": "Ein Vertrag über eine Versicherung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Steueridentifikationsnummer?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Nummer für die Krankenversicherung", "isCorrect": false },
+      { "text": "Eine eindeutige Nummer für jeden Steuerpflichtigen", "isCorrect": true },
+      { "text": "Eine Nummer für die Rentenversicherung", "isCorrect": false },
+      { "text": "Eine Nummer für den Führerschein", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Einkommensteuer?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Steuer auf Einkommen", "isCorrect": true },
+      { "text": "Eine Steuer auf Autos", "isCorrect": false },
+      { "text": "Eine Steuer auf Wohnungen", "isCorrect": false },
+      { "text": "Eine Steuer auf Lebensmittel", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Mehrwertsteuer?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Steuer auf Einkommen", "isCorrect": false },
+      { "text": "Eine Steuer auf Waren und Dienstleistungen", "isCorrect": true },
+      { "text": "Eine Steuer auf Autos", "isCorrect": false },
+      { "text": "Eine Steuer auf Wohnungen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie hoch ist die Mehrwertsteuer in Deutschland normalerweise?",
+    "qType": "mcq",
+    "options": [
+      { "text": "7%", "isCorrect": false },
+      { "text": "19% (reduziert 7% für bestimmte Waren)", "isCorrect": true },
+      { "text": "25%", "isCorrect": false },
+      { "text": "30%", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Mietvertrag?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Vertrag über eine Arbeit", "isCorrect": false },
+      { "text": "Ein Vertrag über eine Wohnung oder ein Haus", "isCorrect": true },
+      { "text": "Ein Vertrag über ein Auto", "isCorrect": false },
+      { "text": "Ein Vertrag über eine Versicherung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Kündigungsfrist bei einem Mietvertrag?",
+    "qType": "mcq",
+    "options": [
+      { "text": "1 Monat", "isCorrect": false },
+      { "text": "3 Monate (kann variieren)", "isCorrect": true },
+      { "text": "6 Monate", "isCorrect": false },
+      { "text": "1 Jahr", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Kaution?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Miete", "isCorrect": false },
+      { "text": "Eine Sicherheitsleistung für den Vermieter", "isCorrect": true },
+      { "text": "Eine Steuer", "isCorrect": false },
+      { "text": "Eine Versicherung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Nebenkosten?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Miete", "isCorrect": false },
+      { "text": "Zusätzliche Kosten wie Heizung, Wasser, Müll", "isCorrect": true },
+      { "text": "Die Kaution", "isCorrect": false },
+      { "text": "Eine Steuer", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Personalausweis?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Ausweis für Autos", "isCorrect": false },
+      { "text": "Ein amtlicher Ausweis zur Identifikation", "isCorrect": true },
+      { "text": "Ein Ausweis für die Arbeit", "isCorrect": false },
+      { "text": "Ein Ausweis für die Versicherung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Ab welchem Alter muss man einen Personalausweis haben?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ab 14 Jahren", "isCorrect": false },
+      { "text": "Ab 16 Jahren", "isCorrect": true },
+      { "text": "Ab 18 Jahren", "isCorrect": false },
+      { "text": "Ab 21 Jahren", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Reisepass?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Ausweis für Deutschland", "isCorrect": false },
+      { "text": "Ein Dokument für Reisen ins Ausland", "isCorrect": true },
+      { "text": "Ein Ausweis für die Arbeit", "isCorrect": false },
+      { "text": "Ein Ausweis für die Versicherung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Führerschein?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Ausweis zur Identifikation", "isCorrect": false },
+      { "text": "Eine Berechtigung zum Führen von Kraftfahrzeugen", "isCorrect": true },
+      { "text": "Ein Ausweis für die Arbeit", "isCorrect": false },
+      { "text": "Ein Ausweis für die Versicherung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Geschwindigkeitsbegrenzung innerorts?",
+    "qType": "mcq",
+    "options": [
+      { "text": "30 km/h", "isCorrect": false },
+      { "text": "50 km/h", "isCorrect": true },
+      { "text": "70 km/h", "isCorrect": false },
+      { "text": "100 km/h", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Geschwindigkeitsbegrenzung auf Landstraßen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "50 km/h", "isCorrect": false },
+      { "text": "100 km/h", "isCorrect": true },
+      { "text": "120 km/h", "isCorrect": false },
+      { "text": "150 km/h", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Geschwindigkeitsbegrenzung auf Autobahnen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "100 km/h", "isCorrect": false },
+      { "text": "Es gibt keine generelle Begrenzung, aber empfohlene 130 km/h", "isCorrect": true },
+      { "text": "150 km/h", "isCorrect": false },
+      { "text": "200 km/h", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Promillegrenze beim Autofahren?",
+    "qType": "mcq",
+    "options": [
+      { "text": "0,0 Promille", "isCorrect": false },
+      { "text": "0,5 Promille", "isCorrect": true },
+      { "text": "1,0 Promille", "isCorrect": false },
+      { "text": "1,5 Promille", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist eine Gurtpflicht?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Pflicht, einen Helm zu tragen", "isCorrect": false },
+      { "text": "Die Pflicht, einen Sicherheitsgurt zu tragen", "isCorrect": true },
+      { "text": "Die Pflicht, eine Versicherung zu haben", "isCorrect": false },
+      { "text": "Die Pflicht, einen Führerschein zu haben", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist eine Kfz-Haftpflichtversicherung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Versicherung gegen Diebstahl", "isCorrect": false },
+      { "text": "Eine Pflichtversicherung für Schäden an anderen", "isCorrect": true },
+      { "text": "Eine Versicherung gegen Krankheit", "isCorrect": false },
+      { "text": "Eine Versicherung für Arbeitslosigkeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Umweltzone?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Gebiet, in dem bestimmte Fahrzeuge nicht fahren dürfen", "isCorrect": true },
+      { "text": "Ein Gebiet ohne Verkehr", "isCorrect": false },
+      { "text": "Ein Gebiet nur für Elektroautos", "isCorrect": false },
+      { "text": "Ein Gebiet ohne Parkplätze", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist eine Umweltplakette?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Plakette für die Windschutzscheibe zur Kennzeichnung der Schadstoffklasse", "isCorrect": true },
+      { "text": "Eine Plakette für die Versicherung", "isCorrect": false },
+      { "text": "Eine Plakette für den Führerschein", "isCorrect": false },
+      { "text": "Eine Plakette für die Steuer", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die EU?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine einzelne Nation", "isCorrect": false },
+      { "text": "Die Europäische Union, ein Zusammenschluss europäischer Länder", "isCorrect": true },
+      { "text": "Eine Stadt", "isCorrect": false },
+      { "text": "Eine Partei", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wann wurde die EU gegründet?",
+    "qType": "mcq",
+    "options": [
+      { "text": "1945", "isCorrect": false },
+      { "text": "1957 (als EWG)", "isCorrect": true },
+      { "text": "1970", "isCorrect": false },
+      { "text": "1990", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wie viele Mitgliedsstaaten hat die EU ungefähr?",
+    "qType": "mcq",
+    "options": [
+      { "text": "15", "isCorrect": false },
+      { "text": "27", "isCorrect": true },
+      { "text": "35", "isCorrect": false },
+      { "text": "50", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Euro?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Währung der EU", "isCorrect": true },
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Eine Stadt", "isCorrect": false },
+      { "text": "Ein Gesetz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist das Schengen-Abkommen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Abkommen über die Abschaffung der Grenzkontrollen", "isCorrect": true },
+      { "text": "Ein Abkommen über Steuern", "isCorrect": false },
+      { "text": "Ein Abkommen über die Währung", "isCorrect": false },
+      { "text": "Ein Abkommen über die Bildung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die NATO?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Das Nordatlantische Verteidigungsbündnis", "isCorrect": true },
+      { "text": "Eine Stadt", "isCorrect": false },
+      { "text": "Ein Gesetz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die UNO?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Die Vereinten Nationen, eine internationale Organisation", "isCorrect": true },
+      { "text": "Eine Stadt", "isCorrect": false },
+      { "text": "Ein Gesetz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die UNESCO?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Eine UN-Organisation für Bildung, Wissenschaft und Kultur", "isCorrect": true },
+      { "text": "Eine Stadt", "isCorrect": false },
+      { "text": "Ein Gesetz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die WHO?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Die Weltgesundheitsorganisation", "isCorrect": true },
+      { "text": "Eine Stadt", "isCorrect": false },
+      { "text": "Ein Gesetz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Gleichberechtigung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die gleichen Rechte für alle Menschen", "isCorrect": true },
+      { "text": "Die gleichen Steuern für alle", "isCorrect": false },
+      { "text": "Die gleichen Löhne für alle", "isCorrect": false },
+      { "text": "Die gleichen Wohnungen für alle", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist Diskriminierung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die gleiche Behandlung aller", "isCorrect": false },
+      { "text": "Die ungerechte Behandlung von Menschen aufgrund bestimmter Merkmale", "isCorrect": true },
+      { "text": "Die faire Behandlung aller", "isCorrect": false },
+      { "text": "Die gerechte Behandlung aller", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist Toleranz?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Ablehnung anderer Meinungen", "isCorrect": false },
+      { "text": "Die Akzeptanz und Respektierung anderer Meinungen und Lebensweisen", "isCorrect": true },
+      { "text": "Die Gleichgültigkeit", "isCorrect": false },
+      { "text": "Die Intoleranz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist Integration?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Ausgrenzung von Menschen", "isCorrect": false },
+      { "text": "Die Einbeziehung von Menschen in die Gesellschaft", "isCorrect": true },
+      { "text": "Die Trennung von Menschen", "isCorrect": false },
+      { "text": "Die Diskriminierung von Menschen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist Migration?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Bleiben im eigenen Land", "isCorrect": false },
+      { "text": "Die Wanderung von Menschen von einem Land in ein anderes", "isCorrect": true },
+      { "text": "Das Reisen im Urlaub", "isCorrect": false },
+      { "text": "Das Studieren im Ausland", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Migrant?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Jemand, der im eigenen Land bleibt", "isCorrect": false },
+      { "text": "Jemand, der von einem Land in ein anderes zieht", "isCorrect": true },
+      { "text": "Jemand, der im Urlaub reist", "isCorrect": false },
+      { "text": "Jemand, der studiert", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Flüchtling?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Jemand, der freiwillig umzieht", "isCorrect": false },
+      { "text": "Jemand, der aus politischen oder anderen Gründen fliehen muss", "isCorrect": true },
+      { "text": "Jemand, der im Urlaub reist", "isCorrect": false },
+      { "text": "Jemand, der studiert", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist Asyl?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Wohnung", "isCorrect": false },
+      { "text": "Schutz für Verfolgte", "isCorrect": true },
+      { "text": "Eine Arbeit", "isCorrect": false },
+      { "text": "Eine Versicherung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Einbürgerung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Ausreise aus einem Land", "isCorrect": false },
+      { "text": "Die Erlangung der Staatsbürgerschaft", "isCorrect": true },
+      { "text": "Die Einreise in ein Land", "isCorrect": false },
+      { "text": "Die Arbeit in einem Land", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die doppelte Staatsbürgerschaft?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Staatsbürgerschaft von einem Land", "isCorrect": false },
+      { "text": "Die Staatsbürgerschaft von zwei Ländern gleichzeitig", "isCorrect": true },
+      { "text": "Die Staatsbürgerschaft von drei Ländern", "isCorrect": false },
+      { "text": "Keine Staatsbürgerschaft", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Tag der Deutschen Einheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "1. Januar", "isCorrect": false },
+      { "text": "3. Oktober", "isCorrect": true },
+      { "text": "9. November", "isCorrect": false },
+      { "text": "25. Dezember", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der 1. Mai in Deutschland?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein normaler Arbeitstag", "isCorrect": false },
+      { "text": "Der Tag der Arbeit, ein Feiertag", "isCorrect": true },
+      { "text": "Ein Wahlsonntag", "isCorrect": false },
+      { "text": "Ein Schultag", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der 9. November in der deutschen Geschichte?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Der Tag der Deutschen Einheit", "isCorrect": false },
+      { "text": "Ein wichtiger Tag mit mehreren historischen Ereignissen (Mauerfall 1989, Reichspogromnacht 1938)", "isCorrect": true },
+      { "text": "Der Tag der Arbeit", "isCorrect": false },
+      { "text": "Ein normaler Tag", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Holocaust?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Krieg", "isCorrect": false },
+      { "text": "Die systematische Verfolgung und Ermordung von Millionen Menschen, insbesondere Juden, durch die Nationalsozialisten", "isCorrect": true },
+      { "text": "Eine Revolution", "isCorrect": false },
+      { "text": "Eine Wirtschaftskrise", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die NS-Zeit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zeit der Weimarer Republik", "isCorrect": false },
+      { "text": "Die Zeit des Nationalsozialismus (1933-1945)", "isCorrect": true },
+      { "text": "Die Zeit nach dem Zweiten Weltkrieg", "isCorrect": false },
+      { "text": "Die Zeit der DDR", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die DDR?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Deutsche Demokratische Republik (1949-1990)", "isCorrect": true },
+      { "text": "Die Bundesrepublik Deutschland", "isCorrect": false },
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Eine Stadt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was war die Berliner Mauer?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine normale Stadtmauer", "isCorrect": false },
+      { "text": "Eine Mauer, die Berlin von 1961 bis 1989 teilte", "isCorrect": true },
+      { "text": "Eine Mauer um ganz Deutschland", "isCorrect": false },
+      { "text": "Eine Mauer um die EU", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was war die Stasi?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Das Ministerium für Staatssicherheit der DDR", "isCorrect": true },
+      { "text": "Eine Stadt", "isCorrect": false },
+      { "text": "Ein Gesetz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was war die Wende?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Die friedliche Revolution 1989, die zum Ende der DDR führte", "isCorrect": true },
+      { "text": "Eine Stadt", "isCorrect": false },
+      { "text": "Ein Gesetz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Wiedervereinigung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Vereinigung von Ost- und Westdeutschland 1990", "isCorrect": true },
+      { "text": "Die Vereinigung von Deutschland und Österreich", "isCorrect": false },
+      { "text": "Die Vereinigung von Deutschland und der Schweiz", "isCorrect": false },
+      { "text": "Die Vereinigung von Deutschland und Polen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Weimarer Republik?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zeit von 1919 bis 1933", "isCorrect": true },
+      { "text": "Die Zeit von 1933 bis 1945", "isCorrect": false },
+      { "text": "Die Zeit von 1945 bis 1949", "isCorrect": false },
+      { "text": "Die Zeit von 1949 bis 1990", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Erste Weltkrieg?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Krieg von 1914 bis 1918", "isCorrect": true },
+      { "text": "Ein Krieg von 1939 bis 1945", "isCorrect": false },
+      { "text": "Ein Krieg von 1870 bis 1871", "isCorrect": false },
+      { "text": "Ein Krieg von 1945 bis 1949", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Zweite Weltkrieg?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Krieg von 1914 bis 1918", "isCorrect": false },
+      { "text": "Ein Krieg von 1939 bis 1945", "isCorrect": true },
+      { "text": "Ein Krieg von 1870 bis 1871", "isCorrect": false },
+      { "text": "Ein Krieg von 1945 bis 1949", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Reformation?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Revolution", "isCorrect": false },
+      { "text": "Eine religiöse Bewegung im 16. Jahrhundert, die zur Spaltung der Kirche führte", "isCorrect": true },
+      { "text": "Ein Krieg", "isCorrect": false },
+      { "text": "Eine Wirtschaftskrise", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wer war Martin Luther?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Kaiser", "isCorrect": false },
+      { "text": "Ein Reformator, der die Reformation einleitete", "isCorrect": true },
+      { "text": "Ein Dichter", "isCorrect": false },
+      { "text": "Ein Maler", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist das Brandenburger Tor?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Tor in München", "isCorrect": false },
+      { "text": "Ein berühmtes Wahrzeichen in Berlin", "isCorrect": true },
+      { "text": "Ein Tor in Hamburg", "isCorrect": false },
+      { "text": "Ein Tor in Köln", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Kölner Dom?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Dom in Berlin", "isCorrect": false },
+      { "text": "Ein berühmter Dom in Köln", "isCorrect": true },
+      { "text": "Ein Dom in München", "isCorrect": false },
+      { "text": "Ein Dom in Hamburg", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist das Oktoberfest?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Fest in Berlin", "isCorrect": false },
+      { "text": "Ein berühmtes Volksfest in München", "isCorrect": true },
+      { "text": "Ein Fest in Hamburg", "isCorrect": false },
+      { "text": "Ein Fest in Köln", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die deutsche Kultur?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Musik", "isCorrect": false },
+      { "text": "Die vielfältige Kultur mit Literatur, Musik, Kunst, Traditionen und Bräuchen", "isCorrect": true },
+      { "text": "Nur Literatur", "isCorrect": false },
+      { "text": "Nur Kunst", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wer war Johann Wolfgang von Goethe?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Maler", "isCorrect": false },
+      { "text": "Ein berühmter deutscher Dichter und Schriftsteller", "isCorrect": true },
+      { "text": "Ein Komponist", "isCorrect": false },
+      { "text": "Ein Politiker", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wer war Ludwig van Beethoven?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Dichter", "isCorrect": false },
+      { "text": "Ein berühmter deutscher Komponist", "isCorrect": true },
+      { "text": "Ein Maler", "isCorrect": false },
+      { "text": "Ein Politiker", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Wer war Albert Einstein?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Dichter", "isCorrect": false },
+      { "text": "Ein berühmter deutscher Physiker", "isCorrect": true },
+      { "text": "Ein Maler", "isCorrect": false },
+      { "text": "Ein Politiker", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die deutsche Sprache?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine romanische Sprache", "isCorrect": false },
+      { "text": "Eine germanische Sprache", "isCorrect": true },
+      { "text": "Eine slawische Sprache", "isCorrect": false },
+      { "text": "Eine asiatische Sprache", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "In welchen Ländern wird Deutsch gesprochen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur in Deutschland", "isCorrect": false },
+      { "text": "In Deutschland, Österreich, der Schweiz und anderen Ländern", "isCorrect": true },
+      { "text": "Nur in Deutschland und Österreich", "isCorrect": false },
+      { "text": "Nur in Deutschland und der Schweiz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die deutsche Küche?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Bratwurst", "isCorrect": false },
+      { "text": "Eine vielfältige Küche mit regionalen Spezialitäten", "isCorrect": true },
+      { "text": "Nur Sauerkraut", "isCorrect": false },
+      { "text": "Nur Bier", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein typisch deutsches Gericht?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Pizza", "isCorrect": false },
+      { "text": "Sauerkraut, Bratwurst, Schnitzel, etc.", "isCorrect": true },
+      { "text": "Sushi", "isCorrect": false },
+      { "text": "Tacos", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die deutsche Wirtschaft?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine schwache Wirtschaft", "isCorrect": false },
+      { "text": "Eine der größten Volkswirtschaften der Welt", "isCorrect": true },
+      { "text": "Eine kleine Wirtschaft", "isCorrect": false },
+      { "text": "Eine unbedeutende Wirtschaft", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was sind wichtige deutsche Industriezweige?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Landwirtschaft", "isCorrect": false },
+      { "text": "Automobilindustrie, Maschinenbau, Chemie, Elektronik", "isCorrect": true },
+      { "text": "Nur Textilien", "isCorrect": false },
+      { "text": "Nur Tourismus", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die soziale Marktwirtschaft?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine reine Marktwirtschaft", "isCorrect": false },
+      { "text": "Ein Wirtschaftssystem, das Marktwirtschaft mit sozialer Absicherung verbindet", "isCorrect": true },
+      { "text": "Eine Planwirtschaft", "isCorrect": false },
+      { "text": "Eine Diktatur", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Umwelt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur die Natur", "isCorrect": false },
+      { "text": "Die natürliche Umgebung, die geschützt werden muss", "isCorrect": true },
+      { "text": "Nur die Städte", "isCorrect": false },
+      { "text": "Nur die Industrie", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist Umweltschutz?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zerstörung der Umwelt", "isCorrect": false },
+      { "text": "Maßnahmen zum Schutz der natürlichen Umwelt", "isCorrect": true },
+      { "text": "Die Verschmutzung der Umwelt", "isCorrect": false },
+      { "text": "Die Ignorierung der Umwelt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist Recycling?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Entsorgung von Müll", "isCorrect": false },
+      { "text": "Die Wiederverwertung von Abfällen", "isCorrect": true },
+      { "text": "Die Verbrennung von Müll", "isCorrect": false },
+      { "text": "Die Deponierung von Müll", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist erneuerbare Energie?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Energie aus fossilen Brennstoffen", "isCorrect": false },
+      { "text": "Energie aus nachhaltigen Quellen wie Sonne, Wind, Wasser", "isCorrect": true },
+      { "text": "Energie aus Atomkraft", "isCorrect": false },
+      { "text": "Energie aus Kohle", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Energiewende?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Umstellung auf erneuerbare Energien", "isCorrect": true },
+      { "text": "Die Umstellung auf Atomkraft", "isCorrect": false },
+      { "text": "Die Umstellung auf Kohle", "isCorrect": false },
+      { "text": "Die Umstellung auf Öl", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Klimawandel?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine natürliche Veränderung des Wetters", "isCorrect": false },
+      { "text": "Eine langfristige Veränderung des Klimas, oft durch menschliche Aktivitäten verursacht", "isCorrect": true },
+      { "text": "Eine kurzfristige Wetteränderung", "isCorrect": false },
+      { "text": "Eine Erfindung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist Nachhaltigkeit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die kurzfristige Nutzung von Ressourcen", "isCorrect": false },
+      { "text": "Die langfristige Nutzung von Ressourcen ohne Schädigung der Umwelt", "isCorrect": true },
+      { "text": "Die Verschwendung von Ressourcen", "isCorrect": false },
+      { "text": "Die Zerstörung von Ressourcen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Mülltrennung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Vermischung von Müll", "isCorrect": false },
+      { "text": "Die Trennung von Müll nach verschiedenen Kategorien für Recycling", "isCorrect": true },
+      { "text": "Die Verbrennung von Müll", "isCorrect": false },
+      { "text": "Die Deponierung von Müll", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Pressefreiheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zensur der Presse", "isCorrect": false },
+      { "text": "Das Recht der Presse, frei zu berichten", "isCorrect": true },
+      { "text": "Die Kontrolle der Presse", "isCorrect": false },
+      { "text": "Das Verbot der Presse", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Meinungsfreiheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zensur von Meinungen", "isCorrect": false },
+      { "text": "Das Recht, seine Meinung frei zu äußern", "isCorrect": true },
+      { "text": "Die Kontrolle von Meinungen", "isCorrect": false },
+      { "text": "Das Verbot von Meinungen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Versammlungsfreiheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Verbot von Versammlungen", "isCorrect": false },
+      { "text": "Das Recht, sich friedlich zu versammeln", "isCorrect": true },
+      { "text": "Die Zensur von Versammlungen", "isCorrect": false },
+      { "text": "Die Kontrolle von Versammlungen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Vereinigungsfreiheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Verbot von Vereinigungen", "isCorrect": false },
+      { "text": "Das Recht, Vereine und Organisationen zu gründen", "isCorrect": true },
+      { "text": "Die Zensur von Vereinigungen", "isCorrect": false },
+      { "text": "Die Kontrolle von Vereinigungen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Gewaltenteilung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Vereinigung aller Gewalten", "isCorrect": false },
+      { "text": "Die Trennung von Legislative, Exekutive und Judikative", "isCorrect": true },
+      { "text": "Die Kontrolle aller Gewalten", "isCorrect": false },
+      { "text": "Das Verbot aller Gewalten", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Legislative?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die ausführende Gewalt", "isCorrect": false },
+      { "text": "Die gesetzgebende Gewalt (Parlament)", "isCorrect": true },
+      { "text": "Die rechtsprechende Gewalt", "isCorrect": false },
+      { "text": "Die kontrollierende Gewalt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Exekutive?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die gesetzgebende Gewalt", "isCorrect": false },
+      { "text": "Die ausführende Gewalt (Regierung, Verwaltung)", "isCorrect": true },
+      { "text": "Die rechtsprechende Gewalt", "isCorrect": false },
+      { "text": "Die kontrollierende Gewalt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Judikative?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die gesetzgebende Gewalt", "isCorrect": false },
+      { "text": "Die rechtsprechende Gewalt (Gerichte)", "isCorrect": true },
+      { "text": "Die ausführende Gewalt", "isCorrect": false },
+      { "text": "Die kontrollierende Gewalt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Gesetz?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Empfehlung", "isCorrect": false },
+      { "text": "Eine verbindliche Regel, die vom Parlament beschlossen wird", "isCorrect": true },
+      { "text": "Ein Vorschlag", "isCorrect": false },
+      { "text": "Eine Meinung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist eine Verordnung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Gesetz", "isCorrect": false },
+      { "text": "Eine Rechtsnorm, die von der Exekutive erlassen wird", "isCorrect": true },
+      { "text": "Eine Meinung", "isCorrect": false },
+      { "text": "Ein Vorschlag", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Gericht?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Eine Institution, die Recht spricht", "isCorrect": true },
+      { "text": "Eine Stadt", "isCorrect": false },
+      { "text": "Ein Gesetz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Richter?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Anwalt", "isCorrect": false },
+      { "text": "Eine Person, die Recht spricht", "isCorrect": true },
+      { "text": "Ein Polizist", "isCorrect": false },
+      { "text": "Ein Politiker", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Anwalt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Richter", "isCorrect": false },
+      { "text": "Ein Rechtsvertreter, der Mandanten vor Gericht vertritt", "isCorrect": true },
+      { "text": "Ein Polizist", "isCorrect": false },
+      { "text": "Ein Politiker", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Unschuldsvermutung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Annahme der Schuld", "isCorrect": false },
+      { "text": "Die Annahme der Unschuld bis zum Beweis der Schuld", "isCorrect": true },
+      { "text": "Die Bestrafung ohne Beweis", "isCorrect": false },
+      { "text": "Die Verurteilung ohne Prozess", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Todesstrafe?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Strafe in Deutschland", "isCorrect": false },
+      { "text": "Eine Strafe, die in Deutschland abgeschafft ist", "isCorrect": true },
+      { "text": "Eine Strafe, die noch verwendet wird", "isCorrect": false },
+      { "text": "Eine Strafe, die nur für bestimmte Verbrechen gilt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Folter?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine erlaubte Methode", "isCorrect": false },
+      { "text": "Eine verbotene Methode der Verhöre", "isCorrect": true },
+      { "text": "Eine legale Methode", "isCorrect": false },
+      { "text": "Eine übliche Methode", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Menschenwürde?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Verletzung der Würde", "isCorrect": false },
+      { "text": "Die unantastbare Würde jedes Menschen", "isCorrect": true },
+      { "text": "Die antastbare Würde", "isCorrect": false },
+      { "text": "Die verletzbare Würde", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Menschenrechte?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Rechte nur für bestimmte Menschen", "isCorrect": false },
+      { "text": "Grundrechte, die allen Menschen zustehen", "isCorrect": true },
+      { "text": "Rechte nur für Deutsche", "isCorrect": false },
+      { "text": "Rechte nur für Europäer", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Familie?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur die Eltern", "isCorrect": false },
+      { "text": "Eine Gemeinschaft von Menschen, die zusammenleben und füreinander sorgen", "isCorrect": true },
+      { "text": "Nur die Kinder", "isCorrect": false },
+      { "text": "Nur die Großeltern", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Ehe?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Freundschaft", "isCorrect": false },
+      { "text": "Eine rechtlich anerkannte Lebensgemeinschaft zwischen zwei Menschen", "isCorrect": true },
+      { "text": "Eine Arbeitsgemeinschaft", "isCorrect": false },
+      { "text": "Eine Nachbarschaft", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die gleichgeschlechtliche Ehe?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Ehe zwischen Mann und Frau", "isCorrect": false },
+      { "text": "Eine Ehe zwischen zwei Menschen gleichen Geschlechts", "isCorrect": true },
+      { "text": "Eine Ehe zwischen drei Menschen", "isCorrect": false },
+      { "text": "Eine Ehe zwischen Verwandten", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Scheidung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Heirat", "isCorrect": false },
+      { "text": "Die rechtliche Auflösung einer Ehe", "isCorrect": true },
+      { "text": "Die Verlobung", "isCorrect": false },
+      { "text": "Die Hochzeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist das Sorgerecht?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Recht auf Arbeit", "isCorrect": false },
+      { "text": "Das Recht und die Pflicht, für ein Kind zu sorgen", "isCorrect": true },
+      { "text": "Das Recht auf Wohnung", "isCorrect": false },
+      { "text": "Das Recht auf Bildung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Kindergeld?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Geld, das Kinder verdienen", "isCorrect": false },
+      { "text": "Eine staatliche Leistung für Familien mit Kindern", "isCorrect": true },
+      { "text": "Geld, das Kinder sparen", "isCorrect": false },
+      { "text": "Geld, das Kinder ausgeben", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Elterngeld?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Geld für Kinder", "isCorrect": false },
+      { "text": "Eine staatliche Leistung für Eltern nach der Geburt eines Kindes", "isCorrect": true },
+      { "text": "Geld für Großeltern", "isCorrect": false },
+      { "text": "Geld für Verwandte", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Rente?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Geld für Kinder", "isCorrect": false },
+      { "text": "Eine regelmäßige Zahlung im Alter", "isCorrect": true },
+      { "text": "Geld für Studenten", "isCorrect": false },
+      { "text": "Geld für Arbeitslose", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Ab welchem Alter kann man in Deutschland in Rente gehen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ab 60 Jahren", "isCorrect": false },
+      { "text": "Das Rentenalter wird schrittweise auf 67 Jahre angehoben", "isCorrect": true },
+      { "text": "Ab 70 Jahren", "isCorrect": false },
+      { "text": "Ab 75 Jahren", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Pflegeversicherung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Versicherung gegen Krankheit", "isCorrect": false },
+      { "text": "Eine Versicherung, die bei Pflegebedürftigkeit hilft", "isCorrect": true },
+      { "text": "Eine Versicherung für Autos", "isCorrect": false },
+      { "text": "Eine Versicherung für Arbeitslosigkeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Gesundheitsversorgung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Versorgung mit Lebensmitteln", "isCorrect": false },
+      { "text": "Die medizinische Versorgung der Bevölkerung", "isCorrect": true },
+      { "text": "Die Versorgung mit Wohnungen", "isCorrect": false },
+      { "text": "Die Versorgung mit Arbeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Arzt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Lehrer", "isCorrect": false },
+      { "text": "Ein medizinischer Fachmann, der Krankheiten behandelt", "isCorrect": true },
+      { "text": "Ein Anwalt", "isCorrect": false },
+      { "text": "Ein Polizist", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Krankenhaus?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Hotel", "isCorrect": false },
+      { "text": "Eine Einrichtung zur medizinischen Behandlung", "isCorrect": true },
+      { "text": "Eine Schule", "isCorrect": false },
+      { "text": "Ein Büro", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Impfung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Behandlung", "isCorrect": false },
+      { "text": "Eine vorbeugende Maßnahme gegen Krankheiten", "isCorrect": true },
+      { "text": "Eine Operation", "isCorrect": false },
+      { "text": "Eine Therapie", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Vorsorgeuntersuchung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Behandlung", "isCorrect": false },
+      { "text": "Eine vorbeugende medizinische Untersuchung", "isCorrect": true },
+      { "text": "Eine Operation", "isCorrect": false },
+      { "text": "Eine Therapie", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Prävention?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Behandlung", "isCorrect": false },
+      { "text": "Die Vorbeugung von Krankheiten", "isCorrect": true },
+      { "text": "Die Operation", "isCorrect": false },
+      { "text": "Die Therapie", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hygiene?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Verschmutzung", "isCorrect": false },
+      { "text": "Die Sauberkeit und Gesundheitspflege", "isCorrect": true },
+      { "text": "Die Unreinheit", "isCorrect": false },
+      { "text": "Die Vernachlässigung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Ernährung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Bewegung", "isCorrect": false },
+      { "text": "Die Aufnahme von Nahrung", "isCorrect": true },
+      { "text": "Die Ruhe", "isCorrect": false },
+      { "text": "Die Arbeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die gesunde Ernährung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die ungesunde Ernährung", "isCorrect": false },
+      { "text": "Eine ausgewogene Ernährung mit allen notwendigen Nährstoffen", "isCorrect": true },
+      { "text": "Die einseitige Ernährung", "isCorrect": false },
+      { "text": "Die unausgewogene Ernährung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bewegung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Ruhe", "isCorrect": false },
+      { "text": "Körperliche Aktivität für die Gesundheit", "isCorrect": true },
+      { "text": "Die Ernährung", "isCorrect": false },
+      { "text": "Die Arbeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Sport?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Ruhe", "isCorrect": false },
+      { "text": "Körperliche Aktivität zur Förderung der Gesundheit und Fitness", "isCorrect": true },
+      { "text": "Die Ernährung", "isCorrect": false },
+      { "text": "Die Arbeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Freizeit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Arbeitszeit", "isCorrect": false },
+      { "text": "Die Zeit, die man für Hobbys und Erholung hat", "isCorrect": true },
+      { "text": "Die Schulzeit", "isCorrect": false },
+      { "text": "Die Schlafenszeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Hobby?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Arbeit", "isCorrect": false },
+      { "text": "Eine Freizeitbeschäftigung, die man gerne macht", "isCorrect": true },
+      { "text": "Eine Pflicht", "isCorrect": false },
+      { "text": "Eine Aufgabe", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Kultur?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Musik", "isCorrect": false },
+      { "text": "Die Gesamtheit der geistigen und künstlerischen Errungenschaften einer Gesellschaft", "isCorrect": true },
+      { "text": "Nur Literatur", "isCorrect": false },
+      { "text": "Nur Kunst", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Musik?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Geräusche", "isCorrect": false },
+      { "text": "Eine Kunstform mit Tönen und Klängen", "isCorrect": true },
+      { "text": "Nur Lärm", "isCorrect": false },
+      { "text": "Nur Stille", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Literatur?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Zeitungen", "isCorrect": false },
+      { "text": "Die Gesamtheit der schriftlichen Werke", "isCorrect": true },
+      { "text": "Nur Bücher", "isCorrect": false },
+      { "text": "Nur Zeitschriften", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Kunst?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Malerei", "isCorrect": false },
+      { "text": "Die kreative Gestaltung in verschiedenen Formen", "isCorrect": true },
+      { "text": "Nur Skulptur", "isCorrect": false },
+      { "text": "Nur Architektur", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist das Theater?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Kino", "isCorrect": false },
+      { "text": "Eine Bühne, auf der Schauspiele aufgeführt werden", "isCorrect": true },
+      { "text": "Ein Museum", "isCorrect": false },
+      { "text": "Eine Bibliothek", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist das Museum?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Theater", "isCorrect": false },
+      { "text": "Eine Einrichtung zur Ausstellung von Kunst und Kultur", "isCorrect": true },
+      { "text": "Ein Kino", "isCorrect": false },
+      { "text": "Eine Bibliothek", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bibliothek?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Museum", "isCorrect": false },
+      { "text": "Eine Einrichtung zur Ausleihe von Büchern und Medien", "isCorrect": true },
+      { "text": "Ein Theater", "isCorrect": false },
+      { "text": "Ein Kino", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bildung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Schule", "isCorrect": false },
+      { "text": "Die Vermittlung von Wissen und Fähigkeiten", "isCorrect": true },
+      { "text": "Nur Studium", "isCorrect": false },
+      { "text": "Nur Ausbildung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Schule?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Museum", "isCorrect": false },
+      { "text": "Eine Bildungseinrichtung für Kinder und Jugendliche", "isCorrect": true },
+      { "text": "Ein Theater", "isCorrect": false },
+      { "text": "Ein Kino", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Universität?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Schule", "isCorrect": false },
+      { "text": "Eine Hochschule für wissenschaftliches Studium", "isCorrect": true },
+      { "text": "Ein Museum", "isCorrect": false },
+      { "text": "Ein Theater", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist das Studium?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Schule", "isCorrect": false },
+      { "text": "Die wissenschaftliche Ausbildung an einer Hochschule", "isCorrect": true },
+      { "text": "Die Ausbildung", "isCorrect": false },
+      { "text": "Die Arbeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Abschluss?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Der Anfang", "isCorrect": false },
+      { "text": "Das Ende einer Ausbildung oder eines Studiums mit einem Zeugnis", "isCorrect": true },
+      { "text": "Die Mitte", "isCorrect": false },
+      { "text": "Der Beginn", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist der Beruf?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Freizeit", "isCorrect": false },
+      { "text": "Eine Tätigkeit, mit der man seinen Lebensunterhalt verdient", "isCorrect": true },
+      { "text": "Das Hobby", "isCorrect": false },
+      { "text": "Die Ruhe", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Qualifikation?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Unfähigkeit", "isCorrect": false },
+      { "text": "Die Fähigkeiten und Kenntnisse für eine Tätigkeit", "isCorrect": true },
+      { "text": "Die Unwissenheit", "isCorrect": false },
+      { "text": "Die Inkompetenz", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Weiterbildung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Erstausbildung", "isCorrect": false },
+      { "text": "Die Fortbildung nach der Ausbildung oder dem Studium", "isCorrect": true },
+      { "text": "Die Grundausbildung", "isCorrect": false },
+      { "text": "Die Schulausbildung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Medien?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Zeitungen", "isCorrect": false },
+      { "text": "Kommunikationsmittel wie Zeitungen, Fernsehen, Radio, Internet", "isCorrect": true },
+      { "text": "Nur Fernsehen", "isCorrect": false },
+      { "text": "Nur Radio", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist das Internet?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Buch", "isCorrect": false },
+      { "text": "Ein weltweites Netzwerk von Computern", "isCorrect": true },
+      { "text": "Eine Zeitung", "isCorrect": false },
+      { "text": "Ein Radio", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Digitalisierung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Rückkehr zur analogen Technik", "isCorrect": false },
+      { "text": "Die Umstellung auf digitale Technologien", "isCorrect": true },
+      { "text": "Die Abschaffung von Technik", "isCorrect": false },
+      { "text": "Die Verwendung von Papier", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die soziale Medien?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Zeitungen", "isCorrect": false },
+      { "text": "Plattformen im Internet für soziale Interaktion", "isCorrect": true },
+      { "text": "Nur Fernsehen", "isCorrect": false },
+      { "text": "Nur Radio", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Datenschutz?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Weitergabe von Daten", "isCorrect": false },
+      { "text": "Der Schutz persönlicher Daten", "isCorrect": true },
+      { "text": "Die Veröffentlichung von Daten", "isCorrect": false },
+      { "text": "Die Verbreitung von Daten", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Privatsphäre?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Öffentlichkeit", "isCorrect": false },
+      { "text": "Der persönliche Bereich, der geschützt werden sollte", "isCorrect": true },
+      { "text": "Die Transparenz", "isCorrect": false },
+      { "text": "Die Offenheit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Zivilgesellschaft?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Regierung", "isCorrect": false },
+      { "text": "Die Gesamtheit der Bürger und ihrer Organisationen", "isCorrect": true },
+      { "text": "Die Polizei", "isCorrect": false },
+      { "text": "Die Armee", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist ein Verein?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Firma", "isCorrect": false },
+      { "text": "Eine Organisation von Menschen mit gemeinsamen Interessen", "isCorrect": true },
+      { "text": "Eine Partei", "isCorrect": false },
+      { "text": "Eine Behörde", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Zivilcourage?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Feigheit", "isCorrect": false },
+      { "text": "Der Mut, für andere einzutreten und Unrecht zu bekämpfen", "isCorrect": true },
+      { "text": "Die Gleichgültigkeit", "isCorrect": false },
+      { "text": "Die Passivität", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Solidarität?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Gleichgültigkeit", "isCorrect": false },
+      { "text": "Die gegenseitige Unterstützung und Verbundenheit", "isCorrect": true },
+      { "text": "Die Isolation", "isCorrect": false },
+      { "text": "Die Trennung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Demokratie?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Diktatur", "isCorrect": false },
+      { "text": "Eine Regierungsform, in der das Volk die Macht hat", "isCorrect": true },
+      { "text": "Eine Monarchie", "isCorrect": false },
+      { "text": "Eine Diktatur", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Diktatur?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Demokratie", "isCorrect": false },
+      { "text": "Eine Regierungsform, in der eine Person oder Gruppe alle Macht hat", "isCorrect": true },
+      { "text": "Eine Republik", "isCorrect": false },
+      { "text": "Eine Monarchie", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Föderalismus?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zentralisierung", "isCorrect": false },
+      { "text": "Ein System, in dem Macht zwischen Bund und Ländern geteilt wird", "isCorrect": true },
+      { "text": "Die Vereinheitlichung", "isCorrect": false },
+      { "text": "Die Vereinigung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Subsidiarität?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zentralisierung", "isCorrect": false },
+      { "text": "Das Prinzip, dass Aufgaben auf der niedrigsten möglichen Ebene erledigt werden", "isCorrect": true },
+      { "text": "Die Vereinheitlichung", "isCorrect": false },
+      { "text": "Die Vereinigung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Verfassung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Gesetz", "isCorrect": false },
+      { "text": "Das Grundgesetz, das die Grundordnung eines Staates festlegt", "isCorrect": true },
+      { "text": "Eine Verordnung", "isCorrect": false },
+      { "text": "Eine Meinung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Rechtsstaatlichkeit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Willkür", "isCorrect": false },
+      { "text": "Das Prinzip, dass der Staat an Recht und Gesetz gebunden ist", "isCorrect": true },
+      { "text": "Die Gesetzlosigkeit", "isCorrect": false },
+      { "text": "Die Anarchie", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Gewaltenteilung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Vereinigung aller Gewalten", "isCorrect": false },
+      { "text": "Die Trennung von Legislative, Exekutive und Judikative", "isCorrect": true },
+      { "text": "Die Kontrolle aller Gewalten", "isCorrect": false },
+      { "text": "Das Verbot aller Gewalten", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bundeswehr?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Polizei", "isCorrect": false },
+      { "text": "Die Streitkräfte der Bundesrepublik Deutschland", "isCorrect": true },
+      { "text": "Die Feuerwehr", "isCorrect": false },
+      { "text": "Die Rettungsdienste", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Wehrpflicht?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Pflicht, in der Armee zu dienen (aktuell ausgesetzt)", "isCorrect": true },
+      { "text": "Die Pflicht, Polizist zu werden", "isCorrect": false },
+      { "text": "Die Pflicht, Feuerwehrmann zu werden", "isCorrect": false },
+      { "text": "Die Pflicht, Rettungssanitäter zu werden", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Zivildienst?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Der Dienst in der Armee", "isCorrect": false },
+      { "text": "Ein Ersatzdienst für den Wehrdienst (aktuell ausgesetzt)", "isCorrect": true },
+      { "text": "Der Dienst in der Polizei", "isCorrect": false },
+      { "text": "Der Dienst in der Feuerwehr", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Verkehrssicherheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Gefahr im Verkehr", "isCorrect": false },
+      { "text": "Die Sicherheit im Straßenverkehr", "isCorrect": true },
+      { "text": "Die Unfallgefahr", "isCorrect": false },
+      { "text": "Die Verkehrsgefahr", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Verkehrsregeln?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Regeln für zu Hause", "isCorrect": false },
+      { "text": "Regeln für den Straßenverkehr", "isCorrect": true },
+      { "text": "Regeln für die Schule", "isCorrect": false },
+      { "text": "Regeln für die Arbeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Verkehrszeichen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Zeichen für zu Hause", "isCorrect": false },
+      { "text": "Schilder und Markierungen im Straßenverkehr", "isCorrect": true },
+      { "text": "Zeichen für die Schule", "isCorrect": false },
+      { "text": "Zeichen für die Arbeit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Vorfahrt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Recht, zuerst zu fahren", "isCorrect": true },
+      { "text": "Das Verbot zu fahren", "isCorrect": false },
+      { "text": "Die Pflicht zu warten", "isCorrect": false },
+      { "text": "Die Geschwindigkeitsbegrenzung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Parkverbot?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Erlaubnis zu parken", "isCorrect": false },
+      { "text": "Das Verbot, ein Fahrzeug abzustellen", "isCorrect": true },
+      { "text": "Die Pflicht zu parken", "isCorrect": false },
+      { "text": "Die Empfehlung zu parken", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Halteverbot?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Erlaubnis zu halten", "isCorrect": false },
+      { "text": "Das Verbot, ein Fahrzeug anzuhalten", "isCorrect": true },
+      { "text": "Die Pflicht zu halten", "isCorrect": false },
+      { "text": "Die Empfehlung zu halten", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Verkehrsampel?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine normale Lampe", "isCorrect": false },
+      { "text": "Eine Ampel zur Regelung des Verkehrs", "isCorrect": true },
+      { "text": "Eine Straßenlaterne", "isCorrect": false },
+      { "text": "Eine Taschenlampe", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was bedeutet Rot an einer Ampel?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Fahren", "isCorrect": false },
+      { "text": "Stoppen", "isCorrect": true },
+      { "text": "Vorsicht", "isCorrect": false },
+      { "text": "Langsam fahren", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was bedeutet Grün an einer Ampel?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Stoppen", "isCorrect": false },
+      { "text": "Fahren", "isCorrect": true },
+      { "text": "Vorsicht", "isCorrect": false },
+      { "text": "Langsam fahren", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was bedeutet Gelb an einer Ampel?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Fahren", "isCorrect": false },
+      { "text": "Vorsicht, auf Rot vorbereiten", "isCorrect": true },
+      { "text": "Stoppen", "isCorrect": false },
+      { "text": "Schnell fahren", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Radweg?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Weg für Autos", "isCorrect": false },
+      { "text": "Ein Weg für Fahrräder", "isCorrect": true },
+      { "text": "Ein Weg für Fußgänger", "isCorrect": false },
+      { "text": "Ein Weg für Motorräder", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Gehweg?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Weg für Autos", "isCorrect": false },
+      { "text": "Ein Weg für Fußgänger", "isCorrect": true },
+      { "text": "Ein Weg für Fahrräder", "isCorrect": false },
+      { "text": "Ein Weg für Motorräder", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Zebrastreifen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Streifen für Autos", "isCorrect": false },
+      { "text": "Ein Fußgängerüberweg", "isCorrect": true },
+      { "text": "Ein Streifen für Fahrräder", "isCorrect": false },
+      { "text": "Ein Streifen für Motorräder", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Verkehrsunfall?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein normales Ereignis", "isCorrect": false },
+      { "text": "Ein Unfall im Straßenverkehr", "isCorrect": true },
+      { "text": "Ein Erfolg", "isCorrect": false },
+      { "text": "Ein Glück", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Erste Hilfe?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die letzte Hilfe", "isCorrect": false },
+      { "text": "Sofortmaßnahmen bei Unfällen und Notfällen", "isCorrect": true },
+      { "text": "Die professionelle Hilfe", "isCorrect": false },
+      { "text": "Die langfristige Hilfe", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Rettungsdienst?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Polizei", "isCorrect": false },
+      { "text": "Ein Dienst zur medizinischen Notfallversorgung", "isCorrect": true },
+      { "text": "Die Feuerwehr", "isCorrect": false },
+      { "text": "Die Armee", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Feuerwehr?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Polizei", "isCorrect": false },
+      { "text": "Ein Dienst zur Brandbekämpfung und Rettung", "isCorrect": true },
+      { "text": "Die Armee", "isCorrect": false },
+      { "text": "Die Rettungsdienste", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Brandschutz?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Brandförderung", "isCorrect": false },
+      { "text": "Maßnahmen zur Verhinderung und Bekämpfung von Bränden", "isCorrect": true },
+      { "text": "Die Brandstiftung", "isCorrect": false },
+      { "text": "Die Brandgefahr", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Notfall?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein normales Ereignis", "isCorrect": false },
+      { "text": "Eine dringende Situation, die sofortige Hilfe erfordert", "isCorrect": true },
+      { "text": "Ein alltägliches Ereignis", "isCorrect": false },
+      { "text": "Ein geplantes Ereignis", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die öffentliche Verkehrsmittel?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Autos", "isCorrect": false },
+      { "text": "Verkehrsmittel wie Bus, Bahn, U-Bahn, Straßenbahn", "isCorrect": true },
+      { "text": "Nur Fahrräder", "isCorrect": false },
+      { "text": "Nur Motorräder", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bahn?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Auto", "isCorrect": false },
+      { "text": "Ein Zugverkehrsmittel", "isCorrect": true },
+      { "text": "Ein Bus", "isCorrect": false },
+      { "text": "Ein Flugzeug", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die U-Bahn?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Auto", "isCorrect": false },
+      { "text": "Eine Untergrundbahn", "isCorrect": true },
+      { "text": "Ein Bus", "isCorrect": false },
+      { "text": "Ein Flugzeug", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Straßenbahn?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Auto", "isCorrect": false },
+      { "text": "Ein Schienenfahrzeug im Straßenverkehr", "isCorrect": true },
+      { "text": "Ein Bus", "isCorrect": false },
+      { "text": "Ein Flugzeug", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bus?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Auto", "isCorrect": false },
+      { "text": "Ein öffentliches Verkehrsmittel auf der Straße", "isCorrect": true },
+      { "text": "Ein Zug", "isCorrect": false },
+      { "text": "Ein Flugzeug", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Fahrkarte?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Ausweis", "isCorrect": false },
+      { "text": "Ein Ticket für öffentliche Verkehrsmittel", "isCorrect": true },
+      { "text": "Ein Führerschein", "isCorrect": false },
+      { "text": "Ein Personalausweis", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Schwarzfahren?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die legale Nutzung öffentlicher Verkehrsmittel", "isCorrect": false },
+      { "text": "Die Nutzung öffentlicher Verkehrsmittel ohne gültige Fahrkarte", "isCorrect": true },
+      { "text": "Die kostenlose Nutzung", "isCorrect": false },
+      { "text": "Die erlaubte Nutzung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Fahrrad?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Auto", "isCorrect": false },
+      { "text": "Ein Fahrzeug mit zwei Rädern, das mit Muskelkraft angetrieben wird", "isCorrect": true },
+      { "text": "Ein Motorrad", "isCorrect": false },
+      { "text": "Ein Bus", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Fahrradhelm?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Hut", "isCorrect": false },
+      { "text": "Ein Schutzhelm für Fahrradfahrer", "isCorrect": true },
+      { "text": "Ein Schuh", "isCorrect": false },
+      { "text": "Ein Handschuh", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die E-Bike?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein normales Fahrrad", "isCorrect": false },
+      { "text": "Ein Fahrrad mit elektrischer Unterstützung", "isCorrect": true },
+      { "text": "Ein Motorrad", "isCorrect": false },
+      { "text": "Ein Auto", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Carsharing?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Besitzen eines Autos", "isCorrect": false },
+      { "text": "Das gemeinsame Nutzen von Autos", "isCorrect": true },
+      { "text": "Das Verkaufen eines Autos", "isCorrect": false },
+      { "text": "Das Stehlen eines Autos", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Flugzeug?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Auto", "isCorrect": false },
+      { "text": "Ein Luftfahrzeug", "isCorrect": true },
+      { "text": "Ein Zug", "isCorrect": false },
+      { "text": "Ein Bus", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Flughafen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Bahnhof", "isCorrect": false },
+      { "text": "Ein Ort, an dem Flugzeuge starten und landen", "isCorrect": true },
+      { "text": "Ein Busbahnhof", "isCorrect": false },
+      { "text": "Ein Hafen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bahnhof?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Flughafen", "isCorrect": false },
+      { "text": "Ein Ort, an dem Züge halten", "isCorrect": true },
+      { "text": "Ein Busbahnhof", "isCorrect": false },
+      { "text": "Ein Hafen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hafen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Flughafen", "isCorrect": false },
+      { "text": "Ein Ort, an dem Schiffe anlegen", "isCorrect": true },
+      { "text": "Ein Bahnhof", "isCorrect": false },
+      { "text": "Ein Busbahnhof", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Reise?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Bleiben zu Hause", "isCorrect": false },
+      { "text": "Eine Fahrt zu einem anderen Ort", "isCorrect": true },
+      { "text": "Die Arbeit", "isCorrect": false },
+      { "text": "Die Ruhe", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Urlaub?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Arbeit", "isCorrect": false },
+      { "text": "Eine Zeit der Erholung und Entspannung", "isCorrect": true },
+      { "text": "Die Schule", "isCorrect": false },
+      { "text": "Die Ausbildung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Tourismus?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Arbeit", "isCorrect": false },
+      { "text": "Das Reisen zu Erholungs- und Erlebniszwecken", "isCorrect": true },
+      { "text": "Die Schule", "isCorrect": false },
+      { "text": "Die Ausbildung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Hotel?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Zuhause", "isCorrect": false },
+      { "text": "Eine Unterkunft für Reisende", "isCorrect": true },
+      { "text": "Ein Büro", "isCorrect": false },
+      { "text": "Eine Schule", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Gastronomie?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Industrie", "isCorrect": false },
+      { "text": "Das Gaststätten- und Restaurantwesen", "isCorrect": true },
+      { "text": "Die Landwirtschaft", "isCorrect": false },
+      { "text": "Die Technologie", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Restaurant?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Zuhause", "isCorrect": false },
+      { "text": "Ein Lokal, in dem man essen kann", "isCorrect": true },
+      { "text": "Ein Büro", "isCorrect": false },
+      { "text": "Eine Schule", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Café?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Zuhause", "isCorrect": false },
+      { "text": "Ein Lokal, in dem man Kaffee und Getränke trinken kann", "isCorrect": true },
+      { "text": "Ein Büro", "isCorrect": false },
+      { "text": "Eine Schule", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bäckerei?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Zuhause", "isCorrect": false },
+      { "text": "Ein Geschäft, in dem man Brot und Backwaren kaufen kann", "isCorrect": true },
+      { "text": "Ein Büro", "isCorrect": false },
+      { "text": "Eine Schule", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Supermarkt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Zuhause", "isCorrect": false },
+      { "text": "Ein großes Geschäft, in dem man Lebensmittel kaufen kann", "isCorrect": true },
+      { "text": "Ein Büro", "isCorrect": false },
+      { "text": "Eine Schule", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Markt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Ein Zuhause", "isCorrect": false },
+      { "text": "Ein Ort, an dem Händler ihre Waren verkaufen", "isCorrect": true },
+      { "text": "Ein Büro", "isCorrect": false },
+      { "text": "Eine Schule", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Einkaufen?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Verkaufen", "isCorrect": false },
+      { "text": "Das Kaufen von Waren", "isCorrect": true },
+      { "text": "Das Produzieren", "isCorrect": false },
+      { "text": "Das Herstellen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bezahlung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Empfangen", "isCorrect": false },
+      { "text": "Das Zahlen für Waren oder Dienstleistungen", "isCorrect": true },
+      { "text": "Das Verschenken", "isCorrect": false },
+      { "text": "Das Stehlen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Barzahlung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zahlung mit Karte", "isCorrect": false },
+      { "text": "Die Zahlung mit Bargeld", "isCorrect": true },
+      { "text": "Die Zahlung mit Scheck", "isCorrect": false },
+      { "text": "Die Zahlung mit Kredit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Kartenzahlung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Zahlung mit Bargeld", "isCorrect": false },
+      { "text": "Die Zahlung mit Kredit- oder Debitkarte", "isCorrect": true },
+      { "text": "Die Zahlung mit Scheck", "isCorrect": false },
+      { "text": "Die Zahlung mit Kredit", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Rechnung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Quittung", "isCorrect": false },
+      { "text": "Eine schriftliche Aufstellung über zu zahlende Beträge", "isCorrect": true },
+      { "text": "Ein Geschenk", "isCorrect": false },
+      { "text": "Ein Rabatt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Quittung?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Rechnung", "isCorrect": false },
+      { "text": "Ein Beleg über eine erfolgte Zahlung", "isCorrect": true },
+      { "text": "Ein Geschenk", "isCorrect": false },
+      { "text": "Ein Rabatt", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Rabatt?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Erhöhung", "isCorrect": false },
+      { "text": "Ein Preisnachlass", "isCorrect": true },
+      { "text": "Eine Gebühr", "isCorrect": false },
+      { "text": "Eine Steuer", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Umtausch?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Der Kauf", "isCorrect": false },
+      { "text": "Das Zurückgeben oder Austauschen einer gekauften Ware", "isCorrect": true },
+      { "text": "Der Verkauf", "isCorrect": false },
+      { "text": "Die Reparatur", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Garantie?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Verweigerung", "isCorrect": false },
+      { "text": "Eine Zusicherung für die Qualität oder Funktionsfähigkeit einer Ware", "isCorrect": true },
+      { "text": "Die Ablehnung", "isCorrect": false },
+      { "text": "Die Verweigerung", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Verbraucherschutz?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Der Schutz der Händler", "isCorrect": false },
+      { "text": "Der Schutz der Verbraucher vor betrügerischen Praktiken", "isCorrect": true },
+      { "text": "Der Schutz der Produzenten", "isCorrect": false },
+      { "text": "Der Schutz der Hersteller", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Verbraucherzentrale?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Eine Organisation für Händler", "isCorrect": false },
+      { "text": "Eine Organisation, die Verbraucher berät und schützt", "isCorrect": true },
+      { "text": "Eine Organisation für Produzenten", "isCorrect": false },
+      { "text": "Eine Organisation für Hersteller", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Lebensmittel?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Nur Getränke", "isCorrect": false },
+      { "text": "Nahrungsmittel und Getränke", "isCorrect": true },
+      { "text": "Nur Fleisch", "isCorrect": false },
+      { "text": "Nur Gemüse", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Lebensmittelsicherheit?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Gefahr von Lebensmitteln", "isCorrect": false },
+      { "text": "Die Sicherheit und Qualität von Lebensmitteln", "isCorrect": true },
+      { "text": "Die Unsicherheit von Lebensmitteln", "isCorrect": false },
+      { "text": "Die Gefährlichkeit von Lebensmitteln", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Haltbarkeitsdatum?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Das Herstellungsdatum", "isCorrect": false },
+      { "text": "Das Datum, bis zu dem ein Lebensmittel verzehrt werden sollte", "isCorrect": true },
+      { "text": "Das Verkaufsdatum", "isCorrect": false },
+      { "text": "Das Einkaufsdatum", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Allergene?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Gesunde Stoffe", "isCorrect": false },
+      { "text": "Stoffe, die allergische Reaktionen auslösen können", "isCorrect": true },
+      { "text": "Vitamine", "isCorrect": false },
+      { "text": "Mineralien", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Bio-Lebensmittel?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Lebensmittel aus konventioneller Landwirtschaft", "isCorrect": false },
+      { "text": "Lebensmittel aus ökologischer Landwirtschaft", "isCorrect": true },
+      { "text": "Lebensmittel mit Zusatzstoffen", "isCorrect": false },
+      { "text": "Lebensmittel mit Konservierungsstoffen", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Fair Trade?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Unfairer Handel", "isCorrect": false },
+      { "text": "Fairen Handel, der faire Preise für Produzenten garantiert", "isCorrect": true },
+      { "text": "Billiger Handel", "isCorrect": false },
+      { "text": "Teurer Handel", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  },
+  {
+    "prompt": "Was ist die Nachbarschaft?",
+    "qType": "mcq",
+    "options": [
+      { "text": "Die Familie", "isCorrect": false },
+      { "text": "Die Menschen, die in der Nähe wohnen", "isCorrect": true },
+      { "text": "Die Kollegen", "isCorrect": false },
+      { "text": "Die Freunde", "isCorrect": false }
+    ],
+    "provider": "leben_in_deutschland",
+    "mainSkill": "leben_test",
+    "usageCategory": "common",
+    "level": "A1",
+    "status": "published",
+    "tags": ["300-Fragen"]
+  }
+  ]
+}
+

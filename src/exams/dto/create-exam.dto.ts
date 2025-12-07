@@ -13,7 +13,8 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProviderEnum } from '../../common/enums/provider.enum';
-import { ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
+import { ExamCategoryEnum, ExamSkillEnum, ExamStatusEnum } from '../../common/enums';
+import type { ExamStatus } from '../../common/enums';
 
 /**
  * أنواع الامتحانات (اختياري - للتوافق مع الفرونت)
@@ -146,9 +147,8 @@ export class CreateExamDto {
   @Min(1)
   timeLimitMin: number;
 
-  @IsString()
-  @IsNotEmpty()
-  status: string;            // draft / published
+  @IsEnum(ExamStatusEnum)
+  status: ExamStatus;
 
   @IsEnum(ExamCategoryEnum)
   examCategory: ExamCategoryEnum;
