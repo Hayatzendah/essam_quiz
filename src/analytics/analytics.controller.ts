@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -14,8 +14,35 @@ export class AnalyticsController {
   @Get('overview')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')
+  @ApiOperation({ summary: 'Get analytics overview', description: 'الحصول على نظرة عامة على الإحصائيات' })
   getOverview(@Req() req: any) {
     return this.analytics.getOverview(req.user);
+  }
+
+  @Get('activity')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({ 
+    summary: 'Get activity analytics', 
+    description: 'الحصول على إحصائيات النشاط اليومي (عدد المحاولات لكل يوم)' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'قائمة بالنشاط اليومي',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          date: { type: 'string', example: '2025-12-01' },
+          count: { type: 'number', example: 12 }
+        }
+      }
+    }
+  })
+  getActivity(@Query('days') days?: string, @Req() req?: any) {
+    const daysNumber = days ? parseInt(days, 10) : 7; // افتراضي 7 أيام
+    return this.analytics.getActivity(daysNumber, req?.user);
   }
 
   @Get('exam/:examId')

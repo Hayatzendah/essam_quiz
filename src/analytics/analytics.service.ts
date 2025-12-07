@@ -211,6 +211,56 @@ export class AnalyticsService {
       maxScore,
     };
   }
+
+  /**
+   * الحصول على إحصائيات النشاط اليومي (عدد المحاولات لكل يوم)
+   * @param days عدد الأيام الماضية (افتراضي: 7)
+   * @param user المستخدم الحالي
+   * @returns قائمة بالنشاط اليومي [{ date: "2025-12-01", count: 12 }, ...]
+   */
+  async getActivity(days: number = 7, user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    // حساب التاريخ من عدد الأيام الماضية
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    since.setHours(0, 0, 0, 0); // بداية اليوم
+
+    // تجميع المحاولات حسب التاريخ
+    const attempts = await this.AttemptModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: since },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$createdAt',
+              timezone: 'UTC',
+            },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 }, // ترتيب حسب التاريخ
+      },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          count: 1,
+        },
+      },
+    ]).exec();
+
+    return attempts;
+  }
 }
 
 
