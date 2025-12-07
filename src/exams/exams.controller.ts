@@ -297,6 +297,18 @@ export class ExamsController {
     return this.service.fixEmptySections(id, req.user);
   }
 
+  // أرشفة امتحان (بدلاً من الحذف)
+  @Patch(':id/archive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({ summary: 'Archive exam', description: 'أرشفة امتحان (بدلاً من الحذف)' })
+  archive(@Param('id') id: string, @Req() req: any) {
+    this.logger.log(
+      `PATCH /exams/${id}/archive - user: ${req?.user?.userId}, role: ${req?.user?.role}`,
+    );
+    return this.service.archive(id, req?.user);
+  }
+
   // حذف امتحان (المالك أو الأدمن)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)

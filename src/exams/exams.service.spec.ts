@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ExamsService } from './exams.service';
-import { Exam, ExamSchema, ExamStatus } from './schemas/exam.schema';
+import { Exam, ExamSchema } from './schemas/exam.schema';
+import { ExamStatusEnum } from '../common/enums';
 import { disconnect } from 'mongoose';
 
 const teacherUser = { userId: '671fc2b4c7e54e0d8f7d1aaa', role: 'teacher' as const };
@@ -35,7 +36,7 @@ describe('ExamsService', () => {
       teacherUser,
     );
     expect(e.id).toBeDefined();
-    expect(e.status).toBe(ExamStatus.DRAFT);
+    expect(e.status).toBe(ExamStatusEnum.DRAFT);
   });
 
   it('creates quota exam with difficulty distribution', async () => {

@@ -1,13 +1,12 @@
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import type { ExamStatus } from '../schemas/exam.schema';
-import { ExamStatusEnum } from '../schemas/exam.schema';
+import { ExamStatusEnum } from '../../common/enums';
 import { ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
 
 export class QueryExamDto {
   @IsOptional()
   @IsEnum(ExamStatusEnum)
-  status?: ExamStatus;
+  status?: ExamStatusEnum;
 
   @IsOptional()
   @IsString()

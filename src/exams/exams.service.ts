@@ -12,9 +12,7 @@ import { QueryExamDto } from './dto/query-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
 import { Exam, ExamDocument } from './schemas/exam.schema';
-import type { ExamStatus } from './schemas/exam.schema';
-import { ExamStatusEnum } from './schemas/exam.schema';
-import { ExamCategoryEnum } from '../common/enums';
+import { ExamCategoryEnum, ExamStatusEnum } from '../common/enums';
 import { ProviderEnum } from '../common/enums/provider.enum';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
@@ -1627,10 +1625,34 @@ export class ExamsService {
       return { message: 'Exam deleted permanently', id };
     } else {
       // Soft delete: تغيير الحالة إلى archived
-      doc.status = 'archived' as any;
+      doc.status = ExamStatusEnum.ARCHIVED;
       await doc.save();
       return { message: 'Exam archived successfully', id: doc._id, status: doc.status };
     }
+  }
+
+  /**
+   * أرشفة امتحان (بدلاً من الحذف)
+   */
+  async archive(id: string, user: ReqUser) {
+    if (!user) throw new ForbiddenException();
+    const doc = await this.model.findById(id).exec();
+    if (!doc) throw new NotFoundException('Exam not found');
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const isOwner = doc.ownerId?.toString() === userId;
+    const isAdmin = user.role === 'admin';
+    if (!(isOwner || isAdmin))
+      throw new ForbiddenException('Only owner teacher or admin can archive');
+
+    doc.status = ExamStatusEnum.ARCHIVED;
+    await doc.save();
+
+    return {
+      message: 'Exam archived successfully',
+      id: doc._id,
+      status: doc.status,
+    };
   }
 
   async debugExamStructure(id: string) {

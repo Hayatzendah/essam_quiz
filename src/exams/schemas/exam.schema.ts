@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import type {
-  ExamStatus,
   QuestionLevel,
   QuestionProvider,
   QuestionSection,
@@ -17,8 +16,6 @@ import {
 import { ProviderEnum } from '../../common/enums/provider.enum';
 
 export type ExamDocument = Exam & Document;
-export type { ExamStatus };
-export { ExamStatusEnum };
 
 @Schema({ _id: false })
 export class SectionItem {
@@ -137,8 +134,8 @@ export class Exam {
   })
   mainSkill?: ExamSkillEnum;
 
-  @Prop({ type: String, enum: Object.values(ExamStatusEnum), default: ExamStatusEnum.DRAFT, index: true })
-  status: ExamStatus;
+  @Prop({ type: String, enum: ExamStatusEnum, default: ExamStatusEnum.DRAFT, index: true })
+  status: ExamStatusEnum;
 
   @Prop({ type: [ExamSectionSchema], default: [], _id: false })
   sections: ExamSection[];

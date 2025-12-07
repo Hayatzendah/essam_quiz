@@ -2,8 +2,7 @@ import { PartialType } from '@nestjs/mapped-types';
 import { Transform } from 'class-transformer';
 import { CreateExamDto, ExamTypeEnum } from './create-exam.dto';
 import { IsEnum, IsMongoId, IsOptional, IsArray, IsString } from 'class-validator';
-import type { ExamStatus } from '../schemas/exam.schema';
-import { ExamStatusEnum } from '../schemas/exam.schema';
+import { ExamStatusEnum } from '../../common/enums';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 
 export class UpdateExamDto extends PartialType(CreateExamDto) {
@@ -41,7 +40,7 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
   // السماح بتغيير الحالة مع تحقق بالـ Service
   @IsOptional()
   @IsEnum(ExamStatusEnum)
-  status?: ExamStatus;
+  status?: ExamStatusEnum;
 
   // الإسناد (اختياري عبر PATCH أيضاً)
   @IsOptional()

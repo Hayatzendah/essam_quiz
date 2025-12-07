@@ -14,7 +14,6 @@ import {
 import { Type } from 'class-transformer';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 import { ExamCategoryEnum, ExamSkillEnum, ExamStatusEnum } from '../../common/enums';
-import type { ExamStatus } from '../../common/enums';
 
 /**
  * أنواع الامتحانات (اختياري - للتوافق مع الفرونت)
@@ -148,7 +147,7 @@ export class CreateExamDto {
   timeLimitMin: number;
 
   @IsEnum(ExamStatusEnum)
-  status: ExamStatus;
+  status: ExamStatusEnum;
 
   @IsEnum(ExamCategoryEnum)
   examCategory: ExamCategoryEnum;

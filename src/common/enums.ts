@@ -22,11 +22,11 @@ export type QuestionStatus = 'draft' | 'published' | 'archived';
 
 export type ExamStatus = 'draft' | 'published' | 'archived';
 
-export const ExamStatusEnum = {
-  DRAFT: 'draft' as const,
-  PUBLISHED: 'published' as const,
-  ARCHIVED: 'archived' as const,
-} as const;
+export enum ExamStatusEnum {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived',
+}
 
 export type AttemptStatus = 'in_progress' | 'submitted' | 'graded';
 
