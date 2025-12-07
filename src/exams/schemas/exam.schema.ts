@@ -81,7 +81,7 @@ export class ExamSection {
   tags?: string[];
 
   @Prop({ type: Object, _id: false })
-  difficultyDistribution?: { easy?: number; medium?: number; hard?: number };
+  difficultyDistribution?: { easy?: number; medium?: number; hard?: number }; // مهم: medium وليس med
 
   @Prop({ type: Boolean, default: false })
   randomize?: boolean;
@@ -90,7 +90,7 @@ export const ExamSectionSchema = SchemaFactory.createForClass(ExamSection);
 
 class DifficultyDistribution {
   @Prop({ type: Number, default: 0 }) easy?: number;
-  @Prop({ type: Number, default: 0 }) med?: number;
+  @Prop({ type: Number, default: 0 }) medium?: number; // مهم: medium وليس med
   @Prop({ type: Number, default: 0 }) hard?: number;
 }
 const DifficultyDistributionSchema = SchemaFactory.createForClass(DifficultyDistribution);

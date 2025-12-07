@@ -197,8 +197,13 @@ export class ExamsService {
     const userId = user.userId || (user as any).sub || (user as any).id;
     
     // تحويل questionId في items إلى ObjectId إذا كان string
-    // وإزالة أي sections null أو undefined
-    const processedDto = { ...dto };
+    // معالجة attemptsLimit و attemptLimit (دعم كلا الحقلين)
+    const processedDto: any = { ...dto };
+    if (processedDto.attemptsLimit !== undefined) {
+      processedDto.attemptLimit = processedDto.attemptsLimit; // تحويل attemptsLimit إلى attemptLimit للـ schema
+    }
+    
+    // تنظيف sections: تحويل med إلى medium و skill إلى lowercase
     if (processedDto.sections && Array.isArray(processedDto.sections)) {
       // إزالة null/undefined sections
       processedDto.sections = processedDto.sections
@@ -214,6 +219,17 @@ export class ExamsService {
           // التأكد من وجود name (الحقل الأساسي)
           if (!processedSection.name && processedSection.title) {
             processedSection.name = processedSection.title;
+          }
+          
+          // تحويل skill إلى lowercase
+          if (processedSection.skill && typeof processedSection.skill === 'string') {
+            processedSection.skill = processedSection.skill.toLowerCase();
+          }
+          
+          // تحويل med إلى medium في difficultyDistribution
+          if (processedSection.difficultyDistribution && processedSection.difficultyDistribution.med !== undefined) {
+            processedSection.difficultyDistribution.medium = processedSection.difficultyDistribution.med;
+            delete processedSection.difficultyDistribution.med;
           }
           
           // معالجة items - يمكن أن تكون فارغة أو undefined
@@ -1066,6 +1082,16 @@ export class ExamsService {
     const isAdmin = user.role === 'admin';
     if (!(isOwner || isAdmin)) throw new ForbiddenException('Only owner teacher or admin');
 
+    // معالجة attemptsLimit و attemptLimit (دعم كلا الحقلين)
+    const dtoAny = dto as any;
+    if (dtoAny.attemptsLimit !== undefined) {
+      dtoAny.attemptLimit = dtoAny.attemptsLimit; // تحويل attemptsLimit إلى attemptLimit للـ schema
+    }
+    // إذا كان attemptLimit موجود و attemptsLimit غير موجود، نستخدم attemptLimit
+    if (dtoAny.attemptLimit !== undefined && dtoAny.attemptsLimit === undefined) {
+      // نتركه كما هو للتوافق مع الكود القديم
+    }
+
     // قيود بعد النشر
     const goingToPublish =
       dto.status === ExamStatusEnum.PUBLISHED && doc.status !== ExamStatusEnum.PUBLISHED;
@@ -1192,7 +1218,21 @@ export class ExamsService {
     }
     
     // تطبيق باقي التحديثات
-    const { sections, ...restDto } = dto as any;
+    const { sections, attemptsLimit, ...restDto } = dto as any;
+    // تنظيف difficultyDistribution: تحويل med إلى medium
+    if (restDto.sections && Array.isArray(restDto.sections)) {
+      restDto.sections = restDto.sections.map((s: any) => {
+        if (s.difficultyDistribution && s.difficultyDistribution.med !== undefined) {
+          s.difficultyDistribution.medium = s.difficultyDistribution.med;
+          delete s.difficultyDistribution.med;
+        }
+        // تحويل skill إلى lowercase
+        if (s.skill && typeof s.skill === 'string') {
+          s.skill = s.skill.toLowerCase();
+        }
+        return s;
+      });
+    }
     Object.assign(doc, restDto);
 
     // لو في تعديل في البنية قبل النشر، عادي — سيؤثر على اختيار الأسئلة لاحقًا في attempts

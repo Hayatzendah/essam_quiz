@@ -11,7 +11,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 import { ExamCategoryEnum, ExamSkillEnum, ExamStatusEnum } from '../../common/enums';
 
@@ -26,6 +26,7 @@ export enum ExamTypeEnum {
 
 /**
  * توزيع الصعوبة (اختياري داخل السكشن)
+ * مهم: الاسم الرسمي هو medium وليس med
  */
 export class DifficultyDistributionDto {
   @IsOptional()
@@ -36,7 +37,7 @@ export class DifficultyDistributionDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  medium?: number;
+  medium?: number; // مهم: medium وليس med
 
   @IsOptional()
   @IsInt()
@@ -84,8 +85,9 @@ export class ExamSectionDto {
   section?: string;          // نص إضافي لو حابة (عندك نفس القيمة)
 
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.toLowerCase() : value)
   @IsEnum(ExamSkillEnum)
-  skill?: ExamSkillEnum;     // HOEREN / LESEN / ...
+  skill?: ExamSkillEnum;     // hoeren / lesen / schreiben / sprechen / misc
 
   // teil مطلوب إذا لم يكن هناك items (يدعم teil أو teilNumber)
   @ValidateIf((o) => !o.items || o.items.length === 0)
@@ -101,8 +103,8 @@ export class ExamSectionDto {
   // quota مطلوب إذا لم يكن هناك items
   @ValidateIf((o) => !o.items || o.items.length === 0)
   @IsInt()
-  @Min(0)
-  quota?: number;            // عدد الأسئلة العشوائي - مطلوب إذا لم يكن items
+  @Min(1)  // يجب أن يكون >= 1
+  quota?: number;            // عدد الأسئلة في هذا القسم - مطلوب إذا لم يكن items (>= 1)
 
   @IsOptional()
   @ValidateNested()
@@ -163,7 +165,13 @@ export class CreateExamDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  attemptLimit?: number; // 0 = غير محدود
+  attemptsLimit?: number; // 0 = غير محدود (اسم الحقل: attemptsLimit)
+  
+  // للتوافق مع الكود القديم
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  attemptLimit?: number; // 0 = غير محدود (deprecated - استخدم attemptsLimit)
 
   // ========= حقول خاصة بالقواعد =========
 

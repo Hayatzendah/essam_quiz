@@ -108,7 +108,13 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
   @IsOptional()
   @IsInt()
   @Min(0)
-  attemptLimit?: number; // 0 = غير محدود
+  attemptsLimit?: number; // 0 = غير محدود (اسم الحقل: attemptsLimit)
+  
+  // للتوافق مع الكود القديم
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  attemptLimit?: number; // 0 = غير محدود (deprecated - استخدم attemptsLimit)
 
   // حقول خاصة بالقواعد
   @IsOptional()
