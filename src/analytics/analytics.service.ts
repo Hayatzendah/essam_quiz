@@ -574,7 +574,7 @@ export class AnalyticsService {
     });
 
     // بناء النتيجة
-    const result = Array.from(skillMap.entries()).map(([skill, data]) => ({
+    const items = Array.from(skillMap.entries()).map(([skill, data]) => ({
       skill,
       questionsCount: data.questionsCount,
       avgScore: Math.round(data.avgScore * 100) / 100,
@@ -582,7 +582,7 @@ export class AnalyticsService {
 
     // ترتيب حسب المهارات الأساسية أولاً
     const skillOrder = ['hoeren', 'lesen', 'schreiben', 'sprechen', 'misc', 'mixed', 'leben_test'];
-    result.sort((a, b) => {
+    items.sort((a, b) => {
       const aIndex = skillOrder.indexOf(a.skill);
       const bIndex = skillOrder.indexOf(b.skill);
       if (aIndex === -1 && bIndex === -1) return 0;
@@ -591,90 +591,130 @@ export class AnalyticsService {
       return aIndex - bIndex;
     });
 
-    return result;
+    // إرجاع النتيجة بالشكل المتوقع من الفرونت
+    return { items };
   }
 
   /**
-   * الحصول على إحصائيات الأسئلة حسب المهارة والمستوى والحالة
+   * الحصول على إحصائيات الأسئلة (الأسئلة التي تحتاج تطوير والأكثر خطأ)
    * @param user المستخدم الحالي
-   * @returns إحصائيات الأسئلة (bySkill, byLevel, published, draft)
+   * @returns إحصائيات الأسئلة (questionsToImprove, mostWrongQuestions)
    */
   async getQuestions(user?: ReqUser) {
     if (user) {
       this.ensureTeacherOrAdmin(user);
     }
 
-    // تجميع الأسئلة حسب المهارة (mainSkill)
-    const bySkill = await this.QuestionModel.aggregate([
+    // تجميع إجابات الطلاب من attempts لكل سؤال
+    const questionStats = await this.AttemptModel.aggregate([
       {
         $match: {
-          mainSkill: { $exists: true, $ne: null },
+          status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] }, // المحاولات المكتملة
         },
+      },
+      {
+        $unwind: '$items', // تفكيك items
       },
       {
         $group: {
-          _id: '$mainSkill',
-          count: { $sum: 1 },
+          _id: '$items.questionId',
+          totalAttempts: { $sum: 1 },
+          correctAttempts: {
+            $sum: {
+              $cond: [
+                {
+                  $gte: [
+                    { $add: ['$items.autoScore', '$items.manualScore'] },
+                    '$items.points',
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          wrongAttempts: {
+            $sum: {
+              $cond: [
+                {
+                  $lt: [
+                    { $add: ['$items.autoScore', '$items.manualScore'] },
+                    '$items.points',
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
         },
       },
       {
-        $sort: { count: -1 }, // ترتيب حسب العدد (تنازلي)
+        $match: {
+          totalAttempts: { $gte: 1 }, // على الأقل محاولة واحدة
+        },
       },
       {
         $project: {
           _id: 0,
-          skill: '$_id',
-          count: 1,
+          questionId: '$_id',
+          totalAttempts: 1,
+          correctAttempts: 1,
+          wrongAttempts: 1,
+          successRate: {
+            $multiply: [
+              {
+                $divide: ['$correctAttempts', '$totalAttempts'],
+              },
+              100,
+            ],
+          },
         },
       },
     ]).exec();
 
-    // تجميع الأسئلة حسب المستوى (level)
-    const byLevel = await this.QuestionModel.aggregate([
-      {
-        $match: {
-          level: { $exists: true, $ne: null },
-        },
-      },
-      {
-        $group: {
-          _id: '$level',
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { _id: 1 }, // ترتيب حسب المستوى (A1, A2, B1, B2, C1, C2)
-      },
-      {
-        $project: {
-          _id: 0,
-          level: '$_id',
-          count: 1,
-        },
-      },
-    ]).exec();
+    if (questionStats.length === 0) {
+      return {
+        questionsToImprove: [],
+        mostWrongQuestions: [],
+      };
+    }
 
-    // عدد الأسئلة المنشورة
-    const published = await this.QuestionModel.countDocuments({
-      status: QuestionStatus.PUBLISHED,
-    }).exec();
+    // جلب معلومات الأسئلة
+    const questionIds = questionStats.map((stat) => stat.questionId);
+    const questions = await this.QuestionModel.find({ _id: { $in: questionIds } })
+      .select({ prompt: 1 })
+      .lean()
+      .exec();
 
-    // عدد الأسئلة المسودة
-    const draft = await this.QuestionModel.countDocuments({
-      status: QuestionStatus.DRAFT,
-    }).exec();
+    const questionsMap = new Map(
+      questions.map((q) => [String(q._id), q.prompt]),
+    );
+
+    // بناء قائمة الأسئلة التي تحتاج تطوير (successRate < 40%)
+    const questionsToImprove = questionStats
+      .filter((stat) => stat.successRate < 40)
+      .map((stat) => ({
+        questionId: String(stat.questionId),
+        prompt: questionsMap.get(String(stat.questionId)) ?? 'Unknown question',
+        successRate: Math.round(stat.successRate * 100) / 100,
+      }))
+      .sort((a, b) => a.successRate - b.successRate); // ترتيب حسب نسبة النجاح (تصاعدي)
+
+    // بناء قائمة أكثر الأسئلة خطأ (Top 10 حسب wrongAttempts)
+    const mostWrongQuestions = questionStats
+      .map((stat) => ({
+        questionId: String(stat.questionId),
+        prompt: questionsMap.get(String(stat.questionId)) ?? 'Unknown question',
+        wrongAttempts: stat.wrongAttempts,
+        successRate: Math.round(stat.successRate * 100) / 100,
+      }))
+      .sort((a, b) => b.wrongAttempts - a.wrongAttempts) // ترتيب حسب عدد الأخطاء (تنازلي)
+      .slice(0, 10); // أعلى 10 أسئلة
 
     return {
-      bySkill: bySkill.map((item) => ({
-        skill: String(item.skill),
-        count: item.count,
-      })),
-      byLevel: byLevel.map((item) => ({
-        level: String(item.level),
-        count: item.count,
-      })),
-      published,
-      draft,
+      questionsToImprove,
+      mostWrongQuestions,
     };
   }
 

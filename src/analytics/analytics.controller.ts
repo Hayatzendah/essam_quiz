@@ -119,15 +119,18 @@ export class AnalyticsController {
     status: 200, 
     description: 'إحصائيات لكل مهارة',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          skill: { type: 'string', example: 'hoeren' },
-          skillLabel: { type: 'string', example: 'Hören' },
-          attemptsCount: { type: 'number', example: 120 },
-          avgScore: { type: 'number', example: 76 },
-          passRate: { type: 'number', example: 70 }
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              skill: { type: 'string', example: 'lesen' },
+              questionsCount: { type: 'number', example: 120 },
+              avgScore: { type: 'number', example: 63.4 }
+            }
+          }
         }
       }
     }
@@ -223,7 +226,7 @@ export class AnalyticsController {
   @Roles('teacher', 'admin')
   @ApiOperation({ 
     summary: 'Get questions analytics', 
-    description: 'إحصائيات الأسئلة حسب المهارة والمستوى والحالة' 
+    description: 'الأسئلة التي تحتاج تطوير والأكثر خطأ' 
   })
   @ApiResponse({ 
     status: 200, 
@@ -231,28 +234,29 @@ export class AnalyticsController {
     schema: {
       type: 'object',
       properties: {
-        bySkill: {
+        questionsToImprove: {
           type: 'array',
           items: {
             type: 'object',
             properties: {
-              skill: { type: 'string', example: 'hoeren' },
-              count: { type: 'number', example: 140 }
+              questionId: { type: 'string' },
+              prompt: { type: 'string' },
+              successRate: { type: 'number', example: 27.8 }
             }
           }
         },
-        byLevel: {
+        mostWrongQuestions: {
           type: 'array',
           items: {
             type: 'object',
             properties: {
-              level: { type: 'string', example: 'A1' },
-              count: { type: 'number', example: 90 }
+              questionId: { type: 'string' },
+              prompt: { type: 'string' },
+              wrongAttempts: { type: 'number', example: 42 },
+              successRate: { type: 'number', example: 35.0 }
             }
           }
-        },
-        published: { type: 'number', example: 350 },
-        draft: { type: 'number', example: 153 }
+        }
       }
     }
   })
