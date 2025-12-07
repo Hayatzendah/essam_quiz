@@ -197,7 +197,7 @@ export class AnalyticsService {
    * الحصول على إحصائيات النشاط اليومي (عدد المحاولات لكل يوم)
    * @param days عدد الأيام الماضية (افتراضي: 7)
    * @param user المستخدم الحالي
-   * @returns قائمة بالنشاط اليومي [{ date: "2025-12-01", count: 12 }, ...]
+   * @returns قائمة بالنشاط اليومي [{ date: "2025-12-01", activeStudents: 5, attemptsCount: 8, avgScore: 72 }, ...]
    */
   async getActivity(days: number = 7, user?: ReqUser) {
     if (user) {
@@ -209,11 +209,12 @@ export class AnalyticsService {
     since.setDate(since.getDate() - days);
     since.setHours(0, 0, 0, 0); // بداية اليوم
 
-    // تجميع المحاولات حسب التاريخ
+    // تجميع المحاولات حسب التاريخ مع حساب activeStudents و avgScore
     const attempts = await this.AttemptModel.aggregate([
       {
         $match: {
           createdAt: { $gte: since },
+          status: AttemptStatus.GRADED, // فقط المحاولات المصححة
         },
       },
       {
@@ -225,22 +226,53 @@ export class AnalyticsService {
               timezone: 'UTC',
             },
           },
-          count: { $sum: 1 },
+          attemptsCount: { $sum: 1 },
+          activeStudents: { $addToSet: '$studentId' }, // عدد الطلاب الفريدين
+          totalScore: {
+            $sum: {
+              $cond: [
+                { $gt: ['$totalMaxScore', 0] },
+                {
+                  $multiply: [
+                    {
+                      $divide: ['$finalScore', '$totalMaxScore'],
+                    },
+                    100, // تحويل إلى نسبة مئوية
+                  ],
+                },
+                0,
+              ],
+            },
+          },
         },
-      },
-      {
-        $sort: { _id: 1 }, // ترتيب حسب التاريخ
       },
       {
         $project: {
           _id: 0,
           date: '$_id',
-          count: 1,
+          attemptsCount: 1,
+          activeStudents: { $size: '$activeStudents' }, // عدد الطلاب الفريدين
+          avgScore: {
+            $cond: [
+              { $gt: ['$attemptsCount', 0] },
+              { $divide: ['$totalScore', '$attemptsCount'] },
+              0,
+            ],
+          },
         },
+      },
+      {
+        $sort: { date: 1 }, // ترتيب حسب التاريخ
       },
     ]).exec();
 
-    return attempts;
+    // تقريب avgScore
+    return attempts.map((item) => ({
+      date: item.date,
+      activeStudents: item.activeStudents,
+      attemptsCount: item.attemptsCount,
+      avgScore: Math.round(item.avgScore * 100) / 100,
+    }));
   }
 
   /**
@@ -330,12 +362,15 @@ export class AnalyticsService {
     // حساب معدل النجاح الإجمالي
     const totalAttempts = attempts.reduce((s, a) => s + a.attemptsCount, 0);
     const totalPassed = attempts.reduce((s, a) => s + a.passedCount, 0);
+    const totalFailed = totalAttempts - totalPassed;
     const overallPassRate = totalAttempts
-      ? Math.round((totalPassed / totalAttempts) * 100 * 100) / 100
+      ? Math.round((totalPassed / totalAttempts) * 100)
       : 0;
 
     return {
       overallPassRate,
+      totalPassed,
+      totalFailed,
       exams: perExam,
     };
   }
@@ -389,7 +424,7 @@ export class AnalyticsService {
         $sort: type === 'best' ? { avgScore: -1 } : { avgScore: 1 }, // ترتيب حسب النوع
       },
       {
-        $limit: 10, // أعلى/أدنى 10 امتحانات
+        $limit: 5, // أعلى/أدنى 5 امتحانات
       },
     ]).exec();
 
@@ -509,21 +544,54 @@ export class AnalyticsService {
       leben_test: 'Leben Test',
     };
 
-    // بناء النتيجة
-    const result = attempts.map((stat) => {
+    // جلب عدد الأسئلة لكل مهارة
+    const questionsBySkill = await this.QuestionModel.aggregate([
+      {
+        $match: {
+          mainSkill: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: '$mainSkill',
+          questionsCount: { $sum: 1 },
+        },
+      },
+    ]).exec();
+
+    // دمج البيانات
+    const skillMap = new Map<string, { questionsCount: number; avgScore: number }>();
+    
+    // إضافة عدد الأسئلة
+    questionsBySkill.forEach((item) => {
+      const skill = String(item._id).toLowerCase();
+      skillMap.set(skill, {
+        questionsCount: item.questionsCount,
+        avgScore: 0,
+      });
+    });
+
+    // إضافة متوسط الدرجات
+    attempts.forEach((stat) => {
       const skill = String(stat._id).toLowerCase();
       const avgScore = stat.attemptsCount > 0 ? stat.totalScore / stat.attemptsCount : 0;
-      const passRate =
-        stat.attemptsCount > 0 ? (stat.passedCount / stat.attemptsCount) * 100 : 0;
-
-      return {
-        skill,
-        skillLabel: skillLabels[skill] || skill.charAt(0).toUpperCase() + skill.slice(1),
-        attemptsCount: stat.attemptsCount,
-        avgScore: Math.round(avgScore * 100) / 100,
-        passRate: Math.round(passRate * 100) / 100,
-      };
+      
+      if (skillMap.has(skill)) {
+        skillMap.get(skill)!.avgScore = avgScore;
+      } else {
+        skillMap.set(skill, {
+          questionsCount: 0,
+          avgScore: avgScore,
+        });
+      }
     });
+
+    // بناء النتيجة
+    const result = Array.from(skillMap.entries()).map(([skill, data]) => ({
+      skill,
+      questionsCount: data.questionsCount,
+      avgScore: Math.round(data.avgScore * 100) / 100,
+    }));
 
     // ترتيب حسب المهارات الأساسية أولاً
     const skillOrder = ['hoeren', 'lesen', 'schreiben', 'sprechen', 'misc', 'mixed', 'leben_test'];
