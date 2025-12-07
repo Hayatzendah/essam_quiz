@@ -136,6 +136,88 @@ export class AnalyticsController {
     return this.analytics.getSkills(req?.user);
   }
 
+  @Get('skills/analytics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({ 
+    summary: 'Get skills analytics (detailed)', 
+    description: 'إحصائيات مفصلة للمهارات (عدد الأسئلة، الصحيحة، الخاطئة، نسبة النجاح)' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'إحصائيات مفصلة لكل مهارة',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          skill: { type: 'string', example: 'hoeren' },
+          totalQuestions: { type: 'number', example: 150 },
+          correct: { type: 'number', example: 120 },
+          wrong: { type: 'number', example: 30 },
+          successRate: { type: 'number', example: 80 }
+        }
+      }
+    }
+  })
+  getSkillsAnalytics(@Req() req?: any) {
+    return this.analytics.getSkillsAnalytics(req?.user);
+  }
+
+  @Get('skills/needs-improvement')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({ 
+    summary: 'Get skills that need improvement', 
+    description: 'المهارات التي تحتاج تحسين (نسبة النجاح أقل من 40%)' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'قائمة بالمهارات التي تحتاج تحسين',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          skill: { type: 'string', example: 'sprechen' },
+          totalQuestions: { type: 'number', example: 50 },
+          correct: { type: 'number', example: 15 },
+          wrong: { type: 'number', example: 35 },
+          successRate: { type: 'number', example: 30 }
+        }
+      }
+    }
+  })
+  getSkillsNeedImprovement(@Req() req?: any) {
+    return this.analytics.getSkillsNeedImprovement(req?.user);
+  }
+
+  @Get('questions/most-wrong')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({ 
+    summary: 'Get most wrong questions', 
+    description: 'الأسئلة الأكثر خطأ (أعلى عدد إجابات خاطئة)' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'قائمة بالأسئلة الأكثر خطأ',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          questionId: { type: 'string' },
+          questionPrompt: { type: 'string' },
+          count: { type: 'number', example: 25 }
+        }
+      }
+    }
+  })
+  getMostWrongQuestions(@Req() req?: any) {
+    return this.analytics.getMostWrongQuestions(req?.user);
+  }
+
   @Get('questions')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')

@@ -869,6 +869,198 @@ export class AnalyticsService {
       successRate: Math.round(stat.successRate * 100) / 100,
     }));
   }
+
+  /**
+   * الحصول على إحصائيات المهارات (Skills Analytics)
+   * تجميع حسب mainSkill من الأسئلة
+   * @returns قائمة بإحصائيات كل مهارة
+   */
+  async getSkillsAnalytics(user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    // جلب جميع المحاولات المكتملة
+    const attempts = await this.AttemptModel.find({
+      status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] },
+    })
+      .select({ items: 1 })
+      .lean()
+      .exec();
+
+    if (!attempts.length) {
+      return [];
+    }
+
+    // تجميع questionIds من جميع المحاولات
+    const questionIds = new Set<string>();
+    attempts.forEach((attempt) => {
+      attempt.items?.forEach((item: any) => {
+        if (item.questionId) {
+          questionIds.add(String(item.questionId));
+        }
+      });
+    });
+
+    // جلب معلومات الأسئلة مع mainSkill
+    const questions = await this.QuestionModel.find({
+      _id: { $in: Array.from(questionIds) },
+      mainSkill: { $exists: true, $ne: null },
+    })
+      .select({ _id: 1, mainSkill: 1 })
+      .lean()
+      .exec();
+
+    // خريطة لربط questionId بـ skill
+    const questionSkillMap = new Map<string, string>();
+    questions.forEach((q) => {
+      questionSkillMap.set(String(q._id), String(q.mainSkill).toLowerCase());
+    });
+
+    // تجميع الإحصائيات حسب المهارة
+    const skillsMap: Record<
+      string,
+      {
+        skill: string;
+        totalQuestions: number;
+        correct: number;
+        wrong: number;
+        successRate: number;
+      }
+    > = {};
+
+    for (const attempt of attempts) {
+      for (const item of attempt.items || []) {
+        const questionId = String(item.questionId);
+        const skill = questionSkillMap.get(questionId);
+
+        if (!skill) continue;
+
+        if (!skillsMap[skill]) {
+          skillsMap[skill] = {
+            skill,
+            totalQuestions: 0,
+            correct: 0,
+            wrong: 0,
+            successRate: 0,
+          };
+        }
+
+        skillsMap[skill].totalQuestions++;
+
+        // حساب isCorrect: autoScore + manualScore >= points
+        const totalScore = (item.autoScore || 0) + (item.manualScore || 0);
+        const points = item.points || 0;
+        const isCorrect = totalScore >= points;
+
+        if (isCorrect) {
+          skillsMap[skill].correct++;
+        } else {
+          skillsMap[skill].wrong++;
+        }
+      }
+    }
+
+    // حساب نسب النجاح
+    const result = Object.values(skillsMap).map((skill) => ({
+      ...skill,
+      successRate: skill.totalQuestions
+        ? Math.round((skill.correct / skill.totalQuestions) * 100)
+        : 0,
+    }));
+
+    // ترتيب حسب المهارات الأساسية
+    const skillOrder = ['hoeren', 'lesen', 'schreiben', 'sprechen', 'misc', 'mixed', 'leben_test'];
+    result.sort((a, b) => {
+      const aIndex = skillOrder.indexOf(a.skill);
+      const bIndex = skillOrder.indexOf(b.skill);
+      if (aIndex === -1 && bIndex === -1) return 0;
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+
+    return result;
+  }
+
+  /**
+   * الحصول على المهارات التي تحتاج تحسين (نسبة النجاح < 40%)
+   * @param user المستخدم الحالي
+   * @returns قائمة بالمهارات التي تحتاج تحسين
+   */
+  async getSkillsNeedImprovement(user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    const skills = await this.getSkillsAnalytics(user);
+    return skills.filter((s) => s.successRate < 40);
+  }
+
+  /**
+   * الحصول على الأسئلة الأكثر خطأ
+   * @param user المستخدم الحالي
+   * @returns قائمة بالأسئلة الأكثر خطأ (أعلى عدد إجابات خاطئة)
+   */
+  async getMostWrongQuestions(user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    // جلب جميع المحاولات المكتملة
+    const attempts = await this.AttemptModel.find({
+      status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] },
+    })
+      .select({ items: 1 })
+      .lean()
+      .exec();
+
+    const wrongMap: Record<string, number> = {};
+
+    for (const attempt of attempts) {
+      for (const item of attempt.items || []) {
+        const questionId = String(item.questionId);
+
+        // حساب isCorrect: autoScore + manualScore >= points
+        const totalScore = (item.autoScore || 0) + (item.manualScore || 0);
+        const points = item.points || 0;
+        const isCorrect = totalScore >= points;
+
+        if (!isCorrect) {
+          wrongMap[questionId] = (wrongMap[questionId] || 0) + 1;
+        }
+      }
+    }
+
+    // تحويل إلى array وترتيب
+    const result = Object.entries(wrongMap)
+      .map(([questionId, count]) => ({ questionId, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // أعلى 10 أسئلة
+
+    // جلب معلومات الأسئلة
+    if (result.length > 0) {
+      const questionIds = result.map((r) => r.questionId);
+      const questions = await this.QuestionModel.find({
+        _id: { $in: questionIds },
+      })
+        .select({ prompt: 1 })
+        .lean()
+        .exec();
+
+      const questionsMap = new Map(
+        questions.map((q) => [String(q._id), q.prompt]),
+      );
+
+      return result.map((r) => ({
+        questionId: r.questionId,
+        questionPrompt: questionsMap.get(r.questionId) ?? 'Unknown question',
+        count: r.count,
+      }));
+    }
+
+    return result;
+  }
 }
 
 
