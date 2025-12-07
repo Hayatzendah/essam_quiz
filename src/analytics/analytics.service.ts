@@ -30,6 +30,7 @@ export class AnalyticsService {
     const totalStudents = await this.UserModel.countDocuments({ role: 'student' }).exec();
 
     // Exams
+    const totalExams = await this.ExamModel.countDocuments({}).exec(); // إجمالي الامتحانات
     const draftExamsCount = await this.ExamModel.countDocuments({ status: 'draft' }).exec();
     const publishedExamsCount = await this.ExamModel.countDocuments({ status: 'published' }).exec();
 
@@ -75,11 +76,12 @@ export class AnalyticsService {
       : 0;
 
     return {
-      totalStudents,
-      draftExamsCount,
-      publishedExamsCount,
-      totalQuestions,
-      averageScore,
+      totalExams, // إجمالي الامتحانات
+      totalStudents, // إجمالي الطلاب
+      draftExamsCount, // امتحانات مسودة
+      publishedExamsCount, // امتحانات منشورة
+      totalQuestions, // إجمالي الأسئلة
+      averageScore, // متوسط العلامات
     };
   }
 
