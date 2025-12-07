@@ -1,14 +1,34 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { Transform } from 'class-transformer';
-import { CreateExamDto, ExamTypeEnum } from './create-exam.dto';
-import { IsEnum, IsMongoId, IsOptional, IsArray, IsString } from 'class-validator';
-import { ExamStatusEnum } from '../../common/enums';
+import { Transform, Type } from 'class-transformer';
+import { 
+  CreateExamDto, 
+  ExamTypeEnum, 
+  ExamSectionDto,
+  DifficultyDistributionDto,
+  SectionItemDto
+} from './create-exam.dto';
+import { 
+  IsEnum, 
+  IsMongoId, 
+  IsOptional, 
+  IsArray, 
+  IsString, 
+  IsInt, 
+  IsBoolean,
+  IsNotEmpty,
+  Min,
+  ValidateNested,
+  ValidateIf
+} from 'class-validator';
+import { ExamStatusEnum, ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 
 export class UpdateExamDto extends PartialType(CreateExamDto) {
-  // Override sections to ensure null values are filtered
+  // Override sections to ensure null values are filtered and proper validation
   @IsOptional()
   @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ExamSectionDto)
   @Transform(({ value }) => {
     // Filter out null, undefined, and empty objects from sections array
     if (Array.isArray(value)) {
@@ -36,7 +56,8 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
     }
     return value;
   })
-  sections?: any[];
+  sections?: ExamSectionDto[];
+
   // السماح بتغيير الحالة مع تحقق بالـ Service
   @IsOptional()
   @IsEnum(ExamStatusEnum)
@@ -52,17 +73,66 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
   @IsMongoId({ each: true })
   studentIds?: string[];
 
-  // الحقول الإضافية
+  // الحقول الأساسية (اختيارية في التعديل)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  title?: string;
+
   @IsOptional()
   @IsString()
   description?: string;
 
   @IsOptional()
-  @IsEnum(ProviderEnum)
-  provider?: ProviderEnum;
+  @IsString()
+  @IsNotEmpty()
+  level?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  timeLimitMin?: number;
+
+  @IsOptional()
+  @IsEnum(ExamCategoryEnum)
+  examCategory?: ExamCategoryEnum;
 
   @IsOptional()
   @IsEnum(ExamTypeEnum)
-  examType?: ExamTypeEnum; // للتوافق مع الفرونت (leben_test)
+  examType?: ExamTypeEnum;
+
+  @IsOptional()
+  @IsBoolean()
+  randomizeQuestions?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  attemptLimit?: number; // 0 = غير محدود
+
+  // حقول خاصة بالقواعد
+  @IsOptional()
+  @ValidateIf(o => o.examCategory === ExamCategoryEnum.GRAMMAR)
+  @IsMongoId()
+  grammarTopicId?: string;
+
+  // حقول خاصة بـ Prüfungen
+  @IsOptional()
+  @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @IsEnum(ProviderEnum)
+  @IsNotEmpty()
+  provider?: ProviderEnum;
+
+  @IsOptional()
+  @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @IsEnum(ExamSkillEnum)
+  @IsNotEmpty()
+  mainSkill?: ExamSkillEnum;
+
+  // حقول مشتركة
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }
 

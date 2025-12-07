@@ -160,6 +160,11 @@ export class CreateExamDto {
   @IsBoolean()
   randomizeQuestions?: boolean;
 
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  attemptLimit?: number; // 0 = غير محدود
+
   // ========= حقول خاصة بالقواعد =========
 
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.GRAMMAR)
