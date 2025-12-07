@@ -325,6 +325,8 @@ export class AnalyticsService {
     if (attempts.length === 0) {
       return {
         overallPassRate: 0,
+        totalPassed: 0,
+        totalFailed: 0,
         exams: [],
       };
     }
