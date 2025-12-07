@@ -261,6 +261,103 @@ export class AnalyticsService {
 
     return attempts;
   }
+
+  /**
+   * الحصول على إحصائيات معدل النجاح لكل امتحان
+   * @param days عدد الأيام الماضية (افتراضي: 30)
+   * @param user المستخدم الحالي
+   * @returns معدل النجاح الإجمالي ومعدل النجاح لكل امتحان
+   */
+  async getPassRate(days: number = 30, user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    // حساب التاريخ من عدد الأيام الماضية
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    since.setHours(0, 0, 0, 0); // بداية اليوم
+
+    // تجميع المحاولات حسب examId وحساب عدد المحاولات وعدد الناجحين
+    const attempts = await this.AttemptModel.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: since },
+          status: AttemptStatus.GRADED, // فقط المحاولات المصححة
+        },
+      },
+      {
+        $group: {
+          _id: '$examId',
+          attemptsCount: { $sum: 1 },
+          passedCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $gt: ['$totalMaxScore', 0] },
+                    {
+                      $gte: [
+                        {
+                          $divide: ['$finalScore', '$totalMaxScore'],
+                        },
+                        0.6, // 60% كحد أدنى للنجاح
+                      ],
+                    },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]).exec();
+
+    if (attempts.length === 0) {
+      return {
+        overallPassRate: 0,
+        exams: [],
+      };
+    }
+
+    // جلب معلومات الامتحانات
+    const examIds = attempts.map((a) => a._id);
+    const exams = await this.ExamModel.find({ _id: { $in: examIds } })
+      .select({ title: 1 })
+      .lean()
+      .exec();
+
+    const examsMap = new Map(exams.map((e) => [String(e._id), e.title]));
+
+    // حساب معدل النجاح لكل امتحان
+    const perExam = attempts.map((a) => {
+      const passRate = a.attemptsCount
+        ? (a.passedCount / a.attemptsCount) * 100
+        : 0;
+
+      return {
+        examId: String(a._id),
+        examName: examsMap.get(String(a._id)) ?? 'Unknown exam',
+        attemptsCount: a.attemptsCount,
+        passedCount: a.passedCount,
+        passRate: Math.round(passRate * 100) / 100, // تقريب لرقمين عشريين
+      };
+    });
+
+    // حساب معدل النجاح الإجمالي
+    const totalAttempts = attempts.reduce((s, a) => s + a.attemptsCount, 0);
+    const totalPassed = attempts.reduce((s, a) => s + a.passedCount, 0);
+    const overallPassRate = totalAttempts
+      ? Math.round((totalPassed / totalAttempts) * 100 * 100) / 100
+      : 0;
+
+    return {
+      overallPassRate,
+      exams: perExam,
+    };
+  }
 }
 
 

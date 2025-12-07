@@ -45,6 +45,41 @@ export class AnalyticsController {
     return this.analytics.getActivity(daysNumber, req?.user);
   }
 
+  @Get('pass-rate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({ 
+    summary: 'Get pass rate analytics', 
+    description: 'الحصول على إحصائيات معدل النجاح لكل امتحان' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'معدل النجاح الإجمالي ومعدل النجاح لكل امتحان',
+    schema: {
+      type: 'object',
+      properties: {
+        overallPassRate: { type: 'number', example: 75 },
+        exams: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              examId: { type: 'string' },
+              examName: { type: 'string' },
+              attemptsCount: { type: 'number' },
+              passedCount: { type: 'number' },
+              passRate: { type: 'number' }
+            }
+          }
+        }
+      }
+    }
+  })
+  getPassRate(@Query('days') days?: string, @Req() req?: any) {
+    const daysNumber = days ? parseInt(days, 10) : 30; // افتراضي 30 يوم
+    return this.analytics.getPassRate(daysNumber, req?.user);
+  }
+
   @Get('exam/:examId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')
