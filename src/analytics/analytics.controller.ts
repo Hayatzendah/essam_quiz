@@ -191,4 +191,60 @@ export class AnalyticsController {
   getQuestionAnalytics(@Param('questionId') questionId: string, @Req() req: any) {
     return this.analytics.getQuestionAnalytics(questionId, req.user);
   }
+
+  @Get('questions/incorrect')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({ 
+    summary: 'Get most incorrect questions', 
+    description: 'الأسئلة الأكثر خطأ (أعلى عدد إجابات خاطئة)' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'قائمة بالأسئلة الأكثر خطأ',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          questionId: { type: 'string' },
+          questionPrompt: { type: 'string' },
+          totalAnswers: { type: 'number' },
+          wrongAnswers: { type: 'number' },
+          successRate: { type: 'number' }
+        }
+      }
+    }
+  })
+  getMostIncorrectQuestions(@Req() req?: any) {
+    return this.analytics.getMostIncorrectQuestions(req?.user);
+  }
+
+  @Get('questions/needing-improvement')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({ 
+    summary: 'Get questions needing improvement', 
+    description: 'الأسئلة التي تحتاج تطوير (نسبة النجاح أقل من 40%)' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'قائمة بالأسئلة التي تحتاج تطوير',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          questionId: { type: 'string' },
+          questionPrompt: { type: 'string' },
+          totalAnswers: { type: 'number' },
+          wrongAnswers: { type: 'number' },
+          successRate: { type: 'number' }
+        }
+      }
+    }
+  })
+  getQuestionsNeedingImprovement(@Req() req?: any) {
+    return this.analytics.getQuestionsNeedingImprovement(req?.user);
+  }
 }

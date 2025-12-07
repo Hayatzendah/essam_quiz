@@ -199,16 +199,18 @@ export class AnalyticsService {
     }
 
     // حساب التاريخ من عدد الأيام الماضية
+    // نستخدم UTC لتجنب مشاكل timezone
     const since = new Date();
-    since.setDate(since.getDate() - days);
-    since.setHours(0, 0, 0, 0); // بداية اليوم
+    since.setUTCDate(since.getUTCDate() - days);
+    since.setUTCHours(0, 0, 0, 0); // بداية اليوم في UTC
 
     // تجميع المحاولات حسب التاريخ مع حساب activeStudents و avgScore
+    // نستخدم SUBMITTED و GRADED (المحاولات المكتملة)
     const attempts = await this.AttemptModel.aggregate([
       {
         $match: {
           createdAt: { $gte: since },
-          status: AttemptStatus.GRADED, // فقط المحاولات المصححة
+          status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] }, // المحاولات المكتملة
         },
       },
       {
@@ -281,16 +283,18 @@ export class AnalyticsService {
     }
 
     // حساب التاريخ من عدد الأيام الماضية
+    // نستخدم UTC لتجنب مشاكل timezone
     const since = new Date();
-    since.setDate(since.getDate() - days);
-    since.setHours(0, 0, 0, 0); // بداية اليوم
+    since.setUTCDate(since.getUTCDate() - days);
+    since.setUTCHours(0, 0, 0, 0); // بداية اليوم في UTC
 
     // تجميع المحاولات حسب examId وحساب عدد المحاولات وعدد الناجحين
+    // نستخدم SUBMITTED و GRADED (المحاولات المكتملة)
     const attempts = await this.AttemptModel.aggregate([
       {
         $match: {
           createdAt: { $gte: since },
-          status: AttemptStatus.GRADED, // فقط المحاولات المصححة
+          status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] }, // المحاولات المكتملة
         },
       },
       {
@@ -383,10 +387,11 @@ export class AnalyticsService {
     }
 
     // تجميع المحاولات حسب examId وحساب متوسط الدرجات
+    // نستخدم SUBMITTED و GRADED (المحاولات المكتملة)
     const examStats = await this.AttemptModel.aggregate([
       {
         $match: {
-          status: AttemptStatus.GRADED, // فقط المحاولات المصححة
+          status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] }, // المحاولات المكتملة
         },
       },
       {
@@ -458,44 +463,50 @@ export class AnalyticsService {
       this.ensureTeacherOrAdmin(user);
     }
 
-    // جلب جميع المحاولات المصححة مع ربطها بالامتحانات
-    const attempts = await this.AttemptModel.aggregate([
+    // جلب جميع المحاولات المكتملة مع ربطها بالأسئلة
+    // نستخدم SUBMITTED و GRADED (المحاولات المكتملة)
+    const attemptsBySkill = await this.AttemptModel.aggregate([
       {
         $match: {
-          status: AttemptStatus.GRADED,
+          status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] }, // المحاولات المكتملة
         },
       },
       {
+        $unwind: '$items', // تفكيك items
+      },
+      {
         $lookup: {
-          from: 'exams',
-          localField: 'examId',
+          from: 'questions',
+          localField: 'items.questionId',
           foreignField: '_id',
-          as: 'exam',
+          as: 'question',
         },
       },
       {
         $unwind: {
-          path: '$exam',
+          path: '$question',
           preserveNullAndEmptyArrays: false,
         },
       },
       {
         $match: {
-          'exam.mainSkill': { $exists: true, $ne: null },
+          'question.mainSkill': { $exists: true, $ne: null },
         },
       },
       {
         $group: {
-          _id: '$exam.mainSkill',
-          attemptsCount: { $sum: 1 },
+          _id: '$question.mainSkill',
           totalScore: {
             $sum: {
               $cond: [
-                { $gt: ['$totalMaxScore', 0] },
+                { $gt: ['$items.points', 0] },
                 {
                   $multiply: [
                     {
-                      $divide: ['$finalScore', '$totalMaxScore'],
+                      $divide: [
+                        { $add: ['$items.autoScore', '$items.manualScore'] },
+                        '$items.points',
+                      ],
                     },
                     100, // تحويل إلى نسبة مئوية
                   ],
@@ -504,27 +515,7 @@ export class AnalyticsService {
               ],
             },
           },
-          passedCount: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $gt: ['$totalMaxScore', 0] },
-                    {
-                      $gte: [
-                        {
-                          $divide: ['$finalScore', '$totalMaxScore'],
-                        },
-                        0.6, // 60% كحد أدنى للنجاح
-                      ],
-                    },
-                  ],
-                },
-                1,
-                0,
-              ],
-            },
-          },
+          attemptsCount: { $sum: 1 },
         },
       },
     ]).exec();
@@ -568,7 +559,7 @@ export class AnalyticsService {
     });
 
     // إضافة متوسط الدرجات
-    attempts.forEach((stat) => {
+    attemptsBySkill.forEach((stat) => {
       const skill = String(stat._id).toLowerCase();
       const avgScore = stat.attemptsCount > 0 ? stat.totalScore / stat.attemptsCount : 0;
       
@@ -685,6 +676,198 @@ export class AnalyticsService {
       published,
       draft,
     };
+  }
+
+  /**
+   * الحصول على الأسئلة الأكثر خطأ
+   * @param user المستخدم الحالي
+   * @returns قائمة بالأسئلة الأكثر خطأ (أعلى عدد إجابات خاطئة)
+   */
+  async getMostIncorrectQuestions(user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    // تجميع إجابات الطلاب من attempts
+    const questionStats = await this.AttemptModel.aggregate([
+      {
+        $match: {
+          status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] }, // المحاولات المكتملة
+        },
+      },
+      {
+        $unwind: '$items', // تفكيك items
+      },
+      {
+        $group: {
+          _id: '$items.questionId',
+          totalAnswers: { $sum: 1 },
+          wrongAnswers: {
+            $sum: {
+              $cond: [
+                {
+                  $lt: [
+                    { $add: ['$items.autoScore', '$items.manualScore'] },
+                    '$items.points',
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          totalAnswers: { $gte: 1 }, // على الأقل إجابة واحدة
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          questionId: '$_id',
+          totalAnswers: 1,
+          wrongAnswers: 1,
+          successRate: {
+            $multiply: [
+              {
+                $divide: [
+                  { $subtract: ['$totalAnswers', '$wrongAnswers'] },
+                  '$totalAnswers',
+                ],
+              },
+              100,
+            ],
+          },
+        },
+      },
+      {
+        $sort: { wrongAnswers: -1, successRate: 1 }, // ترتيب حسب عدد الأخطاء (تنازلي) ثم نسبة النجاح (تصاعدي)
+      },
+      {
+        $limit: 10, // أعلى 10 أسئلة
+      },
+    ]).exec();
+
+    if (questionStats.length === 0) {
+      return [];
+    }
+
+    // جلب معلومات الأسئلة
+    const questionIds = questionStats.map((stat) => stat.questionId);
+    const questions = await this.QuestionModel.find({ _id: { $in: questionIds } })
+      .select({ prompt: 1 })
+      .lean()
+      .exec();
+
+    const questionsMap = new Map(questions.map((q) => [String(q._id), q.prompt]));
+
+    // بناء النتيجة
+    return questionStats.map((stat) => ({
+      questionId: String(stat.questionId),
+      questionPrompt: questionsMap.get(String(stat.questionId)) ?? 'Unknown question',
+      totalAnswers: stat.totalAnswers,
+      wrongAnswers: stat.wrongAnswers,
+      successRate: Math.round(stat.successRate * 100) / 100,
+    }));
+  }
+
+  /**
+   * الحصول على الأسئلة التي تحتاج تطوير (نسبة النجاح أقل من 40%)
+   * @param user المستخدم الحالي
+   * @returns قائمة بالأسئلة التي تحتاج تطوير
+   */
+  async getQuestionsNeedingImprovement(user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    // تجميع إجابات الطلاب من attempts
+    const questionStats = await this.AttemptModel.aggregate([
+      {
+        $match: {
+          status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] }, // المحاولات المكتملة
+        },
+      },
+      {
+        $unwind: '$items', // تفكيك items
+      },
+      {
+        $group: {
+          _id: '$items.questionId',
+          totalAnswers: { $sum: 1 },
+          wrongAnswers: {
+            $sum: {
+              $cond: [
+                {
+                  $lt: [
+                    { $add: ['$items.autoScore', '$items.manualScore'] },
+                    '$items.points',
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          totalAnswers: { $gte: 1 }, // على الأقل إجابة واحدة
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          questionId: '$_id',
+          totalAnswers: 1,
+          wrongAnswers: 1,
+          successRate: {
+            $multiply: [
+              {
+                $divide: [
+                  { $subtract: ['$totalAnswers', '$wrongAnswers'] },
+                  '$totalAnswers',
+                ],
+              },
+              100,
+            ],
+          },
+        },
+      },
+      {
+        $match: {
+          successRate: { $lt: 40 }, // نسبة النجاح أقل من 40%
+        },
+      },
+      {
+        $sort: { successRate: 1, wrongAnswers: -1 }, // ترتيب حسب نسبة النجاح (تصاعدي) ثم عدد الأخطاء (تنازلي)
+      },
+    ]).exec();
+
+    if (questionStats.length === 0) {
+      return [];
+    }
+
+    // جلب معلومات الأسئلة
+    const questionIds = questionStats.map((stat) => stat.questionId);
+    const questions = await this.QuestionModel.find({ _id: { $in: questionIds } })
+      .select({ prompt: 1 })
+      .lean()
+      .exec();
+
+    const questionsMap = new Map(questions.map((q) => [String(q._id), q.prompt]));
+
+    // بناء النتيجة
+    return questionStats.map((stat) => ({
+      questionId: String(stat.questionId),
+      questionPrompt: questionsMap.get(String(stat.questionId)) ?? 'Unknown question',
+      totalAnswers: stat.totalAnswers,
+      wrongAnswers: stat.wrongAnswers,
+      successRate: Math.round(stat.successRate * 100) / 100,
+    }));
   }
 }
 
