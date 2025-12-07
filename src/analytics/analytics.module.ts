@@ -5,6 +5,7 @@ import { AnalyticsService } from './analytics.service';
 import { Attempt, AttemptSchema } from '../attempts/schemas/attempt.schema';
 import { Exam, ExamSchema } from '../exams/schemas/exam.schema';
 import { Question, QuestionSchema } from '../questions/schemas/question.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { Question, QuestionSchema } from '../questions/schemas/question.schema';
       { name: Attempt.name, schema: AttemptSchema },
       { name: Exam.name, schema: ExamSchema },
       { name: Question.name, schema: QuestionSchema },
+      { name: User.name, schema: UserSchema },
     ]),
   ],
   controllers: [AnalyticsController],

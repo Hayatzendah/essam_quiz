@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { Attempt, AttemptDocument, AttemptStatus } from '../attempts/schemas/attempt.schema';
 import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
 import { Question, QuestionDocument, QuestionStatus } from '../questions/schemas/question.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -13,6 +14,7 @@ export class AnalyticsService {
     @InjectModel(Attempt.name) private readonly AttemptModel: Model<AttemptDocument>,
     @InjectModel(Exam.name) private readonly ExamModel: Model<ExamDocument>,
     @InjectModel(Question.name) private readonly QuestionModel: Model<QuestionDocument>,
+    @InjectModel(User.name) private readonly UserModel: Model<UserDocument>,
   ) {}
 
   private ensureTeacherOrAdmin(user: ReqUser) {
@@ -24,23 +26,60 @@ export class AnalyticsService {
   async getOverview(user: ReqUser) {
     this.ensureTeacherOrAdmin(user);
 
-    // إجمالي عدد الامتحانات (بدون أي فلاتر)
-    const totalExams = await this.ExamModel.countDocuments({}).exec();
+    // Count students (users with role = 'student')
+    const totalStudents = await this.UserModel.countDocuments({ role: 'student' }).exec();
 
-    // إجمالي عدد الأسئلة
-    const totalQuestions = await this.QuestionModel.countDocuments({
-      status: 'published',
-    }).exec();
+    // Exams
+    const draftExamsCount = await this.ExamModel.countDocuments({ status: 'draft' }).exec();
+    const publishedExamsCount = await this.ExamModel.countDocuments({ status: 'published' }).exec();
 
-    // عدد الامتحانات المنشورة (بدون أي فلاتر)
-    const publishedExams = await this.ExamModel.countDocuments({
-      status: 'published',
-    }).exec();
+    // Questions (all questions, not filtered by status)
+    const totalQuestions = await this.QuestionModel.countDocuments({}).exec();
+
+    // Average score over all finished attempts (SUBMITTED or GRADED)
+    const avgScoreResult = await this.AttemptModel.aggregate([
+      {
+        $match: {
+          status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] },
+          totalMaxScore: { $gt: 0 }, // Only attempts with valid max score
+        },
+      },
+      {
+        $project: {
+          scorePercentage: {
+            $cond: [
+              { $gt: ['$totalMaxScore', 0] },
+              {
+                $multiply: [
+                  {
+                    $divide: ['$finalScore', '$totalMaxScore'],
+                  },
+                  100,
+                ],
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          avgScore: { $avg: '$scorePercentage' },
+        },
+      },
+    ]).exec();
+
+    const averageScore = avgScoreResult.length > 0 && avgScoreResult[0].avgScore
+      ? Math.round(avgScoreResult[0].avgScore * 100) / 100
+      : 0;
 
     return {
-      totalExams,
+      totalStudents,
+      draftExamsCount,
+      publishedExamsCount,
       totalQuestions,
-      publishedExams,
+      averageScore,
     };
   }
 
