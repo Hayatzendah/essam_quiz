@@ -24,22 +24,16 @@ export class AnalyticsService {
   async getOverview(user: ReqUser) {
     this.ensureTeacherOrAdmin(user);
 
-    const userId = user.userId || (user as any).sub || (user as any).id;
-    const isAdmin = user.role === 'admin';
-
-    // إجمالي عدد الامتحانات
-    const totalExams = await this.ExamModel.countDocuments(
-      isAdmin ? {} : { ownerId: userId },
-    ).exec();
+    // إجمالي عدد الامتحانات (بدون أي فلاتر)
+    const totalExams = await this.ExamModel.countDocuments({}).exec();
 
     // إجمالي عدد الأسئلة
     const totalQuestions = await this.QuestionModel.countDocuments({
       status: 'published',
     }).exec();
 
-    // عدد الامتحانات المنشورة
+    // عدد الامتحانات المنشورة (بدون أي فلاتر)
     const publishedExams = await this.ExamModel.countDocuments({
-      ...(isAdmin ? {} : { ownerId: userId }),
       status: 'published',
     }).exec();
 
