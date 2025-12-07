@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Attempt, AttemptDocument, AttemptStatus } from '../attempts/schemas/attempt.schema';
 import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
-import { Question, QuestionDocument } from '../questions/schemas/question.schema';
+import { Question, QuestionDocument, QuestionStatus } from '../questions/schemas/question.schema';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -537,6 +537,90 @@ export class AnalyticsService {
     });
 
     return result;
+  }
+
+  /**
+   * الحصول على إحصائيات الأسئلة حسب المهارة والمستوى والحالة
+   * @param user المستخدم الحالي
+   * @returns إحصائيات الأسئلة (bySkill, byLevel, published, draft)
+   */
+  async getQuestions(user?: ReqUser) {
+    if (user) {
+      this.ensureTeacherOrAdmin(user);
+    }
+
+    // تجميع الأسئلة حسب المهارة (mainSkill)
+    const bySkill = await this.QuestionModel.aggregate([
+      {
+        $match: {
+          mainSkill: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: '$mainSkill',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { count: -1 }, // ترتيب حسب العدد (تنازلي)
+      },
+      {
+        $project: {
+          _id: 0,
+          skill: '$_id',
+          count: 1,
+        },
+      },
+    ]).exec();
+
+    // تجميع الأسئلة حسب المستوى (level)
+    const byLevel = await this.QuestionModel.aggregate([
+      {
+        $match: {
+          level: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: '$level',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 }, // ترتيب حسب المستوى (A1, A2, B1, B2, C1, C2)
+      },
+      {
+        $project: {
+          _id: 0,
+          level: '$_id',
+          count: 1,
+        },
+      },
+    ]).exec();
+
+    // عدد الأسئلة المنشورة
+    const published = await this.QuestionModel.countDocuments({
+      status: QuestionStatus.PUBLISHED,
+    }).exec();
+
+    // عدد الأسئلة المسودة
+    const draft = await this.QuestionModel.countDocuments({
+      status: QuestionStatus.DRAFT,
+    }).exec();
+
+    return {
+      bySkill: bySkill.map((item) => ({
+        skill: String(item.skill),
+        count: item.count,
+      })),
+      byLevel: byLevel.map((item) => ({
+        level: String(item.level),
+        count: item.count,
+      })),
+      published,
+      draft,
+    };
   }
 }
 
