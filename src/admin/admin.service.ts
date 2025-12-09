@@ -387,5 +387,97 @@ export class AdminService {
       };
     });
   }
+
+  async getStudentSkills(studentId: string) {
+    // التحقق من صحة الـ ID
+    if (!Types.ObjectId.isValid(studentId)) {
+      throw new NotFoundException('Student not found');
+    }
+
+    const studentObjectId = new Types.ObjectId(studentId);
+
+    // خريطة لتسميات المهارات
+    const skillLabels: Record<string, string> = {
+      hoeren: 'Hören',
+      lesen: 'Lesen',
+      schreiben: 'Schreiben',
+      sprechen: 'Sprechen',
+      misc: 'Misc',
+      mixed: 'Mixed',
+      leben_test: 'Leben Test',
+    };
+
+    // جلب جميع محاولات الطالب المكتملة مع تفاصيل الامتحان
+    const attempts = await this.attemptModel
+      .find({
+        studentId: studentObjectId,
+        status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] },
+      })
+      .populate('examId', 'title level mainSkill')
+      .lean()
+      .exec();
+
+    if (attempts.length === 0) {
+      return [];
+    }
+
+    // تجميع البيانات حسب المهارة والمستوى
+    const skillLevelMap = new Map<
+      string,
+      { attemptsCount: number; totalScore: number; totalMaxScore: number }
+    >();
+
+    attempts.forEach((attempt: any) => {
+      const exam = attempt.examId || {};
+      const skill = exam.mainSkill || 'unknown';
+      const level = exam.level || 'unknown';
+      const key = `${skill}_${level}`;
+
+      if (!skillLevelMap.has(key)) {
+        skillLevelMap.set(key, {
+          attemptsCount: 0,
+          totalScore: 0,
+          totalMaxScore: 0,
+        });
+      }
+
+      const stat = skillLevelMap.get(key)!;
+      stat.attemptsCount++;
+      stat.totalScore += attempt.finalScore || 0;
+      stat.totalMaxScore += attempt.totalMaxScore || 0;
+    });
+
+    // بناء النتيجة
+    const skills = Array.from(skillLevelMap.entries()).map(([key, stat]) => {
+      const [skill, level] = key.split('_');
+      const skillLabel = skillLabels[skill.toLowerCase()] || skill;
+      const averageScore =
+        stat.attemptsCount > 0 && stat.totalMaxScore > 0
+          ? Math.round(((stat.totalScore / stat.totalMaxScore) * 100) * 100) / 100
+          : 0;
+
+      return {
+        skill: skillLabel,
+        level: level !== 'unknown' ? level : null,
+        attemptsCount: stat.attemptsCount,
+        averageScore: averageScore,
+      };
+    });
+
+    // ترتيب حسب المهارات الأساسية أولاً
+    const skillOrder = ['Hören', 'Lesen', 'Schreiben', 'Sprechen', 'Misc', 'Mixed', 'Leben Test'];
+    skills.sort((a, b) => {
+      const aIndex = skillOrder.indexOf(a.skill);
+      const bIndex = skillOrder.indexOf(b.skill);
+      if (aIndex !== -1 && bIndex !== -1) {
+        return aIndex - bIndex;
+      }
+      if (aIndex !== -1) return -1;
+      if (bIndex !== -1) return 1;
+      return a.skill.localeCompare(b.skill);
+    });
+
+    return skills;
+  }
 }
 

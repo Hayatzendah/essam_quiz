@@ -72,5 +72,20 @@ export class AdminController {
     }
     return this.adminService.getStudentAttempts(studentId);
   }
+
+  @Get('students/:studentId/skills')
+  @ApiOperation({
+    summary: 'Get student skills statistics',
+    description: 'جلب إحصائيات مهارات الطالب',
+  })
+  @ApiParam({ name: 'studentId', description: 'معرف الطالب' })
+  async getStudentSkills(@Param('studentId') studentId: string) {
+    // التحقق من وجود الطالب أولاً
+    const student = await this.adminService.getStudentById(studentId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    return this.adminService.getStudentSkills(studentId);
+  }
 }
 
