@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../users/schemas/user.schema';
@@ -129,6 +129,84 @@ export class AdminService {
       total,
       page,
       limit,
+    };
+  }
+
+  async getStudentById(studentId: string) {
+    // التحقق من صحة الـ ID
+    if (!Types.ObjectId.isValid(studentId)) {
+      throw new NotFoundException('Student not found');
+    }
+
+    // البحث عن الطالب
+    const student = await this.userModel
+      .findOne({
+        _id: new Types.ObjectId(studentId),
+        role: 'student', // التأكد أنه طالب
+      })
+      .select('-password -refreshTokenHash') // استبعاد كلمة السر
+      .lean()
+      .exec();
+
+    if (!student) {
+      return null;
+    }
+
+    // جلب إحصائيات المحاولات
+    const attemptsStats = await this.attemptModel
+      .aggregate([
+        {
+          $match: {
+            studentId: new Types.ObjectId(studentId),
+            status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] },
+          },
+        },
+        {
+          $project: {
+            studentId: 1,
+            activityDate: {
+              $cond: [
+                { $ifNull: ['$submittedAt', false] },
+                '$submittedAt',
+                '$createdAt',
+              ],
+            },
+          },
+        },
+        {
+          $group: {
+            _id: '$studentId',
+            attemptsCount: { $sum: 1 },
+            lastActivity: { $max: '$activityDate' },
+          },
+        },
+      ])
+      .exec();
+
+    const stats = attemptsStats.length > 0
+      ? {
+          attemptsCount: attemptsStats[0].attemptsCount,
+          lastActivity: attemptsStats[0].lastActivity,
+        }
+      : {
+          attemptsCount: 0,
+          lastActivity: null,
+        };
+
+    // إرجاع نفس الشكل المستخدم في getStudents
+    const studentObj = student as any;
+    return {
+      id: student._id.toString(),
+      name: student.name || 'غير محدد',
+      email: student.email,
+      level: studentObj.level || null,
+      status: studentObj.status || 'active',
+      lastActivity: stats.lastActivity,
+      attemptsCount: stats.attemptsCount,
+      // إضافة تفاصيل إضافية إذا لزم الأمر
+      createdAt: studentObj.createdAt || null,
+      updatedAt: studentObj.updatedAt || null,
+      state: student.state || null,
     };
   }
 }

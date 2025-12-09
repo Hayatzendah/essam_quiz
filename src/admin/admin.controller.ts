@@ -1,5 +1,5 @@
-import { Controller, Get, Query, UseGuards, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Query, UseGuards, Req, Param, NotFoundException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { QueryStudentsDto } from './dto/query-students.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -27,6 +27,20 @@ export class AdminController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'عدد النتائج في الصفحة' })
   getStudents(@Query() query: QueryStudentsDto) {
     return this.adminService.getStudents(query);
+  }
+
+  @Get('students/:studentId')
+  @ApiOperation({
+    summary: 'Get student by ID',
+    description: 'جلب تفاصيل طالب محدد',
+  })
+  @ApiParam({ name: 'studentId', description: 'معرف الطالب' })
+  async getStudentById(@Param('studentId') studentId: string) {
+    const student = await this.adminService.getStudentById(studentId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    return student;
   }
 }
 
