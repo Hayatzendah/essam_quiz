@@ -20,6 +20,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { GrammarModule } from './modules/grammar/grammar.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ListeningClipsModule } from './listening-clips/listening-clips.module';
+import { AdminModule } from './admin/admin.module';
 
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -122,6 +123,7 @@ import { AppController } from './app.controller';
     GrammarModule,
     UploadsModule,
     ListeningClipsModule,
+    AdminModule,
   ],
 
   controllers: [AppController, HealthController],
