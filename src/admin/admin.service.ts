@@ -235,6 +235,9 @@ export class AdminService {
       return {
         totalAttempts: 0,
         completedAttempts: 0,
+        attemptsCount: 0,
+        currentLevel: null,
+        level: null, // للتوافق
         averageScore: 0,
         averagePercentage: 0,
         bestScore: 0,
@@ -423,9 +426,55 @@ export class AdminService {
       return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
     });
 
+    // حساب attemptsCount من performanceByExam (مجموع attempts لكل exam)
+    const attemptsCount = performanceByExam.reduce((sum, exam) => sum + exam.attempts, 0);
+
+    // تحديد المستوى الحالي (أعلى مستوى حل فيه الطالب)
+    // ترتيب المستويات: A1 < A2 < B1 < B2 < C1 < C2
+    const levelOrder: Record<string, number> = {
+      A1: 1,
+      A2: 2,
+      B1: 3,
+      B2: 4,
+      C1: 5,
+      C2: 6,
+    };
+
+    let currentLevel: string | null = null;
+    let maxLevelOrder = 0;
+
+    // البحث عن أعلى مستوى في performanceByLevel
+    performanceByLevel.forEach((levelStat) => {
+      const level = levelStat.level;
+      if (level && level !== 'unknown' && levelOrder[level]) {
+        const order = levelOrder[level];
+        if (order > maxLevelOrder) {
+          maxLevelOrder = order;
+          currentLevel = level;
+        }
+      }
+    });
+
+    // إذا لم نجد مستوى في performanceByLevel، نبحث في attempts مباشرة
+    if (!currentLevel) {
+      attempts.forEach((attempt: any) => {
+        const level = attempt.examId?.level;
+        if (level && level !== 'unknown' && levelOrder[level]) {
+          const order = levelOrder[level];
+          if (order > maxLevelOrder) {
+            maxLevelOrder = order;
+            currentLevel = level;
+          }
+        }
+      });
+    }
+
     return {
       totalAttempts: attempts.length,
       completedAttempts: attempts.length,
+      attemptsCount: attemptsCount, // عدد المحاولات الكلي من performanceByExam
+      currentLevel: currentLevel, // المستوى الحالي (أعلى مستوى)
+      level: currentLevel, // للتوافق
       averageScore: Math.round(avgScore * 100) / 100,
       averagePercentage: Math.round(avgPercentage * 100) / 100,
       bestScore: Math.round(bestScore * 100) / 100,
