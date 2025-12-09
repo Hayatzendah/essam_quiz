@@ -379,4 +379,16 @@ export class AttemptsController {
   view(@Param('attemptId') attemptId: string, @Req() req: any) {
     return this.service.getAttempt(req.user, attemptId);
   }
+
+  // عرض نتائج المحاولة (نفس endpoint لكن باسم مختلف للتوافق)
+  @Get(':attemptId/results')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student', 'teacher', 'admin')
+  @ApiOperation({
+    summary: 'Get attempt results',
+    description: 'جلب نتائج المحاولة مع الدرجات والإحصائيات',
+  })
+  getResults(@Param('attemptId') attemptId: string, @Req() req: any) {
+    return this.service.getAttempt(req.user, attemptId);
+  }
 }
