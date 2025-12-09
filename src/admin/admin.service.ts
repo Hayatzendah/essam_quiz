@@ -348,5 +348,44 @@ export class AdminService {
       performanceByLevel,
     };
   }
+
+  async getStudentAttempts(studentId: string) {
+    // التحقق من صحة الـ ID
+    if (!Types.ObjectId.isValid(studentId)) {
+      throw new NotFoundException('Student not found');
+    }
+
+    const studentObjectId = new Types.ObjectId(studentId);
+
+    // جلب جميع محاولات الطالب مع تفاصيل الامتحان
+    const attempts = await this.attemptModel
+      .find({
+        studentId: studentObjectId,
+      })
+      .populate('examId', 'title provider level examCategory')
+      .sort({ submittedAt: -1, createdAt: -1 })
+      .lean()
+      .exec();
+
+    // تحويل المحاولات إلى الشكل المطلوب
+    return attempts.map((attempt: any) => {
+      const exam = attempt.examId || {};
+      return {
+        id: attempt._id.toString(),
+        examId: exam._id ? exam._id.toString() : null,
+        examTitle: exam.title || 'Unknown Exam',
+        provider: exam.provider || null,
+        score: attempt.finalScore || 0,
+        maxScore: attempt.totalMaxScore || 0,
+        status: attempt.status === AttemptStatus.GRADED
+          ? 'completed'
+          : attempt.status === AttemptStatus.SUBMITTED
+          ? 'submitted'
+          : 'in_progress',
+        startedAt: attempt.startedAt || attempt.createdAt,
+        submittedAt: attempt.submittedAt || null,
+      };
+    });
+  }
 }
 

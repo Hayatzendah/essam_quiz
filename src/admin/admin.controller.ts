@@ -57,5 +57,20 @@ export class AdminController {
     }
     return this.adminService.getStudentPerformance(studentId);
   }
+
+  @Get('students/:studentId/attempts')
+  @ApiOperation({
+    summary: 'Get student attempts list',
+    description: 'جلب قائمة محاولات الطالب',
+  })
+  @ApiParam({ name: 'studentId', description: 'معرف الطالب' })
+  async getStudentAttempts(@Param('studentId') studentId: string) {
+    // التحقق من وجود الطالب أولاً
+    const student = await this.adminService.getStudentById(studentId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    return this.adminService.getStudentAttempts(studentId);
+  }
 }
 
