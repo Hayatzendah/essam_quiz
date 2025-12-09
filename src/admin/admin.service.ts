@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { Attempt, AttemptDocument, AttemptStatus } from '../attempts/schemas/attempt.schema';
+import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
 import { QueryStudentsDto } from './dto/query-students.dto';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class AdminService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Attempt.name) private readonly attemptModel: Model<AttemptDocument>,
+    @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
   ) {}
 
   async getStudents(query: QueryStudentsDto) {
@@ -207,6 +209,143 @@ export class AdminService {
       createdAt: studentObj.createdAt || null,
       updatedAt: studentObj.updatedAt || null,
       state: student.state || null,
+    };
+  }
+
+  async getStudentPerformance(studentId: string) {
+    // التحقق من صحة الـ ID
+    if (!Types.ObjectId.isValid(studentId)) {
+      throw new NotFoundException('Student not found');
+    }
+
+    const studentObjectId = new Types.ObjectId(studentId);
+
+    // جلب جميع محاولات الطالب المكتملة
+    const attempts = await this.attemptModel
+      .find({
+        studentId: studentObjectId,
+        status: { $in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] },
+      })
+      .populate('examId', 'title level examCategory mainSkill')
+      .sort({ submittedAt: -1, createdAt: -1 })
+      .lean()
+      .exec();
+
+    if (attempts.length === 0) {
+      return {
+        totalAttempts: 0,
+        completedAttempts: 0,
+        averageScore: 0,
+        averagePercentage: 0,
+        bestScore: 0,
+        worstScore: 0,
+        passingRate: 0,
+        totalPassed: 0,
+        totalFailed: 0,
+        recentAttempts: [],
+        performanceBySkill: [],
+        performanceByLevel: [],
+      };
+    }
+
+    // حساب الإحصائيات الأساسية
+    const scores = attempts.map((a: any) => a.finalScore || 0);
+    const percentages = attempts.map((a: any) => {
+      if (a.totalMaxScore > 0) {
+        return ((a.finalScore || 0) / a.totalMaxScore) * 100;
+      }
+      return 0;
+    });
+
+    const avgScore = scores.length > 0 ? scores.reduce((s, v) => s + v, 0) / scores.length : 0;
+    const avgPercentage =
+      percentages.length > 0 ? percentages.reduce((s, v) => s + v, 0) / percentages.length : 0;
+
+    const bestScore = Math.max(...scores);
+    const worstScore = Math.min(...scores);
+
+    // نسبة النجاح (افترضنا 60% كحد أدنى)
+    const passingThreshold = 60;
+    const passed = percentages.filter((p) => p >= passingThreshold).length;
+    const failed = percentages.length - passed;
+    const passingRate = percentages.length > 0 ? (passed / percentages.length) * 100 : 0;
+
+    // آخر 10 محاولات
+    const recentAttempts = attempts.slice(0, 10).map((attempt: any) => ({
+      attemptId: attempt._id.toString(),
+      examId: attempt.examId?._id?.toString() || null,
+      examTitle: attempt.examId?.title || 'Unknown Exam',
+      score: attempt.finalScore || 0,
+      maxScore: attempt.totalMaxScore || 0,
+      percentage: attempt.totalMaxScore > 0
+        ? Math.round(((attempt.finalScore || 0) / attempt.totalMaxScore) * 100)
+        : 0,
+      status: attempt.status,
+      submittedAt: attempt.submittedAt || attempt.createdAt,
+      passed: attempt.totalMaxScore > 0
+        ? ((attempt.finalScore || 0) / attempt.totalMaxScore) * 100 >= passingThreshold
+        : false,
+    }));
+
+    // الأداء حسب المهارة
+    const skillMap = new Map<string, { total: number; totalScore: number; totalMaxScore: number }>();
+    attempts.forEach((attempt: any) => {
+      const skill = attempt.examId?.mainSkill || 'unknown';
+      if (!skillMap.has(skill)) {
+        skillMap.set(skill, { total: 0, totalScore: 0, totalMaxScore: 0 });
+      }
+      const stat = skillMap.get(skill)!;
+      stat.total++;
+      stat.totalScore += attempt.finalScore || 0;
+      stat.totalMaxScore += attempt.totalMaxScore || 0;
+    });
+
+    const performanceBySkill = Array.from(skillMap.entries()).map(([skill, stat]) => ({
+      skill,
+      attemptsCount: stat.total,
+      averageScore: stat.total > 0 ? Math.round((stat.totalScore / stat.total) * 100) / 100 : 0,
+      averagePercentage:
+        stat.totalMaxScore > 0
+          ? Math.round(((stat.totalScore / stat.totalMaxScore) * 100) * 100) / 100
+          : 0,
+    }));
+
+    // الأداء حسب المستوى
+    const levelMap = new Map<string, { total: number; totalScore: number; totalMaxScore: number }>();
+    attempts.forEach((attempt: any) => {
+      const level = attempt.examId?.level || 'unknown';
+      if (!levelMap.has(level)) {
+        levelMap.set(level, { total: 0, totalScore: 0, totalMaxScore: 0 });
+      }
+      const stat = levelMap.get(level)!;
+      stat.total++;
+      stat.totalScore += attempt.finalScore || 0;
+      stat.totalMaxScore += attempt.totalMaxScore || 0;
+    });
+
+    const performanceByLevel = Array.from(levelMap.entries()).map(([level, stat]) => ({
+      level,
+      attemptsCount: stat.total,
+      averageScore: stat.total > 0 ? Math.round((stat.totalScore / stat.total) * 100) / 100 : 0,
+      averagePercentage:
+        stat.totalMaxScore > 0
+          ? Math.round(((stat.totalScore / stat.totalMaxScore) * 100) * 100) / 100
+          : 0,
+    }));
+
+    return {
+      totalAttempts: attempts.length,
+      completedAttempts: attempts.length,
+      averageScore: Math.round(avgScore * 100) / 100,
+      averagePercentage: Math.round(avgPercentage * 100) / 100,
+      bestScore: Math.round(bestScore * 100) / 100,
+      worstScore: Math.round(worstScore * 100) / 100,
+      passingRate: Math.round(passingRate * 100) / 100,
+      totalPassed: passed,
+      totalFailed: failed,
+      recentAttempts,
+      performanceBySkill,
+      performanceByLevel,
     };
   }
 }
