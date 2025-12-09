@@ -367,16 +367,45 @@ export class AdminService {
       .lean()
       .exec();
 
-    // تحويل المحاولات إلى الشكل المطلوب
+    // تحويل المحاولات إلى الشكل المطلوب مع حساب الدرجات بشكل صحيح
     return attempts.map((attempt: any) => {
       const exam = attempt.examId || {};
+      
+      // حساب totalMaxScore من items إذا لم يكن محسوباً
+      let totalMaxScore = attempt.totalMaxScore || 0;
+      if (totalMaxScore === 0 && attempt.items && Array.isArray(attempt.items)) {
+        totalMaxScore = attempt.items.reduce((sum: number, item: any) => {
+          return sum + (item.points || 0);
+        }, 0);
+      }
+
+      // حساب finalScore من autoScore + manualScore لكل item
+      let finalScore = attempt.finalScore || 0;
+      if (finalScore === 0 && attempt.items && Array.isArray(attempt.items)) {
+        const totalAutoScore = attempt.items.reduce((sum: number, item: any) => {
+          return sum + (item.autoScore || 0);
+        }, 0);
+        const totalManualScore = attempt.items.reduce((sum: number, item: any) => {
+          return sum + (item.manualScore || 0);
+        }, 0);
+        finalScore = totalAutoScore + totalManualScore;
+      }
+
+      // حساب النسبة المئوية
+      const percentage = totalMaxScore > 0
+        ? Math.round(((finalScore / totalMaxScore) * 100) * 100) / 100
+        : 0;
+
       return {
         id: attempt._id.toString(),
         examId: exam._id ? exam._id.toString() : null,
         examTitle: exam.title || 'Unknown Exam',
         provider: exam.provider || null,
-        score: attempt.finalScore || 0,
-        maxScore: attempt.totalMaxScore || 0,
+        score: finalScore,
+        totalScore: finalScore, // للتوافق
+        maxScore: totalMaxScore,
+        totalMaxScore: totalMaxScore, // للتوافق
+        percentage: percentage,
         status: attempt.status === AttemptStatus.GRADED
           ? 'completed'
           : attempt.status === AttemptStatus.SUBMITTED
@@ -384,6 +413,9 @@ export class AdminService {
           : 'in_progress',
         startedAt: attempt.startedAt || attempt.createdAt,
         submittedAt: attempt.submittedAt || null,
+        // إضافة حقول إضافية للتوافق
+        totalAutoScore: attempt.totalAutoScore || 0,
+        totalManualScore: attempt.totalManualScore || 0,
       };
     });
   }
