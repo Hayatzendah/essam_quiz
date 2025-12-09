@@ -245,6 +245,8 @@ export class AdminService {
         recentAttempts: [],
         performanceBySkill: [],
         performanceByLevel: [],
+        performanceByExam: [],
+        exams: [], // للتوافق
       };
     }
 
@@ -333,6 +335,94 @@ export class AdminService {
           : 0,
     }));
 
+    // الأداء حسب الامتحان (performanceByExam)
+    const examMap = new Map<
+      string,
+      {
+        examId: string;
+        examTitle: string;
+        attempts: any[];
+        totalTime: number;
+        lastSubmittedAt: Date | null;
+      }
+    >();
+
+    attempts.forEach((attempt: any) => {
+      const examId = attempt.examId?._id?.toString() || attempt.examId?.toString() || 'unknown';
+      const examTitle = attempt.examId?.title || 'Unknown Exam';
+
+      if (!examMap.has(examId)) {
+        examMap.set(examId, {
+          examId,
+          examTitle,
+          attempts: [],
+          totalTime: 0,
+          lastSubmittedAt: null,
+        });
+      }
+
+      const examStat = examMap.get(examId)!;
+      examStat.attempts.push(attempt);
+      
+      // حساب الوقت المستغرق
+      if (attempt.timeUsedSec) {
+        examStat.totalTime += attempt.timeUsedSec;
+      } else if (attempt.startedAt && attempt.submittedAt) {
+        const timeDiff = new Date(attempt.submittedAt).getTime() - new Date(attempt.startedAt).getTime();
+        examStat.totalTime += Math.floor(timeDiff / 1000); // تحويل إلى ثواني
+      }
+
+      // آخر تاريخ إرسال
+      const submittedAt = attempt.submittedAt || attempt.createdAt;
+      if (submittedAt && (!examStat.lastSubmittedAt || new Date(submittedAt) > examStat.lastSubmittedAt)) {
+        examStat.lastSubmittedAt = new Date(submittedAt);
+      }
+    });
+
+    const performanceByExam = Array.from(examMap.entries()).map(([examId, stat]) => {
+      // حساب أفضل درجة
+      const scores = stat.attempts.map((a: any) => {
+        // حساب finalScore من items إذا لم يكن موجوداً
+        let finalScore = a.finalScore || 0;
+        if (finalScore === 0 && a.items && Array.isArray(a.items)) {
+          const totalAutoScore = a.items.reduce((sum: number, item: any) => sum + (item.autoScore || 0), 0);
+          const totalManualScore = a.items.reduce((sum: number, item: any) => sum + (item.manualScore || 0), 0);
+          finalScore = totalAutoScore + totalManualScore;
+        }
+        return finalScore;
+      });
+
+      // حساب maxScore (نأخذ أول محاولة لأنها عادة نفس الامتحان)
+      let maxScore = stat.attempts[0]?.totalMaxScore || 0;
+      if (maxScore === 0 && stat.attempts[0]?.items && Array.isArray(stat.attempts[0].items)) {
+        maxScore = stat.attempts[0].items.reduce((sum: number, item: any) => sum + (item.points || 0), 0);
+      }
+
+      const bestScore = scores.length > 0 ? Math.max(...scores) : 0;
+      const hasCompleted = stat.attempts.some((a: any) => 
+        a.status === AttemptStatus.GRADED || a.status === AttemptStatus.SUBMITTED
+      );
+
+      return {
+        examId: stat.examId,
+        examTitle: stat.examTitle,
+        score: Math.round(bestScore * 100) / 100,
+        maxScore: maxScore,
+        status: hasCompleted ? 'completed' : 'in_progress',
+        attempts: stat.attempts.length,
+        totalTime: stat.totalTime,
+        submittedAt: stat.lastSubmittedAt,
+      };
+    });
+
+    // ترتيب حسب آخر تاريخ إرسال (الأحدث أولاً)
+    performanceByExam.sort((a, b) => {
+      if (!a.submittedAt && !b.submittedAt) return 0;
+      if (!a.submittedAt) return 1;
+      if (!b.submittedAt) return -1;
+      return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime();
+    });
+
     return {
       totalAttempts: attempts.length,
       completedAttempts: attempts.length,
@@ -346,6 +436,8 @@ export class AdminService {
       recentAttempts,
       performanceBySkill,
       performanceByLevel,
+      performanceByExam,
+      exams: performanceByExam, // للتوافق مع الفرونت
     };
   }
 
