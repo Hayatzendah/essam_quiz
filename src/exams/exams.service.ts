@@ -172,18 +172,16 @@ export class ExamsService {
         }
         // لا نتحقق من difficultyDistribution لامتحانات Provider (اختياري)
       } else if (dto.examCategory === 'grammar_exam') {
-        // للـ Grammar exams: يجب أن يكون هناك items (بدون quota)
-        if (!s.items || !Array.isArray(s.items) || s.items.length === 0) {
-          throw new BadRequestException(
-            `Section "${s.name || 'unnamed'}" must have items for grammar_exam`,
-          );
-        }
-        // تنظيف items من null
-        s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
-        if (s.items.length === 0) {
-          throw new BadRequestException(
-            `Section "${s.name || 'unnamed'}" must have at least one valid item with questionId`,
-          );
+        // للـ Grammar exams: إذا كان هناك section، يجب أن يكون هناك items (بدون quota)
+        // لكن Grammar exams يمكن أن تكون بدون sections تماماً
+        if (s.items && Array.isArray(s.items) && s.items.length > 0) {
+          // تنظيف items من null
+          s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
+          if (s.items.length === 0) {
+            throw new BadRequestException(
+              `Section "${s.name || 'unnamed'}" must have at least one valid item with questionId`,
+            );
+          }
         }
         // التحقق من difficultyDistribution للقواعد فقط (إذا كان موجوداً وquota موجود)
         if (s.quota && s.difficultyDistribution) {
@@ -295,8 +293,8 @@ export class ExamsService {
           return processedSection;
         });
       
-      // التحقق من أن هناك sections صحيحة بعد التنظيف
-      if (processedDto.sections.length === 0) {
+      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar)
+      if (dto.examCategory !== ExamCategoryEnum.GRAMMAR && processedDto.sections.length === 0) {
         throw new BadRequestException('Exam must have at least one valid section');
       }
     }
@@ -1193,8 +1191,9 @@ export class ExamsService {
           return section;
         });
       
-      // التحقق من أن هناك sections صحيحة بعد التنظيف
-      if (processedSections.length === 0) {
+      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar)
+      const examCategory = (dto as any).examCategory || doc.examCategory;
+      if (examCategory !== ExamCategoryEnum.GRAMMAR && processedSections.length === 0) {
         throw new BadRequestException('Exam must have at least one valid section');
       }
       
@@ -1221,7 +1220,8 @@ export class ExamsService {
         return true;
       });
       
-      if (normalizedSections.length === 0) {
+      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar)
+      if (examCategory !== ExamCategoryEnum.GRAMMAR && normalizedSections.length === 0) {
         throw new BadRequestException('Exam must have at least one valid section (after filtering null/empty values)');
       }
       
