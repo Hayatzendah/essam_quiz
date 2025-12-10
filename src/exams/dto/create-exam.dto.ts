@@ -2,6 +2,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsMongoId,
   IsNotEmpty,
@@ -175,9 +176,23 @@ export class CreateExamDto {
 
   // ========= حقول خاصة بالقواعد =========
 
-  @ValidateIf(o => o.examCategory === ExamCategoryEnum.GRAMMAR)
+  @IsOptional()
+  @IsIn(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'])
+  grammarLevel?: string; // A1, A2, B1, B2, C1, C2
+
+  @IsOptional()
   @IsMongoId()
   grammarTopicId?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  totalQuestions?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  questionTags?: string[];
 
   // ========= حقول خاصة بـ Prüfungen =========
 
@@ -198,10 +213,12 @@ export class CreateExamDto {
   @IsString({ each: true })
   tags?: string[];
 
+  // ======  sections نخليها اختيارية  ======
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ExamSectionDto)
-  sections: ExamSectionDto[];
+  sections?: ExamSectionDto[];
 }
 
 // DTO للـ practice exam - يجعل title اختياري

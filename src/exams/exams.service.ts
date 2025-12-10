@@ -118,19 +118,36 @@ export class ExamsService {
       throw new BadRequestException('examCategory is required');
     }
 
-    // التحقق من grammarTopicId للامتحانات النحوية
-    if (dto.examCategory === 'grammar_exam' && !dto.grammarTopicId) {
-      throw new BadRequestException('grammarTopicId is required for grammar_exam');
+    // ======  👇 ضمان إن الحقول تكون إجبارية فقط لو الامتحان Grammar  ======
+    if (dto.examCategory === ExamCategoryEnum.GRAMMAR) {
+      if (!dto.grammarLevel) {
+        throw new BadRequestException(
+          'Grammar exams require grammarLevel',
+        );
+      }
+      if (!dto.grammarTopicId) {
+        throw new BadRequestException(
+          'Grammar exams require grammarTopicId',
+        );
+      }
+      if (!dto.totalQuestions) {
+        throw new BadRequestException(
+          'Grammar exams require totalQuestions',
+        );
+      }
     }
 
     // تنظيف sections من null/undefined قبل التحقق
+    // sections الآن اختياري - إذا لم يكن موجوداً، نستخدم array فارغ
     if (!dto.sections || !Array.isArray(dto.sections)) {
-      throw new BadRequestException('Exam must have at least one section');
+      dto.sections = [];
     }
     
     // إزالة null/undefined sections
     const cleanedSections = dto.sections.filter((s: any) => s !== null && s !== undefined);
-    if (cleanedSections.length === 0) {
+    
+    // للامتحانات غير Grammar، يجب أن يكون هناك sections
+    if (dto.examCategory !== ExamCategoryEnum.GRAMMAR && cleanedSections.length === 0) {
       throw new BadRequestException('Exam must have at least one valid section (null sections are not allowed)');
     }
     
@@ -287,7 +304,7 @@ export class ExamsService {
     // Ensure sections is always an array (never null or undefined)
     const normalizedSections = Array.isArray(processedDto.sections) 
       ? processedDto.sections.filter((s: any) => s !== null && s !== undefined)
-      : [];
+      : (processedDto.sections ?? []);
     
     // Log sections before creation
     this.logger.log(

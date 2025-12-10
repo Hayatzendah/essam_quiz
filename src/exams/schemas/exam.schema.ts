@@ -160,6 +160,20 @@ export class Exam {
 
   @Prop({ type: [String], default: [] })
   tags?: string[];
+
+  // ======  👇 إضافات خاصة بامتحان القواعد  ======
+  
+  @Prop({ type: String, enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], required: false })
+  grammarLevel?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'GrammarTopic', required: false })
+  grammarTopicId?: Types.ObjectId;
+
+  @Prop({ type: Number, required: false })
+  totalQuestions?: number;
+
+  @Prop({ type: [String], default: [] })
+  questionTags?: string[];
 }
 
 export const ExamSchema = SchemaFactory.createForClass(Exam);
