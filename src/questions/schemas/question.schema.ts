@@ -91,10 +91,10 @@ export class Question {
   answerKeyBoolean?: boolean;
 
   // FILL
-  @Prop()
+  @Prop({ trim: true })
   fillExact?: string;
 
-  @Prop({ type: [String], default: undefined })
+  @Prop({ type: [String], default: [] })
   regexList?: string[];
 
   // MATCH
