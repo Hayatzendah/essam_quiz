@@ -16,23 +16,12 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Verify build output
-RUN echo "=== Verifying build output ===" && \
-    if [ -f "dist/src/main.js" ]; then \
-        echo "✅ dist/src/main.js exists"; \
-        ls -lh dist/src/main.js; \
-    else \
-        echo "❌ dist/src/main.js NOT FOUND"; \
-        echo "Contents of dist:"; \
-        ls -la dist/ 2>/dev/null || echo "dist directory not found"; \
-        echo "Looking for main.js:"; \
-        find . -name "main.js" -type f 2>/dev/null || echo "main.js not found"; \
-        exit 1; \
-    fi
+# Verify build output exists
+RUN test -f dist/src/main.js || (echo "ERROR: dist/src/main.js not found after build" && ls -la dist/ && exit 1)
 
-# Expose port (adjust if needed)
-EXPOSE 3000
+# Expose port (Railway will set PORT env variable)
+EXPOSE 4000
 
-# Start the application
-CMD ["node", "dist/src/main.js"]
+# Start the application using npm script (same as package.json start:prod)
+CMD ["npm", "run", "start:prod"]
 
