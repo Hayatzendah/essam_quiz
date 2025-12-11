@@ -46,7 +46,10 @@ export class QuestionsService {
       }
     }
     if (dto.qType === QuestionType.FILL) {
-      const hasExact = dto.fillExact && dto.fillExact.trim().length > 0;
+      // fillExact يمكن أن يكون string أو array
+      const hasExact = 
+        (typeof dto.fillExact === 'string' && dto.fillExact.trim().length > 0) ||
+        (Array.isArray(dto.fillExact) && dto.fillExact.length > 0 && dto.fillExact.some((item: any) => item && String(item).trim().length > 0));
       const hasRegex = Array.isArray(dto.regexList) && dto.regexList.length > 0;
       if (!hasExact && !hasRegex) {
         throw new BadRequestException('FILL requires fillExact or regexList');
