@@ -1,8 +1,7 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { GrammarTopicsService } from './grammar-topics.service';
 import { GrammarTopicResponseDto } from './dto/grammar-topic-response.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 /**
  * Controller للتوافق مع الفرونت: GET /grammatik/:level/:slug
@@ -22,7 +21,6 @@ export class GrammarTopicsAliasController {
   })
   @ApiResponse({ status: 404, description: 'Grammar topic not found' })
   @Get(':level/:slug')
-  @UseGuards(JwtAuthGuard)
   findByLevelAndSlug(@Param('level') level: string, @Param('slug') slug: string) {
     return this.grammarTopicsService.findBySlug(slug, level);
   }

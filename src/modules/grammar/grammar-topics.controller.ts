@@ -38,19 +38,6 @@ export class GrammarTopicsController {
     return this.grammarTopicsService.findAll({ level });
   }
 
-  // Route للتوافق مع الفرونت: GET /grammatik/:level/:slug (يجب أن يكون قبل :slug)
-  @ApiOperation({ summary: 'Get a grammar topic by level and slug (alternative route for /grammatik/:level/:slug)' })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns the grammar topic',
-    type: GrammarTopicResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Grammar topic not found' })
-  @Get(':level/:slug')
-  findByLevelAndSlug(@Param('level') level: string, @Param('slug') slug: string) {
-    return this.grammarTopicsService.findBySlug(slug, level);
-  }
-
   @ApiOperation({ summary: 'Get a grammar topic by slug' })
   @ApiResponse({
     status: 200,
