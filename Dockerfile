@@ -33,8 +33,9 @@ RUN npm ci --omit=dev && \
 # Copy built application from builder stage
 COPY --from=builder /usr/src/app/dist ./dist
 
-# Verify dist structure (for debugging)
-RUN ls -la dist/ && ls -la dist/src/ || echo "dist/src not found"
+# List dist contents to verify (will be removed after testing)
+RUN ls -la dist/ 2>/dev/null || echo "dist not found" && \
+    ls -la dist/src/ 2>/dev/null || echo "dist/src not found"
 
 # Expose port (Railway will set PORT env variable)
 EXPOSE 4000
