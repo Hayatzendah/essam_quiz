@@ -121,6 +121,11 @@ export class CreateQuestionWithExamDto {
   @IsNotEmpty()
   examId: string;
 
+  // ====== ربط بموضوع القواعد (للامتحانات النحوية) ======
+  @IsOptional()
+  @IsMongoId()
+  grammarTopicId?: string;
+
   // ====== حالة السؤال ======
   @IsString()
   @IsNotEmpty()

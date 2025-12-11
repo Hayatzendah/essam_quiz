@@ -20,12 +20,14 @@ import {
 } from './schemas/question.schema';
 import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
 import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
+import { GrammarTopic, GrammarTopicDocument } from '../modules/grammar/schemas/grammar-topic.schema';
 
 @Injectable()
 export class QuestionsService {
   constructor(
     @InjectModel(Question.name) private readonly model: Model<QuestionDocument>,
     @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
+    @InjectModel(GrammarTopic.name) private readonly grammarTopicModel: Model<GrammarTopicDocument>,
   ) {}
 
   // التحقق الخاص (حسب نوع السؤال)
@@ -543,7 +545,7 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, grammarTopicId, ...questionData } = dto;
     
     // استخدام type إذا كان موجوداً، وإلا استخدام qType
     const questionType = type || qType;
@@ -670,6 +672,15 @@ export class QuestionsService {
     // 8) حفظ السكاشن المعدّلة في الامتحان
     exam.sections = cleanSections as any;
     await exam.save();
+
+    // 9) تحديث grammarTopic بـ examId إذا كان grammarTopicId موجود
+    if (grammarTopicId) {
+      await this.grammarTopicModel.findByIdAndUpdate(
+        grammarTopicId,
+        { examId: exam._id },
+        { new: true },
+      ).exec();
+    }
 
     // إرجاع النتيجة
     const questionDoc = question.toObject();
