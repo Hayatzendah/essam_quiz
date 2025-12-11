@@ -33,10 +33,13 @@ RUN npm ci --omit=dev && \
 # Copy built application from builder stage
 COPY --from=builder /usr/src/app/dist ./dist
 
+# Verify dist structure (for debugging)
+RUN ls -la dist/ && ls -la dist/src/ || echo "dist/src not found"
+
 # Expose port (Railway will set PORT env variable)
 EXPOSE 4000
 
 # Start the application
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
 
 
