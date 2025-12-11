@@ -72,6 +72,16 @@ export class CreateQuestionWithExamDto {
   @IsBoolean({ message: 'answerKeyBoolean must be a boolean when qType is true_false' })
   answerKeyBoolean?: boolean;
 
+  // ====== FILL ======
+  @IsOptional()
+  @IsString()
+  fillExact?: string; // الإجابة لحقل أكمل الفراغ
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  regexList?: string[];
+
   @IsInt()
   @Min(0)
   points: number;
