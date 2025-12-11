@@ -54,6 +54,9 @@ class QuestionMediaDto {
 
 export class CreateQuestionWithExamDto {
   // ====== البيانات الأساسية للسؤال ======
+  @IsEnum(QuestionType)
+  type: QuestionType;
+
   @IsString()
   @IsNotEmpty()
   prompt: string;

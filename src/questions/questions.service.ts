@@ -543,7 +543,10 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, prompt, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, ...questionData } = dto;
+    
+    // استخدام type إذا كان موجوداً، وإلا استخدام qType
+    const questionType = type || qType;
 
     // 1) التحقق من listeningClipId لأسئلة Hören
     if (usageCategory === 'provider' && skill && skill.toLowerCase() === 'hoeren') {
@@ -556,7 +559,7 @@ export class QuestionsService {
 
     // 2) تأكيد وجود خيار صحيح (فقط لـ MCQ)
     let correctOption: any = null;
-    if (qType === 'mcq' && questionData.options) {
+    if (questionType === 'mcq' && questionData.options) {
       correctOption = questionData.options.find((opt) => opt.isCorrect);
       if (!correctOption) {
         throw new BadRequestException(
@@ -566,7 +569,7 @@ export class QuestionsService {
     }
 
     // 2.1) التحقق من answerKeyBoolean لأسئلة TRUE_FALSE
-    if (qType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean !== 'boolean') {
+    if (questionType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean !== 'boolean') {
       throw new BadRequestException(
         'answerKeyBoolean is required for true_false questions and must be a boolean',
       );
@@ -576,22 +579,22 @@ export class QuestionsService {
     const question = await this.model.create({
       prompt: prompt,
       text: questionData.text || prompt, // للحفاظ على التوافق مع الحقول الموجودة
-      qType: qType,
+      qType: questionType,
       options: questionData.options ? questionData.options.map((opt) => ({
         text: opt.text,
         isCorrect: opt.isCorrect || false,
       })) : undefined,
       correctAnswer: correctOption ? correctOption.text : undefined,
       // TRUE_FALSE answer
-      ...(qType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean === 'boolean' && { answerKeyBoolean }),
+      ...(questionType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean === 'boolean' && { answerKeyBoolean }),
       // FREE_TEXT fields
-      ...(qType === QuestionType.FREE_TEXT && {
+      ...(questionType === QuestionType.FREE_TEXT && {
         ...(questionData.sampleAnswer && { sampleAnswer: questionData.sampleAnswer }),
         ...(questionData.minWords !== undefined && { minWords: questionData.minWords }),
         ...(questionData.maxWords !== undefined && { maxWords: questionData.maxWords }),
       }),
       // SPEAKING fields
-      ...(qType === QuestionType.SPEAKING && {
+      ...(questionType === QuestionType.SPEAKING && {
         ...(questionData.modelAnswerText && { modelAnswerText: questionData.modelAnswerText }),
         ...(questionData.minSeconds !== undefined && { minSeconds: questionData.minSeconds }),
         ...(questionData.maxSeconds !== undefined && { maxSeconds: questionData.maxSeconds }),
