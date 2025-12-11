@@ -33,14 +33,18 @@ RUN npm ci --omit=dev && \
 # Copy built application from builder stage
 COPY --from=builder /usr/src/app/dist ./dist
 
-# List dist contents to verify (will be removed after testing)
-RUN ls -la dist/ 2>/dev/null || echo "dist not found" && \
-    ls -la dist/src/ 2>/dev/null || echo "dist/src not found"
+# Debug: List dist contents to see what was copied
+RUN echo "=== Contents of dist/ ===" && \
+    ls -la dist/ && \
+    echo "=== Contents of dist/src/ ===" && \
+    (ls -la dist/src/ 2>/dev/null || echo "dist/src not found") && \
+    echo "=== Looking for main.js ===" && \
+    (find dist -name "main.js" -type f || echo "main.js not found")
 
 # Expose port (Railway will set PORT env variable)
 EXPOSE 4000
 
-# Start the application
+# Start the application (will be fixed after we see the debug output)
 CMD ["node", "dist/src/main.js"]
 
 
