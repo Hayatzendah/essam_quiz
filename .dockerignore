@@ -29,6 +29,5 @@ quiz-backend
 .eslintrc*
 .prettierrc*
 jest.config.*
-tsconfig*.json
 nest-cli.json
 
