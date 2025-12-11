@@ -36,6 +36,11 @@ export class AttemptItem {
   @Prop() promptSnapshot?: string;
   @Prop({ type: [String], default: undefined }) optionsText?: string[];
   @Prop({ type: [Number], default: undefined }) optionOrder?: number[]; // لو عشوّتنا ترتيب الخيارات
+  @Prop({ type: Object, _id: false }) optionsSnapshot?: Array<{
+    optionId?: string;
+    text: string;
+    isCorrect: boolean;
+  }>; // snapshot كامل للخيارات مع optionId
 
   // Media snapshot (روابط مؤقتة للطالب)
   @Prop() mediaType?: 'audio' | 'image' | 'video';

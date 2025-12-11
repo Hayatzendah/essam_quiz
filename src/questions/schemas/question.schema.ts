@@ -28,7 +28,7 @@ export enum QuestionDifficulty {
   HARD = 'hard',
 }
 
-@Schema({ _id: false })
+@Schema({ _id: true }) // تمكين _id للسماح بحفظ optionId
 export class McqOption {
   @Prop({ required: true, trim: true })
   text: string;
