@@ -47,4 +47,5 @@ export enum ExamSkillEnum {
   MIXED = 'mixed',
   MISC = 'misc', // مهارة عامة
   LEBEN_TEST = 'leben_test', // Leben in Deutschland Test
+  GRAMMAR = 'grammar', // 👈 إضافة GRAMMAR
 }
