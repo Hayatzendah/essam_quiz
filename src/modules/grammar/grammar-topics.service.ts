@@ -27,6 +27,7 @@ export class GrammarTopicsService {
     @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
     @Inject(forwardRef(() => AttemptsService))
     private readonly attemptsService: AttemptsService,
+    @Inject(forwardRef(() => QuestionsService))
     private readonly questionsService: QuestionsService,
   ) {}
 
