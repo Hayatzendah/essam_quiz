@@ -293,17 +293,41 @@ export class GrammarTopicsService {
    * @param examId معرف الامتحان
    */
   async attachExamToTopic(level: string, slug: string, examId: string) {
-    const topic = await this.model.findOneAndUpdate(
-      { level, slug: slug.toLowerCase().trim() },
-      { examId: new Types.ObjectId(examId) },
-      { new: true },
-    ).exec();
+    // 1. البحث عن الموضوع
+    const topic = await this.model.findOne({
+      level,
+      slug: slug.toLowerCase().trim(),
+    }).exec();
 
     if (!topic) {
       this.logger.warn(
         `No grammar topic found for level=${level}, slug=${slug} when attaching exam ${examId}`,
       );
+      return null;
     }
+
+    // 2. جلب الامتحان للحصول على sectionTitle
+    const exam = await this.examModel.findById(examId).lean().exec();
+    if (!exam) {
+      this.logger.warn(`Exam with ID "${examId}" not found when attaching to topic`);
+      return null;
+    }
+
+    // 3. البحث عن section title من الـ exam (أول section أو null)
+    let sectionTitle: string | null = null;
+    if (exam.sections && Array.isArray(exam.sections) && exam.sections.length > 0) {
+      const firstSection = exam.sections.find((sec: any) => sec && typeof sec === 'object');
+      if (firstSection) {
+        sectionTitle = firstSection.title || firstSection.name || null;
+      }
+    }
+
+    // 4. تحديث الـ topic بربطه مع الـ exam و sectionTitle
+    topic.examId = new Types.ObjectId(examId);
+    if (sectionTitle) {
+      topic.sectionTitle = sectionTitle;
+    }
+    await topic.save();
 
     return topic;
   }
