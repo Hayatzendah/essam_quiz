@@ -543,7 +543,7 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, ...questionData } = dto;
     
     // استخدام type إذا كان موجوداً، وإلا استخدام qType
     const questionType = type || qType;
@@ -591,6 +591,11 @@ export class QuestionsService {
       correctAnswer: correctOption ? correctOption.text : undefined,
       // TRUE_FALSE answer
       ...(questionType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean === 'boolean' && { answerKeyBoolean }),
+      // FILL fields
+      ...(questionType === QuestionType.FILL && {
+        ...(fillExact && { fillExact }),
+        ...(regexList && Array.isArray(regexList) && regexList.length > 0 && { regexList }),
+      }),
       // FREE_TEXT fields
       ...(questionType === QuestionType.FREE_TEXT && {
         ...(questionData.sampleAnswer && { sampleAnswer: questionData.sampleAnswer }),
