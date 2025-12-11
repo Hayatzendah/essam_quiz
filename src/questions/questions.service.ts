@@ -493,11 +493,26 @@ export class QuestionsService {
       this.model.countDocuments(query),
     ]);
 
+    // إضافة optionId لكل option في الأسئلة
+    const itemsWithOptionIds = items.map((item: any) => {
+      if (item.options && Array.isArray(item.options)) {
+        return {
+          ...item,
+          options: item.options.map((opt: any) => ({
+            optionId: opt._id ? String(opt._id) : undefined,
+            text: opt.text,
+            isCorrect: opt.isCorrect || false,
+          })),
+        };
+      }
+      return item;
+    });
+
     return {
       page,
       limit,
       total,
-      items,
+      items: itemsWithOptionIds,
     };
   }
 
