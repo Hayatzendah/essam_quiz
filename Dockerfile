@@ -16,18 +16,19 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Debug: Check what was built
-RUN echo "=== Checking dist structure ===" && \
-    echo "Contents of /app:" && \
-    ls -la /app/ && \
-    echo "Contents of dist:" && \
-    ls -la dist/ 2>/dev/null || echo "dist not found" && \
-    echo "Contents of dist/src:" && \
-    (ls -la dist/src/ 2>/dev/null || echo "dist/src not found") && \
-    echo "Looking for main.js:" && \
-    (find . -name "main.js" -type f 2>/dev/null || echo "main.js not found anywhere") && \
-    echo "All .js files in dist:" && \
-    (find dist -name "*.js" -type f 2>/dev/null | head -20 || echo "No .js files found")
+# Verify build output
+RUN echo "=== Verifying build output ===" && \
+    if [ -f "dist/src/main.js" ]; then \
+        echo "✅ dist/src/main.js exists"; \
+        ls -lh dist/src/main.js; \
+    else \
+        echo "❌ dist/src/main.js NOT FOUND"; \
+        echo "Contents of dist:"; \
+        ls -la dist/ 2>/dev/null || echo "dist directory not found"; \
+        echo "Looking for main.js:"; \
+        find . -name "main.js" -type f 2>/dev/null || echo "main.js not found"; \
+        exit 1; \
+    fi
 
 # Expose port (adjust if needed)
 EXPOSE 3000
