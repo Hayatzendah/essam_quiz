@@ -1,14 +1,13 @@
-# Use Node.js 20
-FROM node:20-alpine
+# Stage 1: Build
+FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (including devDependencies for build)
-RUN npm ci --prefer-offline --no-audit
+# Install all dependencies (including devDependencies for build)
+RUN npm ci --prefer-offline --no-audit --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -16,11 +15,27 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Remove devDependencies to reduce image size
-RUN npm prune --production
+# Stage 2: Production
+FROM node:20-alpine
 
-# Expose port (adjust if needed)
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production --prefer-offline --no-audit --legacy-peer-deps && \
+    npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Expose port
 EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the application
 CMD ["node", "dist/src/main.js"]

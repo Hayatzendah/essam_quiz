@@ -24,4 +24,11 @@ questions
 scripts
 assets
 quiz-backend
+*.spec.ts
+*.test.ts
+.eslintrc*
+.prettierrc*
+jest.config.*
+tsconfig*.json
+nest-cli.json
 
