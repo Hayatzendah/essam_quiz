@@ -31,15 +31,20 @@ RUN npm ci --omit=dev && \
     npm cache clean --force
 
 # Copy built application from builder stage
+# First, verify what was built in the builder stage
+RUN echo "=== Builder stage dist contents ===" && \
+    ls -la /usr/src/app/dist/ && \
+    (ls -la /usr/src/app/dist/src/ 2>/dev/null || echo "dist/src not found in builder") && \
+    (find /usr/src/app/dist -name "main.js" -type f || echo "main.js not found in builder")
+
+# Copy the entire dist directory
 COPY --from=builder /usr/src/app/dist ./dist
 
-# Debug: List dist contents to see what was copied
-RUN echo "=== Contents of dist/ ===" && \
+# Verify what was copied
+RUN echo "=== Runner stage dist contents ===" && \
     ls -la dist/ && \
-    echo "=== Contents of dist/src/ ===" && \
-    (ls -la dist/src/ 2>/dev/null || echo "dist/src not found") && \
-    echo "=== Looking for main.js ===" && \
-    (find dist -name "main.js" -type f || echo "main.js not found")
+    (ls -la dist/src/ 2>/dev/null || echo "dist/src not found in runner") && \
+    (find dist -name "main.js" -type f || echo "main.js not found in runner")
 
 # Expose port (Railway will set PORT env variable)
 EXPOSE 4000
