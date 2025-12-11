@@ -72,11 +72,47 @@ export class GrammarTopicsService {
       query.level = level;
     }
 
-    const topic = await this.model.findOne(query).lean().exec();
+    const topic = await this.model.findOne(query).exec();
     if (!topic) {
       throw new NotFoundException(
         `Grammar topic with slug "${slug}"${level ? ` and level "${level}"` : ''} not found`,
       );
+    }
+
+    // إذا كان examId موجوداً، إرجاعه مباشرة
+    if (topic.examId) {
+      return this.mapToResponse(topic);
+    }
+
+    // محاولة البحث عن exam مرتبط بالموضوع تلقائياً
+    // البحث عن exam يحتوي على grammarTopicId يطابق topic._id
+    const exam = await this.examModel
+      .findOne({
+        grammarTopicId: topic._id,
+        examCategory: 'grammar_exam',
+      })
+      .lean()
+      .exec();
+
+    if (exam) {
+      // ربط الموضوع بالامتحان تلقائياً
+      topic.examId = exam._id;
+      
+      // البحث عن section title
+      let sectionTitle: string | null = null;
+      if (exam.sections && Array.isArray(exam.sections) && exam.sections.length > 0) {
+        const firstSection = exam.sections.find((sec: any) => sec && typeof sec === 'object');
+        if (firstSection) {
+          sectionTitle = firstSection.title || firstSection.name || null;
+        }
+      }
+      
+      if (sectionTitle) {
+        topic.sectionTitle = sectionTitle;
+      }
+      
+      await topic.save();
+      this.logger.log(`Auto-linked topic ${slug} (${level}) to exam ${exam._id}`);
     }
 
     return this.mapToResponse(topic);
