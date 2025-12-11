@@ -543,10 +543,14 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, ...questionData } = dto;
     
     // استخدام type إذا كان موجوداً، وإلا استخدام qType
     const questionType = type || qType;
+    
+    // استخدام text كحقل أساسي، و prompt كحقل اختياري
+    const questionText = text;
+    const questionPrompt = prompt ?? text;
 
     // 1) التحقق من listeningClipId لأسئلة Hören
     if (usageCategory === 'provider' && skill && skill.toLowerCase() === 'hoeren') {
@@ -577,8 +581,8 @@ export class QuestionsService {
 
     // 3) إنشاء السؤال
     const question = await this.model.create({
-      prompt: prompt,
-      text: questionData.text || prompt, // للحفاظ على التوافق مع الحقول الموجودة
+      prompt: questionPrompt,
+      text: questionText,
       qType: questionType,
       options: questionData.options ? questionData.options.map((opt) => ({
         text: opt.text,

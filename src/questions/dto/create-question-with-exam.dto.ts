@@ -59,7 +59,11 @@ export class CreateQuestionWithExamDto {
 
   @IsString()
   @IsNotEmpty()
-  prompt: string;
+  text: string;      // النص الأساسي للسؤال
+
+  @IsOptional()
+  @IsString()
+  prompt?: string;   // لو حابة تستخدمه لاحقًا
 
   @IsEnum(QuestionType)
   qType: QuestionType;
@@ -129,10 +133,7 @@ export class CreateQuestionWithExamDto {
   tags?: string[];
 
   // ====== نص سؤال مفتوح (فقط لو النوع FILL أو TEXT) ======
-  @ValidateIf((o) => o.qType === QuestionType.FILL || o.qType === 'text')
-  @IsString()
-  @IsNotEmpty()
-  text?: string;
+  // تم نقل text إلى الأعلى كحقل أساسي
 
   // ====== حقول اختيارية إضافية ======
   @IsOptional()
