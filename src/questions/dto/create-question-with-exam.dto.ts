@@ -81,8 +81,7 @@ export class CreateQuestionWithExamDto {
 
   // ====== FILL ======
   @IsOptional()
-  @IsString()
-  fillExact?: string; // الإجابة لحقل أكمل الفراغ
+  fillExact?: string | string[]; // الإجابة لحقل أكمل الفراغ (يمكن أن يكون string أو array)
 
   @IsOptional()
   @IsArray()

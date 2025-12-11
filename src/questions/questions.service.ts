@@ -689,8 +689,8 @@ export class QuestionsService {
     return {
       message: 'Question created and added to exam',
       question: questionWithoutV,
-      questionId: question._id,
-      examId: exam._id,
+      questionId: question._id.toString(),
+      examId: exam._id.toString(),
       sectionTitle: sectionName,
       section: sectionName,
     };

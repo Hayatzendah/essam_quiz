@@ -91,8 +91,8 @@ export class Question {
   answerKeyBoolean?: boolean;
 
   // FILL
-  @Prop({ trim: true })
-  fillExact?: string;
+  @Prop({ type: [String], default: undefined })
+  fillExact?: string | string[];
 
   @Prop({ type: [String], default: [] })
   regexList?: string[];
@@ -202,7 +202,10 @@ QuestionSchema.pre('validate', function (next) {
   }
 
   if (q.qType === QuestionType.FILL) {
-    const hasExact = typeof q.fillExact === 'string' && q.fillExact.trim().length > 0;
+    // fillExact يمكن أن يكون string أو array
+    const hasExact = 
+      (typeof q.fillExact === 'string' && q.fillExact.trim().length > 0) ||
+      (Array.isArray(q.fillExact) && q.fillExact.length > 0 && q.fillExact.some((item: any) => item && String(item).trim().length > 0));
     const hasRegex = Array.isArray(q.regexList) && q.regexList.length > 0;
     if (!hasExact && !hasRegex) {
       return next(new Error('FILL requires fillExact or regexList'));
