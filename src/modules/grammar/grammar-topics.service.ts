@@ -35,15 +35,18 @@ export class GrammarTopicsService {
    * Helper method to map topic document to response format
    */
   private mapToResponse(topic: any): any {
+    // Convert Mongoose document to plain object if needed
+    const plainTopic = topic.toObject ? topic.toObject() : topic;
+    
     return {
-      ...topic,
-      _id: topic._id?.toString() || topic.id?.toString() || topic._id,
-      examId: topic.examId
-        ? typeof topic.examId === 'object' && topic.examId.toString
-          ? topic.examId.toString()
-          : topic.examId
+      ...plainTopic,
+      _id: plainTopic._id?.toString() || plainTopic.id?.toString() || plainTopic._id,
+      examId: plainTopic.examId
+        ? typeof plainTopic.examId === 'object' && plainTopic.examId.toString
+          ? plainTopic.examId.toString()
+          : plainTopic.examId
         : null,
-      sectionTitle: topic.sectionTitle ?? null,
+      sectionTitle: plainTopic.sectionTitle ?? null,
     };
   }
 
