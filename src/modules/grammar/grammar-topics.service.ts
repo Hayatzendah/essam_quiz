@@ -85,14 +85,39 @@ export class GrammarTopicsService {
     }
 
     // محاولة البحث عن exam مرتبط بالموضوع تلقائياً
-    // البحث عن exam يحتوي على grammarTopicId يطابق topic._id
-    const exam = await this.examModel
+    // 1. البحث عن exam يحتوي على grammarTopicId يطابق topic._id
+    let exam = await this.examModel
       .findOne({
         grammarTopicId: topic._id,
         examCategory: 'grammar_exam',
       })
       .lean()
       .exec();
+
+    // 2. إذا لم يُوجد، البحث عن exam بنفس الـ level و grammar_exam category
+    if (!exam && level) {
+      exam = await this.examModel
+        .findOne({
+          examCategory: 'grammar_exam',
+          level: level,
+          grammarLevel: level,
+        })
+        .sort({ createdAt: -1 }) // أحدث exam
+        .lean()
+        .exec();
+    }
+
+    // 3. إذا لم يُوجد، البحث عن أي exam من نوع grammar_exam بنفس الـ level
+    if (!exam && level) {
+      exam = await this.examModel
+        .findOne({
+          examCategory: 'grammar_exam',
+          level: level,
+        })
+        .sort({ createdAt: -1 }) // أحدث exam
+        .lean()
+        .exec();
+    }
 
     if (exam) {
       // ربط الموضوع بالامتحان تلقائياً
@@ -113,6 +138,8 @@ export class GrammarTopicsService {
       
       await topic.save();
       this.logger.log(`Auto-linked topic ${slug} (${level}) to exam ${exam._id}`);
+    } else {
+      this.logger.warn(`No exam found for topic ${slug} (${level}) - examId will remain null`);
     }
 
     return this.mapToResponse(topic);
