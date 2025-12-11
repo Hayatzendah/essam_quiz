@@ -21,6 +21,8 @@ import {
 import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
 import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
 import { GrammarTopic, GrammarTopicDocument } from '../modules/grammar/schemas/grammar-topic.schema';
+import { GrammarTopicsService } from '../modules/grammar/grammar-topics.service';
+import { Inject, forwardRef } from '@nestjs/common';
 
 @Injectable()
 export class QuestionsService {
@@ -28,6 +30,8 @@ export class QuestionsService {
     @InjectModel(Question.name) private readonly model: Model<QuestionDocument>,
     @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
     @InjectModel(GrammarTopic.name) private readonly grammarTopicModel: Model<GrammarTopicDocument>,
+    @Inject(forwardRef(() => GrammarTopicsService))
+    private readonly grammarTopicsService: GrammarTopicsService,
   ) {}
 
   // التحقق الخاص (حسب نوع السؤال)
@@ -548,7 +552,7 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, grammarTopicId, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, grammarTopicId, grammarLevel, grammarTopic, ...questionData } = dto;
     
     // استخدام type إذا كان موجوداً، وإلا استخدام qType
     const questionType = type || qType;
@@ -676,8 +680,15 @@ export class QuestionsService {
     exam.sections = cleanSections as any;
     await exam.save();
 
-    // 9) تحديث grammarTopic بـ examId إذا كان grammarTopicId موجود
-    if (grammarTopicId) {
+    // 9) ربط الامتحان بالموضوع (grammarTopic) إذا كان grammarLevel و grammarTopic موجودين
+    if (grammarLevel && grammarTopic) {
+      await this.grammarTopicsService.attachExamToTopic(
+        grammarLevel,
+        grammarTopic,
+        exam._id.toString(),
+      );
+    } else if (grammarTopicId) {
+      // للتوافق مع الكود القديم: استخدام grammarTopicId إذا كان موجوداً
       await this.grammarTopicModel.findByIdAndUpdate(
         grammarTopicId,
         { examId: exam._id },

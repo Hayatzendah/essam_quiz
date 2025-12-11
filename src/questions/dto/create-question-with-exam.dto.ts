@@ -125,6 +125,14 @@ export class CreateQuestionWithExamDto {
   @IsMongoId()
   grammarTopicId?: string;
 
+  @IsOptional()
+  @IsString()
+  grammarLevel?: string; // A1, A2, B1, B2, C1
+
+  @IsOptional()
+  @IsString()
+  grammarTopic?: string; // slug الموضوع (مثل: "dativ")
+
   // ====== حالة السؤال ======
   @IsString()
   @IsNotEmpty()

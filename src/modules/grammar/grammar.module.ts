@@ -14,7 +14,7 @@ import { QuestionsModule } from '../../questions/questions.module';
       { name: Exam.name, schema: ExamSchema },
     ]),
     forwardRef(() => AttemptsModule),
-    QuestionsModule,
+    forwardRef(() => QuestionsModule),
   ],
   controllers: [GrammarTopicsController],
   providers: [GrammarTopicsService],

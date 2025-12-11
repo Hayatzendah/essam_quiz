@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -19,6 +20,8 @@ import { ProviderEnum } from '../../common/enums/provider.enum';
 
 @Injectable()
 export class GrammarTopicsService {
+  private readonly logger = new Logger(GrammarTopicsService.name);
+
   constructor(
     @InjectModel(GrammarTopic.name) private readonly model: Model<GrammarTopicDocument>,
     @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
@@ -280,5 +283,27 @@ export class GrammarTopicsService {
       examId: dto.examId,
       sectionTitle: sectionTitle || undefined,
     };
+  }
+
+  /**
+   * ربط امتحان بموضوع قواعد
+   * @param level مستوى الموضوع (A1, A2, B1, B2, C1)
+   * @param slug slug الموضوع (مثل: "dativ")
+   * @param examId معرف الامتحان
+   */
+  async attachExamToTopic(level: string, slug: string, examId: string) {
+    const topic = await this.model.findOneAndUpdate(
+      { level, slug: slug.toLowerCase().trim() },
+      { examId: new Types.ObjectId(examId) },
+      { new: true },
+    ).exec();
+
+    if (!topic) {
+      this.logger.warn(
+        `No grammar topic found for level=${level}, slug=${slug} when attaching exam ${examId}`,
+      );
+    }
+
+    return topic;
   }
 }
