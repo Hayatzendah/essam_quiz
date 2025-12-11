@@ -18,9 +18,16 @@ RUN npm run build
 
 # Debug: Check what was built
 RUN echo "=== Checking dist structure ===" && \
-    ls -la dist/ && \
+    echo "Contents of /app:" && \
+    ls -la /app/ && \
+    echo "Contents of dist:" && \
+    ls -la dist/ 2>/dev/null || echo "dist not found" && \
+    echo "Contents of dist/src:" && \
     (ls -la dist/src/ 2>/dev/null || echo "dist/src not found") && \
-    (find dist -name "main.js" -type f || echo "main.js not found")
+    echo "Looking for main.js:" && \
+    (find . -name "main.js" -type f 2>/dev/null || echo "main.js not found anywhere") && \
+    echo "All .js files in dist:" && \
+    (find dist -name "*.js" -type f 2>/dev/null | head -20 || echo "No .js files found")
 
 # Expose port (adjust if needed)
 EXPOSE 3000
