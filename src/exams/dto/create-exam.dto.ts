@@ -145,9 +145,11 @@ export class CreateExamDto {
   @IsNotEmpty()
   level: string;             // A1 / A2 / ...
 
+  @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
-  timeLimitMin: number;
+  timeLimitMin?: number;
 
   @IsEnum(ExamStatusEnum)
   status: ExamStatusEnum;
