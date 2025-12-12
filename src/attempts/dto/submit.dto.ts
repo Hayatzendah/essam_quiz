@@ -10,6 +10,7 @@ import {
   IsNotEmpty,
   Min,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -36,12 +37,19 @@ export class SubmitAttemptAnswerDto {
   @MaxLength(2000, { message: 'textAnswer must not exceed 2000 characters' })
   textAnswer?: string;
 
+  // لأسئلة Fill blank - النص
+  @ValidateIf((o) => !o.selectedOptionIndexes || o.selectedOptionIndexes.length === 0)
+  @IsOptional()
+  @IsString()
+  answerText?: string;
+
   // لأسئلة الاختيار / صح وغلط - استخدام indexes (0-based)
   // للـ MCQ: indexes للخيارات المختارة
   // للـ True/False: 0 = false, 1 = true
+  @ValidateIf((o) => !o.answerText && !o.textAnswer)
   @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
+  @ArrayMinSize(1, { message: 'selectedOptionIndexes must contain at least 1 element' })
   @IsNumber({}, { each: true })
   @Min(0, { each: true })
   selectedOptionIndexes?: number[];
