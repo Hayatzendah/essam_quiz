@@ -391,4 +391,22 @@ export class AttemptsController {
   getResults(@Param('attemptId') attemptId: string, @Req() req: any) {
     return this.service.getAttempt(req.user, attemptId);
   }
+
+  // إعادة المحاولة - إنشاء attempt جديد لنفس الامتحان
+  @Post(':attemptId/retry')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  @ApiOperation({
+    summary: 'Retry attempt - create new attempt for the same exam',
+    description: 'إنشاء محاولة جديدة لنفس الامتحان (لزر إعادة المحاولة)',
+  })
+  @ApiResponse({ status: 201, description: 'New attempt created successfully' })
+  @ApiResponse({ status: 404, description: 'Original attempt not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not the owner of the attempt' })
+  async retry(@Param('attemptId') attemptId: string, @Req() req: any) {
+    this.logger.log(
+      `[POST /attempts/${attemptId}/retry] Request received - userId: ${req.user?.userId}`,
+    );
+    return this.service.retryAttempt(req.user, attemptId);
+  }
 }
