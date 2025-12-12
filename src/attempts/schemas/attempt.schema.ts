@@ -56,7 +56,7 @@ export class AttemptItem {
 
   // مفاتيح للتصحيح الآلي (لا تُرسل للطالب)
   @Prop() answerKeyBoolean?: boolean; // true_false
-  @Prop() fillExact?: string; // fill
+  @Prop({ type: [String], default: undefined }) fillExact?: string | string[]; // fill - يمكن أن يكون string أو array
   @Prop({ type: [String], default: undefined }) regexList?: string[]; // fill
   @Prop({ type: [Number], default: undefined }) correctOptionIndexes?: number[]; // mcq
   @Prop({ type: [[String, String]], default: undefined }) answerKeyMatch?: [string, string][]; // match: أزواج [left, right]
