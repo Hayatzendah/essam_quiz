@@ -36,12 +36,15 @@ export class SubmitAttemptAnswerDto {
   @MaxLength(2000, { message: 'textAnswer must not exceed 2000 characters' })
   textAnswer?: string;
 
-  // لأسئلة الاختيار / صح وغلط
+  // لأسئلة الاختيار / صح وغلط - استخدام indexes (0-based)
+  // للـ MCQ: indexes للخيارات المختارة
+  // للـ True/False: 0 = false, 1 = true
   @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
-  @IsMongoId({ each: true })
-  selectedOptionIds?: string[];
+  @IsNumber({}, { each: true })
+  @Min(0, { each: true })
+  selectedOptionIndexes?: number[];
 
   // لأسئلة التحدث (SPEAKING) - تسجيل صوتي
   @IsOptional()
@@ -67,7 +70,7 @@ export class SubmitAttemptAnswerDto {
   @IsString()
   studentAnswerText?: string;
 
-  // للتوافق مع الكود القديم - للـ True/False: boolean
+  // للتوافق مع الكود القديم - للـ True/False: boolean (يتم تحويله إلى index)
   @IsOptional()
   @IsBoolean()
   studentAnswerBoolean?: boolean;
