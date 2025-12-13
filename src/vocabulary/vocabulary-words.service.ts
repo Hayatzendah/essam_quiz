@@ -6,6 +6,7 @@ import { VocabularyTopic, VocabularyTopicDocument } from './schemas/vocabulary-t
 import { CreateVocabularyWordDto } from './dto/create-vocabulary-word.dto';
 import { UpdateVocabularyWordDto } from './dto/update-vocabulary-word.dto';
 import { QueryVocabularyWordDto } from './dto/query-vocabulary-word.dto';
+import { CreateBulkVocabularyWordsDto } from './dto/create-bulk-vocabulary-words.dto';
 
 @Injectable()
 export class VocabularyWordsService {
@@ -119,6 +120,43 @@ export class VocabularyWordsService {
     if (!result) {
       throw new NotFoundException(`Word with ID ${id} not found`);
     }
+  }
+
+  /**
+   * إضافة عدة كلمات دفعة واحدة
+   */
+  async createBulk(dto: CreateBulkVocabularyWordsDto): Promise<{ insertedCount: number; ids: string[] }> {
+    // التحقق من وجود الموضوع
+    if (!Types.ObjectId.isValid(dto.topicId)) {
+      throw new BadRequestException(`Invalid topicId: ${dto.topicId}`);
+    }
+
+    const topic = await this.topicModel.findById(dto.topicId).exec();
+    if (!topic) {
+      throw new NotFoundException(`Topic with ID ${dto.topicId} not found`);
+    }
+
+    // التحقق من وجود كلمات
+    if (!dto.words || dto.words.length === 0) {
+      throw new BadRequestException('Words array cannot be empty');
+    }
+
+    // تحضير البيانات للإدراج
+    const wordsToInsert = dto.words.map((wordItem) => ({
+      topicId: new Types.ObjectId(dto.topicId),
+      word: wordItem.word.trim(),
+      meaning: wordItem.meaning.trim(),
+      exampleSentence: wordItem.exampleSentence?.trim(),
+      isActive: true,
+    }));
+
+    // إدراج الكلمات دفعة واحدة
+    const result = await this.wordModel.insertMany(wordsToInsert);
+
+    return {
+      insertedCount: result.length,
+      ids: result.map((doc) => doc._id.toString()),
+    };
   }
 }
 

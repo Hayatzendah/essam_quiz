@@ -15,6 +15,7 @@ import { VocabularyWordsService } from './vocabulary-words.service';
 import { CreateVocabularyWordDto } from './dto/create-vocabulary-word.dto';
 import { UpdateVocabularyWordDto } from './dto/update-vocabulary-word.dto';
 import { QueryVocabularyWordDto } from './dto/query-vocabulary-word.dto';
+import { CreateBulkVocabularyWordsDto } from './dto/create-bulk-vocabulary-words.dto';
 
 @ApiTags('Vocabulary Words')
 @Controller('vocabulary-words')
@@ -38,6 +39,16 @@ export class VocabularyWordsController {
   @ApiResponse({ status: 200, description: 'List of words' })
   findAll(@Query() query: QueryVocabularyWordDto) {
     return this.wordsService.findAll(query);
+  }
+
+  @Post('bulk')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create multiple vocabulary words at once (bulk insert)' })
+  @ApiResponse({ status: 201, description: 'Words created successfully', schema: { properties: { insertedCount: { type: 'number' }, ids: { type: 'array', items: { type: 'string' } } } } })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  @ApiResponse({ status: 404, description: 'Topic not found' })
+  createBulk(@Body() createBulkDto: CreateBulkVocabularyWordsDto) {
+    return this.wordsService.createBulk(createBulkDto);
   }
 
   @Get(':id')
