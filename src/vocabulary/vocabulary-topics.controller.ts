@@ -28,12 +28,21 @@ export class VocabularyTopicsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all vocabulary topics (optionally filtered by level)' })
+  @ApiOperation({ summary: 'Get all vocabulary topics (optionally filtered by level and slug)' })
   @ApiQuery({ name: 'level', required: false, enum: ['A1', 'A2', 'B1', 'B2', 'C1'] })
+  @ApiQuery({ name: 'slug', required: false, type: String })
   @ApiQuery({ name: 'isActive', required: false, type: String })
   @ApiResponse({ status: 200, description: 'List of topics' })
   findAll(@Query() query: QueryVocabularyTopicDto) {
     return this.topicsService.findAll(query);
+  }
+
+  @Get('by-slug/:slug')
+  @ApiOperation({ summary: 'Get a vocabulary topic by slug' })
+  @ApiResponse({ status: 200, description: 'Topic found' })
+  @ApiResponse({ status: 404, description: 'Topic not found' })
+  findBySlug(@Param('slug') slug: string) {
+    return this.topicsService.findBySlug(slug);
   }
 
   @Get(':id')

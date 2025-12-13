@@ -26,13 +26,17 @@ export class VocabularyTopicsService {
   }
 
   /**
-   * البحث عن المواضيع مع إمكانية التصفية حسب المستوى
+   * البحث عن المواضيع مع إمكانية التصفية حسب المستوى والـ slug
    */
   async findAll(query: QueryVocabularyTopicDto): Promise<VocabularyTopic[]> {
     const filter: any = {};
 
     if (query.level) {
       filter.level = query.level;
+    }
+
+    if (query.slug) {
+      filter.slug = query.slug;
     }
 
     if (query.isActive !== undefined) {
@@ -53,6 +57,17 @@ export class VocabularyTopicsService {
     const topic = await this.topicModel.findById(id).exec();
     if (!topic) {
       throw new NotFoundException(`Topic with ID ${id} not found`);
+    }
+    return topic;
+  }
+
+  /**
+   * البحث عن موضوع واحد بالـ slug
+   */
+  async findBySlug(slug: string): Promise<VocabularyTopic> {
+    const topic = await this.topicModel.findOne({ slug }).exec();
+    if (!topic) {
+      throw new NotFoundException(`Topic with slug "${slug}" not found`);
     }
     return topic;
   }

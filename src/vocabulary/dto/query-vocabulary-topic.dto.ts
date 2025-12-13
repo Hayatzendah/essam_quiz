@@ -8,6 +8,10 @@ export class QueryVocabularyTopicDto {
 
   @IsOptional()
   @IsString()
+  slug?: string;
+
+  @IsOptional()
+  @IsString()
   isActive?: string; // 'true' or 'false' as query param
 }
 

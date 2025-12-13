@@ -19,6 +19,10 @@ export class CreateVocabularyTopicDto {
   icon?: string;
 
   @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 }

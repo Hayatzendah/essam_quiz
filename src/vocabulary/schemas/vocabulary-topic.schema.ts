@@ -19,6 +19,9 @@ export class VocabularyTopic {
   @Prop({ trim: true })
   icon?: string;
 
+  @Prop({ trim: true, unique: true, sparse: true, index: true })
+  slug?: string;
+
   @Prop({ type: Boolean, default: true, index: true })
   isActive: boolean;
 }
