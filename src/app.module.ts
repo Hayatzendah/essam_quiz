@@ -21,6 +21,7 @@ import { GrammarModule } from './modules/grammar/grammar.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ListeningClipsModule } from './listening-clips/listening-clips.module';
 import { AdminModule } from './admin/admin.module';
+import { VocabularyModule } from './vocabulary/vocabulary.module';
 
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -124,6 +125,7 @@ import { AppController } from './app.controller';
     UploadsModule,
     ListeningClipsModule,
     AdminModule,
+    VocabularyModule,
   ],
 
   controllers: [AppController, HealthController],

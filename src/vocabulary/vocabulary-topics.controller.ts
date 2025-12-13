@@ -1,0 +1,47 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { VocabularyTopicsService } from './vocabulary-topics.service';
+import { CreateVocabularyTopicDto } from './dto/create-vocabulary-topic.dto';
+import { QueryVocabularyTopicDto } from './dto/query-vocabulary-topic.dto';
+
+@ApiTags('Vocabulary Topics')
+@Controller('vocabulary-topics')
+export class VocabularyTopicsController {
+  constructor(private readonly topicsService: VocabularyTopicsService) {}
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new vocabulary topic' })
+  @ApiResponse({ status: 201, description: 'Topic created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  create(@Body() createDto: CreateVocabularyTopicDto) {
+    return this.topicsService.create(createDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all vocabulary topics (optionally filtered by level)' })
+  @ApiQuery({ name: 'level', required: false, enum: ['A1', 'A2', 'B1', 'B2', 'C1'] })
+  @ApiQuery({ name: 'isActive', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'List of topics' })
+  findAll(@Query() query: QueryVocabularyTopicDto) {
+    return this.topicsService.findAll(query);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a vocabulary topic by ID' })
+  @ApiResponse({ status: 200, description: 'Topic found' })
+  @ApiResponse({ status: 404, description: 'Topic not found' })
+  findOne(@Param('id') id: string) {
+    return this.topicsService.findOne(id);
+  }
+}
+
