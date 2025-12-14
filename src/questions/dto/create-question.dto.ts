@@ -13,7 +13,7 @@ import {
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { QuestionStatus, QuestionType } from '../schemas/question.schema';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 import { ExamSkillEnum } from '../../common/enums';
@@ -53,7 +53,13 @@ export class CreateQuestionDto {
   @MinLength(3)
   prompt: string;
 
+  // type كـ alias لـ qType (للتوافق مع الفرونت)
+  @IsOptional()
   @IsEnum(QuestionType)
+  type?: QuestionType;
+
+  @IsEnum(QuestionType)
+  @Transform(({ obj }) => obj.qType || obj.type)
   qType: QuestionType;
 
   // MCQ

@@ -13,7 +13,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { QuestionType } from '../schemas/question.schema';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 
@@ -54,8 +54,10 @@ class QuestionMediaDto {
 
 export class CreateQuestionWithExamDto {
   // ====== البيانات الأساسية للسؤال ======
+  // type كـ alias لـ qType (للتوافق مع الفرونت)
+  @IsOptional()
   @IsEnum(QuestionType)
-  type: QuestionType;
+  type?: QuestionType;
 
   @IsString()
   @IsNotEmpty()
@@ -66,6 +68,7 @@ export class CreateQuestionWithExamDto {
   prompt?: string;   // لو حابة تستخدمه لاحقًا
 
   @IsEnum(QuestionType)
+  @Transform(({ obj }) => obj.qType || obj.type)
   qType: QuestionType;
 
   @ValidateIf((o) => o.qType === QuestionType.MCQ)
