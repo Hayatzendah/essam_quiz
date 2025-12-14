@@ -94,14 +94,16 @@ export class ExamSectionDto {
 
   // teil مطلوب إذا لم يكن هناك items (يدعم teil أو teilNumber)
   @ValidateIf((o) => !o.items || o.items.length === 0)
+  @Transform(({ value, obj }) => value ?? obj.teilNumber)
+  @Type(() => Number)
   @IsInt()
   @Min(1)
-  teil?: number;             // 1, 2, 3... - مطلوب إذا لم يكن items
+  teil?: number;             // 1, 2, 3... - مطلوب إذا لم يكن items (يقبل teilNumber كـ alias)
 
   @IsOptional()
   @IsInt()
   @Min(1)
-  teilNumber?: number;       // 1, 2, 3... - للتوافق مع الكود القديم
+  teilNumber?: number;       // 1, 2, 3... - للتوافق مع الكود القديم (يتم تحويله إلى teil تلقائياً)
 
   // quota مطلوب إذا لم يكن هناك items
   @ValidateIf((o) => !o.items || o.items.length === 0)
