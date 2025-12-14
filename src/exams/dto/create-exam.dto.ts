@@ -93,9 +93,9 @@ export class ExamSectionDto {
   skill?: ExamSkillEnum;     // hoeren / lesen / schreiben / sprechen / misc
 
   // teil مطلوب إذا لم يكن هناك items (يدعم teil أو teilNumber)
-  @ValidateIf((o) => !o.items || o.items.length === 0)
   @Transform(({ value, obj }) => value ?? obj.teilNumber)
   @Type(() => Number)
+  @ValidateIf((o) => !o.items || o.items.length === 0)
   @IsInt()
   @Min(1)
   teil?: number;             // 1, 2, 3... - مطلوب إذا لم يكن items (يقبل teilNumber كـ alias)
