@@ -85,6 +85,10 @@ export class ExamSection {
 
   @Prop({ type: Boolean, default: false })
   randomize?: boolean;
+
+  // للأسئلة السمعية (Hören) - معرف ملف الصوت
+  @Prop({ type: Types.ObjectId, ref: 'ListeningClip', required: false })
+  listeningAudioId?: Types.ObjectId;
 }
 export const ExamSectionSchema = SchemaFactory.createForClass(ExamSection);
 

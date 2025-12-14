@@ -247,6 +247,16 @@ export class ExamsService {
             delete processedSection.difficultyDistribution.med;
           }
           
+          // معالجة listeningAudioId - تحويل string إلى ObjectId إذا كان موجوداً
+          if (processedSection.listeningAudioId) {
+            if (typeof processedSection.listeningAudioId === 'string' && Types.ObjectId.isValid(processedSection.listeningAudioId)) {
+              processedSection.listeningAudioId = new Types.ObjectId(processedSection.listeningAudioId);
+            } else if (!(processedSection.listeningAudioId instanceof Types.ObjectId)) {
+              // إذا كان غير صالح، نحذفه
+              delete processedSection.listeningAudioId;
+            }
+          }
+          
           // معالجة items - يمكن أن تكون فارغة أو undefined
           const sectionItems = processedSection.items ?? [];
           if (Array.isArray(sectionItems) && sectionItems.length > 0) {
@@ -1172,6 +1182,16 @@ export class ExamsService {
       const processedSections = (dto as any).sections
         .filter((section: any) => section !== null && section !== undefined)
         .map((section: any) => {
+          // معالجة listeningAudioId - تحويل string إلى ObjectId إذا كان موجوداً
+          if (section.listeningAudioId) {
+            if (typeof section.listeningAudioId === 'string' && Types.ObjectId.isValid(section.listeningAudioId)) {
+              section.listeningAudioId = new Types.ObjectId(section.listeningAudioId);
+            } else if (!(section.listeningAudioId instanceof Types.ObjectId)) {
+              // إذا كان غير صالح، نحذفه
+              delete section.listeningAudioId;
+            }
+          }
+          
           if (section.items && Array.isArray(section.items)) {
             // إزالة null/undefined items
             section.items = section.items

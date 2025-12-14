@@ -127,6 +127,11 @@ export class ExamSectionDto {
   @IsOptional()
   @IsMongoId()
   topicId?: string;          // للتوافق مع الكود القديم (اختياري)
+
+  // للأسئلة السمعية (Hören) - معرف ملف الصوت
+  @IsOptional()
+  @IsMongoId()
+  listeningAudioId?: string; // معرف ملف الصوت للقسم السمعي
 }
 
 /**
