@@ -586,7 +586,8 @@ export class QuestionsService {
     let finalListeningClipId = listeningClipId;
     if (usageCategory === 'provider' && skill && skill.toLowerCase() === 'hoeren') {
       if (!finalListeningClipId) {
-        // البحث عن section الذي يطابق skill و teilNumber (أو أول section مع listeningAudioId)
+        // البحث عن section الذي يطابق skill='hoeren' و listeningAudioId
+        // أولاً: البحث عن section يطابق skill و teilNumber (إذا كان teilNumber موجود)
         let matchingSection = exam.sections?.find((sec: any) => {
           const sectionSkill = (sec.skill || '').toLowerCase();
           return sectionSkill === 'hoeren' && 
@@ -594,7 +595,7 @@ export class QuestionsService {
                  sec.listeningAudioId;
         });
 
-        // إذا لم يوجد section يطابق teilNumber، نبحث عن أول section مع listeningAudioId
+        // إذا لم يوجد section يطابق teilNumber، نبحث عن أول section مع skill='hoeren' و listeningAudioId
         if (!matchingSection) {
           matchingSection = exam.sections?.find((sec: any) => {
             const sectionSkill = (sec.skill || '').toLowerCase();
@@ -602,13 +603,13 @@ export class QuestionsService {
           });
         }
 
-        // إذا وجد section مع listeningAudioId، نستخدمه
+        // إذا وجد section مع listeningAudioId، نستخدمه تلقائياً
         if (matchingSection?.listeningAudioId) {
           finalListeningClipId = matchingSection.listeningAudioId.toString();
         } else {
-          // إذا لم يوجد، نرمي خطأ
+          // إذا لم يوجد، نرمي خطأ واضح
           throw new BadRequestException(
-            'listeningClipId is required for Hören questions with provider usage category. Either provide listeningClipId in the request or set listeningAudioId in the exam section.',
+            'listeningClipId is required for Hören questions with provider usage category. Either provide listeningClipId in the request or set listeningAudioId in the exam section with skill="hoeren".',
           );
         }
       }
