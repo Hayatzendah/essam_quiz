@@ -576,16 +576,45 @@ export class QuestionsService {
     const questionText = text;
     const questionPrompt = prompt ?? text;
 
-    // 1) التحقق من listeningClipId لأسئلة Hören
+    // 1) جلب الامتحان أولاً (لأخذ listeningAudioId من section إذا لزم الأمر)
+    const exam = await this.examModel.findById(examId).exec();
+    if (!exam) {
+      throw new NotFoundException('Exam not found');
+    }
+
+    // 2) التحقق من listeningClipId لأسئلة Hören - أخذ listeningAudioId من section إذا لم يكن موجود
+    let finalListeningClipId = listeningClipId;
     if (usageCategory === 'provider' && skill && skill.toLowerCase() === 'hoeren') {
-      if (!listeningClipId) {
-        throw new BadRequestException(
-          'listeningClipId is required for Hören questions with provider usage category',
-        );
+      if (!finalListeningClipId) {
+        // البحث عن section الذي يطابق skill و teilNumber (أو أول section مع listeningAudioId)
+        let matchingSection = exam.sections?.find((sec: any) => {
+          const sectionSkill = (sec.skill || '').toLowerCase();
+          return sectionSkill === 'hoeren' && 
+                 (teilNumber ? sec.teilNumber === teilNumber : true) &&
+                 sec.listeningAudioId;
+        });
+
+        // إذا لم يوجد section يطابق teilNumber، نبحث عن أول section مع listeningAudioId
+        if (!matchingSection) {
+          matchingSection = exam.sections?.find((sec: any) => {
+            const sectionSkill = (sec.skill || '').toLowerCase();
+            return sectionSkill === 'hoeren' && sec.listeningAudioId;
+          });
+        }
+
+        // إذا وجد section مع listeningAudioId، نستخدمه
+        if (matchingSection?.listeningAudioId) {
+          finalListeningClipId = matchingSection.listeningAudioId.toString();
+        } else {
+          // إذا لم يوجد، نرمي خطأ
+          throw new BadRequestException(
+            'listeningClipId is required for Hören questions with provider usage category. Either provide listeningClipId in the request or set listeningAudioId in the exam section.',
+          );
+        }
       }
     }
 
-    // 2) تأكيد وجود خيار صحيح (فقط لـ MCQ)
+    // 3) تأكيد وجود خيار صحيح (فقط لـ MCQ)
     let correctOption: any = null;
     if (questionType === 'mcq' && questionData.options) {
       correctOption = questionData.options.find((opt) => opt.isCorrect);
@@ -596,14 +625,14 @@ export class QuestionsService {
       }
     }
 
-    // 2.1) التحقق من answerKeyBoolean لأسئلة TRUE_FALSE
+    // 3.1) التحقق من answerKeyBoolean لأسئلة TRUE_FALSE
     if (questionType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean !== 'boolean') {
       throw new BadRequestException(
         'answerKeyBoolean is required for true_false questions and must be a boolean',
       );
     }
 
-    // 3) إنشاء السؤال
+    // 4) إنشاء السؤال
     const question = await this.model.create({
       prompt: questionPrompt,
       text: questionText,
@@ -640,33 +669,25 @@ export class QuestionsService {
       provider: provider,
       section: section || sectionTitle,
       ...(questionData.audioUrl && { audioUrl: questionData.audioUrl }),
-      ...(listeningClipId && { listeningClipId: new Types.ObjectId(listeningClipId) }),
+      ...(finalListeningClipId && { listeningClipId: new Types.ObjectId(finalListeningClipId) }),
       ...(questionData.media && { media: questionData.media }),
       // لو عندك createdBy/ownerId حطيه هنا
       // createdBy: userId ? new Types.ObjectId(userId) : undefined,
     });
 
-    // 3) جلب الامتحان
-    const exam = await this.examModel.findById(examId).exec();
-    if (!exam) {
-      // عشان ما نسيبش سؤال لوحده لو الامتحان مش موجود
-      await this.model.findByIdAndDelete(question._id).catch(() => undefined);
-      throw new NotFoundException('Exam not found');
-    }
-
-    // 4) تنظيف sections من null أو قيم غريبة
+    // 5) تنظيف sections من null أو قيم غريبة
     const cleanSections: any[] = Array.isArray(exam.sections)
       ? exam.sections.filter((sec: any) => !!sec && typeof sec === 'object')
       : [];
 
-    // 5) البحث عن سكشن بالاسم (استخدام section أو sectionTitle)
+    // 6) البحث عن سكشن بالاسم (استخدام section أو sectionTitle)
     const sectionName = section || sectionTitle;
     let sectionIndex = cleanSections.findIndex(
       (sec: any) => sec.name === sectionName || sec.title === sectionName,
     );
 
     if (sectionIndex === -1) {
-      // 6) لو مش موجود → نضيف سكشن جديد فيه السؤال
+      // 7) لو مش موجود → نضيف سكشن جديد فيه السؤال
       cleanSections.push({
         name: sectionName,
         title: sectionName, // للحفاظ على التوافق
@@ -680,7 +701,7 @@ export class QuestionsService {
         ],
       });
     } else {
-      // 7) لو موجود → نضيف السؤال في items
+      // 8) لو موجود → نضيف السؤال في items
       const items = Array.isArray(cleanSections[sectionIndex].items)
         ? cleanSections[sectionIndex].items
         : [];
@@ -691,11 +712,11 @@ export class QuestionsService {
       cleanSections[sectionIndex].items = items;
     }
 
-    // 8) حفظ السكاشن المعدّلة في الامتحان
+    // 9) حفظ السكاشن المعدّلة في الامتحان
     exam.sections = cleanSections as any;
     await exam.save();
 
-    // 9) ربط الامتحان بالموضوع (grammarTopic) إذا كان grammarLevel و grammarTopic موجودين
+    // 10) ربط الامتحان بالموضوع (grammarTopic) إذا كان grammarLevel و grammarTopic موجودين
     if (grammarLevel && grammarTopic) {
       await this.grammarTopicsService.attachExamToTopic(
         grammarLevel,
