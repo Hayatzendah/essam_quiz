@@ -67,15 +67,14 @@ export class SectionItemDto {
  *  - Leben in Deutschland (title + quota + teil)
  */
 export class ExamSectionDto {
-  // title مطلوب إذا لم يكن هناك items (للشكل الجديد)
-  @ValidateIf((o) => !o.items || o.items.length === 0)
+  // title هو الحقل الرسمي المطلوب للقسم
   @IsString()
   @IsNotEmpty()
-  title?: string;            // "Leben in Deutschland – Teil 1" - مطلوب إذا لم يكن items
+  title: string;            // "Leben in Deutschland – Teil 1" - الحقل الرسمي المطلوب
 
   @IsOptional()
   @IsString()
-  name?: string;             // "Hören – Teil 1" - للتوافق مع الكود القديم (مع items)
+  name?: string;             // "Hören – Teil 1" - للتوافق مع الكود القديم (يتم نسخه من title تلقائياً)
 
   @IsOptional()
   @IsString()

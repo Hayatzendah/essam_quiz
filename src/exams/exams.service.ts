@@ -227,13 +227,15 @@ export class ExamsService {
           // إنشاء نسخة جديدة من section لتجنب تعديل الـ original
           const processedSection = { ...section };
           
-          // التأكد من وجود title (استخدام name كـ fallback للتوافق مع الكود القديم)
-          if (!processedSection.title && processedSection.name) {
+          // title هو الحقل الرسمي - نسخه إلى name للتوافق مع الكود القديم
+          if (processedSection.title) {
+            // إذا لم يكن name موجوداً، نستخدم title
+            if (!processedSection.name) {
+              processedSection.name = processedSection.title;
+            }
+          } else if (processedSection.name) {
+            // للتوافق مع الكود القديم: إذا كان name موجوداً و title غير موجود، ننسخ name إلى title
             processedSection.title = processedSection.name;
-          }
-          // التأكد من وجود name (الحقل الأساسي)
-          if (!processedSection.name && processedSection.title) {
-            processedSection.name = processedSection.title;
           }
           
           // تحويل skill إلى lowercase
@@ -1190,6 +1192,17 @@ export class ExamsService {
               // إذا كان غير صالح، نحذفه
               delete section.listeningAudioId;
             }
+          }
+          
+          // title هو الحقل الرسمي - نسخه إلى name للتوافق مع الكود القديم
+          if (section.title) {
+            // إذا لم يكن name موجوداً، نستخدم title
+            if (!section.name) {
+              section.name = section.title;
+            }
+          } else if (section.name) {
+            // للتوافق مع الكود القديم: إذا كان name موجوداً و title غير موجود، ننسخ name إلى title
+            section.title = section.name;
           }
           
           if (section.items && Array.isArray(section.items)) {
