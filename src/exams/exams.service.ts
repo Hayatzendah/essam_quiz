@@ -227,14 +227,10 @@ export class ExamsService {
           // إنشاء نسخة جديدة من section لتجنب تعديل الـ original
           const processedSection = { ...section };
           
-          // title هو الحقل الرسمي - نسخه إلى name للتوافق مع الكود القديم
-          if (processedSection.title) {
-            // إذا لم يكن name موجوداً، نستخدم title
-            if (!processedSection.name) {
-              processedSection.name = processedSection.title;
-            }
-          } else if (processedSection.name) {
-            // للتوافق مع الكود القديم: إذا كان name موجوداً و title غير موجود، ننسخ name إلى title
+          // توحيد الحقول: name هو الحقل الموحد (name = name ?? title)
+          processedSection.name = processedSection.name ?? processedSection.title;
+          // نسخ name إلى title للتوافق
+          if (processedSection.name && !processedSection.title) {
             processedSection.title = processedSection.name;
           }
           
@@ -1194,14 +1190,10 @@ export class ExamsService {
             }
           }
           
-          // title هو الحقل الرسمي - نسخه إلى name للتوافق مع الكود القديم
-          if (section.title) {
-            // إذا لم يكن name موجوداً، نستخدم title
-            if (!section.name) {
-              section.name = section.title;
-            }
-          } else if (section.name) {
-            // للتوافق مع الكود القديم: إذا كان name موجوداً و title غير موجود، ننسخ name إلى title
+          // توحيد الحقول: name هو الحقل الموحد (name = name ?? title)
+          section.name = section.name ?? section.title;
+          // نسخ name إلى title للتوافق
+          if (section.name && !section.title) {
             section.title = section.name;
           }
           
