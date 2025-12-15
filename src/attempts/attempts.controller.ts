@@ -376,8 +376,8 @@ export class AttemptsController {
   @Get(':attemptId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student', 'teacher', 'admin')
-  view(@Param('attemptId') attemptId: string, @Req() req: any) {
-    return this.service.getAttempt(req.user, attemptId);
+  view(@Param('attemptId') attemptId: string, @Query('examId') examId: string | undefined, @Req() req: any) {
+    return this.service.getAttempt(req.user, attemptId, examId);
   }
 
   // عرض نتائج المحاولة (نفس endpoint لكن باسم مختلف للتوافق)
@@ -388,8 +388,8 @@ export class AttemptsController {
     summary: 'Get attempt results',
     description: 'جلب نتائج المحاولة مع الدرجات والإحصائيات',
   })
-  getResults(@Param('attemptId') attemptId: string, @Req() req: any) {
-    return this.service.getAttempt(req.user, attemptId);
+  getResults(@Param('attemptId') attemptId: string, @Query('examId') examId: string | undefined, @Req() req: any) {
+    return this.service.getAttempt(req.user, attemptId, examId);
   }
 
   // إعادة المحاولة - إنشاء attempt جديد لنفس الامتحان
