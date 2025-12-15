@@ -124,7 +124,7 @@ export class GrammarTopicsService {
 
     if (exam) {
       // ربط الموضوع بالامتحان تلقائياً
-      topic.examId = exam._id;
+      topic.examId = (exam as any)._id;
       
       // البحث عن section title
       let sectionTitle: string | null = null;

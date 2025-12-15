@@ -19,7 +19,7 @@ import * as path from 'path';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import type { Response } from 'express';
-import { audioFileFilter, getDefaultAudioExtension } from '../../common/utils/audio-file-validator.util';
+import { audioFileFilter, getDefaultAudioExtension, isAllowedAudioFile } from '../../common/utils/audio-file-validator.util';
 
 const storage = multer.memoryStorage();
 
@@ -296,8 +296,16 @@ export class MediaController {
             false,
           );
         }
-        // استخدام نفس الـ validator لرفض OPUS
-        return audioFileFilter(req, file, cb);
+        // التحقق من أن الصيغة مدعومة (رفض OPUS)
+        if (!isAllowedAudioFile(file)) {
+          return cb(
+            new BadRequestException(
+              'OPUS format is not supported. Please use MP3, M4A, WAV, or AAC format for better browser compatibility.',
+            ) as any,
+            false,
+          );
+        }
+        cb(null, true);
       },
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB للطلاب
     }),

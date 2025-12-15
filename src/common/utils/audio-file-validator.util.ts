@@ -19,10 +19,10 @@ export const ALLOWED_AUDIO_MIMETYPES = [
 
 /**
  * التحقق من أن الملف الصوتي بصيغة مدعومة
- * @param file - ملف Multer
+ * @param file - ملف Multer (diskStorage أو memoryStorage)
  * @returns true إذا كان الملف مدعوم، false إذا كان OPUS أو غير مدعوم
  */
-export function isAllowedAudioFile(file: Express.Multer.File): boolean {
+export function isAllowedAudioFile(file: { originalname: string; mimetype: string }): boolean {
   const ext = extname(file.originalname).toLowerCase();
   const mimetype = file.mimetype.toLowerCase();
 

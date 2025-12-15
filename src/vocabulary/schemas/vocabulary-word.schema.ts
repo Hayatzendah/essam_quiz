@@ -24,3 +24,4 @@ export class VocabularyWord {
 export const VocabularyWordSchema = SchemaFactory.createForClass(VocabularyWord);
 
 
+

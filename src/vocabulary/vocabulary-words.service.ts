@@ -155,7 +155,7 @@ export class VocabularyWordsService {
 
     return {
       insertedCount: result.length,
-      ids: result.map((doc) => doc._id.toString()),
+      ids: result.map((doc: any) => doc._id.toString()),
     };
   }
 }

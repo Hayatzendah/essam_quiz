@@ -696,7 +696,7 @@ export class QuestionsService {
         teilNumber: teilNumber,
         items: [
           {
-            questionId: question._id,
+            questionId: (question as any)._id,
             points: points ?? 1,
           },
         ],
@@ -722,13 +722,13 @@ export class QuestionsService {
       await this.grammarTopicsService.attachExamToTopic(
         grammarLevel,
         grammarTopic,
-        exam._id.toString(),
+        (exam as any)._id.toString(),
       );
     } else if (grammarTopicId) {
       // للتوافق مع الكود القديم: استخدام grammarTopicId إذا كان موجوداً
       await this.grammarTopicModel.findByIdAndUpdate(
         grammarTopicId,
-        { examId: exam._id },
+        { examId: (exam as any)._id },
         { new: true },
       ).exec();
     }
@@ -740,8 +740,8 @@ export class QuestionsService {
     return {
       message: 'Question created and added to exam',
       question: questionWithoutV,
-      questionId: question._id.toString(),
-      examId: exam._id.toString(),
+      questionId: (question as any)._id.toString(),
+      examId: (exam as any)._id.toString(),
       sectionTitle: sectionName,
       section: sectionName,
     };
