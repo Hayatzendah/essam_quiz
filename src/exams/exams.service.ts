@@ -1350,10 +1350,17 @@ export class ExamsService {
     if (!Types.ObjectId.isValid(examId)) {
       throw new BadRequestException(`Invalid exam ID format: ${examId}`);
     }
-    if (!Types.ObjectId.isValid(listeningAudioId)) {
-      throw new BadRequestException(`Invalid listeningAudioId format: ${listeningAudioId}`);
+    
+    // التحقق من listeningAudioId قبل التحويل
+    this.logger.log(
+      `[updateSectionAudio] Received listeningAudioId from request: "${listeningAudioId}" (type: ${typeof listeningAudioId})`,
+    );
+    
+    if (!listeningAudioId || !Types.ObjectId.isValid(listeningAudioId)) {
+      throw new BadRequestException(`Invalid listeningAudioId format: ${listeningAudioId}. Must be a valid MongoDB ObjectId.`);
     }
 
+    // التحقق من وجود الامتحان والصلاحيات
     const doc = await this.model.findById(examId).exec();
     if (!doc) throw new NotFoundException('Exam not found');
 
@@ -1364,53 +1371,74 @@ export class ExamsService {
       throw new ForbiddenException('Only owner teacher or admin');
     }
 
-    // البحث عن section يطابق skill و teilNumber (إذا كان موجوداً)
+    // بناء query للبحث عن section
     const normalizedSkill = skill.toLowerCase();
-    let sectionIndex = -1;
-    
+    const query: any = {
+      _id: examId,
+      'sections.skill': { $regex: new RegExp(`^${normalizedSkill}$`, 'i') },
+    };
+
+    // إضافة teilNumber إلى query إذا كان موجوداً
     if (teilNumber !== null && teilNumber !== undefined) {
-      // البحث مع teilNumber
-      sectionIndex = doc.sections.findIndex((sec: any) => {
-        const sectionSkill = (sec.skill || '').toLowerCase();
-        return sectionSkill === normalizedSkill && sec.teilNumber === teilNumber;
-      });
-    }
-    
-    // إذا لم يوجد مع teilNumber، نبحث عن أول section مع skill فقط
-    if (sectionIndex === -1) {
-      sectionIndex = doc.sections.findIndex((sec: any) => {
-        const sectionSkill = (sec.skill || '').toLowerCase();
-        return sectionSkill === normalizedSkill;
-      });
+      query['sections.teilNumber'] = teilNumber;
     }
 
-    if (sectionIndex === -1) {
+    // استخدام findOneAndUpdate مع positional operator $ لتحديث section معين
+    const updateQuery: any = {
+      $set: {
+        'sections.$.listeningAudioId': new Types.ObjectId(listeningAudioId),
+      },
+    };
+
+    this.logger.log(
+      `[updateSectionAudio] Updating exam ${examId}, query: ${JSON.stringify(query)}, update: ${JSON.stringify(updateQuery)}`,
+    );
+
+    const updatedDoc = await this.model.findOneAndUpdate(
+      query,
+      updateQuery,
+      { new: true, runValidators: true },
+    ).exec();
+
+    if (!updatedDoc) {
       const errorMsg = teilNumber !== null && teilNumber !== undefined
         ? `Section not found with skill="${skill}" and teilNumber=${teilNumber}`
         : `Section not found with skill="${skill}"`;
       throw new NotFoundException(errorMsg);
     }
 
-    // تحديث listeningAudioId
-    doc.sections[sectionIndex].listeningAudioId = new Types.ObjectId(listeningAudioId);
-    doc.markModified('sections'); // تأكد من أن Mongoose يحدث الحقل
-    await doc.save();
+    // البحث عن section المحدث
+    const updatedSection = updatedDoc.sections.find((sec: any) => {
+      const sectionSkill = (sec.skill || '').toLowerCase();
+      if (teilNumber !== null && teilNumber !== undefined) {
+        return sectionSkill === normalizedSkill && sec.teilNumber === teilNumber;
+      }
+      return sectionSkill === normalizedSkill;
+    });
 
-    // إعادة جلب المستند للتأكد من أن التحديث تم حفظه
-    const updatedDoc = await this.model.findById(examId).lean().exec();
-    const savedSection = updatedDoc?.sections?.[sectionIndex];
+    if (!updatedSection) {
+      throw new NotFoundException('Section not found after update');
+    }
 
     this.logger.log(
-      `[updateSectionAudio] Updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${savedSection?.listeningAudioId}`,
+      `[updateSectionAudio] Successfully updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${updatedSection.listeningAudioId}`,
     );
 
-    const currentSection = doc.sections[sectionIndex];
     return {
       message: 'Section audio updated successfully',
       section: {
-        skill: currentSection.skill,
-        teilNumber: currentSection.teilNumber,
-        listeningAudioId: currentSection.listeningAudioId?.toString() || undefined,
+        skill: updatedSection.skill,
+        teilNumber: updatedSection.teilNumber,
+        listeningAudioId: updatedSection.listeningAudioId?.toString() || undefined,
+      },
+      // إرجاع document محدث للتأكد
+      exam: {
+        _id: updatedDoc._id.toString(),
+        sections: updatedDoc.sections.map((s: any) => ({
+          skill: s.skill,
+          teilNumber: s.teilNumber,
+          listeningAudioId: s.listeningAudioId?.toString() || undefined,
+        })),
       },
     };
   }
