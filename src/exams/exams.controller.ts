@@ -280,18 +280,18 @@ export class ExamsController {
     return this.service.updateExam(id, dto, req.user);
   }
 
-  // تحديث listeningAudioId في section معين
+  // تحديث listeningAudioId في section معين (مع teilNumber)
   @Patch(':examId/sections/:skill/:teilNumber/audio')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
   @ApiOperation({
-    summary: 'Update listening audio for a specific exam section',
+    summary: 'Update listening audio for a specific exam section (with teilNumber)',
     description: 'تحديث listeningAudioId في section معين (skill + teilNumber) - teacher: فقط امتحاناته',
   })
   @ApiResponse({ status: 200, description: 'Section audio updated successfully' })
   @ApiResponse({ status: 403, description: 'Forbidden - admin or teacher (owner only)' })
   @ApiResponse({ status: 404, description: 'Exam or section not found' })
-  updateSectionAudio(
+  updateSectionAudioWithTeil(
     @Param('examId') examId: string,
     @Param('skill') skill: string,
     @Param('teilNumber') teilNumber: string,
@@ -306,6 +306,29 @@ export class ExamsController {
       throw new BadRequestException(`Invalid teilNumber: ${teilNumber}. Must be a positive integer.`);
     }
     return this.service.updateSectionAudio(examId, skill, teilNumberInt, dto.listeningAudioId, req.user);
+  }
+
+  // تحديث listeningAudioId في section معين (بدون teilNumber)
+  @Patch(':examId/sections/:skill/audio')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Update listening audio for a specific exam section (without teilNumber)',
+    description: 'تحديث listeningAudioId في section معين (skill فقط) - teacher: فقط امتحاناته',
+  })
+  @ApiResponse({ status: 200, description: 'Section audio updated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin or teacher (owner only)' })
+  @ApiResponse({ status: 404, description: 'Exam or section not found' })
+  updateSectionAudio(
+    @Param('examId') examId: string,
+    @Param('skill') skill: string,
+    @Body() dto: UpdateSectionAudioDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(
+      `[PATCH /exams/${examId}/sections/${skill}/audio] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
+    );
+    return this.service.updateSectionAudio(examId, skill, null, dto.listeningAudioId, req.user);
   }
 
   // إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة (admin/teacher)

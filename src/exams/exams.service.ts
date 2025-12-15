@@ -1299,14 +1299,14 @@ export class ExamsService {
    * تحديث listeningAudioId في section معين
    * @param examId معرف الامتحان
    * @param skill skill السكشن (مثل 'hoeren')
-   * @param teilNumber رقم الجزء (مثل 1, 2, 3)
+   * @param teilNumber رقم الجزء (مثل 1, 2, 3) - اختياري
    * @param listeningAudioId معرف ملف الصوت
    * @param user المستخدم
    */
   async updateSectionAudio(
     examId: string,
     skill: string,
-    teilNumber: number,
+    teilNumber: number | null,
     listeningAudioId: string,
     user: ReqUser,
   ) {
@@ -1328,17 +1328,31 @@ export class ExamsService {
       throw new ForbiddenException('Only owner teacher or admin');
     }
 
-    // البحث عن section يطابق skill و teilNumber
+    // البحث عن section يطابق skill و teilNumber (إذا كان موجوداً)
     const normalizedSkill = skill.toLowerCase();
-    const sectionIndex = doc.sections.findIndex((sec: any) => {
-      const sectionSkill = (sec.skill || '').toLowerCase();
-      return sectionSkill === normalizedSkill && sec.teilNumber === teilNumber;
-    });
+    let sectionIndex = -1;
+    
+    if (teilNumber !== null && teilNumber !== undefined) {
+      // البحث مع teilNumber
+      sectionIndex = doc.sections.findIndex((sec: any) => {
+        const sectionSkill = (sec.skill || '').toLowerCase();
+        return sectionSkill === normalizedSkill && sec.teilNumber === teilNumber;
+      });
+    }
+    
+    // إذا لم يوجد مع teilNumber، نبحث عن أول section مع skill فقط
+    if (sectionIndex === -1) {
+      sectionIndex = doc.sections.findIndex((sec: any) => {
+        const sectionSkill = (sec.skill || '').toLowerCase();
+        return sectionSkill === normalizedSkill;
+      });
+    }
 
     if (sectionIndex === -1) {
-      throw new NotFoundException(
-        `Section not found with skill="${skill}" and teilNumber=${teilNumber}`,
-      );
+      const errorMsg = teilNumber !== null && teilNumber !== undefined
+        ? `Section not found with skill="${skill}" and teilNumber=${teilNumber}`
+        : `Section not found with skill="${skill}"`;
+      throw new NotFoundException(errorMsg);
     }
 
     // تحديث listeningAudioId
@@ -1346,7 +1360,7 @@ export class ExamsService {
     await doc.save();
 
     this.logger.log(
-      `[updateSectionAudio] Updated listeningAudioId for exam ${examId}, section skill="${skill}", teilNumber=${teilNumber}`,
+      `[updateSectionAudio] Updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}`,
     );
 
     return {
