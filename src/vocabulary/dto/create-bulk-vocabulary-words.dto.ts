@@ -27,3 +27,4 @@ export class CreateBulkVocabularyWordsDto {
   words: VocabularyWordItemDto[];
 }
 
+

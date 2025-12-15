@@ -10,3 +10,4 @@ export class QueryVocabularyWordDto {
   isActive?: string; // 'true' or 'false' as query param
 }
 
+

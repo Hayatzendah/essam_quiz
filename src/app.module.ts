@@ -106,9 +106,29 @@ import { AppController } from './app.controller';
       serveStaticOptions: {
         index: false, // لا تبحث عن index.html
         fallthrough: false, // لا تمرر الطلب للـ route التالي إذا لم يجد الملف
-        setHeaders: (res) => {
+        setHeaders: (res, path) => {
           res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
           res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Accept-Ranges', 'bytes'); // دعم Range requests
+          
+          // تحديد Content-Type بناءً على extension الملف
+          const lowerPath = path.toLowerCase();
+          if (lowerPath.endsWith('.opus')) {
+            res.setHeader('Content-Type', 'audio/opus'); // opus format
+          } else if (lowerPath.endsWith('.ogg')) {
+            res.setHeader('Content-Type', 'audio/ogg');
+          } else if (lowerPath.endsWith('.mp3')) {
+            res.setHeader('Content-Type', 'audio/mpeg');
+          } else if (lowerPath.endsWith('.wav')) {
+            res.setHeader('Content-Type', 'audio/wav');
+          } else if (lowerPath.endsWith('.m4a')) {
+            res.setHeader('Content-Type', 'audio/mp4');
+          } else if (lowerPath.endsWith('.aac')) {
+            res.setHeader('Content-Type', 'audio/aac');
+          } else if (lowerPath.endsWith('.webm')) {
+            res.setHeader('Content-Type', 'audio/webm');
+          }
+          // إذا لم يكن audio file، express.static سيتعامل معه تلقائياً
         },
       },
     }),

@@ -20,3 +20,4 @@ import { VocabularyWord, VocabularyWordSchema } from './schemas/vocabulary-word.
 })
 export class VocabularyModule {}
 
+

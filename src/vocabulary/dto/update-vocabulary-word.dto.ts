@@ -22,3 +22,4 @@ export class UpdateVocabularyWordDto {
   isActive?: boolean;
 }
 
+
