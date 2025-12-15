@@ -20,15 +20,16 @@ export const ALLOWED_AUDIO_MIMETYPES = [
 /**
  * التحقق من أن الملف الصوتي بصيغة مدعومة
  * @param file - ملف Multer (diskStorage أو memoryStorage)
- * @returns true إذا كان الملف مدعوم، false إذا كان OPUS أو غير مدعوم
+ * @returns true إذا كان الملف مدعوم، false إذا كان غير مدعوم
+ * ملاحظة: OPUS مسموح الآن (سيتم تحويله تلقائياً)
  */
 export function isAllowedAudioFile(file: { originalname: string; mimetype: string }): boolean {
   const ext = extname(file.originalname).toLowerCase();
   const mimetype = file.mimetype.toLowerCase();
 
-  // رفض OPUS صراحة
+  // السماح بـ OPUS (سيتم تحويله تلقائياً)
   if (ext === '.opus' || mimetype.includes('opus')) {
-    return false;
+    return true;
   }
 
   // التحقق من الصيغة
@@ -42,7 +43,7 @@ export function isAllowedAudioFile(file: { originalname: string; mimetype: strin
 
 /**
  * fileFilter للاستخدام مع multer
- * يرفض OPUS والسماح فقط بـ MP3, M4A, WAV, AAC
+ * يسمح بـ MP3, M4A, WAV, AAC, OPUS (OPUS سيتم تحويله تلقائياً إلى MP3)
  */
 export function audioFileFilter(
   req: any,
@@ -57,11 +58,20 @@ export function audioFileFilter(
     );
   }
 
-  // التحقق من أن الصيغة مدعومة (رفض OPUS)
+  const ext = extname(file.originalname).toLowerCase();
+  const mimetype = file.mimetype.toLowerCase();
+
+  // السماح بـ OPUS (سيتم تحويله تلقائياً)
+  if (ext === '.opus' || mimetype.includes('opus')) {
+    callback(null, true);
+    return;
+  }
+
+  // التحقق من أن الصيغة مدعومة
   if (!isAllowedAudioFile(file)) {
     return callback(
       new BadRequestException(
-        'OPUS format is not supported. Please use MP3, M4A, WAV, or AAC format for better browser compatibility.',
+        'Unsupported audio format. Please use MP3, M4A, WAV, AAC, or OPUS format.',
       ) as any,
       false,
     );

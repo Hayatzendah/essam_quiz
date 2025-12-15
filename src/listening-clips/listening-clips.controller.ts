@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname, join, basename } from 'path';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ListeningClipsService } from './listening-clips.service';
 import { CreateListeningClipDto } from './dto/create-listening-clip.dto';
@@ -21,12 +21,16 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
+import { AudioConverterService } from '../common/services/audio-converter.service';
 
 @ApiTags('Listening Clips')
 @ApiBearerAuth('JWT-auth')
 @Controller(['listening-clips', 'listeningclips']) // دعم كلا المسارين
 export class ListeningClipsController {
-  constructor(private readonly service: ListeningClipsService) {}
+  constructor(
+    private readonly service: ListeningClipsService,
+    private readonly audioConverter: AudioConverterService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -90,10 +94,26 @@ export class ListeningClipsController {
       throw new BadRequestException('No audio file uploaded');
     }
 
-    console.log('Saved listening clip at', file.path); // خلي الباك يطبع ده
+    console.log('Saved listening clip at', file.path);
+
+    let finalPath = file.path;
+    let finalFilename = file.filename;
+
+    // تحويل OPUS إلى MP3 تلقائياً
+    const ext = extname(file.originalname).toLowerCase();
+    if (ext === '.opus') {
+      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
+      if (convertedPath) {
+        finalPath = convertedPath;
+        finalFilename = basename(convertedPath);
+        console.log(`Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+      } else {
+        console.warn(`Failed to convert OPUS file: ${file.filename}`);
+      }
+    }
 
     // استخدام مسار نسبي فقط (بدون baseUrl) لأن الفرونت سيبني الـ URL الكامل
-    const audioUrl = `/uploads/audio/${file.filename}`;
+    const audioUrl = `/uploads/audio/${finalFilename}`;
 
     dto.audioUrl = audioUrl;
     const clip = await this.service.create(dto);
@@ -185,7 +205,23 @@ export class ListeningClipsController {
 
     console.log('Saved listening clip audio at', file.path);
 
-    const audioUrl = `/uploads/audio/${file.filename}`;
+    let finalPath = file.path;
+    let finalFilename = file.filename;
+
+    // تحويل OPUS إلى MP3 تلقائياً
+    const ext = extname(file.originalname).toLowerCase();
+    if (ext === '.opus') {
+      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
+      if (convertedPath) {
+        finalPath = convertedPath;
+        finalFilename = basename(convertedPath);
+        console.log(`Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+      } else {
+        console.warn(`Failed to convert OPUS file: ${file.filename}`);
+      }
+    }
+
+    const audioUrl = `/uploads/audio/${finalFilename}`;
 
     // إنشاء ListeningClip في MongoDB
     const clip = await this.service.create({

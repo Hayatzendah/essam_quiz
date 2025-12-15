@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ListeningClipsController } from './listening-clips.controller';
 import { ListeningClipsService } from './listening-clips.service';
 import { ListeningClip, ListeningClipSchema } from './schemas/listening-clip.schema';
+import { AudioConverterService } from '../common/services/audio-converter.service';
 
 @Module({
   imports: [
@@ -11,7 +12,7 @@ import { ListeningClip, ListeningClipSchema } from './schemas/listening-clip.sch
     ]),
   ],
   controllers: [ListeningClipsController],
-  providers: [ListeningClipsService],
+  providers: [ListeningClipsService, AudioConverterService],
   exports: [ListeningClipsService],
 })
 export class ListeningClipsModule {}

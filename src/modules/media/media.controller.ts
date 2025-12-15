@@ -17,9 +17,10 @@ import { MediaService } from './media.service';
 import * as multer from 'multer';
 import * as path from 'path';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname, join, basename } from 'path';
 import type { Response } from 'express';
 import { audioFileFilter, getDefaultAudioExtension, isAllowedAudioFile } from '../../common/utils/audio-file-validator.util';
+import { AudioConverterService } from '../../common/services/audio-converter.service';
 
 const storage = multer.memoryStorage();
 
@@ -32,7 +33,10 @@ function fileFilter(_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 
 @Controller('media')
 export class MediaController {
-  constructor(private readonly media: MediaService) {}
+  constructor(
+    private readonly media: MediaService,
+    private readonly audioConverter: AudioConverterService,
+  ) {}
 
   @Get('mock/*path')
   async getMockFile(@Param('path') path: string, @Res() res: Response) {
@@ -348,12 +352,30 @@ export class MediaController {
 
     console.log('Saved audio file at', file.path);
 
-    const key = `/uploads/audio/${file.filename}`;
+    let finalPath = file.path;
+    let finalFilename = file.filename;
+    let finalMime = file.mimetype;
+
+    // تحويل OPUS إلى MP3 تلقائياً
+    const ext = extname(file.originalname).toLowerCase();
+    if (ext === '.opus') {
+      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
+      if (convertedPath) {
+        finalPath = convertedPath;
+        finalFilename = basename(convertedPath);
+        finalMime = 'audio/mpeg';
+        console.log(`Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+      } else {
+        console.warn(`Failed to convert OPUS file: ${file.filename}`);
+      }
+    }
+
+    const key = `/uploads/audio/${finalFilename}`;
     return {
       type: 'audio',
       key,
       url: key,
-      mime: file.mimetype,
+      mime: finalMime,
     };
   }
 }

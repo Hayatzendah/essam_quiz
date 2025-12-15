@@ -8,17 +8,19 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname, join, basename } from 'path';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
+import { AudioConverterService } from '../common/services/audio-converter.service';
 
 @ApiTags('Uploads')
 @ApiBearerAuth('JWT-auth')
 @Controller('uploads')
 export class UploadsController {
+  constructor(private readonly audioConverter: AudioConverterService) {}
   @Post('audio')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')
@@ -55,15 +57,32 @@ export class UploadsController {
   })
   @ApiResponse({ status: 201, description: 'Audio file uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid file' })
-  uploadAudio(@UploadedFile() file: Express.Multer.File) {
+  async uploadAudio(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
-    console.log('Saved audio file at', file.path); // خلي الباك يطبع ده
+    console.log('Saved audio file at', file.path);
+
+    let finalPath = file.path;
+    let finalFilename = file.filename;
+
+    // تحويل OPUS إلى MP3 تلقائياً
+    const ext = extname(file.originalname).toLowerCase();
+    if (ext === '.opus') {
+      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
+      if (convertedPath) {
+        finalPath = convertedPath;
+        finalFilename = basename(convertedPath);
+        console.log(`Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+      } else {
+        console.warn(`Failed to convert OPUS file: ${file.filename}`);
+        // نرجع الملف الأصلي حتى لو فشل التحويل
+      }
+    }
 
     // استخدام مسار نسبي فقط (بدون baseUrl) لأن الفرونت سيبني الـ URL الكامل
-    const audioUrl = `/uploads/audio/${file.filename}`;
+    const audioUrl = `/uploads/audio/${finalFilename}`;
 
     return { audioUrl };
   }
