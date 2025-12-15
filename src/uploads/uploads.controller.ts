@@ -74,9 +74,10 @@ export class UploadsController {
       if (convertedPath) {
         finalPath = convertedPath;
         finalFilename = basename(convertedPath);
-        console.log(`Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+        console.log(`✅ Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+        console.log(`✅ Final audioUrl will be: /uploads/audio/${finalFilename} (Content-Type: audio/mpeg)`);
       } else {
-        console.warn(`Failed to convert OPUS file: ${file.filename}`);
+        console.warn(`❌ Failed to convert OPUS file: ${file.filename}`);
         // نرجع الملف الأصلي حتى لو فشل التحويل
       }
     }

@@ -106,9 +106,9 @@ export class ListeningClipsController {
       if (convertedPath) {
         finalPath = convertedPath;
         finalFilename = basename(convertedPath);
-        console.log(`Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+        console.log(`✅ Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
       } else {
-        console.warn(`Failed to convert OPUS file: ${file.filename}`);
+        console.warn(`❌ Failed to convert OPUS file: ${file.filename}`);
       }
     }
 
@@ -117,6 +117,24 @@ export class ListeningClipsController {
 
     dto.audioUrl = audioUrl;
     const clip = await this.service.create(dto);
+
+    // إذا تم التحويل، تحديث audioUrl في الدوكومنت للتأكد من أنه .mp3
+    if (ext === '.opus' && finalFilename.endsWith('.mp3')) {
+      const updatedClip = await this.service.updateAudioUrl(
+        (clip as any)._id.toString(),
+        audioUrl,
+      );
+      console.log(`✅ Updated audioUrl in ListeningClip ${(clip as any)._id} to: ${audioUrl}`);
+      return {
+        _id: updatedClip._id,
+        audioUrl: updatedClip.audioUrl,
+        teil: updatedClip.teil,
+        level: updatedClip.level,
+        provider: updatedClip.provider,
+        skill: updatedClip.skill,
+        title: updatedClip.title,
+      };
+    }
     
     // إرجاع كل البيانات المطلوبة
     return {
@@ -215,9 +233,9 @@ export class ListeningClipsController {
       if (convertedPath) {
         finalPath = convertedPath;
         finalFilename = basename(convertedPath);
-        console.log(`Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+        console.log(`✅ Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
       } else {
-        console.warn(`Failed to convert OPUS file: ${file.filename}`);
+        console.warn(`❌ Failed to convert OPUS file: ${file.filename}`);
       }
     }
 
@@ -231,6 +249,19 @@ export class ListeningClipsController {
       teil: Number(dto.teil),
       audioUrl,
     });
+
+    // إذا تم التحويل، تحديث audioUrl في الدوكومنت للتأكد من أنه .mp3
+    if (ext === '.opus' && finalFilename.endsWith('.mp3')) {
+      const updatedClip = await this.service.updateAudioUrl(
+        (clip as any)._id.toString(),
+        audioUrl,
+      );
+      console.log(`✅ Updated audioUrl in ListeningClip ${(clip as any)._id} to: ${audioUrl}`);
+      return {
+        listeningClipId: String(updatedClip._id),
+        audioUrl: updatedClip.audioUrl,
+      };
+    }
 
     return {
       listeningClipId: String(clip._id),

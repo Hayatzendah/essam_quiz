@@ -50,5 +50,22 @@ export class ListeningClipsService {
     }
     return clip;
   }
+
+  /**
+   * تحديث audioUrl في الدوكومنت بعد تحويل الملف
+   */
+  async updateAudioUrl(id: string, audioUrl: string): Promise<ListeningClipDocument> {
+    const clip = await this.model.findByIdAndUpdate(
+      id,
+      { audioUrl },
+      { new: true },
+    ).exec();
+
+    if (!clip) {
+      throw new NotFoundException(`ListeningClip with ID ${id} not found`);
+    }
+
+    return clip;
+  }
 }
 

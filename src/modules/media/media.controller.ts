@@ -364,9 +364,10 @@ export class MediaController {
         finalPath = convertedPath;
         finalFilename = basename(convertedPath);
         finalMime = 'audio/mpeg';
-        console.log(`Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+        console.log(`✅ Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+        console.log(`✅ Final audioUrl will be: /uploads/audio/${finalFilename} (Content-Type: audio/mpeg)`);
       } else {
-        console.warn(`Failed to convert OPUS file: ${file.filename}`);
+        console.warn(`❌ Failed to convert OPUS file: ${file.filename}`);
       }
     }
 
