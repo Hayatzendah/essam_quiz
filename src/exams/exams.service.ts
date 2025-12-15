@@ -1018,6 +1018,17 @@ export class ExamsService {
     const doc = await this.model.findById(id).lean().exec();
     if (!doc) throw new NotFoundException('Exam not found');
 
+    // Log للتحقق من listeningAudioId في sections
+    if (doc.sections && Array.isArray(doc.sections)) {
+      doc.sections.forEach((s: any, index: number) => {
+        if (s && s.skill === 'hoeren') {
+          this.logger.log(
+            `[findById] Section ${index} (skill=${s.skill}): listeningAudioId=${s.listeningAudioId} (type: ${typeof s.listeningAudioId})`,
+          );
+        }
+      });
+    }
+
     // التحكم بالوصول
     if (!user) throw new ForbiddenException();
 
@@ -1061,11 +1072,32 @@ export class ExamsService {
       const sectionsWithItems = normalizedSections.map((s: any) => {
         if (!s) return s;
         // إرجاع القسم كاملاً مع items
-        return {
+        // تحويل listeningAudioId إلى string إذا كان موجوداً
+        let listeningAudioIdValue: string | undefined = undefined;
+        if (s.listeningAudioId) {
+          if (typeof s.listeningAudioId === 'string') {
+            listeningAudioIdValue = s.listeningAudioId;
+          } else if (s.listeningAudioId && typeof s.listeningAudioId === 'object' && '_id' in s.listeningAudioId) {
+            // ObjectId
+            listeningAudioIdValue = String(s.listeningAudioId);
+          } else if (s.listeningAudioId.toString) {
+            listeningAudioIdValue = s.listeningAudioId.toString();
+          } else {
+            listeningAudioIdValue = String(s.listeningAudioId);
+          }
+        }
+        
+        const result: any = {
           ...s,
           items: s.items || [], // التأكد من أن items موجودة حتى لو كانت فارغة
-          listeningAudioId: s.listeningAudioId ? (typeof s.listeningAudioId === 'string' ? s.listeningAudioId : s.listeningAudioId.toString()) : undefined,
         };
+        
+        // إضافة listeningAudioId بشكل صريح (حتى لو كان undefined، لكن في JSON undefined لا يظهر)
+        if (listeningAudioIdValue) {
+          result.listeningAudioId = listeningAudioIdValue;
+        }
+        
+        return result;
       });
       return { ...docWithNormalizedSections, sections: sectionsWithItems };
     }
