@@ -264,23 +264,7 @@ export class ExamsController {
     return this.service.fixAllExamsWithEmptySections(req.user);
   }
 
-  // تفاصيل الامتحان
-  @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'teacher', 'student')
-  findById(@Param('id') id: string, @Req() req: any) {
-    return this.service.findById(id, req.user);
-  }
-
-  // تحديث الامتحان (المالك أو الأدمن)
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'teacher')
-  update(@Param('id') id: string, @Body() dto: UpdateExamDto, @Req() req: any) {
-    return this.service.updateExam(id, dto, req.user);
-  }
-
-  // تحديث listeningAudioId في section معين (مع teilNumber)
+  // تحديث listeningAudioId في section معين (مع teilNumber) - يجب أن يكون قبل @Patch(':id')
   @Patch(':examId/sections/:skill/:teilNumber/audio')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
@@ -308,7 +292,7 @@ export class ExamsController {
     return this.service.updateSectionAudio(examId, skill, teilNumberInt, dto.listeningAudioId, req.user);
   }
 
-  // تحديث listeningAudioId في section معين (بدون teilNumber)
+  // تحديث listeningAudioId في section معين (بدون teilNumber) - يجب أن يكون قبل @Patch(':id')
   @Patch(':examId/sections/:skill/audio')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
@@ -329,6 +313,22 @@ export class ExamsController {
       `[PATCH /exams/${examId}/sections/${skill}/audio] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
     );
     return this.service.updateSectionAudio(examId, skill, null, dto.listeningAudioId, req.user);
+  }
+
+  // تفاصيل الامتحان
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher', 'student')
+  findById(@Param('id') id: string, @Req() req: any) {
+    return this.service.findById(id, req.user);
+  }
+
+  // تحديث الامتحان (المالك أو الأدمن)
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  update(@Param('id') id: string, @Body() dto: UpdateExamDto, @Req() req: any) {
+    return this.service.updateExam(id, dto, req.user);
   }
 
   // إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة (admin/teacher)

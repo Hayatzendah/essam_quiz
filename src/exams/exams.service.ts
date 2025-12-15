@@ -1087,7 +1087,11 @@ export class ExamsService {
             };
           }
           // للطلاب: إخفاء questionIds (الأسئلة) لأسباب أمنية
-          return { ...s, items: undefined };
+          return { 
+            ...s, 
+            items: undefined,
+            listeningAudioId: s?.listeningAudioId ? (typeof s.listeningAudioId === 'string' ? s.listeningAudioId : s.listeningAudioId.toString()) : undefined,
+          };
         });
       return { ...docWithNormalizedSections, sections: safeSections };
     }
