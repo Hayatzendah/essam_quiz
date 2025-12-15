@@ -1421,17 +1421,19 @@ export class ExamsService {
     }
 
     const listeningAudioIdString = updatedSection.listeningAudioId?.toString() || null;
+    const updatedAtValue = (updatedDoc as any).updatedAt || new Date();
+    const examIdString = (updatedDoc as any)._id?.toString() || examId;
     
     this.logger.log(
-      `[updateSectionAudio] Successfully updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${listeningAudioIdString}, updatedAt: ${updatedDoc.updatedAt}`,
+      `[updateSectionAudio] Successfully updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${listeningAudioIdString}, updatedAt: ${updatedAtValue}`,
     );
 
     // إرجاع response واضح يثبت أن التحديث تم
     return {
       success: true,
       message: 'Section audio updated successfully',
-      examId: updatedDoc._id.toString(),
-      updatedAt: updatedDoc.updatedAt,
+      examId: examIdString,
+      updatedAt: updatedAtValue,
       section: {
         skill: updatedSection.skill,
         teilNumber: updatedSection.teilNumber,
