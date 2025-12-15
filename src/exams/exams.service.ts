@@ -1366,19 +1366,19 @@ export class ExamsService {
 
     // إعادة جلب المستند للتأكد من أن التحديث تم حفظه
     const updatedDoc = await this.model.findById(examId).lean().exec();
-    const updatedSection = updatedDoc?.sections?.[sectionIndex];
+    const savedSection = updatedDoc?.sections?.[sectionIndex];
 
     this.logger.log(
-      `[updateSectionAudio] Updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${updatedSection?.listeningAudioId}`,
+      `[updateSectionAudio] Updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${savedSection?.listeningAudioId}`,
     );
 
-    const updatedSection = doc.sections[sectionIndex];
+    const currentSection = doc.sections[sectionIndex];
     return {
       message: 'Section audio updated successfully',
       section: {
-        skill: updatedSection.skill,
-        teilNumber: updatedSection.teilNumber,
-        listeningAudioId: updatedSection.listeningAudioId?.toString() || undefined,
+        skill: currentSection.skill,
+        teilNumber: currentSection.teilNumber,
+        listeningAudioId: currentSection.listeningAudioId?.toString() || undefined,
       },
     };
   }
