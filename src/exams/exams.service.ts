@@ -1296,6 +1296,70 @@ export class ExamsService {
   }
 
   /**
+   * تحديث listeningAudioId في section معين
+   * @param examId معرف الامتحان
+   * @param skill skill السكشن (مثل 'hoeren')
+   * @param teilNumber رقم الجزء (مثل 1, 2, 3)
+   * @param listeningAudioId معرف ملف الصوت
+   * @param user المستخدم
+   */
+  async updateSectionAudio(
+    examId: string,
+    skill: string,
+    teilNumber: number,
+    listeningAudioId: string,
+    user: ReqUser,
+  ) {
+    if (!user) throw new ForbiddenException();
+    if (!Types.ObjectId.isValid(examId)) {
+      throw new BadRequestException(`Invalid exam ID format: ${examId}`);
+    }
+    if (!Types.ObjectId.isValid(listeningAudioId)) {
+      throw new BadRequestException(`Invalid listeningAudioId format: ${listeningAudioId}`);
+    }
+
+    const doc = await this.model.findById(examId).exec();
+    if (!doc) throw new NotFoundException('Exam not found');
+
+    const userId = user.userId || (user as any).sub || (user as any).id;
+    const isOwner = doc.ownerId?.toString() === userId;
+    const isAdmin = user.role === 'admin';
+    if (!(isOwner || isAdmin)) {
+      throw new ForbiddenException('Only owner teacher or admin');
+    }
+
+    // البحث عن section يطابق skill و teilNumber
+    const normalizedSkill = skill.toLowerCase();
+    const sectionIndex = doc.sections.findIndex((sec: any) => {
+      const sectionSkill = (sec.skill || '').toLowerCase();
+      return sectionSkill === normalizedSkill && sec.teilNumber === teilNumber;
+    });
+
+    if (sectionIndex === -1) {
+      throw new NotFoundException(
+        `Section not found with skill="${skill}" and teilNumber=${teilNumber}`,
+      );
+    }
+
+    // تحديث listeningAudioId
+    doc.sections[sectionIndex].listeningAudioId = new Types.ObjectId(listeningAudioId);
+    await doc.save();
+
+    this.logger.log(
+      `[updateSectionAudio] Updated listeningAudioId for exam ${examId}, section skill="${skill}", teilNumber=${teilNumber}`,
+    );
+
+    return {
+      message: 'Section audio updated successfully',
+      section: {
+        skill: doc.sections[sectionIndex].skill,
+        teilNumber: doc.sections[sectionIndex].teilNumber,
+        listeningAudioId: doc.sections[sectionIndex].listeningAudioId.toString(),
+      },
+    };
+  }
+
+  /**
    * إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة
    * - للاستخدام من قبل admin فقط
    * - يفحص كل section وإذا كان فارغاً (لا items ولا quota) يضيف quota = 5

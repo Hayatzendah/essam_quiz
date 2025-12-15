@@ -22,6 +22,7 @@ import { UpdateExamDto } from './dto/update-exam.dto';
 import { QueryExamDto } from './dto/query-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
 import { StartLebenExamDto } from './dto/start-leben-exam.dto';
+import { UpdateSectionAudioDto } from './dto/update-section-audio.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -277,6 +278,34 @@ export class ExamsController {
   @Roles('admin', 'teacher')
   update(@Param('id') id: string, @Body() dto: UpdateExamDto, @Req() req: any) {
     return this.service.updateExam(id, dto, req.user);
+  }
+
+  // تحديث listeningAudioId في section معين
+  @Patch(':examId/sections/:skill/:teilNumber/audio')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Update listening audio for a specific exam section',
+    description: 'تحديث listeningAudioId في section معين (skill + teilNumber) - teacher: فقط امتحاناته',
+  })
+  @ApiResponse({ status: 200, description: 'Section audio updated successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin or teacher (owner only)' })
+  @ApiResponse({ status: 404, description: 'Exam or section not found' })
+  updateSectionAudio(
+    @Param('examId') examId: string,
+    @Param('skill') skill: string,
+    @Param('teilNumber') teilNumber: string,
+    @Body() dto: UpdateSectionAudioDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(
+      `[PATCH /exams/${examId}/sections/${skill}/${teilNumber}/audio] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
+    );
+    const teilNumberInt = parseInt(teilNumber, 10);
+    if (isNaN(teilNumberInt) || teilNumberInt < 1) {
+      throw new BadRequestException(`Invalid teilNumber: ${teilNumber}. Must be a positive integer.`);
+    }
+    return this.service.updateSectionAudio(examId, skill, teilNumberInt, dto.listeningAudioId, req.user);
   }
 
   // إصلاح الامتحان تلقائياً: إضافة quota للأقسام الفارغة (admin/teacher)
