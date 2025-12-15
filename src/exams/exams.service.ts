@@ -1367,12 +1367,13 @@ export class ExamsService {
       `[updateSectionAudio] Updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}`,
     );
 
+    const updatedSection = doc.sections[sectionIndex];
     return {
       message: 'Section audio updated successfully',
       section: {
-        skill: doc.sections[sectionIndex].skill,
-        teilNumber: doc.sections[sectionIndex].teilNumber,
-        listeningAudioId: doc.sections[sectionIndex].listeningAudioId.toString(),
+        skill: updatedSection.skill,
+        teilNumber: updatedSection.teilNumber,
+        listeningAudioId: updatedSection.listeningAudioId?.toString() || undefined,
       },
     };
   }
