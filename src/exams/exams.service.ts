@@ -1361,10 +1361,15 @@ export class ExamsService {
 
     // تحديث listeningAudioId
     doc.sections[sectionIndex].listeningAudioId = new Types.ObjectId(listeningAudioId);
+    doc.markModified('sections'); // تأكد من أن Mongoose يحدث الحقل
     await doc.save();
 
+    // إعادة جلب المستند للتأكد من أن التحديث تم حفظه
+    const updatedDoc = await this.model.findById(examId).lean().exec();
+    const updatedSection = updatedDoc?.sections?.[sectionIndex];
+
     this.logger.log(
-      `[updateSectionAudio] Updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}`,
+      `[updateSectionAudio] Updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${updatedSection?.listeningAudioId}`,
     );
 
     const updatedSection = doc.sections[sectionIndex];
