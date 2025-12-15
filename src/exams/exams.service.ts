@@ -1420,25 +1420,38 @@ export class ExamsService {
       throw new NotFoundException('Section not found after update');
     }
 
+    const listeningAudioIdString = updatedSection.listeningAudioId?.toString() || null;
+    
     this.logger.log(
-      `[updateSectionAudio] Successfully updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${updatedSection.listeningAudioId}`,
+      `[updateSectionAudio] Successfully updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${listeningAudioIdString}, updatedAt: ${updatedDoc.updatedAt}`,
     );
 
+    // إرجاع response واضح يثبت أن التحديث تم
     return {
+      success: true,
       message: 'Section audio updated successfully',
+      examId: updatedDoc._id.toString(),
+      updatedAt: updatedDoc.updatedAt,
       section: {
         skill: updatedSection.skill,
         teilNumber: updatedSection.teilNumber,
-        listeningAudioId: updatedSection.listeningAudioId?.toString() || undefined,
+        listeningAudioId: listeningAudioIdString,
+        // إثبات أن listeningAudioId موجود في section المحدث
+        hasListeningAudioId: !!updatedSection.listeningAudioId,
       },
-      // إرجاع document محدث للتأكد
-      exam: {
-        _id: updatedDoc._id.toString(),
-        sections: updatedDoc.sections.map((s: any) => ({
-          skill: s.skill,
-          teilNumber: s.teilNumber,
-          listeningAudioId: s.listeningAudioId?.toString() || undefined,
-        })),
+      // إرجاع جميع sections للتأكد من أن التحديث تم
+      allSections: updatedDoc.sections.map((s: any) => ({
+        skill: s.skill,
+        teilNumber: s.teilNumber,
+        listeningAudioId: s.listeningAudioId?.toString() || null,
+        hasListeningAudioId: !!s.listeningAudioId,
+      })),
+      // معلومات إضافية للتحقق
+      verification: {
+        queryUsed: query,
+        updateUsed: updateQuery,
+        sectionFound: !!updatedSection,
+        listeningAudioIdSet: !!updatedSection.listeningAudioId,
       },
     };
   }
