@@ -937,6 +937,7 @@ export class ExamsService {
         label: s.label || s.name,
         durationMin: s.durationMin,
         partsCount: s.partsCount || partsCount,
+        listeningAudioId: s.listeningAudioId ? s.listeningAudioId.toString() : undefined,
       };
     });
 
@@ -1063,6 +1064,7 @@ export class ExamsService {
         return {
           ...s,
           items: s.items || [], // التأكد من أن items موجودة حتى لو كانت فارغة
+          listeningAudioId: s.listeningAudioId ? (typeof s.listeningAudioId === 'string' ? s.listeningAudioId : s.listeningAudioId.toString()) : undefined,
         };
       });
       return { ...docWithNormalizedSections, sections: sectionsWithItems };
@@ -1077,7 +1079,12 @@ export class ExamsService {
         .map((s: any) => {
           const hasQuota = typeof s?.quota === 'number' && s.quota > 0;
           if (hasQuota || doc.randomizeQuestions) {
-            return { name: s?.name || 'Unnamed Section', quota: s?.quota, difficultyDistribution: s?.difficultyDistribution };
+            return { 
+              name: s?.name || 'Unnamed Section', 
+              quota: s?.quota, 
+              difficultyDistribution: s?.difficultyDistribution,
+              listeningAudioId: s?.listeningAudioId ? s.listeningAudioId.toString() : undefined,
+            };
           }
           // للطلاب: إخفاء questionIds (الأسئلة) لأسباب أمنية
           return { ...s, items: undefined };
