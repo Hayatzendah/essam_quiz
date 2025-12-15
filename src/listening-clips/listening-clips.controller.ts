@@ -20,6 +20,7 @@ import { SkillEnum } from './schemas/listening-clip.schema';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
 
 @ApiTags('Listening Clips')
 @ApiBearerAuth('JWT-auth')
@@ -37,20 +38,12 @@ export class ListeningClipsController {
         filename: (req, file, cb) => {
           const timestamp = Date.now();
           const random = Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname) || '.opus';
+          const ext = extname(file.originalname) || getDefaultAudioExtension();
           cb(null, `listening-${timestamp}-${random}${ext}`);
         },
       }),
       limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
-      fileFilter: (req, file, callback) => {
-        if (!/^audio\//.test(file.mimetype)) {
-          return callback(
-            new BadRequestException('Only audio files are allowed') as any,
-            false,
-          );
-        }
-        callback(null, true);
-      },
+      fileFilter: audioFileFilter,
     }),
   )
   @ApiOperation({
@@ -127,20 +120,12 @@ export class ListeningClipsController {
         filename: (req, file, cb) => {
           const timestamp = Date.now();
           const random = Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname) || '.opus';
+          const ext = extname(file.originalname) || getDefaultAudioExtension();
           cb(null, `listening-${timestamp}-${random}${ext}`);
         },
       }),
       limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
-      fileFilter: (req, file, callback) => {
-        if (!/^audio\//.test(file.mimetype)) {
-          return callback(
-            new BadRequestException('Only audio files are allowed') as any,
-            false,
-          );
-        }
-        callback(null, true);
-      },
+      fileFilter: audioFileFilter,
     }),
   )
   @ApiOperation({

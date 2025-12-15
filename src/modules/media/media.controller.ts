@@ -19,6 +19,7 @@ import * as path from 'path';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import type { Response } from 'express';
+import { audioFileFilter, getDefaultAudioExtension } from '../../common/utils/audio-file-validator.util';
 
 const storage = multer.memoryStorage();
 
@@ -288,14 +289,15 @@ export class MediaController {
     FileInterceptor('file', {
       storage,
       fileFilter: (req, file, cb) => {
-        // للطلاب: فقط ملفات صوتية
+        // للطلاب: فقط ملفات صوتية مدعومة (بدون OPUS)
         if (!/^audio\//.test(file.mimetype)) {
           return cb(
             new BadRequestException('Only audio files allowed for student uploads') as any,
             false,
           );
         }
-        cb(null, true);
+        // استخدام نفس الـ validator لرفض OPUS
+        return audioFileFilter(req, file, cb);
       },
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB للطلاب
     }),
@@ -323,20 +325,12 @@ export class MediaController {
         filename: (req, file, cb) => {
           const timestamp = Date.now();
           const random = Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname) || '.opus';
+          const ext = extname(file.originalname) || getDefaultAudioExtension();
           cb(null, `listening-${timestamp}-${random}${ext}`);
         },
       }),
       limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-      fileFilter: (req, file, callback) => {
-        if (!/^audio\//.test(file.mimetype)) {
-          return callback(
-            new BadRequestException('Only audio files are allowed') as any,
-            false,
-          );
-        }
-        callback(null, true);
-      },
+      fileFilter: audioFileFilter,
     }),
   )
   async uploadAudio(@UploadedFile() file: Express.Multer.File) {
