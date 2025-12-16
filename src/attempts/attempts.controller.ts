@@ -377,6 +377,13 @@ export class AttemptsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('student', 'teacher', 'admin')
   view(@Param('attemptId') attemptId: string, @Query('examId') examId: string | undefined, @Req() req: any) {
+    // للطلاب: إذا كان examId موجوداً في الـ query، نمرره للتحقق من التطابق
+    // هذا يمنع عرض أسئلة من امتحانات أخرى
+    if (req.user?.role === 'student' && examId) {
+      this.logger.log(
+        `[GET /attempts/${attemptId}] Student ${req.user.userId} requesting attempt for examId: ${examId}`,
+      );
+    }
     return this.service.getAttempt(req.user, attemptId, examId);
   }
 
