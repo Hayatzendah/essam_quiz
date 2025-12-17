@@ -24,6 +24,8 @@ import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
 import { GrammarTopic, GrammarTopicDocument } from '../modules/grammar/schemas/grammar-topic.schema';
 import { GrammarTopicsService } from '../modules/grammar/grammar-topics.service';
 import { Inject, forwardRef } from '@nestjs/common';
+import { ProviderEnum } from '../common/enums/provider.enum';
+import { normalizeProvider } from '../common/utils/provider-normalizer.util';
 
 @Injectable()
 export class QuestionsService {
@@ -758,6 +760,15 @@ export class QuestionsService {
 
     // 9) حفظ السكاشن المعدّلة في الامتحان
     exam.sections = cleanSections as any;
+    
+    // Normalize provider before saving
+    if (exam.provider) {
+      const normalized = normalizeProvider(exam.provider);
+      if (normalized) {
+        exam.provider = normalized;
+      }
+    }
+    
     await exam.save();
 
     // 10) ربط الامتحان بالموضوع (grammarTopic) إذا كان grammarLevel و grammarTopic موجودين

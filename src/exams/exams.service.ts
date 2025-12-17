@@ -14,6 +14,7 @@ import { AssignExamDto } from './dto/assign-exam.dto';
 import { Exam, ExamDocument } from './schemas/exam.schema';
 import { ExamCategoryEnum, ExamStatusEnum } from '../common/enums';
 import { ProviderEnum } from '../common/enums/provider.enum';
+import { normalizeProvider } from '../common/utils/provider-normalizer.util';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -324,6 +325,11 @@ export class ExamsService {
       );
     });
     
+    // Normalize provider before saving
+    if (processedDto.provider) {
+      processedDto.provider = normalizeProvider(processedDto.provider) || processedDto.provider;
+    }
+
     const doc = await this.model.create({
       ...processedDto,
       sections: normalizedSections, // Explicitly set sections to ensure no null values
@@ -1378,6 +1384,14 @@ export class ExamsService {
     }
     Object.assign(doc, restDto);
 
+    // Normalize provider before saving
+    if (doc.provider) {
+      const normalized = normalizeProvider(doc.provider);
+      if (normalized) {
+        doc.provider = normalized;
+      }
+    }
+
     // لو في تعديل في البنية قبل النشر، عادي — سيؤثر على اختيار الأسئلة لاحقًا في attempts
     this.logger.log(
       `[updateExam] Saving exam - examId: ${id}, sections before save: ${JSON.stringify(doc.sections)}`,
@@ -1865,6 +1879,13 @@ export class ExamsService {
       });
 
       if (hasEmptySections) {
+        // Normalize provider before saving
+        if (exam.provider) {
+          const normalized = normalizeProvider(exam.provider);
+          if (normalized) {
+            exam.provider = normalized;
+          }
+        }
         exam.set('sections', updatedSections);
         exam.markModified('sections');
         await exam.save();
@@ -1901,6 +1922,15 @@ export class ExamsService {
 
     if (dto.classId) (doc as any).assignedClassId = new Types.ObjectId(dto.classId);
     if (dto.studentIds) (doc as any).assignedStudentIds = dto.studentIds.map((id) => new Types.ObjectId(id));
+    
+    // Normalize provider before saving
+    if (doc.provider) {
+      const normalized = normalizeProvider(doc.provider);
+      if (normalized) {
+        doc.provider = normalized;
+      }
+    }
+    
     await doc.save();
 
     return { assignedClassId: (doc as any).assignedClassId, assignedStudentIds: (doc as any).assignedStudentIds };
@@ -1936,6 +1966,15 @@ export class ExamsService {
     } else {
       // Soft delete: تغيير الحالة إلى archived
       doc.status = ExamStatusEnum.ARCHIVED;
+      
+      // Normalize provider before saving
+      if (doc.provider) {
+        const normalized = normalizeProvider(doc.provider);
+        if (normalized) {
+          doc.provider = normalized;
+        }
+      }
+      
       await doc.save();
       return { message: 'Exam archived successfully', id: doc._id, status: doc.status };
     }
@@ -1956,6 +1995,15 @@ export class ExamsService {
       throw new ForbiddenException('Only owner teacher or admin can archive');
 
     doc.status = ExamStatusEnum.ARCHIVED;
+    
+    // Normalize provider before saving
+    if (doc.provider) {
+      const normalized = normalizeProvider(doc.provider);
+      if (normalized) {
+        doc.provider = normalized;
+      }
+    }
+    
     await doc.save();
 
     return {
