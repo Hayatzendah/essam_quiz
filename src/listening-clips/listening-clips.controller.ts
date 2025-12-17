@@ -21,7 +21,6 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
-import { AudioConverterService } from '../common/services/audio-converter.service';
 
 @ApiTags('Listening Clips')
 @ApiBearerAuth('JWT-auth')
@@ -29,7 +28,6 @@ import { AudioConverterService } from '../common/services/audio-converter.servic
 export class ListeningClipsController {
   constructor(
     private readonly service: ListeningClipsService,
-    private readonly audioConverter: AudioConverterService,
   ) {}
 
   @Post()
@@ -96,45 +94,11 @@ export class ListeningClipsController {
 
     console.log('Saved listening clip at', file.path);
 
-    let finalPath = file.path;
-    let finalFilename = file.filename;
-
-    // تحويل OPUS أو OGG إلى MP3 تلقائياً
-    const ext = extname(file.originalname).toLowerCase();
-    if (ext === '.opus' || ext === '.ogg') {
-      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
-      if (convertedPath) {
-        finalPath = convertedPath;
-        finalFilename = basename(convertedPath);
-        console.log(`✅ Converted ${ext.toUpperCase()} to MP3: ${file.filename} -> ${finalFilename}`);
-      } else {
-        console.warn(`❌ Failed to convert ${ext.toUpperCase()} file: ${file.filename}`);
-      }
-    }
-
     // استخدام مسار نسبي فقط (بدون baseUrl) لأن الفرونت سيبني الـ URL الكامل
-    const audioUrl = `/uploads/audio/${finalFilename}`;
+    const audioUrl = `/uploads/audio/${file.filename}`;
 
     dto.audioUrl = audioUrl;
     const clip = await this.service.create(dto);
-
-    // إذا تم التحويل، تحديث audioUrl في الدوكومنت للتأكد من أنه .mp3
-    if ((ext === '.opus' || ext === '.ogg') && finalFilename.endsWith('.mp3')) {
-      const updatedClip = await this.service.updateAudioUrl(
-        (clip as any)._id.toString(),
-        audioUrl,
-      );
-      console.log(`✅ Updated audioUrl in ListeningClip ${(clip as any)._id} to: ${audioUrl}`);
-      return {
-        _id: updatedClip._id,
-        audioUrl: updatedClip.audioUrl,
-        teil: updatedClip.teil,
-        level: updatedClip.level,
-        provider: updatedClip.provider,
-        skill: updatedClip.skill,
-        title: updatedClip.title,
-      };
-    }
     
     // إرجاع كل البيانات المطلوبة
     return {
@@ -223,23 +187,7 @@ export class ListeningClipsController {
 
     console.log('Saved listening clip audio at', file.path);
 
-    let finalPath = file.path;
-    let finalFilename = file.filename;
-
-    // تحويل OPUS أو OGG إلى MP3 تلقائياً
-    const ext = extname(file.originalname).toLowerCase();
-    if (ext === '.opus' || ext === '.ogg') {
-      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
-      if (convertedPath) {
-        finalPath = convertedPath;
-        finalFilename = basename(convertedPath);
-        console.log(`✅ Converted ${ext.toUpperCase()} to MP3: ${file.filename} -> ${finalFilename}`);
-      } else {
-        console.warn(`❌ Failed to convert ${ext.toUpperCase()} file: ${file.filename}`);
-      }
-    }
-
-    const audioUrl = `/uploads/audio/${finalFilename}`;
+    const audioUrl = `/uploads/audio/${file.filename}`;
 
     // إنشاء ListeningClip في MongoDB
     const clip = await this.service.create({
@@ -249,19 +197,6 @@ export class ListeningClipsController {
       teil: Number(dto.teil),
       audioUrl,
     });
-
-    // إذا تم التحويل، تحديث audioUrl في الدوكومنت للتأكد من أنه .mp3
-    if ((ext === '.opus' || ext === '.ogg') && finalFilename.endsWith('.mp3')) {
-      const updatedClip = await this.service.updateAudioUrl(
-        (clip as any)._id.toString(),
-        audioUrl,
-      );
-      console.log(`✅ Updated audioUrl in ListeningClip ${(clip as any)._id} to: ${audioUrl}`);
-      return {
-        listeningClipId: String(updatedClip._id),
-        audioUrl: updatedClip.audioUrl,
-      };
-    }
 
     return {
       listeningClipId: String(clip._id),

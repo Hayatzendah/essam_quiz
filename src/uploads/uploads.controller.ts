@@ -14,13 +14,12 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
-import { AudioConverterService } from '../common/services/audio-converter.service';
 
 @ApiTags('Uploads')
 @ApiBearerAuth('JWT-auth')
 @Controller('uploads')
 export class UploadsController {
-  constructor(private readonly audioConverter: AudioConverterService) {}
+  constructor() {}
   @Post('audio')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')
@@ -64,26 +63,8 @@ export class UploadsController {
 
     console.log('Saved audio file at', file.path);
 
-    let finalPath = file.path;
-    let finalFilename = file.filename;
-
-    // تحويل OPUS أو OGG إلى MP3 تلقائياً
-    const ext = extname(file.originalname).toLowerCase();
-    if (ext === '.opus' || ext === '.ogg') {
-      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
-      if (convertedPath) {
-        finalPath = convertedPath;
-        finalFilename = basename(convertedPath);
-        console.log(`✅ Converted ${ext.toUpperCase()} to MP3: ${file.filename} -> ${finalFilename}`);
-        console.log(`✅ Final audioUrl will be: /uploads/audio/${finalFilename} (Content-Type: audio/mpeg)`);
-      } else {
-        console.warn(`❌ Failed to convert ${ext.toUpperCase()} file: ${file.filename}`);
-        // نرجع الملف الأصلي حتى لو فشل التحويل
-      }
-    }
-
     // استخدام مسار نسبي فقط (بدون baseUrl) لأن الفرونت سيبني الـ URL الكامل
-    const audioUrl = `/uploads/audio/${finalFilename}`;
+    const audioUrl = `/uploads/audio/${file.filename}`;
 
     return { audioUrl };
   }

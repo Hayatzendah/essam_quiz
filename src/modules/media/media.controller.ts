@@ -20,7 +20,6 @@ import { diskStorage } from 'multer';
 import { extname, join, basename } from 'path';
 import type { Response } from 'express';
 import { audioFileFilter, getDefaultAudioExtension, isAllowedAudioFile } from '../../common/utils/audio-file-validator.util';
-import { AudioConverterService } from '../../common/services/audio-converter.service';
 
 const storage = multer.memoryStorage();
 
@@ -35,7 +34,6 @@ function fileFilter(_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 export class MediaController {
   constructor(
     private readonly media: MediaService,
-    private readonly audioConverter: AudioConverterService,
   ) {}
 
   @Get('mock/*path')
@@ -352,31 +350,12 @@ export class MediaController {
 
     console.log('Saved audio file at', file.path);
 
-    let finalPath = file.path;
-    let finalFilename = file.filename;
-    let finalMime = file.mimetype;
-
-    // تحويل OPUS أو OGG إلى MP3 تلقائياً
-    const ext = extname(file.originalname).toLowerCase();
-    if (ext === '.opus' || ext === '.ogg') {
-      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
-      if (convertedPath) {
-        finalPath = convertedPath;
-        finalFilename = basename(convertedPath);
-        finalMime = 'audio/mpeg';
-        console.log(`✅ Converted ${ext.toUpperCase()} to MP3: ${file.filename} -> ${finalFilename}`);
-        console.log(`✅ Final audioUrl will be: /uploads/audio/${finalFilename} (Content-Type: audio/mpeg)`);
-      } else {
-        console.warn(`❌ Failed to convert ${ext.toUpperCase()} file: ${file.filename}`);
-      }
-    }
-
-    const key = `/uploads/audio/${finalFilename}`;
+    const key = `/uploads/audio/${file.filename}`;
     return {
       type: 'audio',
       key,
       url: key,
-      mime: finalMime,
+      mime: file.mimetype,
     };
   }
 }
