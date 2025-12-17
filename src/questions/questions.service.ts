@@ -76,6 +76,10 @@ export class QuestionsService {
       ...questionData,
       status: dto.status ?? QuestionStatus.DRAFT,
       createdBy,
+      // MATCH fields
+      ...(dto.qType === QuestionType.MATCH && dto.answerKeyMatch && Array.isArray(dto.answerKeyMatch) && { answerKeyMatch: dto.answerKeyMatch }),
+      // REORDER fields
+      ...(dto.qType === QuestionType.REORDER && dto.answerKeyReorder && Array.isArray(dto.answerKeyReorder) && { answerKeyReorder: dto.answerKeyReorder }),
       // FREE_TEXT fields (إذا كانت موجودة)
       ...(dto.qType === QuestionType.FREE_TEXT && {
         ...(dto.sampleAnswer && { sampleAnswer: dto.sampleAnswer }),
