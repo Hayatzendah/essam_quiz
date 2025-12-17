@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateQuestionDto } from './create-question.dto';
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsOptional, IsArray } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { QuestionStatus, QuestionType } from '../schemas/question.schema';
 
@@ -21,4 +21,14 @@ export class UpdateQuestionDto extends PartialType(CreateQuestionDto) {
   @IsOptional()
   @IsEnum(QuestionStatus)
   status?: QuestionStatus;
+
+  // MATCH fields - إضافة صريحة لضمان عدم حذفها بواسطة ValidationPipe
+  @IsOptional()
+  @IsArray()
+  answerKeyMatch?: [string, string][];
+
+  // REORDER fields - إضافة صريحة لضمان عدم حذفها بواسطة ValidationPipe
+  @IsOptional()
+  @IsArray()
+  answerKeyReorder?: string[];
 }

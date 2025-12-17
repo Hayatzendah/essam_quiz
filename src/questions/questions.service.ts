@@ -426,16 +426,22 @@ export class QuestionsService {
 
     // Log للتحقق من answerKeyMatch في التحديث
     if (updateData.answerKeyMatch && Array.isArray(updateData.answerKeyMatch)) {
-      this.logger.debug(`updateQuestion: Updating answerKeyMatch for question ${id}: ${JSON.stringify(updateData.answerKeyMatch)}`);
+      this.logger.warn(`updateQuestion: Updating answerKeyMatch for question ${id}: ${JSON.stringify(updateData.answerKeyMatch)}`);
+    } else {
+      // Log إذا كان answerKeyMatch غير موجود في updateData
+      this.logger.warn(`updateQuestion: answerKeyMatch not found in updateData for question ${id}. Keys: ${Object.keys(updateData).join(', ')}`);
     }
 
     // تطبيق التحديث (بدون qType)
-    const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).lean().exec();
     if (!updated) throw new NotFoundException('Question not found');
     
     // Log للتحقق من answerKeyMatch بعد التحديث
     if (updated.qType === QuestionType.MATCH) {
-      this.logger.debug(`updateQuestion: Match question ${id} - answerKeyMatch after update: ${JSON.stringify(updated.answerKeyMatch)}`);
+      this.logger.warn(`updateQuestion: Match question ${id} - answerKeyMatch after update: ${JSON.stringify(updated.answerKeyMatch)}`);
+      if (!updated.answerKeyMatch) {
+        this.logger.error(`updateQuestion: ERROR - answerKeyMatch is missing after update for question ${id}!`);
+      }
     }
     
     return updated;
