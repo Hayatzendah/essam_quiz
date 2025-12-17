@@ -60,6 +60,7 @@ export class AttemptItem {
   @Prop({ type: [String], default: undefined }) regexList?: string[]; // fill
   @Prop({ type: [Number], default: undefined }) correctOptionIndexes?: number[]; // mcq
   @Prop({ type: [[String, String]], default: undefined }) answerKeyMatch?: [string, string][]; // match: أزواج [left, right]
+  @Prop({ type: [Object], default: undefined }) matchPairs?: Array<{ left: string; right: string }>; // match: pairs للعرض في response
   @Prop({ type: [String], default: undefined }) answerKeyReorder?: string[]; // reorder: ترتيب صحيح
 
   // إجابة الطالب (حسب النوع)
