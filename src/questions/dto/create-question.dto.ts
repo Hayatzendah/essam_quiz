@@ -17,6 +17,7 @@ import { Type, Transform } from 'class-transformer';
 import { QuestionStatus, QuestionType } from '../schemas/question.schema';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 import { ExamSkillEnum } from '../../common/enums';
+import { normalizeProvider } from '../../common/utils/provider-normalizer.util';
 
 class McqOptionDto {
   @IsString()
@@ -96,7 +97,10 @@ export class CreateQuestionDto {
   answerKeyReorder?: string[];
 
   // فلاتر
-  @IsOptional() @IsEnum(ProviderEnum) provider?: ProviderEnum;
+  @IsOptional()
+  @Transform(({ value }) => normalizeProvider(value))
+  @IsEnum(ProviderEnum)
+  provider?: ProviderEnum;
   @IsOptional() @IsString() section?: string;
   @IsOptional() @IsString() level?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];

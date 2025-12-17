@@ -14,6 +14,7 @@ import {
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ProviderEnum } from '../../common/enums/provider.enum';
+import { normalizeProvider } from '../../common/utils/provider-normalizer.util';
 import { ExamCategoryEnum, ExamSkillEnum, ExamStatusEnum } from '../../common/enums';
 
 /**
@@ -208,9 +209,10 @@ export class CreateExamDto {
   // ========= حقول خاصة بـ Prüfungen =========
 
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @Transform(({ value }) => normalizeProvider(value))
   @IsEnum(ProviderEnum)
   @IsNotEmpty()
-  provider?: ProviderEnum;         // "goethe" / "telc" ...
+  provider?: ProviderEnum;         // "goethe" / "telc" ... (case-insensitive)
 
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
   @IsEnum(ExamSkillEnum)
@@ -237,7 +239,10 @@ export class CreatePracticeExamDto {
   @IsOptional() @IsString() title?: string;
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() level?: string;
-  @IsOptional() @IsEnum(ProviderEnum) provider?: ProviderEnum;
+  @IsOptional()
+  @Transform(({ value }) => normalizeProvider(value))
+  @IsEnum(ProviderEnum)
+  provider?: ProviderEnum;
 
   @IsArray()
   @ValidateNested({ each: true })
