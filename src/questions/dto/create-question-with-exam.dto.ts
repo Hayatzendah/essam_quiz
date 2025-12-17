@@ -12,6 +12,7 @@ import {
   Min,
   ValidateIf,
   ValidateNested,
+  ArrayMinSize,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { QuestionType } from '../schemas/question.schema';
@@ -91,6 +92,21 @@ export class CreateQuestionWithExamDto {
   @IsArray()
   @IsString({ each: true })
   regexList?: string[];
+
+  // ====== MATCH ======
+  @ValidateIf((o) => o.qType === QuestionType.MATCH)
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  answerKeyMatch?: [string, string][]; // أزواج [left, right]
+
+  // ====== REORDER ======
+  @ValidateIf((o) => o.qType === QuestionType.REORDER)
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMinSize(1)
+  answerKeyReorder?: string[]; // ترتيب صحيح
 
   @IsInt()
   @Min(0)

@@ -14,10 +14,44 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
+  // Helper function to get commit SHA
+  const getCommitSha = (): string => {
+    try {
+      // Try to get from environment variable first (set during build/deploy)
+      if (process.env.COMMIT_SHA) {
+        return process.env.COMMIT_SHA;
+      }
+      // Try to get from git
+      try {
+        const { execSync } = require('child_process');
+        return execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim();
+      } catch {
+        // If git is not available, try to read from .git/HEAD
+        try {
+          const { readFileSync } = require('fs');
+          const { join } = require('path');
+          const headPath = join(process.cwd(), '.git', 'HEAD');
+          const headContent = readFileSync(headPath, 'utf-8').trim();
+          if (headContent.startsWith('ref:')) {
+            const refPath = join(process.cwd(), '.git', headContent.substring(5));
+            return readFileSync(refPath, 'utf-8').trim();
+          }
+          return headContent;
+        } catch {
+          return 'unknown';
+        }
+      }
+    } catch {
+      return 'unknown';
+    }
+  };
+
   try {
+    const commitSha = getCommitSha();
     logger.log('🚀 Starting application...');
     logger.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     logger.log(`Port: ${process.env.PORT || 4000}`);
+    logger.log(`Commit SHA: ${commitSha}`);
 
     // Check required environment variables
     const isProduction = process.env.NODE_ENV === 'production';
