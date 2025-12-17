@@ -244,6 +244,9 @@ export class QuestionsService {
 
     // حفظ السكاشن المعدّلة في الامتحان
     exam.sections = cleanSections as any;
+    // Exam Versioning: زيادة version عند إضافة سؤال
+    exam.version = (exam.version || 1) + 1;
+    this.logger.log(`[addQuestionToExam] Version incremented to ${exam.version} after adding question ${questionId}`);
     await exam.save();
 
     return {

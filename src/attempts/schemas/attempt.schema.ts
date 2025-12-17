@@ -90,6 +90,9 @@ export class Attempt {
   @Prop({ type: Types.ObjectId, ref: 'Exam', index: true, required: true })
   examId: Types.ObjectId;
 
+  @Prop({ type: Number, default: 1, min: 1 })
+  examVersion: number; // نسخة الامتحان وقت بدء المحاولة (Exam Versioning)
+
   @Prop({ type: Types.ObjectId, ref: 'User', index: true, required: true })
   studentId: Types.ObjectId;
 

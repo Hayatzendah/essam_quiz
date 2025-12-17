@@ -335,6 +335,7 @@ export class ExamsService {
       sections: normalizedSections, // Explicitly set sections to ensure no null values
       status: processedDto.status ?? ExamStatusEnum.DRAFT,
       ownerId: new Types.ObjectId(userId),
+      version: 1, // Exam versioning: يبدأ من version 1
     });
 
     // Log sections after creation
@@ -472,6 +473,7 @@ export class ExamsService {
       sections: normalizedSections, // Explicitly set sections to ensure no null values
       status: ExamStatusEnum.PUBLISHED, // دائماً published للطلاب
       ownerId: new Types.ObjectId(userId),
+      version: 1, // Exam versioning: يبدأ من version 1
     });
 
     this.logger.log(
@@ -1277,7 +1279,18 @@ export class ExamsService {
 
     // تطبيق التحديث
     // معالجة خاصة لـ sections لأن Object.assign قد لا يعمل بشكل صحيح مع nested arrays
+    let shouldIncrementVersion = false;
     if ((dto as any).sections !== undefined) {
+      // التحقق من وجود تغيير فعلي في sections
+      const oldSectionsStr = JSON.stringify(doc.sections);
+      const newSectionsStr = JSON.stringify((dto as any).sections);
+      if (oldSectionsStr !== newSectionsStr) {
+        shouldIncrementVersion = true;
+        this.logger.log(
+          `[updateExam] Sections changed - incrementing version from ${doc.version || 1} to ${(doc.version || 1) + 1}`,
+        );
+      }
+      
       this.logger.log(
         `[updateExam] Updating sections - examId: ${id}, old sections: ${JSON.stringify(doc.sections)}, new sections: ${JSON.stringify((dto as any).sections)}`,
       );
@@ -1392,9 +1405,15 @@ export class ExamsService {
       }
     }
 
+    // زيادة version عند تعديل sections (Exam Versioning)
+    if (shouldIncrementVersion) {
+      doc.version = (doc.version || 1) + 1;
+      this.logger.log(`[updateExam] Version incremented to ${doc.version}`);
+    }
+
     // لو في تعديل في البنية قبل النشر، عادي — سيؤثر على اختيار الأسئلة لاحقًا في attempts
     this.logger.log(
-      `[updateExam] Saving exam - examId: ${id}, sections before save: ${JSON.stringify(doc.sections)}`,
+      `[updateExam] Saving exam - examId: ${id}, version: ${doc.version}, sections before save: ${JSON.stringify(doc.sections)}`,
     );
     await doc.save();
     this.logger.log(

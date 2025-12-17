@@ -141,6 +141,9 @@ export class Exam {
   @Prop({ type: String, enum: ExamStatusEnum, default: ExamStatusEnum.DRAFT, index: true })
   status: ExamStatusEnum;
 
+  @Prop({ type: Number, default: 1, min: 1 })
+  version: number; // Exam versioning: يزيد عند تعديل sections أو إضافة أسئلة
+
   @Prop({ type: [ExamSectionSchema], default: [], _id: false })
   sections: ExamSection[];
 
