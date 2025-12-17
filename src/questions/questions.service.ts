@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
@@ -26,6 +27,8 @@ import { Inject, forwardRef } from '@nestjs/common';
 
 @Injectable()
 export class QuestionsService {
+  private readonly logger = new Logger(QuestionsService.name);
+
   constructor(
     @InjectModel(Question.name) private readonly model: Model<QuestionDocument>,
     @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
