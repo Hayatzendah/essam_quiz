@@ -741,7 +741,6 @@ export class QuestionsService {
       : [];
 
     // 6) البحث عن سكشن بالاسم (استخدام section أو sectionTitle)
-    const sectionName = section || sectionTitle;
     let sectionIndex = cleanSections.findIndex(
       (sec: any) => sec.name === sectionName || sec.title === sectionName,
     );
