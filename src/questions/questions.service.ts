@@ -72,8 +72,16 @@ export class QuestionsService {
     // استخراج examId من الـ dto قبل إنشاء السؤال
     const { examId, ...questionData } = dto;
     
+    // Log للتحقق من answerKeyMatch
+    if (dto.qType === QuestionType.MATCH) {
+      this.logger.debug(`createQuestion: Match question - answerKeyMatch from DTO: ${JSON.stringify(dto.answerKeyMatch)}`);
+    }
+    
+    // إزالة answerKeyMatch من questionData إذا كان موجودًا لتجنب التعارض
+    const { answerKeyMatch: _, answerKeyReorder: __, ...restQuestionData } = questionData;
+    
     const doc = await this.model.create({
-      ...questionData,
+      ...restQuestionData,
       status: dto.status ?? QuestionStatus.DRAFT,
       createdBy,
       // MATCH fields
@@ -386,6 +394,12 @@ export class QuestionsService {
     if (!question) {
       throw new NotFoundException('Question not found');
     }
+    
+    // Log للتحقق من answerKeyMatch
+    if (question.qType === QuestionType.MATCH) {
+      this.logger.debug(`findById: Match question ${cleanId} - answerKeyMatch: ${JSON.stringify(question.answerKeyMatch)}`);
+    }
+    
     return question;
   }
 
@@ -687,6 +701,12 @@ export class QuestionsService {
 
     // 4) إنشاء السؤال
     const sectionName = section || sectionTitle;
+    
+    // Log للتحقق من answerKeyMatch
+    if (questionType === QuestionType.MATCH) {
+      this.logger.debug(`createQuestionWithExam: Match question - answerKeyMatch: ${JSON.stringify(answerKeyMatch)}`);
+    }
+    
     const question = await this.model.create({
       prompt: questionPrompt,
       text: questionText,
