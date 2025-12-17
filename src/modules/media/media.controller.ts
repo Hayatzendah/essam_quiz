@@ -356,18 +356,18 @@ export class MediaController {
     let finalFilename = file.filename;
     let finalMime = file.mimetype;
 
-    // تحويل OPUS إلى MP3 تلقائياً
+    // تحويل OPUS أو OGG إلى MP3 تلقائياً
     const ext = extname(file.originalname).toLowerCase();
-    if (ext === '.opus') {
+    if (ext === '.opus' || ext === '.ogg') {
       const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
       if (convertedPath) {
         finalPath = convertedPath;
         finalFilename = basename(convertedPath);
         finalMime = 'audio/mpeg';
-        console.log(`✅ Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+        console.log(`✅ Converted ${ext.toUpperCase()} to MP3: ${file.filename} -> ${finalFilename}`);
         console.log(`✅ Final audioUrl will be: /uploads/audio/${finalFilename} (Content-Type: audio/mpeg)`);
       } else {
-        console.warn(`❌ Failed to convert OPUS file: ${file.filename}`);
+        console.warn(`❌ Failed to convert ${ext.toUpperCase()} file: ${file.filename}`);
       }
     }
 

@@ -99,16 +99,16 @@ export class ListeningClipsController {
     let finalPath = file.path;
     let finalFilename = file.filename;
 
-    // تحويل OPUS إلى MP3 تلقائياً
+    // تحويل OPUS أو OGG إلى MP3 تلقائياً
     const ext = extname(file.originalname).toLowerCase();
-    if (ext === '.opus') {
+    if (ext === '.opus' || ext === '.ogg') {
       const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
       if (convertedPath) {
         finalPath = convertedPath;
         finalFilename = basename(convertedPath);
-        console.log(`✅ Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+        console.log(`✅ Converted ${ext.toUpperCase()} to MP3: ${file.filename} -> ${finalFilename}`);
       } else {
-        console.warn(`❌ Failed to convert OPUS file: ${file.filename}`);
+        console.warn(`❌ Failed to convert ${ext.toUpperCase()} file: ${file.filename}`);
       }
     }
 
@@ -119,7 +119,7 @@ export class ListeningClipsController {
     const clip = await this.service.create(dto);
 
     // إذا تم التحويل، تحديث audioUrl في الدوكومنت للتأكد من أنه .mp3
-    if (ext === '.opus' && finalFilename.endsWith('.mp3')) {
+    if ((ext === '.opus' || ext === '.ogg') && finalFilename.endsWith('.mp3')) {
       const updatedClip = await this.service.updateAudioUrl(
         (clip as any)._id.toString(),
         audioUrl,
@@ -226,16 +226,16 @@ export class ListeningClipsController {
     let finalPath = file.path;
     let finalFilename = file.filename;
 
-    // تحويل OPUS إلى MP3 تلقائياً
+    // تحويل OPUS أو OGG إلى MP3 تلقائياً
     const ext = extname(file.originalname).toLowerCase();
-    if (ext === '.opus') {
+    if (ext === '.opus' || ext === '.ogg') {
       const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
       if (convertedPath) {
         finalPath = convertedPath;
         finalFilename = basename(convertedPath);
-        console.log(`✅ Converted OPUS to MP3: ${file.filename} -> ${finalFilename}`);
+        console.log(`✅ Converted ${ext.toUpperCase()} to MP3: ${file.filename} -> ${finalFilename}`);
       } else {
-        console.warn(`❌ Failed to convert OPUS file: ${file.filename}`);
+        console.warn(`❌ Failed to convert ${ext.toUpperCase()} file: ${file.filename}`);
       }
     }
 
@@ -251,7 +251,7 @@ export class ListeningClipsController {
     });
 
     // إذا تم التحويل، تحديث audioUrl في الدوكومنت للتأكد من أنه .mp3
-    if (ext === '.opus' && finalFilename.endsWith('.mp3')) {
+    if ((ext === '.opus' || ext === '.ogg') && finalFilename.endsWith('.mp3')) {
       const updatedClip = await this.service.updateAudioUrl(
         (clip as any)._id.toString(),
         audioUrl,

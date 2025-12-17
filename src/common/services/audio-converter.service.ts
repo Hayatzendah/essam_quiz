@@ -13,23 +13,23 @@ export class AudioConverterService {
   private readonly logger = new Logger(AudioConverterService.name);
 
   /**
-   * تحويل ملف OPUS إلى MP3
+   * تحويل ملف OPUS أو OGG إلى MP3
    * @param inputPath - مسار الملف الأصلي
-   * @returns مسار الملف المحول (MP3) أو null إذا فشل التحويل
+   * @returns مسار الملف المحول (MP3) أو null إذا فشل التحويل أو الملف ليس OPUS/OGG
    */
   async convertOpusToMp3(inputPath: string): Promise<string | null> {
     try {
-      // التحقق من أن الملف OPUS
+      // التحقق من أن الملف OPUS أو OGG
       const ext = extname(inputPath).toLowerCase();
-      if (ext !== '.opus') {
-        this.logger.warn(`File ${inputPath} is not OPUS, skipping conversion`);
+      if (ext !== '.opus' && ext !== '.ogg') {
+        this.logger.warn(`File ${inputPath} is not OPUS or OGG, skipping conversion`);
         return null;
       }
 
       // إنشاء مسار الملف المحول (MP3)
-      const outputPath = inputPath.replace(/\.opus$/i, '.mp3');
+      const outputPath = inputPath.replace(/\.(opus|ogg)$/i, '.mp3');
 
-      this.logger.log(`Converting OPUS to MP3: ${inputPath} -> ${outputPath}`);
+      this.logger.log(`Converting ${ext.toUpperCase()} to MP3: ${inputPath} -> ${outputPath}`);
 
       // التحويل باستخدام FFmpeg
       await new Promise<void>((resolve, reject) => {
@@ -64,20 +64,34 @@ export class AudioConverterService {
         return null;
       }
 
-      // حذف الملف الأصلي OPUS
+      // حذف الملف الأصلي (OPUS أو OGG)
       try {
         await unlinkAsync(inputPath);
-        this.logger.log(`Deleted original OPUS file: ${inputPath}`);
+        this.logger.log(`Deleted original file: ${inputPath}`);
       } catch (deleteError) {
-        this.logger.warn(`Failed to delete original OPUS file: ${deleteError}`);
+        this.logger.warn(`Failed to delete original file: ${deleteError}`);
         // لا نرفض العملية إذا فشل الحذف
       }
 
       return outputPath;
     } catch (error) {
-      this.logger.error(`Failed to convert OPUS to MP3: ${error.message}`, error.stack);
+      this.logger.error(`Failed to convert to MP3: ${error.message}`, error.stack);
       return null;
     }
+  }
+
+  /**
+   * تحويل ملف OGG أو OPUS إلى MP3 (اسم بديل للتوافق)
+   * @param inputPath - مسار الملف الأصلي
+   * @returns مسار الملف المحول (MP3) أو null إذا فشل التحويل
+   */
+  async convertToMp3IfNeeded(inputPath: string): Promise<string> {
+    const ext = extname(inputPath).toLowerCase();
+    if (ext === '.ogg' || ext === '.opus') {
+      const convertedPath = await this.convertOpusToMp3(inputPath);
+      return convertedPath || inputPath; // إذا فشل التحويل، نرجع المسار الأصلي
+    }
+    return inputPath; // ليس OGG أو OPUS، نرجع المسار كما هو
   }
 
   /**
