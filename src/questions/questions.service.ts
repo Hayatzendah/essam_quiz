@@ -575,7 +575,7 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, grammarTopicId, grammarLevel, grammarTopic, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, answerKeyMatch, answerKeyReorder, grammarTopicId, grammarLevel, grammarTopic, ...questionData } = dto;
     
     // استخدام type إذا كان موجوداً، وإلا استخدام qType
     const questionType = type || qType;
@@ -682,6 +682,7 @@ export class QuestionsService {
     }
 
     // 4) إنشاء السؤال
+    const sectionName = section || sectionTitle;
     const question = await this.model.create({
       prompt: questionPrompt,
       text: questionText,
@@ -698,6 +699,10 @@ export class QuestionsService {
         ...(fillExact && { fillExact }),
         ...(regexList && Array.isArray(regexList) && regexList.length > 0 && { regexList }),
       }),
+      // MATCH fields
+      ...(questionType === QuestionType.MATCH && answerKeyMatch && Array.isArray(answerKeyMatch) && { answerKeyMatch }),
+      // REORDER fields
+      ...(questionType === QuestionType.REORDER && answerKeyReorder && Array.isArray(answerKeyReorder) && { answerKeyReorder }),
       // FREE_TEXT fields
       ...(questionType === QuestionType.FREE_TEXT && {
         ...(questionData.sampleAnswer && { sampleAnswer: questionData.sampleAnswer }),
@@ -716,10 +721,16 @@ export class QuestionsService {
       status: questionData.status as QuestionStatus,
       tags: questionData.tags,
       provider: provider,
-      section: section || sectionTitle,
+      section: sectionName,
+      // حفظ examId و sectionTitle مع السؤال للربط الصحيح
+      ...(examId && { examId: new Types.ObjectId(examId) }),
+      ...(sectionTitle && { sectionTitle }),
       ...(questionData.audioUrl && { audioUrl: questionData.audioUrl }),
       ...(finalListeningClipId && { listeningClipId: new Types.ObjectId(finalListeningClipId) }),
       ...(questionData.media && { media: questionData.media }),
+      // للحقول الخاصة بـ Leben in Deutschland
+      ...(skill && { mainSkill: skill as any }),
+      ...(usageCategory && { usageCategory }),
       // لو عندك createdBy/ownerId حطيه هنا
       // createdBy: userId ? new Types.ObjectId(userId) : undefined,
     });

@@ -170,6 +170,13 @@ export class Question {
 
   @Prop({ trim: true })
   state?: string; // للأسئلة الخاصة بالولايات
+
+  // ربط السؤال بامتحان (لأسئلة Create Question with Exam)
+  @Prop({ type: Types.ObjectId, ref: 'Exam', index: true })
+  examId?: Types.ObjectId;
+
+  @Prop({ trim: true })
+  sectionTitle?: string; // عنوان القسم (مثل "Lesen – Teil 1: Text über Anna")
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);
