@@ -10,6 +10,8 @@ import { json, urlencoded } from 'express';
 import basicAuth from 'express-basic-auth';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { existsSync } from 'fs';
+import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -123,6 +125,40 @@ async function bootstrap() {
     } else {
       allowedOrigins = defaultAllowedOrigins;
     }
+
+    // FIX: Middleware للتعامل مع ملفات .ogg/.opus القديمة - البحث عن .mp3 تلقائياً
+    // هذا middleware يعمل قبل ServeStaticModule
+    app.use('/uploads/audio', async (req: Request, res: Response, next: NextFunction) => {
+      const url = req.url.toLowerCase();
+      
+      // إذا كان الطلب لملف .ogg أو .opus، نحاول البحث عن نسخة .mp3
+      if (url.endsWith('.ogg') || url.endsWith('.opus')) {
+        const originalUrl = req.url; // حفظ الـ URL الأصلي
+        const mp3Url = url.replace(/\.(ogg|opus)$/i, '.mp3');
+        const audioDir = join(process.cwd(), 'uploads', 'audio');
+        const originalPath = join(audioDir, originalUrl.replace(/^\//, ''));
+        const mp3Path = join(audioDir, mp3Url.replace(/^\//, ''));
+        
+        // إذا وجدنا ملف .mp3، نعيد توجيه الطلب إليه
+        if (existsSync(mp3Path)) {
+          logger.log(`[Audio Fallback] Redirecting .ogg/.opus request to .mp3: ${originalUrl} -> ${mp3Url}`);
+          req.url = mp3Url;
+          // نضيف header للتوضيح
+          res.setHeader('X-Audio-Format-Converted', 'ogg-to-mp3');
+        } else if (existsSync(originalPath)) {
+          // إذا كان الملف الأصلي .ogg موجوداً لكن .mp3 غير موجود، نحاول تحويله
+          logger.warn(
+            `[Audio Fallback] .mp3 version not found for: ${originalUrl}. Original .ogg/.opus file exists. Consider converting it manually or the file will not play in browsers.`,
+          );
+          // نترك الطلب يمر للـ static file serving (سيحاول تحميل .ogg)
+          // لكن المتصفح قد لا يدعمه
+        } else {
+          logger.warn(`[Audio Fallback] Neither .mp3 nor .ogg/.opus file found for: ${originalUrl}`);
+        }
+      }
+      
+      next();
+    });
 
     // Add CORS headers for static files (uploads)
     // Note: ServeStaticModule handles serving files, but we still need CORS headers
