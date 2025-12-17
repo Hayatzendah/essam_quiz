@@ -397,7 +397,12 @@ export class QuestionsService {
     
     // Log للتحقق من answerKeyMatch
     if (question.qType === QuestionType.MATCH) {
-      this.logger.debug(`findById: Match question ${cleanId} - answerKeyMatch: ${JSON.stringify(question.answerKeyMatch)}`);
+      this.logger.warn(`findById: Match question ${cleanId} - answerKeyMatch: ${JSON.stringify(question.answerKeyMatch)}`);
+      this.logger.warn(`findById: Match question ${cleanId} - question keys: ${Object.keys(question).join(', ')}`);
+      // إذا كان answerKeyMatch غير موجود، نرجعه كـ undefined صراحة
+      if (!question.answerKeyMatch) {
+        this.logger.warn(`findById: Match question ${cleanId} - answerKeyMatch is missing in database!`);
+      }
     }
     
     return question;
@@ -419,9 +424,20 @@ export class QuestionsService {
       // إذا كان نفس القيمة، نتجاهله فقط (لا نحدثه في updateData)
     }
 
+    // Log للتحقق من answerKeyMatch في التحديث
+    if (updateData.answerKeyMatch && Array.isArray(updateData.answerKeyMatch)) {
+      this.logger.debug(`updateQuestion: Updating answerKeyMatch for question ${id}: ${JSON.stringify(updateData.answerKeyMatch)}`);
+    }
+
     // تطبيق التحديث (بدون qType)
     const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updated) throw new NotFoundException('Question not found');
+    
+    // Log للتحقق من answerKeyMatch بعد التحديث
+    if (updated.qType === QuestionType.MATCH) {
+      this.logger.debug(`updateQuestion: Match question ${id} - answerKeyMatch after update: ${JSON.stringify(updated.answerKeyMatch)}`);
+    }
+    
     return updated;
   }
 
