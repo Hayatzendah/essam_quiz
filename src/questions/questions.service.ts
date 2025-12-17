@@ -582,22 +582,38 @@ export class QuestionsService {
       throw new NotFoundException('Exam not found');
     }
 
-    // 2) التحقق من listeningClipId لأسئلة Hören - أخذ listeningAudioId من section إذا لم يكن موجود
+    // 2) FIX: التحقق من listeningClipId لأسئلة Hören - أخذ listeningAudioId من section إذا لم يكن موجود
+    // هذا fallback ذكي يضمن أن الموقع "سليم" حتى لو الفرونت نسي/غلط
     let finalListeningClipId = listeningClipId;
     if (usageCategory === 'provider' && skill && skill.toLowerCase() === 'hoeren') {
       if (!finalListeningClipId) {
+        this.logger.log(
+          `[createQuestionWithExam] Hören question without listeningClipId - attempting to find listeningAudioId from exam sections`,
+        );
+        
         // البحث عن section الذي يطابق skill='hoeren' و listeningAudioId
         // أولاً: البحث عن section يطابق skill و teilNumber (إذا كان teilNumber موجود)
         let matchingSection = exam.sections?.find((sec: any) => {
+          if (!sec) return false;
           const sectionSkill = (sec.skill || '').toLowerCase();
-          return sectionSkill === 'hoeren' && 
-                 (teilNumber ? sec.teilNumber === teilNumber : true) &&
-                 sec.listeningAudioId;
+          const matchesSkill = sectionSkill === 'hoeren';
+          const matchesTeil = teilNumber ? sec.teilNumber === teilNumber : true;
+          const hasAudioId = sec.listeningAudioId;
+          
+          this.logger.log(
+            `[createQuestionWithExam] Checking section: skill=${sectionSkill}, teilNumber=${sec.teilNumber}, hasAudioId=${!!hasAudioId}`,
+          );
+          
+          return matchesSkill && matchesTeil && hasAudioId;
         });
 
         // إذا لم يوجد section يطابق teilNumber، نبحث عن أول section مع skill='hoeren' و listeningAudioId
         if (!matchingSection) {
+          this.logger.log(
+            `[createQuestionWithExam] No section found with matching teilNumber, searching for any hoeren section with listeningAudioId`,
+          );
           matchingSection = exam.sections?.find((sec: any) => {
+            if (!sec) return false;
             const sectionSkill = (sec.skill || '').toLowerCase();
             return sectionSkill === 'hoeren' && sec.listeningAudioId;
           });
@@ -605,13 +621,37 @@ export class QuestionsService {
 
         // إذا وجد section مع listeningAudioId، نستخدمه تلقائياً
         if (matchingSection?.listeningAudioId) {
-          finalListeningClipId = matchingSection.listeningAudioId.toString();
+          // تحويل listeningAudioId إلى string بشكل آمن
+          if (typeof matchingSection.listeningAudioId === 'string') {
+            finalListeningClipId = matchingSection.listeningAudioId;
+          } else if (matchingSection.listeningAudioId.toString) {
+            finalListeningClipId = matchingSection.listeningAudioId.toString();
+          } else {
+            finalListeningClipId = String(matchingSection.listeningAudioId);
+          }
+          
+          this.logger.log(
+            `[createQuestionWithExam] ✅ Found listeningAudioId in section "${matchingSection.name || matchingSection.title}": ${finalListeningClipId}`,
+          );
         } else {
-          // إذا لم يوجد، نرمي خطأ واضح
+          // إذا لم يوجد، نرمي خطأ واضح ومفيد
+          const sectionNames = exam.sections
+            ?.filter((sec: any) => sec && (sec.skill || '').toLowerCase() === 'hoeren')
+            .map((sec: any) => sec.name || sec.title || 'Unnamed')
+            .join(', ') || 'none';
+          
+          this.logger.error(
+            `[createQuestionWithExam] ❌ No listeningAudioId found in exam sections. Hören sections: ${sectionNames}`,
+          );
+          
           throw new BadRequestException(
-            'listeningClipId is required for Hören questions with provider usage category. Either provide listeningClipId in the request or set listeningAudioId in the exam section with skill="hoeren".',
+            'ارفع ملف الاستماع للقسم أولًا. listeningClipId is required for Hören questions with provider usage category. Either provide listeningClipId in the request or set listeningAudioId in the exam section with skill="hoeren" using PATCH /exams/:examId/sections/:skill/:teilNumber/audio',
           );
         }
+      } else {
+        this.logger.log(
+          `[createQuestionWithExam] Hören question with listeningClipId provided: ${finalListeningClipId}`,
+        );
       }
     }
 

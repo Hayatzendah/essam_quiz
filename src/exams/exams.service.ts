@@ -932,13 +932,33 @@ export class ExamsService {
         partsCount = s.quota;
       }
 
-      return {
+      // FIX: تحويل listeningAudioId إلى string بشكل موحد
+      let listeningAudioIdValue: string | undefined = undefined;
+      if (s.listeningAudioId) {
+        if (typeof s.listeningAudioId === 'string') {
+          listeningAudioIdValue = s.listeningAudioId;
+        } else if (s.listeningAudioId && typeof s.listeningAudioId === 'object' && '_id' in s.listeningAudioId) {
+          listeningAudioIdValue = String(s.listeningAudioId._id || s.listeningAudioId);
+        } else if (s.listeningAudioId.toString) {
+          listeningAudioIdValue = s.listeningAudioId.toString();
+        } else {
+          listeningAudioIdValue = String(s.listeningAudioId);
+        }
+      }
+
+      const result: any = {
         skill: s.skill,
-        label: s.label || s.name,
+        label: s.label || s.name || s.title,
         durationMin: s.durationMin,
         partsCount: s.partsCount || partsCount,
-        listeningAudioId: s.listeningAudioId ? s.listeningAudioId.toString() : undefined,
       };
+      
+      // FIX: إضافة listeningAudioId دائماً إذا كان موجوداً
+      if (listeningAudioIdValue) {
+        result.listeningAudioId = listeningAudioIdValue;
+      }
+      
+      return result;
     });
 
     return {
@@ -1068,7 +1088,7 @@ export class ExamsService {
       this.logger.log(
         `[findById] Returning full exam data for ${isAdmin ? 'admin' : 'owner'} - examId: ${id}, sections count: ${normalizedSections.length}`,
       );
-      // التأكد من أن sections تحتوي على items
+      // التأكد من أن sections تحتوي على items و listeningAudioId
       const sectionsWithItems = normalizedSections.map((s: any) => {
         if (!s) return s;
         // إرجاع القسم كاملاً مع items
@@ -1079,7 +1099,7 @@ export class ExamsService {
             listeningAudioIdValue = s.listeningAudioId;
           } else if (s.listeningAudioId && typeof s.listeningAudioId === 'object' && '_id' in s.listeningAudioId) {
             // ObjectId
-            listeningAudioIdValue = String(s.listeningAudioId);
+            listeningAudioIdValue = String(s.listeningAudioId._id || s.listeningAudioId);
           } else if (s.listeningAudioId.toString) {
             listeningAudioIdValue = s.listeningAudioId.toString();
           } else {
@@ -1092,9 +1112,17 @@ export class ExamsService {
           items: s.items || [], // التأكد من أن items موجودة حتى لو كانت فارغة
         };
         
-        // إضافة listeningAudioId بشكل صريح (حتى لو كان undefined، لكن في JSON undefined لا يظهر)
+        // FIX: إضافة listeningAudioId بشكل صريح دائماً (حتى لو كان undefined، لكن في JSON undefined لا يظهر)
+        // لكن نضيفه فقط إذا كان موجوداً لتجنب إضافة undefined
         if (listeningAudioIdValue) {
           result.listeningAudioId = listeningAudioIdValue;
+        }
+        
+        // Log للتحقق
+        if (s.skill && s.skill.toLowerCase() === 'hoeren') {
+          this.logger.log(
+            `[findById] Section "${s.name || s.title}" (hoeren): listeningAudioId=${listeningAudioIdValue || 'NOT SET'}`,
+          );
         }
         
         return result;
@@ -1109,21 +1137,51 @@ export class ExamsService {
       // إخفاء التفاصيل الحساسة لو كانت عشوائية
       const safeSections = normalizedSections
         .map((s: any) => {
+          // تحويل listeningAudioId إلى string بشكل موحد
+          let listeningAudioIdValue: string | undefined = undefined;
+          if (s?.listeningAudioId) {
+            if (typeof s.listeningAudioId === 'string') {
+              listeningAudioIdValue = s.listeningAudioId;
+            } else if (s.listeningAudioId && typeof s.listeningAudioId === 'object' && '_id' in s.listeningAudioId) {
+              listeningAudioIdValue = String(s.listeningAudioId._id || s.listeningAudioId);
+            } else if (s.listeningAudioId.toString) {
+              listeningAudioIdValue = s.listeningAudioId.toString();
+            } else {
+              listeningAudioIdValue = String(s.listeningAudioId);
+            }
+          }
+          
           const hasQuota = typeof s?.quota === 'number' && s.quota > 0;
           if (hasQuota || doc.randomizeQuestions) {
-            return { 
-              name: s?.name || 'Unnamed Section', 
+            const result: any = { 
+              name: s?.name || s?.title || 'Unnamed Section', 
               quota: s?.quota, 
               difficultyDistribution: s?.difficultyDistribution,
-              listeningAudioId: s?.listeningAudioId ? s.listeningAudioId.toString() : undefined,
             };
+            // FIX: إضافة listeningAudioId دائماً إذا كان موجوداً
+            if (listeningAudioIdValue) {
+              result.listeningAudioId = listeningAudioIdValue;
+            }
+            return result;
           }
           // للطلاب: إخفاء questionIds (الأسئلة) لأسباب أمنية
-          return { 
+          const result: any = { 
             ...s, 
             items: undefined,
-            listeningAudioId: s?.listeningAudioId ? (typeof s.listeningAudioId === 'string' ? s.listeningAudioId : s.listeningAudioId.toString()) : undefined,
           };
+          // FIX: إضافة listeningAudioId دائماً إذا كان موجوداً
+          if (listeningAudioIdValue) {
+            result.listeningAudioId = listeningAudioIdValue;
+          }
+          
+          // Log للتحقق
+          if (s?.skill && s.skill.toLowerCase() === 'hoeren') {
+            this.logger.log(
+              `[findById] Student view - Section "${s.name || s.title}" (hoeren): listeningAudioId=${listeningAudioIdValue || 'NOT SET'}`,
+            );
+          }
+          
+          return result;
         });
       return { ...docWithNormalizedSections, sections: safeSections };
     }
