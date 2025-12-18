@@ -1,9 +1,9 @@
-import { connect, connection, Collection, ObjectId } from 'mongoose';
+import { connect, connection, Types } from 'mongoose';
 
 const MONGODB_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/quiz';
 
 interface AttemptItem {
-  questionId: ObjectId;
+  questionId: Types.ObjectId | string;
   qType: string;
   answerKeyMatch?: [string, string][];
   matchPairs?: Array<{ left: string; right: string }>;
@@ -11,13 +11,13 @@ interface AttemptItem {
 }
 
 interface Attempt {
-  _id: ObjectId;
+  _id: Types.ObjectId;
   items: AttemptItem[];
   [key: string]: any;
 }
 
 interface Question {
-  _id: ObjectId;
+  _id: Types.ObjectId;
   qType: string;
   answerKeyMatch?: [string, string][];
   [key: string]: any;
@@ -35,8 +35,11 @@ async function cleanupDeletedQuestionsFromAttempts() {
     console.log('✅ Connected to MongoDB');
 
     const db = connection.db;
-    const attemptsCollection: Collection<Attempt> = db.collection('attempts');
-    const questionsCollection: Collection<Question> = db.collection('questions');
+    if (!db) {
+      throw new Error('Database connection failed');
+    }
+    const attemptsCollection = db.collection<Attempt>('attempts');
+    const questionsCollection = db.collection<Question>('questions');
 
     // جلب جميع المحاولات
     const attempts = await attemptsCollection.find({}).toArray();
@@ -53,19 +56,25 @@ async function cleanupDeletedQuestionsFromAttempts() {
 
       let attemptNeedsUpdate = false;
       const updatedItems: AttemptItem[] = [];
-      const questionIdsToCheck: ObjectId[] = [];
+      const questionIdsToCheck: Types.ObjectId[] = [];
 
       // جمع جميع questionIds للتحقق منها
       attempt.items.forEach((item: AttemptItem) => {
         if (item.questionId) {
-          questionIdsToCheck.push(new ObjectId(item.questionId));
+          questionIdsToCheck.push(
+            item.questionId instanceof Types.ObjectId 
+              ? item.questionId 
+              : new Types.ObjectId(item.questionId)
+          );
         }
       });
 
       // التحقق من وجود الأسئلة في قاعدة البيانات
-      const existingQuestions = await questionsCollection
-        .find({ _id: { $in: questionIdsToCheck } })
-        .toArray();
+      const existingQuestions = questionIdsToCheck.length > 0
+        ? await questionsCollection
+            .find({ _id: { $in: questionIdsToCheck } })
+            .toArray()
+        : [];
       
       const existingQuestionIds = new Set(
         existingQuestions.map((q: Question) => String(q._id))
