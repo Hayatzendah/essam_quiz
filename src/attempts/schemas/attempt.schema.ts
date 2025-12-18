@@ -59,8 +59,17 @@ export class AttemptItem {
   @Prop({ type: [String], default: undefined }) fillExact?: string | string[]; // fill - يمكن أن يكون string أو array
   @Prop({ type: [String], default: undefined }) regexList?: string[]; // fill
   @Prop({ type: [Number], default: undefined }) correctOptionIndexes?: number[]; // mcq
-  @Prop({ type: [[String, String]], default: undefined }) answerKeyMatch?: [string, string][]; // match: أزواج [left, right]
-  @Prop({ type: [Object], default: undefined }) matchPairs?: Array<{ left: string; right: string }>; // match: pairs للعرض في response
+  @Prop({ 
+    type: [[String, String]], 
+    default: undefined,
+    required: false 
+  }) answerKeyMatch?: [string, string][]; // match: أزواج [left, right]
+  @Prop({ 
+    type: [Object], 
+    default: undefined,
+    required: false,
+    _id: false
+  }) matchPairs?: Array<{ left: string; right: string }>; // match: pairs للعرض في response
   @Prop({ type: [String], default: undefined }) answerKeyReorder?: string[]; // reorder: ترتيب صحيح
 
   // إجابة الطالب (حسب النوع)
