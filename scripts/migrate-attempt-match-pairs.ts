@@ -35,10 +35,17 @@ interface Attempt {
 async function migrateAttemptMatchPairs() {
   try {
     console.log('🔄 Connecting to MongoDB...');
+    if (!MONGO_URI) {
+      throw new Error('MONGO_URI is not set');
+    }
     await connect(MONGO_URI);
     console.log('✅ Connected to MongoDB');
 
-    const db = (await import('mongoose')).connection.db;
+    const mongoose = await import('mongoose');
+    const db = mongoose.connection.db;
+    if (!db) {
+      throw new Error('Database connection not established');
+    }
     const attemptsCollection = db.collection('attempts');
     const questionsCollection = db.collection('questions');
 
@@ -55,7 +62,8 @@ async function migrateAttemptMatchPairs() {
       }
 
       let attemptNeedsUpdate = false;
-      const updatedItems = attempt.items.map((item: AttemptItem) => {
+      let itemUpdated = false;
+      const updatedItemsArray = attempt.items.map((item: AttemptItem) => {
         // Check if this is a match question without matchPairs
         if (item.qType === 'match' && !item.matchPairs) {
           // Try to get matchPairs from answerKeyMatch
@@ -65,7 +73,7 @@ async function migrateAttemptMatchPairs() {
               right,
             }));
             attemptNeedsUpdate = true;
-            updatedItems++;
+            itemUpdated = true;
             console.log(`  ✅ Updated item ${item.questionId} in attempt ${attempt._id}`);
           } else {
             // Try to get answerKeyMatch from the original question
@@ -76,11 +84,15 @@ async function migrateAttemptMatchPairs() {
         }
         return item;
       });
+      
+      if (itemUpdated) {
+        updatedItems++;
+      }
 
       if (attemptNeedsUpdate) {
         await attemptsCollection.updateOne(
           { _id: attempt._id },
-          { $set: { items: updatedItems } }
+          { $set: { items: updatedItemsArray } }
         );
         updatedAttempts++;
         console.log(`✅ Updated attempt ${attempt._id}`);
