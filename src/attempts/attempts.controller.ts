@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -415,5 +416,27 @@ export class AttemptsController {
       `[POST /attempts/${attemptId}/retry] Request received - userId: ${req.user?.userId}`,
     );
     return this.service.retryAttempt(req.user, attemptId);
+  }
+
+  // حذف سؤال محذوف من المحاولة (admin only)
+  @Delete(':attemptId/questions/:questionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Remove deleted question from attempt (admin only)',
+    description: 'حذف سؤال محذوف من المحاولة (للمشرفين فقط)',
+  })
+  @ApiResponse({ status: 200, description: 'Question removed successfully' })
+  @ApiResponse({ status: 404, description: 'Attempt or question not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  async removeDeletedQuestion(
+    @Param('attemptId') attemptId: string,
+    @Param('questionId') questionId: string,
+    @Req() req: any,
+  ) {
+    this.logger.log(
+      `[DELETE /attempts/${attemptId}/questions/${questionId}] Request received - userId: ${req.user?.userId}`,
+    );
+    return this.service.removeDeletedQuestionFromAttempt(req.user, attemptId, questionId);
   }
 }

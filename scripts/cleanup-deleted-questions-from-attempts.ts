@@ -38,12 +38,35 @@ async function cleanupDeletedQuestionsFromAttempts() {
     if (!db) {
       throw new Error('Database connection failed');
     }
+    
+    // عرض أسماء الـ collections المتاحة للتحقق
+    const collections = await db.listCollections().toArray();
+    console.log(`📋 Available collections: ${collections.map(c => c.name).join(', ')}`);
+    
     const attemptsCollection = db.collection<Attempt>('attempts');
     const questionsCollection = db.collection<Question>('questions');
+    
+    // التحقق من عدد المحاولات
+    const attemptsCount = await attemptsCollection.countDocuments({});
+    console.log(`📊 Total attempts in database: ${attemptsCount}`);
 
     // جلب جميع المحاولات
+    console.log(`🔍 Searching for attempts...`);
     const attempts = await attemptsCollection.find({}).toArray();
     console.log(`📊 Found ${attempts.length} attempts to check`);
+    
+    // إذا لم توجد محاولات، نبحث عن المحاولة المحددة من الـ logs
+    if (attempts.length === 0) {
+      console.log(`⚠️  No attempts found. Checking for specific attempt ID from logs...`);
+      const specificAttemptId = '694407e28cbbf7be40562f91';
+      const specificAttempt = await attemptsCollection.findOne({ _id: new Types.ObjectId(specificAttemptId) });
+      if (specificAttempt) {
+        console.log(`✅ Found specific attempt ${specificAttemptId}`);
+        attempts.push(specificAttempt);
+      } else {
+        console.log(`❌ Specific attempt ${specificAttemptId} not found`);
+      }
+    }
 
     let updatedAttempts = 0;
     let removedItems = 0;
