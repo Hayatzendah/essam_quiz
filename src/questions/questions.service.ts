@@ -119,6 +119,10 @@ export class QuestionsService {
       tags: doc.tags,
       createdAt: (doc as any).createdAt,
       ...(examId && { examId }), // إرجاع examId لو موجود
+      // إرجاع answerKeyMatch لأسئلة Match
+      ...(doc.qType === QuestionType.MATCH && doc.answerKeyMatch && { answerKeyMatch: doc.answerKeyMatch }),
+      // إرجاع answerKeyReorder لأسئلة Reorder
+      ...(doc.qType === QuestionType.REORDER && doc.answerKeyReorder && { answerKeyReorder: doc.answerKeyReorder }),
     };
   }
 
