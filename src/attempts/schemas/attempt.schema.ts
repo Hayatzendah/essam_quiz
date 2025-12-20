@@ -52,6 +52,13 @@ export class AttemptItem {
     mime: string;
     url?: string;
   };
+  // مصفوفة من الصور (للدعم المتعدد)
+  @Prop({ type: [Object], default: undefined, _id: false }) imagesSnapshot?: Array<{
+    type: 'image';
+    key: string;
+    mime: string;
+    url?: string;
+  }>;
   @Prop({ type: Types.ObjectId, ref: 'ListeningClip' }) listeningClipId?: Types.ObjectId; // للرجوع إلى ListeningClip
 
   // مفاتيح للتصحيح الآلي (لا تُرسل للطالب)
