@@ -10,7 +10,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join, basename } from 'path';
-import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -67,7 +66,7 @@ export class UploadsController {
   })
   @ApiResponse({ status: 201, description: 'Audio file uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid file' })
-  async uploadAudio(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+  async uploadAudio(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
@@ -124,7 +123,7 @@ export class UploadsController {
   })
   @ApiResponse({ status: 201, description: 'Image file uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid file' })
-  async uploadImage(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+  async uploadImage(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
