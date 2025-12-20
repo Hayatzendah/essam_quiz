@@ -36,7 +36,8 @@
     "delete-all-leben-questions": "ts-node scripts/delete-all-leben-questions.ts",
     "refresh-leben-questions": "ts-node scripts/refresh-leben-questions.ts",
     "add-images-to-questions": "ts-node scripts/add-images-to-questions.ts",
-    "add-images-to-mongodb": "ts-node scripts/add-images-to-mongodb.ts"
+    "add-images-to-mongodb": "ts-node scripts/add-images-to-mongodb.ts",
+    "create-test-attempt-with-images": "ts-node scripts/create-test-attempt-with-images.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.927.0",
