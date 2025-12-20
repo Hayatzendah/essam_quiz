@@ -26,7 +26,17 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "ci": "npm run lint && npm run test && npm run test:e2e",
     "fix-exam": "node fix-empty-sections.js",
-    "cleanup-deleted-questions": "ts-node scripts/cleanup-deleted-questions-from-attempts.ts"
+    "cleanup-deleted-questions": "ts-node scripts/cleanup-deleted-questions-from-attempts.ts",
+    "import-300-questions": "ts-node scripts/import-300-questions.ts",
+    "import-state-questions": "ts-node scripts/import-state-questions.ts",
+    "update-exams-state-questions": "ts-node scripts/update-exams-state-questions.ts",
+    "find-all-state-questions": "ts-node scripts/find-all-state-questions.ts",
+    "fix-correct-answer": "ts-node scripts/fix-correct-answer.ts",
+    "delete-all-state-questions": "ts-node scripts/delete-all-state-questions.ts",
+    "delete-all-leben-questions": "ts-node scripts/delete-all-leben-questions.ts",
+    "refresh-leben-questions": "ts-node scripts/refresh-leben-questions.ts",
+    "add-images-to-questions": "ts-node scripts/add-images-to-questions.ts",
+    "add-images-to-mongodb": "ts-node scripts/add-images-to-mongodb.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.927.0",

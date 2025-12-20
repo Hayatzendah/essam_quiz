@@ -121,6 +121,13 @@ export class CreateQuestionDto {
   @Type(() => QuestionMediaDto)
   media?: QuestionMediaDto;
 
+  // مصفوفة من الصور (للدعم المتعدد)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => QuestionMediaDto)
+  images?: QuestionMediaDto[];
+
   // رابط ملف الصوت (لأسئلة الاستماع) - للتوافق مع الكود القديم
   @IsOptional()
   @IsString()

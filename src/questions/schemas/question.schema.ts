@@ -149,9 +149,13 @@ export class Question {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy?: Types.ObjectId;
 
-  // وسائط
+  // وسائط (يمكن أن تكون صورة واحدة أو مصفوفة من الصور)
   @Prop({ type: QuestionMediaSchema, required: false })
   media?: QuestionMedia;
+
+  // مصفوفة من الصور (للدعم المتعدد)
+  @Prop({ type: [QuestionMediaSchema], required: false })
+  images?: QuestionMedia[];
 
   // رابط ملف الصوت (لأسئلة الاستماع) - للتوافق مع الكود القديم
   @Prop({ trim: true })
@@ -234,6 +238,27 @@ QuestionSchema.pre('validate', function (next) {
     if (q.minWords !== undefined && q.maxWords !== undefined && q.minWords > q.maxWords) {
       return next(new Error('FREE_TEXT minWords must be less than or equal to maxWords'));
     }
+  }
+
+  next();
+});
+
+// تعيين correctAnswer تلقائياً من الخيارات لأسئلة MCQ
+QuestionSchema.pre('save', function (next) {
+  const q = this as QuestionDocument;
+
+  // لأسئلة MCQ: استخراج correctAnswer من أول option مع isCorrect = true
+  if (q.qType === QuestionType.MCQ && q.options && Array.isArray(q.options) && q.options.length > 0) {
+    const correctOption = q.options.find((opt) => opt.isCorrect === true);
+    if (correctOption) {
+      // تحديث correctAnswer دائماً من الخيارات لضمان التوافق
+      q.correctAnswer = correctOption.text;
+    }
+  }
+
+  // أيضاً: تعيين text من prompt إذا لم يكن موجوداً (للتوافق)
+  if (q.prompt && !q.text) {
+    q.text = q.prompt;
   }
 
   next();
