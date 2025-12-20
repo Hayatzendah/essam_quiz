@@ -51,7 +51,8 @@ const questionImages: { [key: number]: string[] } = {
 };
 
 // Base URL للصور (يمكن تغييره حسب البيئة)
-const BASE_URL = process.env.API_BASE_URL || 'http://localhost:4000';
+// استخدام PUBLIC_BASE_URL أولاً، ثم API_BASE_URL كـ fallback
+const BASE_URL = process.env.PUBLIC_BASE_URL || process.env.API_BASE_URL || 'http://localhost:4000';
 
 function getImageUrl(filename: string): string {
   return `${BASE_URL}/uploads/images/questions/${filename}`;
@@ -139,7 +140,7 @@ async function addImagesToMongoDB() {
           // إذا كان هناك صورة واحدة، نستخدم حقل media
           if (validImages.length === 1) {
             setData.media = validImages[0];
-            unsetData.images = ''; // حذف images إذا كان موجوداً
+            // لا نحذف images - نتركه كما هو
           } else {
             // إذا كان هناك عدة صور، نستخدم حقل images
             setData.images = validImages;
@@ -161,6 +162,57 @@ async function addImagesToMongoDB() {
           }
           if (Object.keys(unsetData).length > 0) {
             updateObj.$unset = unsetData;
+          }
+
+          // التحقق من الأسئلة الموجودة أولاً
+          const existingQuestion = await questionsCollection.findOne(query);
+          
+          if (!existingQuestion) {
+            console.log(`⚠️  Question ${questionNumber} not found in MongoDB: "${question.prompt.substring(0, 50)}..."`);
+            continue;
+          }
+
+          // التحقق من images مباشرة
+          const hasImages = existingQuestion.images && Array.isArray(existingQuestion.images) && existingQuestion.images.length > 0;
+          
+          console.log(`   🔍 Question ${questionNumber}: hasImages=${hasImages}, imagesCount=${existingQuestion.images?.length || 0}, validImagesCount=${validImages.length}`);
+          
+          // إجبار التحديث إذا كان images فارغ أو غير موجود
+          let shouldUpdate = false;
+          
+          if (validImages.length > 1) {
+            // عدة صور - يجب أن تكون في images
+            if (!hasImages) {
+              shouldUpdate = true;
+              console.log(`   ✅ Question ${questionNumber} has empty images array - will add ${validImages.length} images`);
+            } else if (existingQuestion.images.length !== validImages.length) {
+              shouldUpdate = true;
+              console.log(`   ✅ Question ${questionNumber} has ${existingQuestion.images.length} images, needs ${validImages.length} - will update`);
+            } else {
+              // التحقق من المحتوى
+              const allMatch = existingQuestion.images.every((img: any, idx: number) => 
+                img && img.key === validImages[idx].key
+              );
+              if (!allMatch) {
+                shouldUpdate = true;
+                console.log(`   ✅ Question ${questionNumber} images don't match - will update`);
+              } else {
+                console.log(`   ℹ️  Question ${questionNumber} already has correct images`);
+              }
+            }
+          } else {
+            // صورة واحدة - نتحقق من media
+            if (!existingQuestion.media || existingQuestion.media.key !== validImages[0].key) {
+              shouldUpdate = true;
+              console.log(`   ✅ Question ${questionNumber} needs media update`);
+            } else {
+              console.log(`   ℹ️  Question ${questionNumber} already has correct media`);
+            }
+          }
+
+          if (!shouldUpdate) {
+            skippedCount++;
+            continue;
           }
 
           const updateResult = await questionsCollection.updateOne(

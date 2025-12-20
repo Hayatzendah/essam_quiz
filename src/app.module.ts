@@ -70,6 +70,7 @@ import { AppController } from './app.controller';
         MEDIA_USE_MOCK: Joi.string().valid('true', 'false').optional(),
         // App URL and file paths
         APP_URL: Joi.string().uri().optional().default('http://localhost:4000'),
+        PUBLIC_BASE_URL: Joi.string().uri().optional().default('http://localhost:4000'),
         FILES_BASE_PATH: Joi.string().optional().default('/uploads/audio'),
       }),
     }),
@@ -128,8 +129,16 @@ import { AppController } from './app.controller';
             res.setHeader('Content-Type', 'audio/aac');
           } else if (lowerPath.endsWith('.webm')) {
             res.setHeader('Content-Type', 'audio/webm');
+          } else if (lowerPath.endsWith('.jpg') || lowerPath.endsWith('.jpeg')) {
+            res.setHeader('Content-Type', 'image/jpeg');
+          } else if (lowerPath.endsWith('.png')) {
+            res.setHeader('Content-Type', 'image/png');
+          } else if (lowerPath.endsWith('.gif')) {
+            res.setHeader('Content-Type', 'image/gif');
+          } else if (lowerPath.endsWith('.webp')) {
+            res.setHeader('Content-Type', 'image/webp');
           }
-          // إذا لم يكن audio file، express.static سيتعامل معه تلقائياً
+          // إذا لم يكن audio/image file، express.static سيتعامل معه تلقائياً
         },
       },
     }),
@@ -197,6 +206,7 @@ export class AppModule implements OnModuleInit {
     const uploadsDir = join(process.cwd(), 'uploads');
     const audioDir = join(uploadsDir, 'audio');
     const recordingsDir = join(uploadsDir, 'recordings');
+    const imagesQuestionsDir = join(uploadsDir, 'images', 'questions');
 
     try {
       // إنشاء مجلد uploads إذا لم يكن موجوداً
@@ -215,6 +225,12 @@ export class AppModule implements OnModuleInit {
       if (!existsSync(recordingsDir)) {
         mkdirSync(recordingsDir, { recursive: true });
         this.logger.log(`✅ Created recordings directory: ${recordingsDir}`);
+      }
+
+      // إنشاء مجلد images/questions إذا لم يكن موجوداً
+      if (!existsSync(imagesQuestionsDir)) {
+        mkdirSync(imagesQuestionsDir, { recursive: true });
+        this.logger.log(`✅ Created images/questions directory: ${imagesQuestionsDir}`);
       }
 
       this.logger.log(`✅ Uploads directories ready: ${uploadsDir}`);

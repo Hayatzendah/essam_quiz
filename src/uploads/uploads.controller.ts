@@ -5,21 +5,32 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join, basename } from 'path';
+import { Request } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
 
+// Filter للصور فقط
+const imageFileFilter = (req: any, file: Express.Multer.File, callback: (error: Error | null, acceptFile: boolean) => void) => {
+  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+    return callback(new Error('Only image files are allowed!'), false);
+  }
+  callback(null, true);
+};
+
 @ApiTags('Uploads')
 @ApiBearerAuth('JWT-auth')
 @Controller('uploads')
 export class UploadsController {
-  constructor() {}
+  constructor(private readonly configService: ConfigService) {}
   @Post('audio')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')
@@ -56,17 +67,88 @@ export class UploadsController {
   })
   @ApiResponse({ status: 201, description: 'Audio file uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid file' })
-  async uploadAudio(@UploadedFile() file: Express.Multer.File) {
+  async uploadAudio(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
     console.log('Saved audio file at', file.path);
 
-    // استخدام مسار نسبي فقط (بدون baseUrl) لأن الفرونت سيبني الـ URL الكامل
-    const audioUrl = `/uploads/audio/${file.filename}`;
+    // استخدام PUBLIC_BASE_URL من environment variables، أو بناء URL من request
+    const publicBaseUrl = this.configService.get<string>('PUBLIC_BASE_URL');
+    let baseUrl: string;
+    
+    if (publicBaseUrl) {
+      baseUrl = publicBaseUrl;
+    } else {
+      // Fallback: بناء URL من request
+      baseUrl = `${req.protocol}://${req.get('host')}`;
+    }
+
+    const audioUrl = `${baseUrl}/uploads/audio/${file.filename}`;
 
     return { audioUrl };
+  }
+
+  @Post('image')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: join(process.cwd(), 'uploads', 'images', 'questions'),
+        filename: (req, file, callback) => {
+          // الحفاظ على الاسم الأصلي للملف
+          callback(null, file.originalname);
+        },
+      }),
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+      fileFilter: imageFileFilter,
+    }),
+  )
+  @ApiOperation({
+    summary: 'Upload image file',
+    description: 'رفع ملف صورة للأسئلة. يرجع رابط الملف.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Image file uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid file' })
+  async uploadImage(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    console.log('Saved image file at', file.path);
+
+    // استخدام PUBLIC_BASE_URL من environment variables، أو بناء URL من request
+    const publicBaseUrl = this.configService.get<string>('PUBLIC_BASE_URL');
+    let baseUrl: string;
+    
+    if (publicBaseUrl) {
+      baseUrl = publicBaseUrl;
+    } else {
+      // Fallback: بناء URL من request
+      baseUrl = `${req.protocol}://${req.get('host')}`;
+    }
+
+    const imageUrl = `${baseUrl}/uploads/images/questions/${file.filename}`;
+
+    return { 
+      imageUrl,
+      filename: file.filename,
+      mime: file.mimetype,
+    };
   }
 }
 
