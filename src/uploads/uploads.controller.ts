@@ -6,6 +6,7 @@ import {
   UploadedFile,
   BadRequestException,
   Req,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -95,7 +96,12 @@ export class UploadsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: join(process.cwd(), 'uploads', 'images', 'questions'),
+        destination: (req: any, file, callback) => {
+          // تحديد المجلد بناءً على query parameter
+          const folder = req.query.folder || 'questions';
+          const destination = join(process.cwd(), 'uploads', 'images', folder);
+          callback(null, destination);
+        },
         filename: (req, file, callback) => {
           // الحفاظ على الاسم الأصلي للملف
           callback(null, file.originalname);
@@ -107,7 +113,7 @@ export class UploadsController {
   )
   @ApiOperation({
     summary: 'Upload image file',
-    description: 'رفع ملف صورة للأسئلة. يرجع رابط الملف.',
+    description: 'رفع ملف صورة للأسئلة. استخدم ?folder=ولايات لرفع صور الولايات.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -123,7 +129,11 @@ export class UploadsController {
   })
   @ApiResponse({ status: 201, description: 'Image file uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid file' })
-  async uploadImage(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+    @Query('folder') folder?: string,
+  ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
@@ -141,12 +151,14 @@ export class UploadsController {
       baseUrl = `${req.protocol}://${req.get('host')}`;
     }
 
-    const imageUrl = `${baseUrl}/uploads/images/questions/${file.filename}`;
+    const imageFolder = folder || 'questions';
+    const imageUrl = `${baseUrl}/uploads/images/${imageFolder}/${file.filename}`;
 
     return { 
       imageUrl,
       filename: file.filename,
       mime: file.mimetype,
+      key: `images/${imageFolder}/${file.filename}`,
     };
   }
 }

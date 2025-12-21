@@ -1,134 +1,80 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as FormData from 'form-data';
+import axios from 'axios';
 
-// Configuration
-const API_BASE_URL = process.env.API_BASE_URL || process.env.PUBLIC_BASE_URL || 'http://localhost:4000';
-const JWT_TOKEN = process.env.JWT_TOKEN || ''; // يجب أن تحصل على token من login
+// إعدادات
+const API_BASE_URL = process.env.API_BASE_URL || 'https://api.deutsch-tests.com';
+const JWT_TOKEN = process.env.JWT_TOKEN || ''; // يجب تعيين JWT token
 
-// قائمة الصور المطلوبة
-const requiredImages = [
-  'سؤال21عام.jpeg',
-  'سؤال21عام.jpeg2.jpeg',
-  'سؤال21عام.jpeg3.jpeg',
-  'سؤال21عام.jpeg4.jpeg',
-  'سؤال55عام.jpeg',
-  'سؤال70عام.jpeg',
-  'سؤال130عام.jpeg',
-  'سؤال176عام.jpeg',
-  'سؤال181عام.jpeg',
-  'سؤال187عام.jpeg',
-  'سؤال209عام.jpeg1.jpeg',
-  'سؤال209عام.jpeg2.jpeg',
-  'سؤال209عام.jpeg3.jpeg',
-  'سؤال209عام.jpeg4.jpeg',
-  'سؤال216عام.jpeg',
-  '1سؤال226عام.jpeg',
-  'سؤال226عام.jpeg2.jpeg',
-  'سؤال226عام.jpeg3.jpeg',
-  'سؤال226عام.jpeg4.jpeg',
-  'سؤال235عام.jpeg',
-];
+// مجلدات الصور
+const QUESTIONS_IMAGES_DIR = path.join(__dirname, '..', 'src', 'uploads', 'images', 'questions');
+const STATES_IMAGES_DIR = path.join(__dirname, '..', 'src', 'uploads', 'images', 'ولايات');
 
-async function uploadImage(imagePath: string, filename: string): Promise<boolean> {
+async function uploadImage(imagePath: string, filename: string, isStateImage: boolean = false): Promise<boolean> {
   try {
-    if (!fs.existsSync(imagePath)) {
-      console.log(`⚠️  Image not found: ${imagePath}`);
-      return false;
-    }
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(imagePath), filename);
 
-    const fileBuffer = fs.readFileSync(imagePath);
-    const boundary = `----WebKitFormBoundary${Date.now()}`;
-    const formData = Buffer.concat([
-      Buffer.from(`--${boundary}\r\n`),
-      Buffer.from(`Content-Disposition: form-data; name="file"; filename="${filename}"\r\n`),
-      Buffer.from(`Content-Type: image/jpeg\r\n\r\n`),
-      fileBuffer,
-      Buffer.from(`\r\n--${boundary}--\r\n`),
-    ]);
+    const endpoint = isStateImage 
+      ? `${API_BASE_URL}/uploads/image?folder=ولايات` 
+      : `${API_BASE_URL}/uploads/image`;
 
-    const response = await fetch(`${API_BASE_URL}/uploads/image`, {
-      method: 'POST',
+    const response = await axios.post(endpoint, formData, {
       headers: {
-        'Content-Type': `multipart/form-data; boundary=${boundary}`,
-        'Authorization': `Bearer ${JWT_TOKEN}`,
+        ...formData.getHeaders(),
+        Authorization: `Bearer ${JWT_TOKEN}`,
       },
-      body: formData,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      console.log(`✅ Uploaded: ${filename} -> ${data.imageUrl}`);
-      return true;
-    } else {
-      const errorText = await response.text();
-      console.log(`❌ Failed to upload ${filename}: Status ${response.status} - ${errorText}`);
-      return false;
-    }
+    console.log(`✅ Uploaded: ${filename} -> ${response.data.imageUrl || response.data.url}`);
+    return true;
   } catch (error: any) {
-    console.log(`❌ Failed to upload ${filename}: ${error.message}`);
+    console.error(`❌ Failed to upload ${filename}:`, error.response?.data || error.message);
     return false;
   }
 }
 
 async function uploadAllImages() {
-  console.log('🚀 Starting image upload process...\n');
-  console.log(`📡 API Base URL: ${API_BASE_URL}\n`);
-
   if (!JWT_TOKEN) {
-    console.error('❌ JWT_TOKEN is required!');
-    console.error('   Please set JWT_TOKEN environment variable or update the script.');
-    console.error('   You can get a token by logging in as teacher/admin.');
+    console.error('❌ JWT_TOKEN environment variable is required!');
+    console.log('Usage: JWT_TOKEN=your_token npm run upload-images');
     process.exit(1);
   }
 
-  const imagesDir = path.join(process.cwd(), 'uploads', 'images', 'questions');
-  
-  if (!fs.existsSync(imagesDir)) {
-    console.error(`❌ Images directory not found: ${imagesDir}`);
-    process.exit(1);
-  }
+  console.log('🚀 Starting image upload...\n');
 
-  let successCount = 0;
-  let failCount = 0;
-
-  console.log(`📁 Found ${requiredImages.length} images to upload\n`);
-
-  for (const filename of requiredImages) {
-    const imagePath = path.join(imagesDir, filename);
-    const success = await uploadImage(imagePath, filename);
-    if (success) {
-      successCount++;
-    } else {
-      failCount++;
+  // رفع صور الأسئلة العامة
+  console.log('📁 Uploading general questions images...');
+  if (fs.existsSync(QUESTIONS_IMAGES_DIR)) {
+    const files = fs.readdirSync(QUESTIONS_IMAGES_DIR);
+    const imageFiles = files.filter(f => f.endsWith('.jpeg') || f.endsWith('.jpg'));
+    
+    for (const file of imageFiles) {
+      const filePath = path.join(QUESTIONS_IMAGES_DIR, file);
+      await uploadImage(filePath, file, false);
+      // تأخير صغير لتجنب rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
-    // انتظار قصير بين كل رفع لتجنب rate limiting
-    await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  console.log(`\n📊 Upload Summary:`);
-  console.log(`   ✅ Success: ${successCount}`);
-  console.log(`   ❌ Failed: ${failCount}`);
-  console.log(`   📦 Total: ${requiredImages.length}`);
-
-  if (failCount === 0) {
-    console.log(`\n🎉 All images uploaded successfully!`);
-  } else {
-    console.log(`\n⚠️  Some images failed to upload. Please check the errors above.`);
+  console.log('\n📁 Uploading state questions images...');
+  // رفع صور الولايات
+  if (fs.existsSync(STATES_IMAGES_DIR)) {
+    const files = fs.readdirSync(STATES_IMAGES_DIR);
+    const imageFiles = files.filter(f => f.endsWith('.jpeg') || f.endsWith('.jpg'));
+    
+    for (const file of imageFiles) {
+      const filePath = path.join(STATES_IMAGES_DIR, file);
+      await uploadImage(filePath, file, true);
+      // تأخير صغير لتجنب rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
   }
+
+  console.log('\n✅ Upload completed!');
 }
 
-// تشغيل السكريبت
-if (require.main === module) {
-  uploadAllImages()
-    .then(() => {
-      console.log('\n✅ Script completed');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('\n💥 Script failed:', error);
-      process.exit(1);
-    });
-}
-
-export { uploadAllImages };
-
+uploadAllImages().catch(console.error);
