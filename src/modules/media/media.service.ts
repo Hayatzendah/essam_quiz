@@ -69,7 +69,7 @@ export class MediaService {
         this.logger.debug(`MOCK MODE: Simulating upload for ${key} (${opts.buffer.length} bytes)`);
       }
       const baseUrl =
-        process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
+        process.env.PUBLIC_BASE_URL || process.env.APP_URL || process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
       const mockUrl = `${baseUrl}/media/mock/${key}`;
       return { key, url: mockUrl, mime: opts.mime };
     }
@@ -139,7 +139,7 @@ export class MediaService {
         this.logger.debug(`MOCK MODE: Generating mock presigned URL for ${key}`);
       }
       const baseUrl =
-        process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
+        process.env.PUBLIC_BASE_URL || process.env.APP_URL || process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
       return `${baseUrl}/media/mock/${key}?expires=${Date.now() + (expiresSec ?? this.defaultExpires) * 1000}`;
     }
 

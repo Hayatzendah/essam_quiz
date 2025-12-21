@@ -69,8 +69,8 @@ import { AppController } from './app.controller';
         S3_BUCKET: Joi.string().optional(),
         MEDIA_USE_MOCK: Joi.string().valid('true', 'false').optional(),
         // App URL and file paths
-        APP_URL: Joi.string().uri().optional().default('http://localhost:4000'),
-        PUBLIC_BASE_URL: Joi.string().uri().optional().default('http://localhost:4000'),
+        APP_URL: Joi.string().uri().optional().default('https://api.deutsch-tests.com'),
+        PUBLIC_BASE_URL: Joi.string().uri().optional().default('https://api.deutsch-tests.com'),
         FILES_BASE_PATH: Joi.string().optional().default('/uploads/audio'),
       }),
     }),
