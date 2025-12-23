@@ -23,7 +23,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
 import * as fs from 'fs';
-import { Response } from 'express';
+import { Response as ExpressResponse } from 'express';
 import { MediaService } from '../modules/media/media.service';
 
 // Filter للصور فقط
@@ -247,7 +247,7 @@ export class UploadsController {
   async getImage(
     @Param('folder') folder: string,
     @Param('filename') filename: string,
-    @Res() res: Response,
+    @Res() res: ExpressResponse,
   ) {
     const filePath = join(process.cwd(), 'uploads', 'images', folder, filename);
     
