@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join, basename } from 'path';
+import { extname, join, basename, resolve } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -23,7 +23,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
 import * as fs from 'fs';
-import { Response as ExpressResponse } from 'express';
+import type { Response as ExpressResponse } from 'express';
 import { MediaService } from '../modules/media/media.service';
 
 // Filter للصور فقط
@@ -249,7 +249,7 @@ export class UploadsController {
     @Param('filename') filename: string,
     @Res() res: ExpressResponse,
   ) {
-    const filePath = join(process.cwd(), 'uploads', 'images', folder, filename);
+    const filePath = resolve(process.cwd(), 'uploads', 'images', folder, filename);
     
     // إذا الملف موجود محلياً، نخدمه مباشرة
     if (fs.existsSync(filePath)) {
