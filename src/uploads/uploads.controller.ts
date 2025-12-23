@@ -7,6 +7,7 @@ import {
   BadRequestException,
   Req,
   Query,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -17,6 +18,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
+import * as fs from 'fs';
 
 // Filter للصور فقط
 const imageFileFilter = (req: any, file: Express.Multer.File, callback: (error: Error | null, acceptFile: boolean) => void) => {
@@ -160,6 +162,73 @@ export class UploadsController {
       mime: file.mimetype,
       key: `images/${imageFolder}/${file.filename}`,
     };
+  }
+
+  @Post('image-from-base64')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('teacher', 'admin')
+  @ApiOperation({
+    summary: 'Upload image from base64',
+    description: 'رفع ملف صورة من base64 string. استخدم ?folder=ولايات لرفع صور الولايات.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        filename: { type: 'string' },
+        base64: { type: 'string' },
+      },
+      required: ['filename', 'base64'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Image file uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid file' })
+  async uploadImageFromBase64(
+    @Body() body: { filename: string; base64: string },
+    @Req() req: any,
+    @Query('folder') folder?: string,
+  ) {
+    if (!body.filename || !body.base64) {
+      throw new BadRequestException('filename and base64 are required');
+    }
+
+    try {
+      // إزالة data URL prefix إذا كان موجوداً
+      let base64Data = body.base64;
+      if (base64Data.includes(',')) {
+        base64Data = base64Data.split(',')[1];
+      }
+
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      // تحديد المجلد
+      const imageFolder = folder || 'questions';
+      const destinationDir = join(process.cwd(), 'uploads', 'images', imageFolder);
+      
+      // التأكد من وجود المجلد
+      if (!fs.existsSync(destinationDir)) {
+        fs.mkdirSync(destinationDir, { recursive: true });
+      }
+
+      const filePath = join(destinationDir, body.filename);
+      fs.writeFileSync(filePath, buffer);
+
+      console.log('Saved image file at', filePath);
+
+      // استخدام PUBLIC_BASE_URL من environment variables
+      const publicBaseUrl = this.configService.get<string>('PUBLIC_BASE_URL');
+      const baseUrl = publicBaseUrl || `${req.protocol}://${req.get('host')}`;
+      const imageUrl = `${baseUrl}/uploads/images/${imageFolder}/${body.filename}`;
+
+      return { 
+        imageUrl,
+        filename: body.filename,
+        mime: 'image/jpeg',
+        key: `images/${imageFolder}/${body.filename}`,
+      };
+    } catch (error: any) {
+      throw new BadRequestException(`Failed to save image: ${error.message}`);
+    }
   }
 }
 
