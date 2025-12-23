@@ -14,3 +14,11 @@ export class QueryVocabularyWordDto {
 
 
 
+
+
+
+
+
+
+
+

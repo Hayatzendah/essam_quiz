@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -8,6 +9,9 @@ import {
   Req,
   Query,
   Body,
+  Res,
+  Param,
+  NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -19,6 +23,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
 import * as fs from 'fs';
+import { Response } from 'express';
+import { MediaService } from '../modules/media/media.service';
 
 // Filter للصور فقط
 const imageFileFilter = (req: any, file: Express.Multer.File, callback: (error: Error | null, acceptFile: boolean) => void) => {
@@ -29,10 +35,12 @@ const imageFileFilter = (req: any, file: Express.Multer.File, callback: (error: 
 };
 
 @ApiTags('Uploads')
-@ApiBearerAuth('JWT-auth')
 @Controller('uploads')
 export class UploadsController {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly mediaService: MediaService,
+  ) {}
   @Post('audio')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('teacher', 'admin')
@@ -228,6 +236,40 @@ export class UploadsController {
       };
     } catch (error: any) {
       throw new BadRequestException(`Failed to save image: ${error.message}`);
+    }
+  }
+
+  @Get('images/:folder/:filename')
+  @ApiOperation({
+    summary: 'Get image with fallback',
+    description: 'يحاول جلب الصورة من disk، وإذا لم تكن موجودة يحاول من S3 أو mock URL',
+  })
+  async getImage(
+    @Param('folder') folder: string,
+    @Param('filename') filename: string,
+    @Res() res: Response,
+  ) {
+    const filePath = join(process.cwd(), 'uploads', 'images', folder, filename);
+    
+    // إذا الملف موجود محلياً، نخدمه مباشرة
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+
+    // إذا الملف مش موجود، نحاول نجيب presigned URL من S3
+    const key = `images/${folder}/${filename}`;
+    try {
+      const presignedUrl = await this.mediaService.getPresignedUrl(key, 3600);
+      // Redirect للـ S3 URL
+      return res.redirect(presignedUrl);
+    } catch (error: any) {
+      // إذا فشل S3، نعطي mock URL أو 404
+      const baseUrl = this.configService.get<string>('PUBLIC_BASE_URL') || 
+                      this.configService.get<string>('APP_URL') || 
+                      'https://api.deutsch-tests.com';
+      const mockUrl = `${baseUrl}/media/mock/${key}`;
+      // Redirect للـ mock URL
+      return res.redirect(mockUrl);
     }
   }
 }

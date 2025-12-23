@@ -34,6 +34,7 @@
     "fix-correct-answer": "ts-node scripts/fix-correct-answer.ts",
     "delete-all-state-questions": "ts-node scripts/delete-all-state-questions.ts",
     "delete-all-leben-questions": "ts-node scripts/delete-all-leben-questions.ts",
+    "delete-common-questions-from-atlas": "ts-node scripts/delete-common-questions-from-atlas.ts",
     "refresh-leben-questions": "ts-node scripts/refresh-leben-questions.ts",
     "add-images-to-questions": "ts-node scripts/add-images-to-questions.ts",
     "add-images-to-mongodb": "ts-node scripts/add-images-to-mongodb.ts",

@@ -127,7 +127,21 @@ export class QuestionsService {
   }
 
   async createBulkQuestions(questions: CreateQuestionDto[], createdBy?: string) {
-    const results: Array<{ index: number; id: any; prompt: string; status: QuestionStatus }> = [];
+    const results: Array<{
+      index: number;
+      id: any;
+      prompt: string;
+      qType: QuestionType;
+      options?: any[];
+      correctAnswer?: string;
+      status: QuestionStatus;
+      provider?: string;
+      level?: string;
+      tags?: string[];
+      state?: string;
+      usageCategory?: string;
+      mainSkill?: string;
+    }> = [];
     const errors: Array<{ index: number; prompt: string; error: string }> = [];
 
     for (let i = 0; i < questions.length; i++) {
@@ -161,11 +175,36 @@ export class QuestionsService {
           await this.addQuestionToExam(examId, String(doc._id), question.section);
         }
 
+        // استخراج correctAnswer من الخيارات إذا لم يكن موجوداً (لأسئلة MCQ)
+        let correctAnswer = doc.correctAnswer;
+        if (doc.qType === QuestionType.MCQ && (!correctAnswer || correctAnswer === '') && doc.options) {
+          const correctOption = doc.options.find((opt: any) => opt.isCorrect === true);
+          if (correctOption) {
+            correctAnswer = correctOption.text;
+            // تحديث السؤال في قاعدة البيانات أيضاً
+            if (!doc.correctAnswer) {
+              doc.correctAnswer = correctAnswer;
+              await doc.save();
+            }
+          }
+        }
+
+        // إرجاع جميع الحقول المهمة
+        const docObj = doc.toObject();
         results.push({
           index: i,
           id: doc._id,
           prompt: doc.prompt,
+          qType: doc.qType,
+          options: doc.options,
+          correctAnswer: correctAnswer || doc.correctAnswer,
           status: doc.status,
+          provider: doc.provider,
+          level: doc.level,
+          tags: doc.tags,
+          state: (docObj as any).state,
+          usageCategory: (docObj as any).usageCategory,
+          mainSkill: (docObj as any).mainSkill,
         });
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -316,10 +355,25 @@ export class QuestionsService {
           .filter(Boolean);
         q.tags = { $in: [...existingTags, filters.state] };
       } else {
-        // للأسئلة العامة (بدون tags للولايات) + أسئلة الولاية المحددة
+        // للأسئلة العامة (usageCategory='common') + أسئلة الولاية المحددة (usageCategory='state_specific' و state=المحدد)
         q.$or = [
-          { tags: { $nin: allStates } }, // أسئلة عامة (ليس لها tag للولاية)
-          { tags: filters.state }, // أسئلة الولاية المحددة
+          { 
+            usageCategory: 'common', // أسئلة عامة (300-Fragen)
+            tags: { $nin: allStates } // تأكيد عدم وجود tags للولايات
+          },
+          { 
+            usageCategory: 'state_specific', // أسئلة الولاية المحددة
+            state: filters.state // الولاية المحددة
+          },
+          // للتوافق مع الأسئلة القديمة التي قد لا تحتوي على usageCategory
+          {
+            usageCategory: { $exists: false },
+            tags: { $nin: allStates } // أسئلة عامة قديمة
+          },
+          {
+            usageCategory: { $exists: false },
+            tags: filters.state // أسئلة ولاية قديمة
+          }
         ];
       }
     } else if (filters.tags) {

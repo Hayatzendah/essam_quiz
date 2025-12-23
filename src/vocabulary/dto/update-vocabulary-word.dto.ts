@@ -26,3 +26,11 @@ export class UpdateVocabularyWordDto {
 
 
 
+
+
+
+
+
+
+
+

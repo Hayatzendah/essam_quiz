@@ -2077,6 +2077,32 @@ export class ExamsService {
         baseQuery.tags = { $in: sectionAny.tags };
       }
 
+      // FIX: للأسئلة الخاصة بالولايات (Leben in Deutschland)
+      const validStates = [
+        'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg',
+        'Bremen', 'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern',
+        'Niedersachsen', 'Nordrhein-Westfalen', 'Rheinland-Pfalz',
+        'Saarland', 'Sachsen', 'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'
+      ];
+      
+      if (
+        (exam.provider === 'leben_in_deutschland' || exam.provider === 'Deutschland-in-Leben' || 
+         exam.provider?.toLowerCase() === 'lid' || exam.provider?.toLowerCase() === 'deutschland-in-leben') &&
+        exam.mainSkill === 'leben_test'
+      ) {
+        // البحث عن ولاية في tags
+        const stateTag = sectionAny.tags?.find((tag: string) => validStates.includes(tag));
+        
+        if (stateTag) {
+          // هذا قسم خاص بالولاية - نضيف فلتر على usageCategory و state
+          baseQuery.usageCategory = 'state_specific';
+          baseQuery.state = stateTag;
+        } else if (sectionAny.tags?.includes('300-Fragen')) {
+          // هذا قسم الـ 300 سؤال - نضيف فلتر على usageCategory
+          baseQuery.usageCategory = 'common';
+        }
+      }
+
       if (sectionAny?.difficultyDistribution) {
         for (const [difficulty, count] of Object.entries(sectionAny.difficultyDistribution)) {
           const countNum = typeof count === 'number' ? (count as number) : 0;
