@@ -106,6 +106,13 @@ export class SubmitAttemptAnswerDto {
   @IsObject()
   studentInteractiveAnswers?: Record<string, string>;
 
+  // لأسئلة INTERACTIVE_TEXT - Reorder: array of part ids بالترتيب اللي الطالب حطه
+  // مثال: ["1", "2", "3", "4"]
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  reorderAnswer?: string[];
+
   // للتوافق مع الكود القديم - للـ INTERACTIVE_TEXT Reorder
   @IsOptional()
   @IsArray()
