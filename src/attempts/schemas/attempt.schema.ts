@@ -80,6 +80,7 @@ export class AttemptItem {
   @Prop({ type: [String], default: undefined }) answerKeyReorder?: string[]; // reorder: ترتيب صحيح
 
   // INTERACTIVE_TEXT snapshots (للتصحيح)
+  @Prop({ type: String, default: undefined }) interactiveTextSnapshot?: string; // النص التفاعلي مع placeholders مثل "Guten Tag! Ich {{a}} Anna. Ich {{b}} aus {{c}} ..."
   @Prop({ type: [Object], default: undefined, _id: false }) interactiveBlanksSnapshot?: Array<{
     id: string;
     type: 'dropdown' | 'textInput';
@@ -94,7 +95,7 @@ export class AttemptItem {
       order: number;
     }>;
   }; // snapshot لترتيب الأجزاء
-  @Prop({ type: String, default: undefined }) textSnapshot?: string; // نص السؤال مع placeholders
+  @Prop({ type: String, default: undefined }) textSnapshot?: string; // نص السؤال مع placeholders (legacy - للتوافق)
 
   // إجابة الطالب (حسب النوع)
   @Prop() studentAnswerText?: string; // fill / short / free_text
