@@ -102,7 +102,10 @@ export class QuestionsService {
       }),
       // INTERACTIVE_TEXT fields (إذا كانت موجودة)
       ...(dto.qType === QuestionType.INTERACTIVE_TEXT && {
-        ...(dto.text && { text: dto.text }),
+        ...(dto.interactiveText && { interactiveText: dto.interactiveText }),
+        ...(dto.text && { text: dto.text }), // للتوافق مع الكود القديم
+        // استخدام interactiveText إذا كان موجوداً، وإلا text
+        ...((dto.interactiveText || dto.text) && { text: dto.interactiveText || dto.text }),
         ...(dto.interactiveBlanks && Array.isArray(dto.interactiveBlanks) && dto.interactiveBlanks.length > 0 && {
           interactiveBlanks: dto.interactiveBlanks.map((blank: any) => {
             // تحويل select إلى dropdown للتوحيد
@@ -713,14 +716,14 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, text, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, answerKeyMatch, answerKeyReorder, grammarTopicId, grammarLevel, grammarTopic, ...questionData } = dto;
+    const { examId, sectionTitle, section, points, text, interactiveText, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, answerKeyMatch, answerKeyReorder, grammarTopicId, grammarLevel, grammarTopic, ...questionData } = dto;
     
     // استخدام type إذا كان موجوداً، وإلا استخدام qType
     const questionType = type || qType;
     
-    // استخدام text كحقل أساسي، و prompt كحقل اختياري
-    const questionText = text;
-    const questionPrompt = prompt ?? text;
+    // استخدام interactiveText إذا كان موجوداً (للـ interactive_text)، وإلا text
+    const questionText = interactiveText || text;
+    const questionPrompt = prompt ?? questionText;
 
     // 1) جلب الامتحان أولاً (لأخذ listeningAudioId من section إذا لزم الأمر)
     const exam = await this.examModel.findById(examId).exec();
@@ -861,8 +864,25 @@ export class QuestionsService {
       }),
       // INTERACTIVE_TEXT fields
       ...(questionType === QuestionType.INTERACTIVE_TEXT && {
-        ...(questionText && { text: questionText }),
-        ...(questionData.interactiveBlanks && Array.isArray(questionData.interactiveBlanks) && questionData.interactiveBlanks.length > 0 && { interactiveBlanks: questionData.interactiveBlanks }),
+        ...(interactiveText && { interactiveText }),
+        ...(questionText && { text: questionText }), // للتوافق مع الكود القديم
+        // استخدام interactiveText إذا كان موجوداً، وإلا text
+        ...((interactiveText || questionText) && { text: interactiveText || questionText }),
+        ...(questionData.interactiveBlanks && Array.isArray(questionData.interactiveBlanks) && questionData.interactiveBlanks.length > 0 && {
+          interactiveBlanks: questionData.interactiveBlanks.map((blank: any) => {
+            // تحويل select إلى dropdown للتوحيد
+            const type = blank.type === 'select' ? 'dropdown' : blank.type;
+            // استخدام options إذا كان موجوداً، وإلا choices
+            const options = blank.options || blank.choices;
+            const choices = blank.choices || blank.options;
+            return {
+              ...blank,
+              type,
+              options,
+              choices, // للتوافق مع الكود القديم
+            };
+          }),
+        }),
         ...(questionData.interactiveReorder && { interactiveReorder: questionData.interactiveReorder }),
       }),
       ...(questionData.explanation && { explanation: questionData.explanation }),

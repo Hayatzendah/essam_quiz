@@ -297,6 +297,11 @@ export class CreateQuestionWithExamDto {
 
   @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
   @IsOptional()
+  @IsString()
+  interactiveText?: string; // النص التفاعلي مع placeholders مثل {{a}}, {{b}}
+
+  @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
+  @IsOptional()
   @IsArray()
   @ArrayMinSize(3)
   @ValidateNested({ each: true })

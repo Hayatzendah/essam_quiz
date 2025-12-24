@@ -171,6 +171,9 @@ export class Question {
   maxSeconds?: number; // حد أقصى للثواني (اختياري)
 
   // INTERACTIVE_TEXT (أسئلة النص التفاعلي)
+  @Prop({ trim: true })
+  interactiveText?: string; // النص التفاعلي مع placeholders مثل {{a}}, {{b}}
+
   @Prop({ type: [InteractiveBlankSchema], default: undefined })
   interactiveBlanks?: InteractiveBlank[]; // للفراغات المتعددة (fill-in-the-blanks)
 
