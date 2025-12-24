@@ -103,7 +103,21 @@ export class QuestionsService {
       // INTERACTIVE_TEXT fields (إذا كانت موجودة)
       ...(dto.qType === QuestionType.INTERACTIVE_TEXT && {
         ...(dto.text && { text: dto.text }),
-        ...(dto.interactiveBlanks && Array.isArray(dto.interactiveBlanks) && dto.interactiveBlanks.length > 0 && { interactiveBlanks: dto.interactiveBlanks }),
+        ...(dto.interactiveBlanks && Array.isArray(dto.interactiveBlanks) && dto.interactiveBlanks.length > 0 && {
+          interactiveBlanks: dto.interactiveBlanks.map((blank: any) => {
+            // تحويل select إلى dropdown للتوحيد
+            const type = blank.type === 'select' ? 'dropdown' : blank.type;
+            // استخدام options إذا كان موجوداً، وإلا choices
+            const options = blank.options || blank.choices;
+            const choices = blank.choices || blank.options;
+            return {
+              ...blank,
+              type,
+              options,
+              choices, // للتوافق مع الكود القديم
+            };
+          }),
+        }),
         ...(dto.interactiveReorder && { interactiveReorder: dto.interactiveReorder }),
       }),
     });
@@ -177,7 +191,21 @@ export class QuestionsService {
           // INTERACTIVE_TEXT fields (إذا كانت موجودة)
           ...(question.qType === QuestionType.INTERACTIVE_TEXT && {
             ...(question.text && { text: question.text }),
-            ...(question.interactiveBlanks && Array.isArray(question.interactiveBlanks) && question.interactiveBlanks.length > 0 && { interactiveBlanks: question.interactiveBlanks }),
+            ...(question.interactiveBlanks && Array.isArray(question.interactiveBlanks) && question.interactiveBlanks.length > 0 && {
+              interactiveBlanks: question.interactiveBlanks.map((blank: any) => {
+                // تحويل select إلى dropdown للتوحيد
+                const type = blank.type === 'select' ? 'dropdown' : blank.type;
+                // استخدام options إذا كان موجوداً، وإلا choices
+                const options = blank.options || blank.choices;
+                const choices = blank.choices || blank.options;
+                return {
+                  ...blank,
+                  type,
+                  options,
+                  choices, // للتوافق مع الكود القديم
+                };
+              }),
+            }),
             ...(question.interactiveReorder && { interactiveReorder: question.interactiveReorder }),
           }),
         });

@@ -64,14 +64,17 @@ export class InteractiveBlank {
   @Prop({ required: true, trim: true })
   id: string; // a, b, c, ... حتى 10
 
-  @Prop({ required: true, enum: ['dropdown', 'textInput'] })
-  type: 'dropdown' | 'textInput';
+  @Prop({ required: true, enum: ['dropdown', 'select', 'textInput'] })
+  type: 'dropdown' | 'select' | 'textInput';
 
   @Prop({ type: [String], required: true })
   correctAnswers: string[]; // إجابات صحيحة متعددة
 
   @Prop({ type: [String], default: undefined })
-  choices?: string[]; // مطلوب إذا type = 'dropdown'
+  choices?: string[]; // مطلوب إذا type = 'dropdown' أو 'select' (legacy - للتوافق)
+
+  @Prop({ type: [String], default: undefined })
+  options?: string[]; // مطلوب إذا type = 'dropdown' أو 'select' (الشكل الجديد)
 
   @Prop({ trim: true, default: undefined })
   hint?: string; // نص تلميح اختياري
@@ -322,8 +325,8 @@ QuestionSchema.pre('validate', function (next) {
         }
         blankIds.add(blank.id);
 
-        if (blank.type === 'dropdown' && (!blank.choices || blank.choices.length === 0)) {
-          return next(new Error(`INTERACTIVE_TEXT blank ${blank.id} of type dropdown requires choices array`));
+        if ((blank.type === 'dropdown' || blank.type === 'select') && (!blank.options || blank.options.length === 0) && (!blank.choices || blank.choices.length === 0)) {
+          return next(new Error(`INTERACTIVE_TEXT blank ${blank.id} of type ${blank.type} requires options or choices array`));
         }
 
         if (!blank.correctAnswers || blank.correctAnswers.length === 0) {

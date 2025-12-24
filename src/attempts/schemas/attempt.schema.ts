@@ -83,9 +83,10 @@ export class AttemptItem {
   @Prop({ type: String, default: undefined }) interactiveTextSnapshot?: string; // النص التفاعلي مع placeholders مثل "Guten Tag! Ich {{a}} Anna. Ich {{b}} aus {{c}} ..."
   @Prop({ type: [Object], default: undefined, _id: false }) interactiveBlanksSnapshot?: Array<{
     id: string;
-    type: 'dropdown' | 'textInput';
+    type: 'dropdown' | 'select' | 'textInput';
     correctAnswers: string[];
-    choices?: string[];
+    options?: string[]; // الشكل الجديد - للـ dropdown/select
+    choices?: string[]; // للتوافق مع الكود القديم
     hint?: string;
   }>; // snapshot للفراغات التفاعلية
   @Prop({ type: Object, default: undefined, _id: false }) interactiveReorderSnapshot?: {

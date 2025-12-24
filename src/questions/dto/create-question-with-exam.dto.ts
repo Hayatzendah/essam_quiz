@@ -61,19 +61,27 @@ class InteractiveBlankDto {
   @MinLength(1)
   id: string; // a, b, c, ... حتى 10
 
-  @IsEnum(['dropdown', 'textInput'])
-  type: 'dropdown' | 'textInput';
+  @IsEnum(['dropdown', 'select', 'textInput'])
+  type: 'dropdown' | 'select' | 'textInput';
 
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
   correctAnswers: string[];
 
-  @ValidateIf((o) => o.type === 'dropdown')
+  @ValidateIf((o) => o.type === 'dropdown' || o.type === 'select')
+  @IsOptional()
   @IsArray()
   @ArrayMinSize(2)
   @IsString({ each: true })
-  choices?: string[];
+  options?: string[]; // الشكل الجديد - مطلوب إذا type = 'dropdown' أو 'select' (حتى 12)
+
+  @ValidateIf((o) => (o.type === 'dropdown' || o.type === 'select') && !o.options)
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(2)
+  @IsString({ each: true })
+  choices?: string[]; // للتوافق مع الكود القديم (حتى 12)
 
   @IsOptional()
   @IsString()
