@@ -11,6 +11,7 @@ import {
   Min,
   MaxLength,
   ValidateIf,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -93,6 +94,23 @@ export class SubmitAttemptAnswerDto {
   @IsArray()
   @IsString({ each: true })
   studentAnswerReorder?: string[];
+
+  // لأسئلة INTERACTIVE_TEXT - Fill-in-the-blanks: map من blankId -> userAnswer
+  // مثال: { "a": "bin", "b": "komme", "c": "Deutschland" }
+  @IsOptional()
+  @IsObject()
+  interactiveAnswers?: Record<string, string>;
+
+  // للتوافق مع الكود القديم - للـ INTERACTIVE_TEXT
+  @IsOptional()
+  @IsObject()
+  studentInteractiveAnswers?: Record<string, string>;
+
+  // للتوافق مع الكود القديم - للـ INTERACTIVE_TEXT Reorder
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  studentReorderAnswer?: string[];
 
   // للتوافق مع الكود القديم
   @IsOptional()
