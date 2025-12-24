@@ -1,0 +1,83 @@
+{
+  "prompt": "Ergänzen Sie alle Lücken im Text. Verwenden Sie die richtigen Wörter.",
+  "qType": "interactive_text",
+  "text": "Mein Name {{a}} Anna Müller. Ich {{b}} 25 Jahre alt und {{c}} aus Berlin. Ich {{d}} Deutschlehrerin und {{e}} an einer Sprachschule. Meine Arbeit {{f}} mir sehr viel Spaß. Am Wochenende {{g}} ich gerne {{h}} und {{i}} Freunde. Ich {{j}} auch gerne reisen.",
+  "interactiveBlanks": [
+    {
+      "id": "a",
+      "type": "dropdown",
+      "correctAnswers": ["ist"],
+      "choices": ["ist", "sind", "bin", "bist"],
+      "hint": "Verb 'sein' - 3. Person Singular"
+    },
+    {
+      "id": "b",
+      "type": "dropdown",
+      "correctAnswers": ["bin"],
+      "choices": ["bin", "ist", "sind", "bist"],
+      "hint": "Verb 'sein' - 1. Person Singular"
+    },
+    {
+      "id": "c",
+      "type": "dropdown",
+      "correctAnswers": ["komme"],
+      "choices": ["komme", "gehe", "fahre", "laufe"],
+      "hint": "Woher kommst du?"
+    },
+    {
+      "id": "d",
+      "type": "textInput",
+      "correctAnswers": ["bin", "arbeite als"],
+      "hint": "Beruf angeben"
+    },
+    {
+      "id": "e",
+      "type": "dropdown",
+      "correctAnswers": ["arbeite"],
+      "choices": ["arbeite", "lerne", "unterrichte", "studierte"],
+      "hint": "Was machst du an der Schule?"
+    },
+    {
+      "id": "f",
+      "type": "dropdown",
+      "correctAnswers": ["macht"],
+      "choices": ["macht", "machen", "mache", "machst"],
+      "hint": "Verb 'machen' - 3. Person Singular"
+    },
+    {
+      "id": "g",
+      "type": "dropdown",
+      "correctAnswers": ["treffe"],
+      "choices": ["treffe", "triffst", "trifft", "treffen"],
+      "hint": "Verb 'treffen' - 1. Person Singular"
+    },
+    {
+      "id": "h",
+      "type": "textInput",
+      "correctAnswers": ["spazieren", "wandern", "laufen"],
+      "hint": "Aktivität im Freien"
+    },
+    {
+      "id": "i",
+      "type": "dropdown",
+      "correctAnswers": ["besuche"],
+      "choices": ["besuche", "besuchst", "besucht", "besuchen"],
+      "hint": "Verb 'besuchen' - 1. Person Singular"
+    },
+    {
+      "id": "j",
+      "type": "dropdown",
+      "correctAnswers": ["möchte", "will"],
+      "choices": ["möchte", "will", "mag", "kann"],
+      "hint": "Wunsch ausdrücken"
+    }
+  ],
+  "provider": "goethe_a1",
+  "mainSkill": "schreiben",
+  "section": "Writing",
+  "usageCategory": "practice",
+  "level": "A1",
+  "status": "published",
+  "tags": ["Grammatik", "Verben", "Präsentation", "A1"]
+}
+

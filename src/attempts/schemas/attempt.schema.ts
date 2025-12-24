@@ -79,8 +79,29 @@ export class AttemptItem {
   }) matchPairs?: Array<{ left: string; right: string }>; // match: pairs للعرض في response
   @Prop({ type: [String], default: undefined }) answerKeyReorder?: string[]; // reorder: ترتيب صحيح
 
+  // INTERACTIVE_TEXT snapshots (للتصحيح)
+  @Prop({ type: [Object], default: undefined, _id: false }) interactiveBlanksSnapshot?: Array<{
+    id: string;
+    type: 'dropdown' | 'textInput';
+    correctAnswers: string[];
+    choices?: string[];
+    hint?: string;
+  }>; // snapshot للفراغات التفاعلية
+  @Prop({ type: Object, default: undefined, _id: false }) interactiveReorderSnapshot?: {
+    parts: Array<{
+      id: string;
+      text: string;
+      order: number;
+    }>;
+  }; // snapshot لترتيب الأجزاء
+  @Prop({ type: String, default: undefined }) textSnapshot?: string; // نص السؤال مع placeholders
+
   // إجابة الطالب (حسب النوع)
   @Prop() studentAnswerText?: string; // fill / short / free_text
+  @Prop({ type: Object, default: undefined, _id: false }) studentInteractiveAnswers?: {
+    [blankId: string]: string; // إجابات الطالب للفراغات: { "a": "bin", "b": "komme", ... }
+  }; // إجابات الفراغات التفاعلية
+  @Prop({ type: [String], default: undefined }) studentReorderAnswer?: string[]; // ترتيب الطالب للأجزاء (array of part ids)
   @Prop({ type: [Number], default: undefined }) studentAnswerIndexes?: number[]; // mcq (مؤشرات للخيارات)
   @Prop() studentAnswerBoolean?: boolean; // true_false
   @Prop({ type: [[String, String]], default: undefined }) studentAnswerMatch?: [string, string][]; // match: أزواج [left, right]

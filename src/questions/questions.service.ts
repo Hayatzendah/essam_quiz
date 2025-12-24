@@ -100,6 +100,12 @@ export class QuestionsService {
         ...(dto.minSeconds !== undefined && { minSeconds: dto.minSeconds }),
         ...(dto.maxSeconds !== undefined && { maxSeconds: dto.maxSeconds }),
       }),
+      // INTERACTIVE_TEXT fields (إذا كانت موجودة)
+      ...(dto.qType === QuestionType.INTERACTIVE_TEXT && {
+        ...(dto.text && { text: dto.text }),
+        ...(dto.interactiveBlanks && Array.isArray(dto.interactiveBlanks) && dto.interactiveBlanks.length > 0 && { interactiveBlanks: dto.interactiveBlanks }),
+        ...(dto.interactiveReorder && { interactiveReorder: dto.interactiveReorder }),
+      }),
     });
 
     // إذا كان examId موجود، نربط السؤال بالامتحان
@@ -167,6 +173,12 @@ export class QuestionsService {
             ...(question.modelAnswerText && { modelAnswerText: question.modelAnswerText }),
             ...(question.minSeconds !== undefined && { minSeconds: question.minSeconds }),
             ...(question.maxSeconds !== undefined && { maxSeconds: question.maxSeconds }),
+          }),
+          // INTERACTIVE_TEXT fields (إذا كانت موجودة)
+          ...(question.qType === QuestionType.INTERACTIVE_TEXT && {
+            ...(question.text && { text: question.text }),
+            ...(question.interactiveBlanks && Array.isArray(question.interactiveBlanks) && question.interactiveBlanks.length > 0 && { interactiveBlanks: question.interactiveBlanks }),
+            ...(question.interactiveReorder && { interactiveReorder: question.interactiveReorder }),
           }),
         });
 
@@ -818,6 +830,12 @@ export class QuestionsService {
         ...(questionData.modelAnswerText && { modelAnswerText: questionData.modelAnswerText }),
         ...(questionData.minSeconds !== undefined && { minSeconds: questionData.minSeconds }),
         ...(questionData.maxSeconds !== undefined && { maxSeconds: questionData.maxSeconds }),
+      }),
+      // INTERACTIVE_TEXT fields
+      ...(questionType === QuestionType.INTERACTIVE_TEXT && {
+        ...(questionText && { text: questionText }),
+        ...(questionData.interactiveBlanks && Array.isArray(questionData.interactiveBlanks) && questionData.interactiveBlanks.length > 0 && { interactiveBlanks: questionData.interactiveBlanks }),
+        ...(questionData.interactiveReorder && { interactiveReorder: questionData.interactiveReorder }),
       }),
       ...(questionData.explanation && { explanation: questionData.explanation }),
       ...(questionData.difficulty && { difficulty: questionData.difficulty as QuestionDifficulty }),

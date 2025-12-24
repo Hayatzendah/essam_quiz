@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  MinLength,
   ValidateIf,
   ValidateNested,
   ArrayMinSize,
@@ -54,6 +55,54 @@ class QuestionMediaDto {
   provider?: 's3' | 'cloudinary';
 }
 
+// DTO للفراغات التفاعلية
+class InteractiveBlankDto {
+  @IsString()
+  @MinLength(1)
+  id: string; // a, b, c, ... حتى 10
+
+  @IsEnum(['dropdown', 'textInput'])
+  type: 'dropdown' | 'textInput';
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  correctAnswers: string[];
+
+  @ValidateIf((o) => o.type === 'dropdown')
+  @IsArray()
+  @ArrayMinSize(2)
+  @IsString({ each: true })
+  choices?: string[];
+
+  @IsOptional()
+  @IsString()
+  hint?: string;
+}
+
+// DTO لأجزاء الترتيب
+class ReorderPartDto {
+  @IsString()
+  @MinLength(1)
+  id: string;
+
+  @IsString()
+  @MinLength(1)
+  text: string;
+
+  @IsNumber()
+  @Min(1)
+  order: number;
+}
+
+class InteractiveReorderDto {
+  @IsArray()
+  @ArrayMinSize(2)
+  @ValidateNested({ each: true })
+  @Type(() => ReorderPartDto)
+  parts: ReorderPartDto[];
+}
+
 export class CreateQuestionWithExamDto {
   // ====== البيانات الأساسية للسؤال ======
   // type كـ alias لـ qType (للتوافق مع الفرونت)
@@ -61,9 +110,10 @@ export class CreateQuestionWithExamDto {
   @IsEnum(QuestionType)
   type?: QuestionType;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  text: string;      // النص الأساسي للسؤال
+  @MinLength(1)
+  text?: string;      // النص الأساسي للسؤال (optional للـ interactive_text reorder، required للباقي)
 
   @IsOptional()
   @IsString()
@@ -233,4 +283,21 @@ export class CreateQuestionWithExamDto {
   @IsNumber()
   @Min(1)
   maxSeconds?: number; // حد أقصى للثواني
+
+  // ====== INTERACTIVE_TEXT (أسئلة النص التفاعلي) ======
+  // ملاحظة: text موجود أصلاً في السطر 115، نستخدمه للـ interactive_text أيضاً
+
+  @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(3)
+  @ValidateNested({ each: true })
+  @Type(() => InteractiveBlankDto)
+  interactiveBlanks?: InteractiveBlankDto[]; // للفراغات المتعددة
+
+  @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => InteractiveReorderDto)
+  interactiveReorder?: InteractiveReorderDto; // لترتيب الأجزاء
 }

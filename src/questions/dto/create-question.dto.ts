@@ -49,6 +49,54 @@ class QuestionMediaDto {
   provider?: 's3' | 'cloudinary';
 }
 
+// DTO للفراغات التفاعلية
+class InteractiveBlankDto {
+  @IsString()
+  @MinLength(1)
+  id: string; // a, b, c, ... حتى 10
+
+  @IsEnum(['dropdown', 'textInput'])
+  type: 'dropdown' | 'textInput';
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  correctAnswers: string[];
+
+  @ValidateIf((o) => o.type === 'dropdown')
+  @IsArray()
+  @ArrayMinSize(2)
+  @IsString({ each: true })
+  choices?: string[];
+
+  @IsOptional()
+  @IsString()
+  hint?: string;
+}
+
+// DTO لأجزاء الترتيب
+class ReorderPartDto {
+  @IsString()
+  @MinLength(1)
+  id: string;
+
+  @IsString()
+  @MinLength(1)
+  text: string;
+
+  @IsNumber()
+  @Min(1)
+  order: number;
+}
+
+class InteractiveReorderDto {
+  @IsArray()
+  @ArrayMinSize(2)
+  @ValidateNested({ each: true })
+  @Type(() => ReorderPartDto)
+  parts: ReorderPartDto[];
+}
+
 export class CreateQuestionDto {
   @IsString()
   @MinLength(3)
@@ -173,6 +221,27 @@ export class CreateQuestionDto {
   @IsNumber()
   @Min(1)
   maxSeconds?: number; // حد أقصى للثواني
+
+  // ====== INTERACTIVE_TEXT (أسئلة النص التفاعلي) ======
+  @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  text?: string; // النص مع placeholders مثل {{a}}, {{b}}
+
+  @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(3)
+  @ValidateNested({ each: true })
+  @Type(() => InteractiveBlankDto)
+  interactiveBlanks?: InteractiveBlankDto[]; // للفراغات المتعددة
+
+  @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => InteractiveReorderDto)
+  interactiveReorder?: InteractiveReorderDto; // لترتيب الأجزاء
 
   // ربط بامتحان (اختياري) - لإضافة السؤال لامتحان معين عند الإنشاء
   @IsOptional()

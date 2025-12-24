@@ -12,7 +12,7 @@ if (!JWT_TOKEN) {
 }
 
 // مجلدات الصور
-const QUESTIONS_IMAGES_DIR = path.join(__dirname, 'src', 'uploads', 'images', 'questions');
+const QUESTIONS_IMAGES_DIR = path.join(__dirname, 'uploads', 'images', 'questions');
 const STATES_IMAGES_DIR = path.join(__dirname, 'src', 'uploads', 'images', 'ولايات');
 
 async function uploadImage(imagePath, filename, isStateImage = false) {

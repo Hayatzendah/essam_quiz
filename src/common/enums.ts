@@ -14,7 +14,8 @@ export type QuestionType =
   | 'reorder'
   | 'short_answer'
   | 'writing'
-  | 'speaking';
+  | 'speaking'
+  | 'interactive_text';
 
 export type QuestionDifficulty = 'easy' | 'med' | 'hard';
 
