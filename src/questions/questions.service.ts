@@ -103,7 +103,6 @@ export class QuestionsService {
       // INTERACTIVE_TEXT fields (إذا كانت موجودة)
       ...(dto.qType === QuestionType.INTERACTIVE_TEXT && {
         ...(dto.interactiveText && { interactiveText: dto.interactiveText }),
-        ...(dto.text && { text: dto.text }), // للتوافق مع الكود القديم
         // استخدام interactiveText إذا كان موجوداً، وإلا text
         ...((dto.interactiveText || dto.text) && { text: dto.interactiveText || dto.text }),
         ...(dto.interactiveBlanks && Array.isArray(dto.interactiveBlanks) && dto.interactiveBlanks.length > 0 && {
@@ -865,7 +864,6 @@ export class QuestionsService {
       // INTERACTIVE_TEXT fields
       ...(questionType === QuestionType.INTERACTIVE_TEXT && {
         ...(interactiveText && { interactiveText }),
-        ...(questionText && { text: questionText }), // للتوافق مع الكود القديم
         // استخدام interactiveText إذا كان موجوداً، وإلا text
         ...((interactiveText || questionText) && { text: interactiveText || questionText }),
         ...(questionData.interactiveBlanks && Array.isArray(questionData.interactiveBlanks) && questionData.interactiveBlanks.length > 0 && {

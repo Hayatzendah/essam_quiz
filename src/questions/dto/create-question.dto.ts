@@ -234,8 +234,13 @@ export class CreateQuestionDto {
   @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
   @IsOptional()
   @IsString()
+  interactiveText?: string; // النص التفاعلي مع placeholders مثل {{a}}, {{b}}
+
+  @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
+  @IsOptional()
+  @IsString()
   @MinLength(1)
-  text?: string; // النص مع placeholders مثل {{a}}, {{b}}
+  text?: string; // للتوافق مع الكود القديم - النص مع placeholders مثل {{a}}, {{b}}
 
   @ValidateIf((o) => o.qType === QuestionType.INTERACTIVE_TEXT)
   @IsOptional()
