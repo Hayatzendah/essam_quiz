@@ -18,6 +18,7 @@ import { QuestionStatus, QuestionType } from '../schemas/question.schema';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 import { ExamSkillEnum } from '../../common/enums';
 import { normalizeProvider } from '../../common/utils/provider-normalizer.util';
+import { normalizeSkill } from '../../common/utils/skill-normalizer.util';
 
 class McqOptionDto {
   @IsString()
@@ -166,7 +167,10 @@ export class CreateQuestionDto {
   @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
 
   // للحقول الخاصة بـ Leben in Deutschland
-  @IsOptional() @IsEnum(ExamSkillEnum) mainSkill?: ExamSkillEnum;
+  @IsOptional()
+  @Transform(({ value }) => normalizeSkill(value))
+  @IsEnum(ExamSkillEnum)
+  mainSkill?: ExamSkillEnum;
   @IsOptional() @IsString() usageCategory?: string; // "common" | "state_specific"
   @IsOptional() @IsString() state?: string; // للأسئلة الخاصة بالولايات
 

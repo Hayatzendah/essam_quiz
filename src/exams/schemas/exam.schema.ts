@@ -52,9 +52,9 @@ export class ExamSection {
   @Prop({ type: [SectionItemSchema], default: [] })
   items: SectionItem[];
 
-  // skill بدعم lowercase و uppercase للتوافق
-  @Prop({ type: String, enum: [...Object.values(ExamSkillEnum), 'HOEREN', 'LESEN', 'SCHREIBEN', 'SPRECHEN', 'GRAMMAR'], trim: true })
-  skill?: ExamSkillEnum | 'HOEREN' | 'LESEN' | 'SCHREIBEN' | 'SPRECHEN' | 'GRAMMAR';
+  // skill - يتم تطبيعه في DTO قبل الحفظ
+  @Prop({ type: String, enum: Object.values(ExamSkillEnum), trim: true })
+  skill?: ExamSkillEnum;
 
   @Prop({ type: Number, min: 1 })
   teilNumber?: number; // 1 أو 2 أو 3...

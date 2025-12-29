@@ -23,6 +23,7 @@ import {
 import { ExamStatusEnum, ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 import { normalizeProvider } from '../../common/utils/provider-normalizer.util';
+import { normalizeSkill } from '../../common/utils/skill-normalizer.util';
 
 export class UpdateExamDto extends PartialType(CreateExamDto) {
   // Override sections to ensure null values are filtered and proper validation
@@ -133,6 +134,7 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
 
   @IsOptional()
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @Transform(({ value }) => normalizeSkill(value))
   @IsEnum(ExamSkillEnum)
   @IsNotEmpty()
   mainSkill?: ExamSkillEnum;

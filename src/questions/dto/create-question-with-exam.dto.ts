@@ -19,6 +19,8 @@ import { Type, Transform } from 'class-transformer';
 import { QuestionType } from '../schemas/question.schema';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 import { normalizeProvider } from '../../common/utils/provider-normalizer.util';
+import { normalizeSkill } from '../../common/utils/skill-normalizer.util';
+import { ExamSkillEnum } from '../../common/enums';
 
 export enum QuestionUsageCategoryEnum {
   GRAMMAR = 'grammar',
@@ -183,9 +185,10 @@ export class CreateQuestionWithExamDto {
   @IsNotEmpty()
   provider: ProviderEnum;          // "Goethe" / "GOETHE" / "goethe" (case-insensitive)
 
-  @IsString()
+  @Transform(({ value }) => normalizeSkill(value))
+  @IsEnum(ExamSkillEnum)
   @IsNotEmpty()
-  skill: string;             // "hoeren" / "HOEREN"
+  skill: ExamSkillEnum;             // "hoeren" / "HOEREN" / "GRAMMAR" (case-insensitive)
 
   @IsInt()
   @Min(1)

@@ -1,7 +1,8 @@
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ExamStatusEnum } from '../../common/enums';
 import { ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
+import { normalizeSkill } from '../../common/utils/skill-normalizer.util';
 
 export class QueryExamDto {
   @IsOptional()
@@ -21,6 +22,7 @@ export class QueryExamDto {
   examCategory?: ExamCategoryEnum;
 
   @IsOptional()
+  @Transform(({ value }) => normalizeSkill(value))
   @IsEnum(ExamSkillEnum)
   mainSkill?: ExamSkillEnum;
 

@@ -15,6 +15,7 @@ import {
 import { Type, Transform } from 'class-transformer';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 import { normalizeProvider } from '../../common/utils/provider-normalizer.util';
+import { normalizeSkill } from '../../common/utils/skill-normalizer.util';
 import { ExamCategoryEnum, ExamSkillEnum, ExamStatusEnum } from '../../common/enums';
 
 /**
@@ -89,9 +90,9 @@ export class ExamSectionDto {
   section?: string;          // نص إضافي لو حابة (عندك نفس القيمة)
 
   @IsOptional()
-  @Transform(({ value }) => typeof value === 'string' ? value.toLowerCase() : value)
+  @Transform(({ value }) => normalizeSkill(value))
   @IsEnum(ExamSkillEnum)
-  skill?: ExamSkillEnum;     // hoeren / lesen / schreiben / sprechen / misc
+  skill?: ExamSkillEnum;     // hoeren / lesen / schreiben / sprechen / grammar / misc
 
   // teil مطلوب إذا لم يكن هناك items (يدعم teil أو teilNumber)
   @Transform(({ value, obj }) => value ?? obj.teilNumber)
@@ -215,9 +216,10 @@ export class CreateExamDto {
   provider?: ProviderEnum;         // "goethe" / "telc" ... (case-insensitive)
 
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @Transform(({ value }) => normalizeSkill(value))
   @IsEnum(ExamSkillEnum)
   @IsNotEmpty()
-  mainSkill?: ExamSkillEnum;       // "hoeren" / "lesen" / "leben_test" ...
+  mainSkill?: ExamSkillEnum;       // "hoeren" / "lesen" / "grammar" / "leben_test" ...
 
   // ========= مشتركة =========
 
