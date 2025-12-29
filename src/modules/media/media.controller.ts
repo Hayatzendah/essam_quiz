@@ -17,7 +17,8 @@ import { MediaService } from './media.service';
 import * as multer from 'multer';
 import * as path from 'path';
 import { diskStorage } from 'multer';
-import { extname, join, basename } from 'path';
+import { extname, join, basename, resolve } from 'path';
+import * as fs from 'fs';
 import type { Response } from 'express';
 import { audioFileFilter, getDefaultAudioExtension, isAllowedAudioFile } from '../../common/utils/audio-file-validator.util';
 
@@ -38,8 +39,40 @@ export class MediaController {
 
   @Get('mock/*path')
   async getMockFile(@Param('path') path: string, @Res() res: Response) {
-    // في وضع Mock، نعيد رسالة توضيحية بدل الملف الفعلي
-    // لأن الملفات لا تُحفظ فعلياً في وضع Mock
+    // 🔥 محاولة جلب الصورة الحقيقية من uploads folder أولاً
+    const filePath = resolve(process.cwd(), 'uploads', path);
+    
+    // التحقق من وجود الملف محلياً
+    if (fs.existsSync(filePath)) {
+      try {
+        // تحديد نوع الملف
+        const ext = extname(path).toLowerCase();
+        const mimeTypes: { [key: string]: string } = {
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.png': 'image/png',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+          '.mp3': 'audio/mpeg',
+          '.wav': 'audio/wav',
+          '.m4a': 'audio/mp4',
+          '.aac': 'audio/aac',
+          '.mp4': 'video/mp4',
+          '.webm': 'video/webm',
+        };
+        
+        const contentType = mimeTypes[ext] || 'application/octet-stream';
+        res.setHeader('Content-Type', contentType);
+        
+        // إرجاع الملف الحقيقي
+        return res.sendFile(filePath);
+      } catch (error) {
+        // في حالة خطأ، نرجع JSON
+        console.error('Error serving file:', error);
+      }
+    }
+    
+    // إذا لم يكن الملف موجوداً محلياً، نرجع رسالة Mock
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({
       message: 'Mock mode: File not actually stored',
