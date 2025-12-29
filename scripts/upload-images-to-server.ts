@@ -8,8 +8,8 @@ const API_BASE_URL = process.env.API_BASE_URL || 'https://api.deutsch-tests.com'
 const JWT_TOKEN = process.env.JWT_TOKEN || ''; // يجب تعيين JWT token
 
 // مجلدات الصور
-const QUESTIONS_IMAGES_DIR = path.join(__dirname, '..', 'src', 'uploads', 'images', 'questions');
-const STATES_IMAGES_DIR = path.join(__dirname, '..', 'src', 'uploads', 'images', 'ولايات');
+const QUESTIONS_IMAGES_DIR = path.join(__dirname, '..', 'uploads', 'images', 'questions');
+const STATES_IMAGES_DIR = path.join(__dirname, '..', 'uploads', 'images', 'ولايات');
 
 async function uploadImage(imagePath: string, filename: string, isStateImage: boolean = false): Promise<boolean> {
   try {

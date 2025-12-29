@@ -207,6 +207,7 @@ export class AppModule implements OnModuleInit {
     const audioDir = join(uploadsDir, 'audio');
     const recordingsDir = join(uploadsDir, 'recordings');
     const imagesQuestionsDir = join(uploadsDir, 'images', 'questions');
+    const imagesStatesDir = join(uploadsDir, 'images', 'ولايات'); // 🔥 مجلد أسئلة الولايات
 
     try {
       // إنشاء مجلد uploads إذا لم يكن موجوداً
@@ -231,6 +232,12 @@ export class AppModule implements OnModuleInit {
       if (!existsSync(imagesQuestionsDir)) {
         mkdirSync(imagesQuestionsDir, { recursive: true });
         this.logger.log(`✅ Created images/questions directory: ${imagesQuestionsDir}`);
+      }
+
+      // 🔥 إنشاء مجلد images/ولايات إذا لم يكن موجوداً (مثل questions)
+      if (!existsSync(imagesStatesDir)) {
+        mkdirSync(imagesStatesDir, { recursive: true });
+        this.logger.log(`✅ Created images/ولايات directory: ${imagesStatesDir}`);
       }
 
       this.logger.log(`✅ Uploads directories ready: ${uploadsDir}`);
