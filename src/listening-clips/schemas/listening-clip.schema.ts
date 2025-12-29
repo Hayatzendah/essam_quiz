@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { ProviderEnum } from '../../common/enums/provider.enum';
+import { normalizeProvider } from '../../common/utils/provider-normalizer.util';
 
 export type ListeningClipDocument = ListeningClip & Document;
 
@@ -43,6 +44,28 @@ export class ListeningClip {
 }
 
 export const ListeningClipSchema = SchemaFactory.createForClass(ListeningClip);
+
+// Pre-save hook to normalize provider value (handles 'osd' -> 'oesd', etc.)
+ListeningClipSchema.pre('save', function (next) {
+  if (this.provider && typeof this.provider === 'string') {
+    const normalized = normalizeProvider(this.provider);
+    if (normalized && typeof normalized === 'string') {
+      this.provider = normalized as ProviderEnum;
+    }
+  }
+  next();
+});
+
+// Pre-validate hook to normalize provider before validation
+ListeningClipSchema.pre('validate', function (next) {
+  if (this.provider && typeof this.provider === 'string') {
+    const normalized = normalizeProvider(this.provider);
+    if (normalized && typeof normalized === 'string') {
+      this.provider = normalized as ProviderEnum;
+    }
+  }
+  next();
+});
 
 // Indexes for better query performance
 ListeningClipSchema.index({ provider: 1, level: 1, skill: 1, teil: 1 });
