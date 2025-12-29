@@ -70,8 +70,10 @@ export class MediaService {
       }
       const baseUrl =
         process.env.PUBLIC_BASE_URL || process.env.APP_URL || process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
-      const mockUrl = `${baseUrl}/media/mock/${key}`;
-      return { key, url: mockUrl, mime: opts.mime };
+      // 🔥 في mock mode، نرجع URL مباشر إلى /uploads/... بدلاً من /media/mock/...
+      // لأن الـ static file serving موجود ويخدم /uploads مباشرة
+      const uploadsUrl = `${baseUrl}/uploads/${key}`;
+      return { key, url: uploadsUrl, mime: opts.mime };
     }
 
     try {
