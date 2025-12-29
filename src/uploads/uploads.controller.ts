@@ -323,7 +323,7 @@ export class UploadsController {
   @Get('images/:folder/:filename')
   @ApiOperation({
     summary: 'Get image with fallback',
-    description: 'يحاول جلب الصورة من disk، وإذا لم تكن موجودة يحاول من S3 أو mock URL',
+    description: 'يحاول جلب الصورة من disk. إذا لم تكن موجودة، يعتمد على ServeStaticModule fallthrough.',
   })
   async getImage(
     @Param('folder') folder: string,
@@ -359,22 +359,16 @@ export class UploadsController {
       };
       const contentType = mimeTypes[ext] || 'image/jpeg';
       res.setHeader('Content-Type', contentType);
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
       console.log(`[Uploads Controller] Serving file: ${filePath}`);
       return res.sendFile(filePath);
     }
 
-    // إذا الملف مش موجود، نحاول نجيب presigned URL من S3
-    const key = `images/${decodedFolder}/${decodedFilename}`;
-    try {
-      const presignedUrl = await this.mediaService.getPresignedUrl(key, 3600);
-      // Redirect للـ S3 URL
-      console.log(`[Uploads Controller] Redirecting to S3: ${presignedUrl}`);
-      return res.redirect(presignedUrl);
-    } catch (error: any) {
-      // إذا فشل S3، نرجع 404 بدلاً من redirect إلى mock
-      console.error(`[Uploads Controller] File not found and S3 failed: ${error.message}`);
-      throw new NotFoundException(`Image not found: ${decodedFolder}/${decodedFilename}`);
-    }
+    // إذا الملف مش موجود محلياً، نرجع 404
+    // ServeStaticModule سيتعامل مع الطلب أولاً، وإذا لم يجد الملف، سيصل هنا
+    console.error(`[Uploads Controller] File not found: ${filePath}`);
+    throw new NotFoundException(`Image not found: ${decodedFolder}/${decodedFilename}`);
   }
 }
 
