@@ -249,27 +249,50 @@ export class UploadsController {
     @Param('filename') filename: string,
     @Res() res: ExpressResponse,
   ) {
-    const filePath = resolve(process.cwd(), 'uploads', 'images', folder, filename);
+    // 🔥 Decode الـ folder و filename للأحرف الخاصة
+    let decodedFolder = folder;
+    let decodedFilename = filename;
+    
+    try {
+      decodedFolder = decodeURIComponent(folder);
+      decodedFilename = decodeURIComponent(filename);
+    } catch (e) {
+      console.warn(`[Uploads Controller] Failed to decode folder/filename: ${folder}/${filename}`);
+    }
+    
+    const filePath = resolve(process.cwd(), 'uploads', 'images', decodedFolder, decodedFilename);
+    
+    console.log(`[Uploads Controller] Looking for file: ${filePath}`);
+    console.log(`[Uploads Controller] File exists: ${fs.existsSync(filePath)}`);
     
     // إذا الملف موجود محلياً، نخدمه مباشرة
     if (fs.existsSync(filePath)) {
+      // تحديد Content-Type
+      const ext = extname(decodedFilename).toLowerCase();
+      const mimeTypes: { [key: string]: string } = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+      };
+      const contentType = mimeTypes[ext] || 'image/jpeg';
+      res.setHeader('Content-Type', contentType);
+      console.log(`[Uploads Controller] Serving file: ${filePath}`);
       return res.sendFile(filePath);
     }
 
     // إذا الملف مش موجود، نحاول نجيب presigned URL من S3
-    const key = `images/${folder}/${filename}`;
+    const key = `images/${decodedFolder}/${decodedFilename}`;
     try {
       const presignedUrl = await this.mediaService.getPresignedUrl(key, 3600);
       // Redirect للـ S3 URL
+      console.log(`[Uploads Controller] Redirecting to S3: ${presignedUrl}`);
       return res.redirect(presignedUrl);
     } catch (error: any) {
-      // إذا فشل S3، نعطي mock URL أو 404
-      const baseUrl = this.configService.get<string>('PUBLIC_BASE_URL') || 
-                      this.configService.get<string>('APP_URL') || 
-                      'https://api.deutsch-tests.com';
-      const mockUrl = `${baseUrl}/media/mock/${key}`;
-      // Redirect للـ mock URL
-      return res.redirect(mockUrl);
+      // إذا فشل S3، نرجع 404 بدلاً من redirect إلى mock
+      console.error(`[Uploads Controller] File not found and S3 failed: ${error.message}`);
+      throw new NotFoundException(`Image not found: ${decodedFolder}/${decodedFilename}`);
     }
   }
 }
