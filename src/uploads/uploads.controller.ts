@@ -108,21 +108,33 @@ export class UploadsController {
       storage: diskStorage({
         destination: (req: any, file, callback) => {
           // تحديد المجلد بناءً على query parameter
-          const folder = req.query.folder || 'questions';
-          const destination = join(process.cwd(), 'uploads', 'images', folder);
+          let folder = req.query.folder || 'questions';
           
-          // 🔥 التأكد من وجود المجلد قبل حفظ الملف
-          if (!fs.existsSync(destination)) {
-            try {
-              fs.mkdirSync(destination, { recursive: true });
-              console.log(`[Upload Image] Created directory: ${destination}`);
-            } catch (error) {
-              console.error(`[Upload Image] Failed to create directory: ${destination}`, error);
-              return callback(new Error(`Failed to create directory: ${error.message}`), null);
-            }
+          // 🔥 Decode الـ folder إذا كان encoded
+          try {
+            folder = decodeURIComponent(folder);
+          } catch (e) {
+            console.warn(`[Upload Image] Failed to decode folder: ${folder}`);
           }
           
-          callback(null, destination);
+          const destination = join(process.cwd(), 'uploads', 'images', folder);
+          
+          console.log(`[Upload Image] Destination folder: ${folder}`);
+          console.log(`[Upload Image] Full destination path: ${destination}`);
+          
+          // 🔥 التأكد من وجود المجلد قبل حفظ الملف
+          try {
+            if (!fs.existsSync(destination)) {
+              fs.mkdirSync(destination, { recursive: true });
+              console.log(`[Upload Image] Created directory: ${destination}`);
+            } else {
+              console.log(`[Upload Image] Directory already exists: ${destination}`);
+            }
+            callback(null, destination);
+          } catch (error: any) {
+            console.error(`[Upload Image] Failed to create directory: ${destination}`, error);
+            callback(new Error(`Failed to create directory: ${error.message}`), null);
+          }
         },
         filename: (req, file, callback) => {
           // الحفاظ على الاسم الأصلي للملف
