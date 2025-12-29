@@ -39,12 +39,24 @@ export class MediaController {
 
   @Get('mock/*path')
   async getMockFile(@Param('path') path: string, @Res() res: Response) {
-    // 🔥 محاولة جلب الصورة الحقيقية من uploads folder أولاً
-    // الـ path يأتي كـ "images/ولايات/..." أو "images/questions/..."
-    const filePath = resolve(process.cwd(), 'uploads', path);
+    // 🔥 تنظيف الـ path - إصلاح أي مشاكل في parsing
+    // الـ path قد يأتي مع encoding issues أو separators خاطئة
+    let cleanPath = decodeURIComponent(path);
+    
+    // إصلاح أي فاصلة بدل slash
+    cleanPath = cleanPath.replace(/,/g, '/');
+    
+    // إزالة أي مسافات زائدة
+    cleanPath = cleanPath.replace(/\s+/g, ' ').trim();
     
     // Logging للتحقق من المسار
-    console.log(`[Mock Endpoint] Requested path: ${path}`);
+    console.log(`[Mock Endpoint] Original path: ${path}`);
+    console.log(`[Mock Endpoint] Cleaned path: ${cleanPath}`);
+    
+    // 🔥 محاولة جلب الصورة الحقيقية من uploads folder أولاً
+    // الـ path يأتي كـ "images/ولايات/..." أو "images/questions/..."
+    const filePath = resolve(process.cwd(), 'uploads', cleanPath);
+    
     console.log(`[Mock Endpoint] Resolved file path: ${filePath}`);
     console.log(`[Mock Endpoint] File exists: ${fs.existsSync(filePath)}`);
     
@@ -52,7 +64,7 @@ export class MediaController {
     if (fs.existsSync(filePath)) {
       try {
         // تحديد نوع الملف
-        const ext = extname(path).toLowerCase();
+        const ext = extname(cleanPath).toLowerCase();
         const mimeTypes: { [key: string]: string } = {
           '.jpg': 'image/jpeg',
           '.jpeg': 'image/jpeg',
@@ -89,7 +101,7 @@ export class MediaController {
     
     // إذا لم يكن الملف موجوداً محلياً، نحاول استخدام الـ uploads endpoint
     // الـ path قد يكون "images/ولايات/..." نحتاج لاستخراج folder و filename
-    const pathParts = path.split('/');
+    const pathParts = cleanPath.split('/').filter(p => p.length > 0);
     if (pathParts.length >= 2 && pathParts[0] === 'images') {
       const folder = pathParts.slice(1, -1).join('/'); // كل شيء بين images و filename
       const filename = pathParts[pathParts.length - 1];
@@ -136,7 +148,8 @@ export class MediaController {
     return res.status(200).json({
       message: 'Mock mode: File not actually stored',
       note: 'This is a mock URL. In production with S3, this would return the actual file.',
-      key: path,
+      key: cleanPath,
+      originalPath: path,
       filePath: filePath,
       info: 'To get real file URLs, configure S3 environment variables in Railway.',
     });
