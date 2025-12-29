@@ -49,34 +49,32 @@ export class MediaController {
     console.log(`[Mock Endpoint] Original URL: ${originalUrl}`);
     console.log(`[Mock Endpoint] Param path: ${JSON.stringify(path)}`);
     
-    // استخراج الـ path من الـ URL بعد /media/mock/
+    // استخراج الـ path من الـ URL بعد /media/mock/ - استخدام non-greedy match
     const match = originalUrl.match(/\/media\/mock\/(.+?)(?:\?|$)/);
     if (match && match[1]) {
       cleanPath = match[1];
     } else {
       // Fallback: استخدام @Param إذا لم نجد في URL
-      cleanPath = path || '';
+      // لكن نحاول إصلاحه إذا كان فيه فواصل
+      cleanPath = (path || '').replace(/,/g, '/');
     }
     
     // إزالة query parameters إذا كانت موجودة
     cleanPath = cleanPath.split('?')[0];
     
     try {
-      // محاولة decode URI component
+      // محاولة decode URI component - مهم جداً للأحرف الخاصة
       cleanPath = decodeURIComponent(cleanPath);
     } catch (e) {
       // إذا فشل decode، نستخدم الـ path الأصلي
-      console.warn(`[Mock Endpoint] Failed to decode path: ${cleanPath}`);
+      console.warn(`[Mock Endpoint] Failed to decode path: ${cleanPath}, error: ${e.message}`);
     }
     
     // إصلاح أي فاصلة بدل slash (مشكلة شائعة في parsing)
     cleanPath = cleanPath.replace(/,/g, '/');
     
     // إزالة أي مسافات زائدة في البداية والنهاية
-    cleanPath = cleanPath.replace(/^\s+|\s+$/g, '');
-    
-    // إزالة أي مسافات متعددة
-    cleanPath = cleanPath.replace(/\s+/g, ' ');
+    cleanPath = cleanPath.trim();
     
     // إصلاح أي double slashes
     cleanPath = cleanPath.replace(/\/+/g, '/');
