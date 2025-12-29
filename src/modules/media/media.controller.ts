@@ -8,6 +8,7 @@ import {
   UploadedFile,
   BadRequestException,
   Res,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -38,17 +39,21 @@ export class MediaController {
   ) {}
 
   @Get('mock/*path')
-  async getMockFile(@Param('path') path: string, @Res() res: Response) {
-    // 🔥 تنظيف الـ path - إصلاح أي مشاكل في parsing
-    // الـ path قد يأتي مع encoding issues أو separators خاطئة
-    let cleanPath = path;
+  async getMockFile(@Param('path') path: string, @Req() req: any, @Res() res: Response) {
+    // 🔥 استخراج الـ path من الـ URL مباشرة لتجنب مشاكل parsing
+    // NestJS @Param('path') قد لا يعمل بشكل صحيح مع slashes متعددة
+    const fullUrl = req.url || req.originalUrl || '';
+    let cleanPath = fullUrl.replace(/^\/media\/mock\//, ''); // إزالة prefix
+    
+    // إزالة query parameters إذا كانت موجودة
+    cleanPath = cleanPath.split('?')[0];
     
     try {
       // محاولة decode URI component
-      cleanPath = decodeURIComponent(path);
+      cleanPath = decodeURIComponent(cleanPath);
     } catch (e) {
       // إذا فشل decode، نستخدم الـ path الأصلي
-      cleanPath = path;
+      console.warn(`[Mock Endpoint] Failed to decode path: ${cleanPath}`);
     }
     
     // إصلاح أي فاصلة بدل slash (مشكلة شائعة في parsing)
@@ -63,8 +68,12 @@ export class MediaController {
     // إصلاح أي double slashes
     cleanPath = cleanPath.replace(/\/+/g, '/');
     
+    // إزالة leading slash إذا كان موجوداً
+    cleanPath = cleanPath.replace(/^\/+/, '');
+    
     // Logging للتحقق من المسار
-    console.log(`[Mock Endpoint] Original path: ${JSON.stringify(path)}`);
+    console.log(`[Mock Endpoint] Original param path: ${JSON.stringify(path)}`);
+    console.log(`[Mock Endpoint] Full URL: ${fullUrl}`);
     console.log(`[Mock Endpoint] Cleaned path: ${JSON.stringify(cleanPath)}`);
     
     // 🔥 محاولة جلب الصورة الحقيقية من uploads folder أولاً
