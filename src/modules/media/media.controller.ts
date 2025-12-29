@@ -138,6 +138,34 @@ export class MediaController {
       
       // 🔥 إذا لم يكن الملف موجوداً، نحاول redirect إلى uploads endpoint
       // هذا يساعد إذا كانت الملفات موجودة على السيرفر لكن في مكان مختلف
+      // لكن أولاً نحاول البحث في جميع المجلدات الممكنة
+      const possiblePaths = [
+        resolve(process.cwd(), 'uploads', 'images', folder, filename),
+        resolve(process.cwd(), 'uploads', cleanPath),
+        resolve(process.cwd(), 'uploads', 'images', cleanPath.replace(/^images\//, '')),
+      ];
+      
+      for (const possiblePath of possiblePaths) {
+        if (fs.existsSync(possiblePath)) {
+          try {
+            const ext = extname(filename).toLowerCase();
+            const mimeTypes: { [key: string]: string } = {
+              '.jpg': 'image/jpeg',
+              '.jpeg': 'image/jpeg',
+              '.png': 'image/png',
+              '.gif': 'image/gif',
+              '.webp': 'image/webp',
+            };
+            const contentType = mimeTypes[ext] || 'image/jpeg';
+            res.setHeader('Content-Type', contentType);
+            console.log(`[Mock Endpoint] Found file at: ${possiblePath}`);
+            return res.sendFile(possiblePath);
+          } catch (error) {
+            console.error(`[Mock Endpoint] Error serving from ${possiblePath}:`, error);
+          }
+        }
+      }
+      
       console.log(`[Mock Endpoint] Redirecting to uploads endpoint: /uploads/images/${folder}/${filename}`);
       return res.redirect(`/uploads/images/${folder}/${filename}`);
     }
