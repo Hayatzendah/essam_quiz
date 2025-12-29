@@ -176,28 +176,81 @@ export class UploadsController {
       throw new BadRequestException('No file uploaded');
     }
 
-    console.log('Saved image file at', file.path);
-
-    // استخدام PUBLIC_BASE_URL من environment variables، أو بناء URL من request
-    const publicBaseUrl = this.configService.get<string>('PUBLIC_BASE_URL');
-    let baseUrl: string;
-    
-    if (publicBaseUrl) {
-      baseUrl = publicBaseUrl;
-    } else {
-      // Fallback: بناء URL من request
-      baseUrl = `${req.protocol}://${req.get('host')}`;
+    if (!file.buffer) {
+      throw new BadRequestException('File buffer is missing');
     }
 
+    // 🔥 محاولة رفع الملف مباشرة إلى S3 أولاً
     const imageFolder = folder || 'questions';
-    const imageUrl = `${baseUrl}/uploads/images/${imageFolder}/${file.filename}`;
+    
+    // Decode الـ folder إذا كان encoded
+    let decodedFolder = imageFolder;
+    try {
+      decodedFolder = decodeURIComponent(imageFolder);
+    } catch (e) {
+      console.warn(`[Upload Image] Failed to decode folder: ${imageFolder}`);
+    }
 
-    return { 
-      imageUrl,
-      filename: file.filename,
-      mime: file.mimetype,
-      key: `images/${imageFolder}/${file.filename}`,
-    };
+    const ext = extname(file.originalname).replace(/^\./, '').toLowerCase();
+    
+    try {
+      // محاولة رفع إلى S3 مباشرة
+      const s3Result = await this.mediaService.uploadBuffer({
+        buffer: file.buffer,
+        mime: file.mimetype,
+        ext,
+        prefix: `images/${decodedFolder}`,
+      });
+
+      console.log(`✅ File uploaded to S3: ${s3Result.key}`);
+
+      // إذا نجح الرفع إلى S3، نرجع URL من S3
+      return {
+        imageUrl: s3Result.url,
+        filename: file.originalname,
+        mime: file.mimetype,
+        key: s3Result.key,
+        provider: 's3',
+      };
+    } catch (s3Error: any) {
+      // إذا فشل S3 (مثلاً mock mode أو S3 غير متوفر)، نحفظ محلياً كـ fallback
+      console.warn(`⚠️ S3 upload failed (${s3Error.message}), saving locally as fallback`);
+      
+      // التأكد من وجود المجلد
+      const destination = join(process.cwd(), 'uploads', 'images', decodedFolder);
+      if (!fs.existsSync(destination)) {
+        fs.mkdirSync(destination, { recursive: true });
+        console.log(`[Upload Image] Created directory: ${destination}`);
+      }
+
+      // حفظ الملف محلياً
+      const filePath = join(destination, file.originalname);
+      fs.writeFileSync(filePath, file.buffer);
+      console.log(`[Upload Image] Saved file locally at: ${filePath}`);
+
+      // استخدام PUBLIC_BASE_URL من environment variables، أو بناء URL من request
+      const publicBaseUrl = this.configService.get<string>('PUBLIC_BASE_URL');
+      let baseUrl: string;
+      
+      if (publicBaseUrl) {
+        baseUrl = publicBaseUrl;
+      } else {
+        // Fallback: بناء URL من request
+        baseUrl = `${req.protocol}://${req.get('host')}`;
+      }
+
+      const imageUrl = `${baseUrl}/uploads/images/${decodedFolder}/${file.originalname}`;
+      const key = `images/${decodedFolder}/${file.originalname}`;
+
+      return { 
+        imageUrl,
+        filename: file.originalname,
+        mime: file.mimetype,
+        key,
+        provider: 'local',
+        warning: '⚠️ File saved locally. Files will be lost on redeploy. Please configure S3 environment variables in Railway for persistent storage.',
+      };
+    }
   }
 
   @Post('image-from-base64')
