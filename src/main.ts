@@ -10,9 +10,35 @@ import { json, urlencoded } from 'express';
 import basicAuth from 'express-basic-auth';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { existsSync, mkdirSync } from 'fs';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+
+  // 🔥 إنشاء مجلدات uploads قبل تحميل ServeStaticModule
+  // هذا يمنع ENOENT errors عند محاولة serve static files
+  try {
+    const uploadsDir = join(process.cwd(), 'uploads');
+    const uploadsImagesDir = join(uploadsDir, 'images');
+
+    // إنشاء uploads directory
+    if (!existsSync(uploadsDir)) {
+      mkdirSync(uploadsDir, { recursive: true });
+      logger.log(`✅ Created uploads directory: ${uploadsDir}`);
+    }
+
+    // إنشاء uploads/images directory
+    if (!existsSync(uploadsImagesDir)) {
+      mkdirSync(uploadsImagesDir, { recursive: true });
+      logger.log(`✅ Created uploads/images directory: ${uploadsImagesDir}`);
+    }
+
+    logger.log(`✅ Uploads directories ready before ServeStaticModule initialization`);
+  } catch (error) {
+    logger.error(`❌ Failed to create uploads directories: ${error}`);
+    logger.error('Please ensure the application has write permissions to create directories');
+    // لا نوقف التطبيق، لكن ننبه للمشكلة
+  }
 
   // Helper function to get commit SHA
   const getCommitSha = (): string => {
@@ -334,6 +360,13 @@ async function bootstrap() {
       logger.log(`✅ CORS enabled for: ${allowAllOrigins ? 'all origins' : allowedOrigins.join(', ')}`);
     }
     logger.log(`✅ All routes mapped successfully`);
+    
+    // 🔥 Important: If adding SPA fallback routes (app.get('*', ...)) in the future,
+    // make sure to exclude /uploads paths to prevent ENOENT errors:
+    // app.get('*', (req, res, next) => {
+    //   if (req.path.startsWith('/uploads')) return next(); // Skip /uploads
+    //   // ... SPA fallback logic
+    // });
   } catch (error) {
     logger.error('❌ Failed to start application:', error);
     logger.error('Error details:', error instanceof Error ? error.stack : error);

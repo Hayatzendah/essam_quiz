@@ -101,11 +101,13 @@ import { AppController } from './app.controller';
     }),
 
     // Serve static files from uploads directory
+    // 🔥 Important: Make sure uploads directories are created BEFORE this module loads
+    // (see main.ts bootstrap function for directory creation)
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), 'uploads'),
+      rootPath: join(process.cwd(), 'uploads'), // ✅ Uses process.cwd() - works in containers
       serveRoot: '/uploads',
       serveStaticOptions: {
-        index: false, // لا تبحث عن index.html
+        index: false, // ✅ لا تبحث عن index.html - يمنع ENOENT stat /app/uploads/index.html
         fallthrough: true, // تمرر الطلب للـ route التالي إذا لم يجد الملف (لإضافة fallback)
         setHeaders: (res, path) => {
           res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -206,6 +208,7 @@ export class AppModule implements OnModuleInit {
     const uploadsDir = join(process.cwd(), 'uploads');
     const audioDir = join(uploadsDir, 'audio');
     const recordingsDir = join(uploadsDir, 'recordings');
+    const imagesDir = join(uploadsDir, 'images'); // 🔥 مجلد images العام
     const imagesQuestionsDir = join(uploadsDir, 'images', 'questions');
     const imagesStatesDir = join(uploadsDir, 'images', 'ولايات'); // 🔥 مجلد أسئلة الولايات
 
@@ -228,16 +231,22 @@ export class AppModule implements OnModuleInit {
         this.logger.log(`✅ Created recordings directory: ${recordingsDir}`);
       }
 
+      // 🔥 إنشاء مجلد images العام (مهم لـ ServeStaticModule)
+      if (!existsSync(imagesDir)) {
+        mkdirSync(imagesDir, { recursive: true });
+        this.logger.log(`✅ Created images directory: ${imagesDir}`);
+      }
+
       // إنشاء مجلد images/questions إذا لم يكن موجوداً
       if (!existsSync(imagesQuestionsDir)) {
         mkdirSync(imagesQuestionsDir, { recursive: true });
         this.logger.log(`✅ Created images/questions directory: ${imagesQuestionsDir}`);
       }
 
-      // 🔥 إنشاء مجلد images/states إذا لم يكن موجوداً (مثل questions)
+      // 🔥 إنشاء مجلد images/ولايات إذا لم يكن موجوداً (مثل questions)
       if (!existsSync(imagesStatesDir)) {
         mkdirSync(imagesStatesDir, { recursive: true });
-        this.logger.log(`✅ Created images/states directory: ${imagesStatesDir}`);
+        this.logger.log(`✅ Created images/ولايات directory: ${imagesStatesDir}`);
       }
 
       this.logger.log(`✅ Uploads directories ready: ${uploadsDir}`);
