@@ -258,7 +258,7 @@ export class UploadsController {
   @Roles('teacher', 'admin')
   @ApiOperation({
     summary: 'Upload image from base64',
-    description: 'رفع ملف صورة من base64 string. استخدم ?folder=ولايات لرفع صور الولايات.',
+    description: 'رفع ملف صورة من base64 string. استخدم ?folder=states لرفع صور الولايات.',
   })
   @ApiBody({
     schema: {

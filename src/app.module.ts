@@ -234,10 +234,10 @@ export class AppModule implements OnModuleInit {
         this.logger.log(`✅ Created images/questions directory: ${imagesQuestionsDir}`);
       }
 
-      // 🔥 إنشاء مجلد images/ولايات إذا لم يكن موجوداً (مثل questions)
+      // 🔥 إنشاء مجلد images/states إذا لم يكن موجوداً (مثل questions)
       if (!existsSync(imagesStatesDir)) {
         mkdirSync(imagesStatesDir, { recursive: true });
-        this.logger.log(`✅ Created images/ولايات directory: ${imagesStatesDir}`);
+        this.logger.log(`✅ Created images/states directory: ${imagesStatesDir}`);
       }
 
       this.logger.log(`✅ Uploads directories ready: ${uploadsDir}`);
