@@ -365,6 +365,8 @@ export class QuestionsService {
     if (filters.section) q.section = filters.section;
     if (filters.qType) q.qType = filters.qType;
     if (filters.status) q.status = filters.status;
+    if (filters.usageCategory) q.usageCategory = filters.usageCategory;
+    if (filters.mainSkill) q.mainSkill = filters.mainSkill;
 
     // قائمة جميع الولايات الألمانية
     const allStates = [

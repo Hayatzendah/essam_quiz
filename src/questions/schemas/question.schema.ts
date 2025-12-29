@@ -55,6 +55,9 @@ export class QuestionMedia {
 
   @Prop({ default: 's3' })
   provider?: 's3' | 'cloudinary';
+
+  @Prop({ trim: true })
+  description?: string; // وصف الصورة (يظهر تحت الصورة في الفرونت)
 }
 const QuestionMediaSchema = SchemaFactory.createForClass(QuestionMedia);
 

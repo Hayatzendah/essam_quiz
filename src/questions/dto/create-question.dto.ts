@@ -47,6 +47,10 @@ class QuestionMediaDto {
   @IsOptional()
   @IsIn(['s3', 'cloudinary'])
   provider?: 's3' | 'cloudinary';
+
+  @IsOptional()
+  @IsString()
+  description?: string; // وصف الصورة (يظهر تحت الصورة في الفرونت)
 }
 
 // DTO للفراغات التفاعلية

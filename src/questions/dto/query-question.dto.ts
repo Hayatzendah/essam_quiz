@@ -6,6 +6,8 @@ export class QueryQuestionDto {
   @IsOptional() @IsString() level?: string;
   @IsOptional() @IsString() section?: string;
   @IsOptional() @IsString() state?: string; // الولاية الألمانية (Bundesland) - للفلترة حسب tags
+  @IsOptional() @IsString() usageCategory?: string; // "common" | "state_specific" - للأسئلة الخاصة بـ Leben in Deutschland
+  @IsOptional() @IsString() mainSkill?: string; // للفلترة حسب mainSkill (مثل "leben_test")
   @IsOptional() @IsEnum(QuestionType) qType?: QuestionType;
   @IsOptional() @IsEnum(QuestionStatus) status?: QuestionStatus;
   @IsOptional() @IsString() tags?: string; // comma-separated
