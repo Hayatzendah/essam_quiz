@@ -507,6 +507,18 @@ export class QuestionsService {
       }
     }
     
+    // Log للتحقق من description في media/images
+    if (question.media?.description) {
+      this.logger.debug(`findById: Question ${cleanId} - media.description: ${question.media.description}`);
+    }
+    if (question.images && question.images.length > 0) {
+      question.images.forEach((img: any, idx: number) => {
+        if (img.description) {
+          this.logger.debug(`findById: Question ${cleanId} - images[${idx}].description: ${img.description}`);
+        }
+      });
+    }
+    
     return question;
   }
 
