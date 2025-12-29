@@ -7,7 +7,7 @@ const TEACHER_EMAIL = process.env.TEACHER_EMAIL || process.env.EMAIL;
 const TEACHER_PASSWORD = process.env.TEACHER_PASSWORD || process.env.PASSWORD;
 
 // مجلدات الصور
-const STATES_IMAGES_DIR = path.join(__dirname, 'src', 'uploads', 'images', 'ولايات');
+const STATES_IMAGES_DIR = path.join(__dirname, 'uploads', 'images', 'ولايات');
 
 async function getJWTToken() {
   if (!TEACHER_EMAIL || !TEACHER_PASSWORD) {
