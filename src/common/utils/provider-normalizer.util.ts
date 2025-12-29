@@ -52,6 +52,11 @@ export function normalizeProvider(provider: string | undefined | null): Provider
     return ProviderEnum.WORTSCHATZ;
   }
 
+  // Handle "OESD" variations (osd -> oesd)
+  if (normalized === 'osd') {
+    return ProviderEnum.OESD;
+  }
+
   // If no match found, return original value (validation will catch it)
   return trimmed;
 }
