@@ -176,8 +176,20 @@ export class UploadsController {
       throw new BadRequestException('No file uploaded');
     }
 
-    if (!file.buffer) {
-      throw new BadRequestException('File buffer is missing');
+    // 🔥 Get buffer from file - if using diskStorage, read from file.path
+    let fileBuffer: Buffer;
+    if (file.buffer) {
+      // Using memoryStorage - buffer is available
+      fileBuffer = file.buffer;
+    } else if (file.path) {
+      // Using diskStorage - read from disk
+      try {
+        fileBuffer = fs.readFileSync(file.path);
+      } catch (error: any) {
+        throw new BadRequestException(`Failed to read file from disk: ${error.message}`);
+      }
+    } else {
+      throw new BadRequestException('File buffer is missing - neither buffer nor path available');
     }
 
     // 🔥 محاولة رفع الملف مباشرة إلى S3 أولاً
@@ -196,7 +208,7 @@ export class UploadsController {
     try {
       // محاولة رفع إلى S3 مباشرة
       const s3Result = await this.mediaService.uploadBuffer({
-        buffer: file.buffer,
+        buffer: fileBuffer,
         mime: file.mimetype,
         ext,
         prefix: `images/${decodedFolder}`,
@@ -223,10 +235,14 @@ export class UploadsController {
         console.log(`[Upload Image] Created directory: ${destination}`);
       }
 
-      // حفظ الملف محلياً
+      // حفظ الملف محلياً (إذا لم يكن موجوداً بالفعل من multer diskStorage)
       const filePath = join(destination, file.originalname);
-      fs.writeFileSync(filePath, file.buffer);
-      console.log(`[Upload Image] Saved file locally at: ${filePath}`);
+      if (!fs.existsSync(filePath)) {
+        fs.writeFileSync(filePath, fileBuffer);
+        console.log(`[Upload Image] Saved file locally at: ${filePath}`);
+      } else {
+        console.log(`[Upload Image] File already exists at: ${filePath} (from multer diskStorage)`);
+      }
 
       // استخدام PUBLIC_BASE_URL من environment variables، أو بناء URL من request
       const publicBaseUrl = this.configService.get<string>('PUBLIC_BASE_URL');
@@ -258,7 +274,7 @@ export class UploadsController {
   @Roles('teacher', 'admin')
   @ApiOperation({
     summary: 'Upload image from base64',
-    description: 'رفع ملف صورة من base64 string. استخدم ?folder=states لرفع صور الولايات.',
+    description: 'رفع ملف صورة من base64 string. استخدم ?folder=ولايات لرفع صور الولايات.',
   })
   @ApiBody({
     schema: {
