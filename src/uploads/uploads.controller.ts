@@ -123,18 +123,22 @@ export class UploadsController {
           console.log(`[Upload Image] Full destination path: ${destination}`);
           
           // 🔥 التأكد من وجود المجلد قبل حفظ الملف
-          try {
-            if (!fs.existsSync(destination)) {
+          if (!fs.existsSync(destination)) {
+            try {
               fs.mkdirSync(destination, { recursive: true });
               console.log(`[Upload Image] Created directory: ${destination}`);
-            } else {
-              console.log(`[Upload Image] Directory already exists: ${destination}`);
+            } catch (error: any) {
+              console.error(`[Upload Image] Failed to create directory: ${destination}`, error);
+              const err = error instanceof Error ? error : new Error(`Failed to create directory: ${error?.message || 'Unknown error'}`);
+              // في multer، callback يتوقع argumentين دائماً: (error, destination)
+              return callback(err, destination);
             }
-            callback(null, destination);
-          } catch (error: any) {
-            console.error(`[Upload Image] Failed to create directory: ${destination}`, error);
-            callback(new Error(`Failed to create directory: ${error.message}`), null);
+          } else {
+            console.log(`[Upload Image] Directory already exists: ${destination}`);
           }
+          
+          // في multer، callback يأخذ (error, destination)
+          callback(null, destination);
         },
         filename: (req, file, callback) => {
           // الحفاظ على الاسم الأصلي للملف
