@@ -110,6 +110,18 @@ export class UploadsController {
           // تحديد المجلد بناءً على query parameter
           const folder = req.query.folder || 'questions';
           const destination = join(process.cwd(), 'uploads', 'images', folder);
+          
+          // 🔥 التأكد من وجود المجلد قبل حفظ الملف
+          if (!fs.existsSync(destination)) {
+            try {
+              fs.mkdirSync(destination, { recursive: true });
+              console.log(`[Upload Image] Created directory: ${destination}`);
+            } catch (error) {
+              console.error(`[Upload Image] Failed to create directory: ${destination}`, error);
+              return callback(new Error(`Failed to create directory: ${error.message}`), null);
+            }
+          }
+          
           callback(null, destination);
         },
         filename: (req, file, callback) => {
