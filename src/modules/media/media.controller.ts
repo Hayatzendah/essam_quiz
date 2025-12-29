@@ -41,9 +41,22 @@ export class MediaController {
   @Get('mock/*path')
   async getMockFile(@Param('path') path: string, @Req() req: any, @Res() res: Response) {
     // 🔥 استخراج الـ path من الـ URL مباشرة لتجنب مشاكل parsing
-    // NestJS @Param('path') قد لا يعمل بشكل صحيح مع slashes متعددة
-    const fullUrl = req.url || req.originalUrl || '';
-    let cleanPath = fullUrl.replace(/^\/media\/mock\//, ''); // إزالة prefix
+    // NestJS @Param('path') قد لا يعمل بشكل صحيح مع slashes متعددة وأحرف خاصة
+    let cleanPath = '';
+    
+    // محاولة استخراج الـ path من req.originalUrl أو req.url
+    const originalUrl = req.originalUrl || req.url || '';
+    console.log(`[Mock Endpoint] Original URL: ${originalUrl}`);
+    console.log(`[Mock Endpoint] Param path: ${JSON.stringify(path)}`);
+    
+    // استخراج الـ path من الـ URL بعد /media/mock/
+    const match = originalUrl.match(/\/media\/mock\/(.+?)(?:\?|$)/);
+    if (match && match[1]) {
+      cleanPath = match[1];
+    } else {
+      // Fallback: استخدام @Param إذا لم نجد في URL
+      cleanPath = path || '';
+    }
     
     // إزالة query parameters إذا كانت موجودة
     cleanPath = cleanPath.split('?')[0];
@@ -72,8 +85,6 @@ export class MediaController {
     cleanPath = cleanPath.replace(/^\/+/, '');
     
     // Logging للتحقق من المسار
-    console.log(`[Mock Endpoint] Original param path: ${JSON.stringify(path)}`);
-    console.log(`[Mock Endpoint] Full URL: ${fullUrl}`);
     console.log(`[Mock Endpoint] Cleaned path: ${JSON.stringify(cleanPath)}`);
     
     // 🔥 محاولة جلب الصورة الحقيقية من uploads folder أولاً
@@ -200,14 +211,22 @@ export class MediaController {
     
     // إذا لم يكن الملف موجوداً محلياً، نرجع رسالة Mock
     console.log(`[Mock Endpoint] File not found: ${filePath}`);
+    console.log(`[Mock Endpoint] Attempted paths checked:`);
+    console.log(`  - ${filePath}`);
+    if (pathParts.length >= 2 && pathParts[0] === 'images') {
+      const folder = pathParts.slice(1, -1).join('/');
+      const filename = pathParts[pathParts.length - 1];
+      console.log(`  - ${resolve(process.cwd(), 'uploads', 'images', folder, filename)}`);
+    }
+    
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({
       message: 'Mock mode: File not actually stored',
       note: 'This is a mock URL. In production with S3, this would return the actual file.',
       key: cleanPath,
-      originalPath: path,
+      originalPath: cleanPath, // استخدام cleanPath بدلاً من path
       filePath: filePath,
-      info: 'To get real file URLs, configure S3 environment variables in Railway.',
+      info: 'To get real file URLs, configure S3 environment variables in Railway, or ensure files exist in /uploads directory.',
     });
   }
 
