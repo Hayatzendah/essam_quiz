@@ -123,6 +123,11 @@ export class MediaController {
           console.error('[Mock Endpoint] Error serving file from uploads:', error);
         }
       }
+      
+      // 🔥 إذا لم يكن الملف موجوداً، نحاول redirect إلى uploads endpoint
+      // هذا يساعد إذا كانت الملفات موجودة على السيرفر لكن في مكان مختلف
+      console.log(`[Mock Endpoint] Redirecting to uploads endpoint: /uploads/images/${folder}/${filename}`);
+      return res.redirect(`/uploads/images/${folder}/${filename}`);
     }
     
     // إذا لم يكن الملف موجوداً محلياً، نرجع رسالة Mock
