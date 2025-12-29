@@ -136,9 +136,8 @@ export class MediaController {
         }
       }
       
-      // 🔥 إذا لم يكن الملف موجوداً، نحاول redirect إلى uploads endpoint
-      // هذا يساعد إذا كانت الملفات موجودة على السيرفر لكن في مكان مختلف
-      // لكن أولاً نحاول البحث في جميع المجلدات الممكنة
+      // 🔥 إذا لم يكن الملف موجوداً، نحاول البحث في جميع المجلدات الممكنة
+      // لكن لا نعمل redirect لتجنب redirect loop
       const possiblePaths = [
         resolve(process.cwd(), 'uploads', 'images', folder, filename),
         resolve(process.cwd(), 'uploads', cleanPath),
@@ -166,8 +165,9 @@ export class MediaController {
         }
       }
       
-      console.log(`[Mock Endpoint] Redirecting to uploads endpoint: /uploads/images/${folder}/${filename}`);
-      return res.redirect(`/uploads/images/${folder}/${filename}`);
+      // 🔥 لا نعمل redirect هنا لتجنب redirect loop
+      // بدلاً من ذلك، نرجع 404 أو رسالة Mock
+      console.log(`[Mock Endpoint] File not found after checking all paths`);
     }
     
     // إذا لم يكن الملف موجوداً محلياً، نرجع رسالة Mock
