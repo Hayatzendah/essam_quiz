@@ -200,7 +200,7 @@ async function bootstrap() {
       
       // 🔥 منع express.static من البحث عن index.html
       // إذا كان الطلب ينتهي بـ / أو يطلب index.html، نرجع 404 مباشرة
-      if (req.path.endsWith('/') || req.path.endsWith('/index.html')) {
+      if (req.path.endsWith('/') || req.path.endsWith('/index.html') || req.path.includes('/index.html')) {
         return res.status(404).json({
           status: 'error',
           code: 404,
@@ -213,35 +213,6 @@ async function bootstrap() {
           path: req.path,
           method: req.method,
         });
-      }
-      
-      // 🔥 التحقق من وجود الملف فعلياً قبل أن يصل إلى express.static
-      // هذا يمنع express.static من البحث عن index.html كـ fallback
-      try {
-        const filePath = join(process.cwd(), 'uploads', req.path.replace(/^\/uploads\//, ''));
-        if (existsSync(filePath)) {
-          const stats = statSync(filePath);
-          // إذا كان مجلد وليس ملف، نرجع 404 (لا نسمح بـ directory listing)
-          if (stats.isDirectory()) {
-            return res.status(404).json({
-              status: 'error',
-              code: 404,
-              message: 'Directory listing not allowed',
-              error: {
-                message: 'Directory listing not allowed',
-                error: 'Not Found',
-                statusCode: 404,
-              },
-              path: req.path,
-              method: req.method,
-            });
-          }
-        }
-        // إذا الملف موجود، نمرر للـ ServeStaticModule
-        // إذا لم يكن موجوداً، express.static سيرجع 404 (مع fallthrough: false)
-      } catch (error) {
-        // في حالة خطأ، نمرر للـ ServeStaticModule للتعامل معه
-        // (قد يكون الملف موجوداً لكن فيه مشكلة في الـ path encoding)
       }
       
       next();
