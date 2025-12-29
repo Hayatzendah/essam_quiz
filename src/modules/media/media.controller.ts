@@ -53,18 +53,34 @@ export class MediaController {
     const match = originalUrl.match(/\/media\/mock\/(.+?)(?:\?|$)/);
     if (match && match[1]) {
       cleanPath = match[1];
+      console.log(`[Mock Endpoint] Extracted from URL: ${cleanPath}`);
     } else {
       // Fallback: استخدام @Param إذا لم نجد في URL
       // لكن نحاول إصلاحه إذا كان فيه فواصل
       cleanPath = (path || '').replace(/,/g, '/');
+      console.log(`[Mock Endpoint] Using param path: ${cleanPath}`);
     }
     
     // إزالة query parameters إذا كانت موجودة
     cleanPath = cleanPath.split('?')[0];
+    console.log(`[Mock Endpoint] Path before decode: ${JSON.stringify(cleanPath)}`);
     
     try {
       // محاولة decode URI component - مهم جداً للأحرف الخاصة
-      cleanPath = decodeURIComponent(cleanPath);
+      // قد يكون الـ path encoded مرتين، لذا نحاول decode مرتين
+      let decoded = cleanPath;
+      try {
+        decoded = decodeURIComponent(cleanPath);
+        // محاولة decode مرة ثانية إذا كان لا يزال encoded
+        if (decoded.includes('%')) {
+          decoded = decodeURIComponent(decoded);
+        }
+      } catch (e) {
+        // إذا فشل، نستخدم القيمة الأصلية
+        console.warn(`[Mock Endpoint] First decode failed, trying direct: ${e.message}`);
+      }
+      cleanPath = decoded;
+      console.log(`[Mock Endpoint] Path after decode: ${JSON.stringify(cleanPath)}`);
     } catch (e) {
       // إذا فشل decode، نستخدم الـ path الأصلي
       console.warn(`[Mock Endpoint] Failed to decode path: ${cleanPath}, error: ${e.message}`);
