@@ -215,30 +215,58 @@ async function bootstrap() {
         });
       }
       
-      // 🔥 إصلاح المسارات العربية - decode الـ URL بشكل صحيح
-      // express.static قد لا يقوم بـ decode بشكل صحيح للمسارات العربية
-      try {
-        // Decode الـ path إذا كان encoded
-        let decodedPath = req.path;
+      // 🔥 Fallback: خدمة الملفات مباشرة للمسارات العربية
+      // إذا كان الطلب لملف صورة أو صوت، نحاول خدمته مباشرة
+      if (req.path.match(/\.(jpeg|jpg|png|gif|webp|mp3|wav|m4a|aac|ogg)$/i)) {
         try {
-          decodedPath = decodeURIComponent(req.path);
-          // إذا كان لا يزال فيه %، نحاول decode مرة ثانية
-          if (decodedPath.includes('%')) {
-            decodedPath = decodeURIComponent(decodedPath);
+          // Decode الـ path
+          let decodedPath = req.path;
+          try {
+            decodedPath = decodeURIComponent(req.path);
+            if (decodedPath.includes('%')) {
+              decodedPath = decodeURIComponent(decodedPath);
+            }
+          } catch (e) {
+            // إذا فشل decode، نستخدم القيمة الأصلية
           }
-        } catch (e) {
-          // إذا فشل decode، نستخدم القيمة الأصلية
-          logger.debug(`[Static Files] Failed to decode path: ${req.path}`);
+          
+          // إزالة /uploads من البداية
+          const relativePath = decodedPath.replace(/^\/uploads\//, '').replace(/^\//, '');
+          const filePath = join(process.cwd(), 'uploads', relativePath);
+          
+          // التحقق من وجود الملف
+          if (existsSync(filePath)) {
+            const stats = statSync(filePath);
+            if (stats.isFile()) {
+              // تحديد Content-Type
+              const ext = relativePath.toLowerCase().split('.').pop();
+              const mimeTypes: { [key: string]: string } = {
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'png': 'image/png',
+                'gif': 'image/gif',
+                'webp': 'image/webp',
+                'mp3': 'audio/mpeg',
+                'wav': 'audio/wav',
+                'm4a': 'audio/mp4',
+                'aac': 'audio/aac',
+                'ogg': 'audio/ogg',
+              };
+              
+              const contentType = mimeTypes[ext || ''] || 'application/octet-stream';
+              res.setHeader('Content-Type', contentType);
+              res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+              res.setHeader('Access-Control-Allow-Origin', '*');
+              
+              // إرسال الملف
+              const fileBuffer = readFileSync(filePath);
+              return res.send(fileBuffer); // لا نمرر للـ next()
+            }
+          }
+        } catch (error) {
+          // في حالة خطأ، نمرر للـ ServeStaticModule
+          logger.debug(`[Static Files Fallback] Error: ${error instanceof Error ? error.message : String(error)}`);
         }
-        
-        // إذا تغير الـ path بعد decode، نحدث req.path
-        if (decodedPath !== req.path) {
-          req.url = req.url.replace(req.path, decodedPath);
-          req.path = decodedPath;
-        }
-      } catch (error) {
-        // في حالة خطأ، نمرر للـ ServeStaticModule
-        logger.warn(`[Static Files] Error processing path: ${req.path}`, error);
       }
       
       next();
@@ -395,71 +423,6 @@ async function bootstrap() {
     } else {
       logger.log(`ℹ️  Swagger is disabled. Set ENABLE_SWAGGER=true to enable.`);
     }
-
-    // 🔥 Fallback middleware for Arabic file paths
-    // This serves files directly if express.static fails (e.g., with Arabic characters)
-    // يجب أن يكون بعد ServeStaticModule لكن قبل app.listen
-    app.use('/uploads', async (req, res, next) => {
-      // فقط إذا كان الطلب لم يتم الرد عليه بعد
-      if (res.headersSent || res.statusCode !== undefined) {
-        return next();
-      }
-      
-      // إذا كان الطلب لملف صورة أو صوت
-      if (req.path.match(/\.(jpeg|jpg|png|gif|webp|mp3|wav|m4a|aac|ogg)$/i)) {
-        try {
-          // Decode الـ path
-          let decodedPath = req.path;
-          try {
-            decodedPath = decodeURIComponent(req.path);
-            if (decodedPath.includes('%')) {
-              decodedPath = decodeURIComponent(decodedPath);
-            }
-          } catch (e) {
-            // إذا فشل decode، نستخدم القيمة الأصلية
-          }
-          
-          // إزالة /uploads من البداية
-          const relativePath = decodedPath.replace(/^\/uploads\//, '').replace(/^\//, '');
-          const filePath = join(process.cwd(), 'uploads', relativePath);
-          
-          // التحقق من وجود الملف
-          if (existsSync(filePath)) {
-            const stats = statSync(filePath);
-            if (stats.isFile()) {
-              // تحديد Content-Type
-              const ext = relativePath.toLowerCase().split('.').pop();
-              const mimeTypes: { [key: string]: string } = {
-                'jpg': 'image/jpeg',
-                'jpeg': 'image/jpeg',
-                'png': 'image/png',
-                'gif': 'image/gif',
-                'webp': 'image/webp',
-                'mp3': 'audio/mpeg',
-                'wav': 'audio/wav',
-                'm4a': 'audio/mp4',
-                'aac': 'audio/aac',
-                'ogg': 'audio/ogg',
-              };
-              
-              const contentType = mimeTypes[ext || ''] || 'application/octet-stream';
-              res.setHeader('Content-Type', contentType);
-              res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-              res.setHeader('Access-Control-Allow-Origin', '*');
-              
-              // إرسال الملف
-              const fileBuffer = readFileSync(filePath);
-              return res.send(fileBuffer); // لا نمرر للـ next()
-            }
-          }
-        } catch (error) {
-          // في حالة خطأ، نمرر للـ ServeStaticModule
-          logger.debug(`[Static Files Fallback] Error: ${error instanceof Error ? error.message : String(error)}`);
-        }
-      }
-      
-      next(); // نمرر للـ ServeStaticModule
-    });
 
     await app.listen(port, '0.0.0.0');
 
