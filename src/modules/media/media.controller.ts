@@ -41,17 +41,31 @@ export class MediaController {
   async getMockFile(@Param('path') path: string, @Res() res: Response) {
     // 🔥 تنظيف الـ path - إصلاح أي مشاكل في parsing
     // الـ path قد يأتي مع encoding issues أو separators خاطئة
-    let cleanPath = decodeURIComponent(path);
+    let cleanPath = path;
     
-    // إصلاح أي فاصلة بدل slash
+    try {
+      // محاولة decode URI component
+      cleanPath = decodeURIComponent(path);
+    } catch (e) {
+      // إذا فشل decode، نستخدم الـ path الأصلي
+      cleanPath = path;
+    }
+    
+    // إصلاح أي فاصلة بدل slash (مشكلة شائعة في parsing)
     cleanPath = cleanPath.replace(/,/g, '/');
     
-    // إزالة أي مسافات زائدة
-    cleanPath = cleanPath.replace(/\s+/g, ' ').trim();
+    // إزالة أي مسافات زائدة في البداية والنهاية
+    cleanPath = cleanPath.replace(/^\s+|\s+$/g, '');
+    
+    // إزالة أي مسافات متعددة
+    cleanPath = cleanPath.replace(/\s+/g, ' ');
+    
+    // إصلاح أي double slashes
+    cleanPath = cleanPath.replace(/\/+/g, '/');
     
     // Logging للتحقق من المسار
-    console.log(`[Mock Endpoint] Original path: ${path}`);
-    console.log(`[Mock Endpoint] Cleaned path: ${cleanPath}`);
+    console.log(`[Mock Endpoint] Original path: ${JSON.stringify(path)}`);
+    console.log(`[Mock Endpoint] Cleaned path: ${JSON.stringify(cleanPath)}`);
     
     // 🔥 محاولة جلب الصورة الحقيقية من uploads folder أولاً
     // الـ path يأتي كـ "images/ولايات/..." أو "images/questions/..."
@@ -101,10 +115,15 @@ export class MediaController {
     
     // إذا لم يكن الملف موجوداً محلياً، نحاول استخدام الـ uploads endpoint
     // الـ path قد يكون "images/ولايات/..." نحتاج لاستخراج folder و filename
-    const pathParts = cleanPath.split('/').filter(p => p.length > 0);
+    const pathParts = cleanPath.split('/').filter(p => p && p.trim().length > 0);
+    console.log(`[Mock Endpoint] Path parts: ${JSON.stringify(pathParts)}`);
+    
     if (pathParts.length >= 2 && pathParts[0] === 'images') {
       const folder = pathParts.slice(1, -1).join('/'); // كل شيء بين images و filename
       const filename = pathParts[pathParts.length - 1];
+      
+      console.log(`[Mock Endpoint] Extracted folder: ${JSON.stringify(folder)}`);
+      console.log(`[Mock Endpoint] Extracted filename: ${JSON.stringify(filename)}`);
       
       // محاولة استخدام uploads controller endpoint
       const uploadsPath = resolve(process.cwd(), 'uploads', 'images', folder, filename);
