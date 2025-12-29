@@ -142,7 +142,10 @@ export class MediaService {
       }
       const baseUrl =
         process.env.PUBLIC_BASE_URL || process.env.APP_URL || process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
-      return `${baseUrl}/media/mock/${key}?expires=${Date.now() + (expiresSec ?? this.defaultExpires) * 1000}`;
+      // 🔥 في mock mode، نرجع URL مباشر إلى /uploads/... بدلاً من /media/mock/...
+      // لأن الـ static file serving موجود ويخدم /uploads مباشرة
+      // لا نحتاج expires parameter لأن الملفات static
+      return `${baseUrl}/uploads/${key}`;
     }
 
     const cmd = new GetObjectCommand({ Bucket: this.bucket, Key: key });
