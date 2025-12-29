@@ -40,7 +40,13 @@ export class MediaController {
   @Get('mock/*path')
   async getMockFile(@Param('path') path: string, @Res() res: Response) {
     // 🔥 محاولة جلب الصورة الحقيقية من uploads folder أولاً
+    // الـ path يأتي كـ "images/ولايات/..." أو "images/questions/..."
     const filePath = resolve(process.cwd(), 'uploads', path);
+    
+    // Logging للتحقق من المسار
+    console.log(`[Mock Endpoint] Requested path: ${path}`);
+    console.log(`[Mock Endpoint] Resolved file path: ${filePath}`);
+    console.log(`[Mock Endpoint] File exists: ${fs.existsSync(filePath)}`);
     
     // التحقق من وجود الملف محلياً
     if (fs.existsSync(filePath)) {
@@ -64,20 +70,69 @@ export class MediaController {
         const contentType = mimeTypes[ext] || 'application/octet-stream';
         res.setHeader('Content-Type', contentType);
         
+        console.log(`[Mock Endpoint] Serving file: ${filePath} with content-type: ${contentType}`);
+        
         // إرجاع الملف الحقيقي
         return res.sendFile(filePath);
       } catch (error) {
         // في حالة خطأ، نرجع JSON
-        console.error('Error serving file:', error);
+        console.error('[Mock Endpoint] Error serving file:', error);
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(500).json({
+          message: 'Error serving file',
+          error: error.message,
+          path: path,
+          filePath: filePath,
+        });
+      }
+    }
+    
+    // إذا لم يكن الملف موجوداً محلياً، نحاول استخدام الـ uploads endpoint
+    // الـ path قد يكون "images/ولايات/..." نحتاج لاستخراج folder و filename
+    const pathParts = path.split('/');
+    if (pathParts.length >= 2 && pathParts[0] === 'images') {
+      const folder = pathParts.slice(1, -1).join('/'); // كل شيء بين images و filename
+      const filename = pathParts[pathParts.length - 1];
+      
+      // محاولة استخدام uploads controller endpoint
+      const uploadsPath = resolve(process.cwd(), 'uploads', 'images', folder, filename);
+      console.log(`[Mock Endpoint] Trying uploads path: ${uploadsPath}`);
+      
+      if (fs.existsSync(uploadsPath)) {
+        try {
+          const ext = extname(filename).toLowerCase();
+          const mimeTypes: { [key: string]: string } = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp',
+            '.mp3': 'audio/mpeg',
+            '.wav': 'audio/wav',
+            '.m4a': 'audio/mp4',
+            '.aac': 'audio/aac',
+            '.mp4': 'video/mp4',
+            '.webm': 'video/webm',
+          };
+          
+          const contentType = mimeTypes[ext] || 'application/octet-stream';
+          res.setHeader('Content-Type', contentType);
+          console.log(`[Mock Endpoint] Serving file from uploads: ${uploadsPath}`);
+          return res.sendFile(uploadsPath);
+        } catch (error) {
+          console.error('[Mock Endpoint] Error serving file from uploads:', error);
+        }
       }
     }
     
     // إذا لم يكن الملف موجوداً محلياً، نرجع رسالة Mock
+    console.log(`[Mock Endpoint] File not found: ${filePath}`);
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({
       message: 'Mock mode: File not actually stored',
       note: 'This is a mock URL. In production with S3, this would return the actual file.',
       key: path,
+      filePath: filePath,
       info: 'To get real file URLs, configure S3 environment variables in Railway.',
     });
   }
