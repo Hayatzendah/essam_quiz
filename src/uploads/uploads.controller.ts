@@ -320,55 +320,7 @@ export class UploadsController {
     }
   }
 
-  @Get('images/:folder/:filename')
-  @ApiOperation({
-    summary: 'Get image with fallback',
-    description: 'يحاول جلب الصورة من disk. إذا لم تكن موجودة، يعتمد على ServeStaticModule fallthrough.',
-  })
-  async getImage(
-    @Param('folder') folder: string,
-    @Param('filename') filename: string,
-    @Res() res: ExpressResponse,
-  ) {
-    // 🔥 Decode الـ folder و filename للأحرف الخاصة
-    let decodedFolder = folder;
-    let decodedFilename = filename;
-    
-    try {
-      decodedFolder = decodeURIComponent(folder);
-      decodedFilename = decodeURIComponent(filename);
-    } catch (e) {
-      console.warn(`[Uploads Controller] Failed to decode folder/filename: ${folder}/${filename}`);
-    }
-    
-    const filePath = resolve(process.cwd(), 'uploads', 'images', decodedFolder, decodedFilename);
-    
-    console.log(`[Uploads Controller] Looking for file: ${filePath}`);
-    console.log(`[Uploads Controller] File exists: ${fs.existsSync(filePath)}`);
-    
-    // إذا الملف موجود محلياً، نخدمه مباشرة
-    if (fs.existsSync(filePath)) {
-      // تحديد Content-Type
-      const ext = extname(decodedFilename).toLowerCase();
-      const mimeTypes: { [key: string]: string } = {
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp',
-      };
-      const contentType = mimeTypes[ext] || 'image/jpeg';
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      console.log(`[Uploads Controller] Serving file: ${filePath}`);
-      return res.sendFile(filePath);
-    }
-
-    // إذا الملف مش موجود محلياً، نرجع 404
-    // ServeStaticModule سيتعامل مع الطلب أولاً، وإذا لم يجد الملف، سيصل هنا
-    console.error(`[Uploads Controller] File not found: ${filePath}`);
-    throw new NotFoundException(`Image not found: ${decodedFolder}/${decodedFilename}`);
-  }
+  // 🔥 تم إزالة getImage endpoint - ServeStaticModule يتعامل مع /uploads/images/... مباشرة
+  // إذا أردت fallback إلى S3، يمكن إضافته لاحقاً
 }
 
