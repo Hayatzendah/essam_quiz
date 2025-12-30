@@ -3,8 +3,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ListeningClip, ListeningClipDocument } from './schemas/listening-clip.schema';
 import { CreateListeningClipDto } from './dto/create-listening-clip.dto';
-import { normalizeProvider } from '../../common/utils/provider-normalizer.util';
-import { ProviderEnum } from '../../common/enums/provider.enum';
 
 @Injectable()
 export class ListeningClipsService {
@@ -14,12 +12,9 @@ export class ListeningClipsService {
   ) {}
 
   async create(dto: CreateListeningClipDto): Promise<ListeningClipDocument> {
-    // Normalize provider to ensure 'osd' -> 'oesd', etc.
-    const normalizedProvider = normalizeProvider(dto.provider) as ProviderEnum;
-    
+    // Provider normalization is handled by schema pre-validate and pre-save hooks
     const doc = new this.model({
       ...dto,
-      provider: normalizedProvider || dto.provider,
       skill: dto.skill || 'hoeren', // Default to hoeren if not provided
     });
     return doc.save();
