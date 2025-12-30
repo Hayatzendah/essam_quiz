@@ -119,8 +119,9 @@ import { AppController } from './app.controller';
           // تحديد Content-Type بناءً على extension الملف
           const lowerPath = path.toLowerCase();
           if (lowerPath.endsWith('.opus')) {
-            // Note: OPUS is no longer accepted for new uploads, but we keep this for legacy files
-            res.setHeader('Content-Type', 'audio/opus'); // opus format (legacy support only)
+            // Note: OPUS files are now converted to MP3, but we keep this for legacy files
+            // Use audio/ogg for better browser compatibility (OPUS is usually in OGG container)
+            res.setHeader('Content-Type', 'audio/ogg; codecs=opus');
           } else if (lowerPath.endsWith('.ogg')) {
             res.setHeader('Content-Type', 'audio/ogg');
           } else if (lowerPath.endsWith('.mp3')) {

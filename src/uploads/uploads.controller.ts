@@ -25,6 +25,7 @@ import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio
 import * as fs from 'fs';
 import type { Response as ExpressResponse } from 'express';
 import { MediaService } from '../modules/media/media.service';
+import { AudioConverterService } from '../common/services/audio-converter.service';
 
 // Filter للصور فقط
 const imageFileFilter = (req: any, file: Express.Multer.File, callback: (error: Error | null, acceptFile: boolean) => void) => {
@@ -40,6 +41,7 @@ export class UploadsController {
   constructor(
     private readonly configService: ConfigService,
     private readonly mediaService: MediaService,
+    private readonly audioConverter: AudioConverterService,
   ) {}
   @Post('audio')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -84,6 +86,22 @@ export class UploadsController {
 
     console.log('Saved audio file at', file.path);
 
+    // تحويل OPUS/OGG إلى MP3 إذا لزم الأمر
+    let finalPath = file.path;
+    let finalFilename = file.filename;
+    const ext = extname(file.filename).toLowerCase();
+    
+    if (ext === '.opus' || ext === '.ogg') {
+      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
+      if (convertedPath) {
+        finalPath = convertedPath;
+        finalFilename = file.filename.replace(/\.(opus|ogg)$/i, '.mp3');
+        console.log(`Converted ${ext} to MP3: ${finalFilename}`);
+      } else {
+        console.warn(`Failed to convert ${ext} to MP3, using original file`);
+      }
+    }
+
     // استخدام PUBLIC_BASE_URL من environment variables، أو بناء URL من request
     const publicBaseUrl = this.configService.get<string>('PUBLIC_BASE_URL');
     let baseUrl: string;
@@ -95,9 +113,27 @@ export class UploadsController {
       baseUrl = `${req.protocol}://${req.get('host')}`;
     }
 
-    const audioUrl = `${baseUrl}/uploads/audio/${file.filename}`;
+    const audioUrl = `${baseUrl}/uploads/audio/${finalFilename}`;
 
-    return { audioUrl };
+    const response: any = { audioUrl };
+
+    // إضافة multiple sources للتوافق مع المتصفحات المختلفة
+    if (ext === '.opus' || ext === '.ogg') {
+      response.audioSources = [
+        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
+      ];
+    } else if (ext === '.mp3') {
+      response.audioSources = [
+        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
+      ];
+    } else {
+      const mimeType = file.mimetype || 'audio/mpeg';
+      response.audioSources = [
+        { url: audioUrl, type: mimeType, format: ext.replace('.', '') },
+      ];
+    }
+
+    return response;
   }
 
   @Post('image')

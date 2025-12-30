@@ -37,3 +37,4 @@ export const VocabularyWordSchema = SchemaFactory.createForClass(VocabularyWord)
 
 
 
+

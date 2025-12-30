@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
+import { AudioConverterService } from '../common/services/audio-converter.service';
 
 @ApiTags('Listening Clips')
 @ApiBearerAuth('JWT-auth')
@@ -28,6 +29,7 @@ import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio
 export class ListeningClipsController {
   constructor(
     private readonly service: ListeningClipsService,
+    private readonly audioConverter: AudioConverterService,
   ) {}
 
   @Post()
@@ -94,14 +96,30 @@ export class ListeningClipsController {
 
     console.log('Saved listening clip at', file.path);
 
+    // تحويل OPUS/OGG إلى MP3 إذا لزم الأمر
+    let finalPath = file.path;
+    let finalFilename = file.filename;
+    const ext = extname(file.filename).toLowerCase();
+    
+    if (ext === '.opus' || ext === '.ogg') {
+      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
+      if (convertedPath) {
+        finalPath = convertedPath;
+        finalFilename = file.filename.replace(/\.(opus|ogg)$/i, '.mp3');
+        console.log(`Converted ${ext} to MP3: ${finalFilename}`);
+      } else {
+        console.warn(`Failed to convert ${ext} to MP3, using original file`);
+      }
+    }
+
     // استخدام مسار نسبي فقط (بدون baseUrl) لأن الفرونت سيبني الـ URL الكامل
-    const audioUrl = `/uploads/audio/${file.filename}`;
+    const audioUrl = `/uploads/audio/${finalFilename}`;
 
     dto.audioUrl = audioUrl;
     const clip = await this.service.create(dto);
     
-    // إرجاع كل البيانات المطلوبة
-    return {
+    // إرجاع كل البيانات المطلوبة مع دعم multiple sources
+    const response: any = {
       _id: clip._id,
       audioUrl: clip.audioUrl,
       teil: clip.teil,
@@ -110,6 +128,27 @@ export class ListeningClipsController {
       skill: clip.skill,
       title: clip.title,
     };
+
+    // إضافة multiple sources للتوافق مع المتصفحات المختلفة
+    if (ext === '.opus' || ext === '.ogg') {
+      // إذا كان الملف الأصلي opus/ogg وتم تحويله، نضيف mp3 كـ primary source
+      response.audioSources = [
+        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
+      ];
+    } else if (ext === '.mp3') {
+      // إذا كان mp3، نضيفه كـ primary source
+      response.audioSources = [
+        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
+      ];
+    } else {
+      // للصيغ الأخرى، نضيفها كما هي
+      const mimeType = file.mimetype || 'audio/mpeg';
+      response.audioSources = [
+        { url: audioUrl, type: mimeType, format: ext.replace('.', '') },
+      ];
+    }
+
+    return response;
   }
 
   @Post('upload-audio')
@@ -187,7 +226,23 @@ export class ListeningClipsController {
 
     console.log('Saved listening clip audio at', file.path);
 
-    const audioUrl = `/uploads/audio/${file.filename}`;
+    // تحويل OPUS/OGG إلى MP3 إذا لزم الأمر
+    let finalPath = file.path;
+    let finalFilename = file.filename;
+    const ext = extname(file.filename).toLowerCase();
+    
+    if (ext === '.opus' || ext === '.ogg') {
+      const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
+      if (convertedPath) {
+        finalPath = convertedPath;
+        finalFilename = file.filename.replace(/\.(opus|ogg)$/i, '.mp3');
+        console.log(`Converted ${ext} to MP3: ${finalFilename}`);
+      } else {
+        console.warn(`Failed to convert ${ext} to MP3, using original file`);
+      }
+    }
+
+    const audioUrl = `/uploads/audio/${finalFilename}`;
 
     // إنشاء ListeningClip في MongoDB
     const clip = await this.service.create({
@@ -198,10 +253,28 @@ export class ListeningClipsController {
       audioUrl,
     });
 
-    return {
+    const response: any = {
       listeningClipId: String(clip._id),
       audioUrl,
     };
+
+    // إضافة multiple sources للتوافق مع المتصفحات المختلفة
+    if (ext === '.opus' || ext === '.ogg') {
+      response.audioSources = [
+        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
+      ];
+    } else if (ext === '.mp3') {
+      response.audioSources = [
+        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
+      ];
+    } else {
+      const mimeType = file.mimetype || 'audio/mpeg';
+      response.audioSources = [
+        { url: audioUrl, type: mimeType, format: ext.replace('.', '') },
+      ];
+    }
+
+    return response;
   }
 
   @Get()

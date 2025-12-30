@@ -17,7 +17,7 @@ async function uploadImage(imagePath: string, filename: string, isStateImage: bo
     formData.append('file', fs.createReadStream(imagePath), filename);
 
     const endpoint = isStateImage 
-      ? `${API_BASE_URL}/uploads/image?folder=states` 
+      ? `${API_BASE_URL}/uploads/image?folder=ولايات` 
       : `${API_BASE_URL}/uploads/image`;
 
     const response = await axios.post(endpoint, formData, {
