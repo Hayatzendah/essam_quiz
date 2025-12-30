@@ -51,6 +51,7 @@ export class AttemptItem {
     key: string;
     mime: string;
     url?: string;
+    description?: string;
   };
   // مصفوفة من الصور (للدعم المتعدد)
   @Prop({ type: [Object], default: undefined, _id: false }) imagesSnapshot?: Array<{
@@ -58,6 +59,7 @@ export class AttemptItem {
     key: string;
     mime: string;
     url?: string;
+    description?: string;
   }>;
   @Prop({ type: Types.ObjectId, ref: 'ListeningClip' }) listeningClipId?: Types.ObjectId; // للرجوع إلى ListeningClip
 

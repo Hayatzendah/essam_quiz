@@ -35,7 +35,8 @@
         "key": "images/ولايات/Württembergسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -43,28 +44,32 @@
           "key": "images/ولايات/Württembergسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Württembergسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Württembergسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Württembergسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Württembergسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -398,7 +403,8 @@
         "key": "images/ولايات/Bayernسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -406,28 +412,32 @@
           "key": "images/ولايات/Bayernسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Bayernسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Bayernسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Bayernسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bayernسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -761,7 +771,8 @@
         "key": "images/ولايات/Berlinسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -769,28 +780,32 @@
           "key": "images/ولايات/Berlinسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Berlinسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Berlinسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Berlinسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Berlinسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -1124,7 +1139,8 @@
         "key": "images/ولايات/Brandenburgسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -1132,28 +1148,32 @@
           "key": "images/ولايات/Brandenburgسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Brandenburgسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Brandenburgسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Brandenburgسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Brandenburgسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -1487,7 +1507,8 @@
         "key": "images/ولايات/Bremenسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -1495,28 +1516,32 @@
           "key": "images/ولايات/Bremenسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Bremenسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Bremenسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Bremenسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Bremenسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -1850,7 +1875,8 @@
         "key": "images/ولايات/Hamburgسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -1858,28 +1884,32 @@
           "key": "images/ولايات/Hamburgسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Hamburgسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Hamburgسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Hamburgسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hamburgسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -2213,7 +2243,8 @@
         "key": "images/ولايات/Hessenسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -2221,28 +2252,32 @@
           "key": "images/ولايات/Hessenسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Hessenسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Hessenسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Hessenسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Hessenسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -2576,7 +2611,8 @@
         "key": "images/ولايات/Mecklenburg-Vorpommernسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -2584,28 +2620,32 @@
           "key": "images/ولايات/Mecklenburg-Vorpommernسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Mecklenburg-Vorpommernسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Mecklenburg-Vorpommernسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Mecklenburg-Vorpommernسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Mecklenburg-Vorpommernسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -2939,7 +2979,8 @@
         "key": "images/ولايات/Niedersachsenسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -2947,28 +2988,32 @@
           "key": "images/ولايات/Niedersachsenسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Niedersachsenسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Niedersachsenسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Niedersachsenسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Niedersachsenسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -3302,7 +3347,8 @@
         "key": "images/ولايات/Nordrhein-Westfalenسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -3310,28 +3356,32 @@
           "key": "images/ولايات/Nordrhein-Westfalenسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Nordrhein-Westfalenسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Nordrhein-Westfalenسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Nordrhein-Westfalenسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Nordrhein-Westfalenسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -3665,7 +3715,8 @@
         "key": "images/ولايات/Rheinland-Pfalzسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -3673,28 +3724,32 @@
           "key": "images/ولايات/Rheinland-Pfalzسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Rheinland-Pfalzسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Rheinland-Pfalzسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Rheinland-Pfalzسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Rheinland-Pfalzسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -4028,7 +4083,8 @@
         "key": "images/ولايات/Saarlandسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -4036,28 +4092,32 @@
           "key": "images/ولايات/Saarlandسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Saarlandسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Saarlandسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Saarlandسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Saarlandسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -4391,7 +4451,8 @@
         "key": "images/ولايات/Sachsenسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -4399,28 +4460,32 @@
           "key": "images/ولايات/Sachsenسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Sachsenسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Sachsenسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Sachsenسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsenسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -4754,7 +4819,8 @@
         "key": "images/ولايات/Sachsen-Anhaltسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -4762,28 +4828,32 @@
           "key": "images/ولايات/Sachsen-Anhaltسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Sachsen-Anhaltسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Sachsen-Anhaltسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Sachsen-Anhaltسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Sachsen-Anhaltسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -5117,7 +5187,8 @@
         "key": "images/ولايات/Schleswig-Holsteinسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -5125,28 +5196,32 @@
           "key": "images/ولايات/Schleswig-Holsteinسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Schleswig-Holsteinسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Schleswig-Holsteinسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Schleswig-Holsteinسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Schleswig-Holsteinسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
@@ -5480,7 +5555,8 @@
         "key": "images/ولايات/Thüringenسؤال1صورة1.jpeg",
         "mime": "image/jpeg",
         "provider": "s3",
-        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة1.jpeg"
+        "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة1.jpeg",
+        "description": "Bild 1"
       },
       "images": [
         {
@@ -5488,28 +5564,32 @@
           "key": "images/ولايات/Thüringenسؤال1صورة1.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة1.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة1.jpeg",
+          "description": "Bild 1"
         },
         {
           "type": "image",
           "key": "images/ولايات/Thüringenسؤال1صورة2.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة2.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة2.jpeg",
+          "description": "Bild 2"
         },
         {
           "type": "image",
           "key": "images/ولايات/Thüringenسؤال1صورة3.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة3.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة3.jpeg",
+          "description": "Bild 3"
         },
         {
           "type": "image",
           "key": "images/ولايات/Thüringenسؤال1صورة4.jpeg",
           "mime": "image/jpeg",
           "provider": "s3",
-          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة4.jpeg"
+          "url": "https://api.deutsch-tests.com/uploads/images/ولايات/Thüringenسؤال1صورة4.jpeg",
+          "description": "Bild 4"
         }
       ]
     },
