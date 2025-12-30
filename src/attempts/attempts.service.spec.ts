@@ -2,9 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MongooseModule } from '@nestjs/mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model, Types, disconnect } from 'mongoose';
+import { ForbiddenException } from '@nestjs/common';
 import { AttemptsService } from './attempts.service';
 import { Attempt, AttemptSchema, AttemptStatus } from './schemas/attempt.schema';
-import { Exam, ExamSchema, ExamStatus } from '../exams/schemas/exam.schema';
+import { Exam, ExamSchema } from '../exams/schemas/exam.schema';
+import { ExamStatusEnum } from '../common/enums';
 import {
   Question,
   QuestionSchema,
@@ -105,7 +107,7 @@ describe('AttemptsService', () => {
     const exam = await examModel.create({
       title: 'Test Exam',
       level: 'g6',
-      status: ExamStatus.PUBLISHED,
+      status: ExamStatusEnum.PUBLISHED,
       sections: [
         {
           name: 'Section 1',
@@ -147,7 +149,7 @@ describe('AttemptsService', () => {
       const randomExam = await examModel.create({
         title: 'Random Exam',
         level: 'g6',
-        status: ExamStatus.PUBLISHED,
+        status: ExamStatusEnum.PUBLISHED,
         sections: [
           {
             name: 'Section 1',
@@ -169,7 +171,7 @@ describe('AttemptsService', () => {
       const distExam = await examModel.create({
         title: 'Distribution Exam',
         level: 'g6',
-        status: ExamStatus.PUBLISHED,
+        status: ExamStatusEnum.PUBLISHED,
         sections: [
           {
             name: 'Section 1',
@@ -193,7 +195,7 @@ describe('AttemptsService', () => {
       const shuffledExam = await examModel.create({
         title: 'Shuffled Exam',
         level: 'g6',
-        status: ExamStatus.PUBLISHED,
+        status: ExamStatusEnum.PUBLISHED,
         sections: [
           {
             name: 'Section 1',
@@ -224,7 +226,7 @@ describe('AttemptsService', () => {
       const exam = await examModel.create({
         title: 'Deterministic Exam',
         level: 'g6',
-        status: ExamStatus.PUBLISHED,
+        status: ExamStatusEnum.PUBLISHED,
         sections: [
           {
             name: 'Section 1',
@@ -279,7 +281,7 @@ describe('AttemptsService', () => {
       const tfExam = await examModel.create({
         title: 'TF Exam',
         level: 'g6',
-        status: ExamStatus.PUBLISHED,
+        status: ExamStatusEnum.PUBLISHED,
         sections: [
           {
             name: 'Section 1',
@@ -308,7 +310,7 @@ describe('AttemptsService', () => {
       const fillExam = await examModel.create({
         title: 'Fill Exam',
         level: 'g6',
-        status: ExamStatus.PUBLISHED,
+        status: ExamStatusEnum.PUBLISHED,
         sections: [
           {
             name: 'Section 1',
@@ -463,7 +465,7 @@ describe('AttemptsService', () => {
       const timeExam = await examModel.create({
         title: 'Time Exam',
         level: 'g6',
-        status: ExamStatus.PUBLISHED,
+        status: ExamStatusEnum.PUBLISHED,
         sections: [
           {
             name: 'Section 1',
@@ -495,7 +497,7 @@ describe('AttemptsService', () => {
       const policyExam = await examModel.create({
         title: 'Policy Exam',
         level: 'g6',
-        status: ExamStatus.PUBLISHED,
+        status: ExamStatusEnum.PUBLISHED,
         sections: [
           {
             name: 'Section 1',
