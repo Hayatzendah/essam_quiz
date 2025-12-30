@@ -44,6 +44,11 @@ export class SubmitAttemptAnswerDto {
   @IsString()
   answerText?: string;
 
+  // للتوافق مع الكود القديم - fillAnswers (يتم تحويله تلقائياً إلى answerText)
+  @IsOptional()
+  @IsString()
+  fillAnswers?: string;
+
   // لأسئلة الاختيار / صح وغلط - استخدام indexes (0-based)
   // للـ MCQ: indexes للخيارات المختارة
   // للـ True/False: 0 = false, 1 = true
