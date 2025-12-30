@@ -45,8 +45,8 @@ export class ListeningClip {
 
 export const ListeningClipSchema = SchemaFactory.createForClass(ListeningClip);
 
-// Pre-save hook to normalize provider value (handles 'osd' -> 'oesd', etc.)
-ListeningClipSchema.pre('save', function (next) {
+// Pre-validate hook to normalize provider before validation
+ListeningClipSchema.pre('validate', function (next) {
   if (this.provider && typeof this.provider === 'string') {
     const normalized = normalizeProvider(this.provider);
     if (normalized && typeof normalized === 'string') {
@@ -56,8 +56,8 @@ ListeningClipSchema.pre('save', function (next) {
   next();
 });
 
-// Pre-validate hook to normalize provider before validation
-ListeningClipSchema.pre('validate', function (next) {
+// Pre-save hook to normalize provider value (handles 'osd' -> 'oesd', etc.)
+ListeningClipSchema.pre('save', function (next) {
   if (this.provider && typeof this.provider === 'string') {
     const normalized = normalizeProvider(this.provider);
     if (normalized && typeof normalized === 'string') {
