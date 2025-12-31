@@ -163,6 +163,7 @@ async function bootstrap() {
       'http://localhost:5177', // Frontend local development
       'https://deutsch-tests.com', // Production domain
       'https://www.deutsch-tests.com', // Production domain with www
+      'https://lightsalmon-anteater-987020.hostingersite.com', // 🔥 مؤقت - دومين Hostinger للاختبار
       'http://localhost:3000',
       'http://localhost:5175',
       'http://localhost:5178',
