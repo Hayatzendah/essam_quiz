@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -11,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { VocabularyTopicsService } from './vocabulary-topics.service';
 import { CreateVocabularyTopicDto } from './dto/create-vocabulary-topic.dto';
+import { UpdateVocabularyTopicDto } from './dto/update-vocabulary-topic.dto';
 import { QueryVocabularyTopicDto } from './dto/query-vocabulary-topic.dto';
 
 @ApiTags('Vocabulary Topics')
@@ -51,6 +54,24 @@ export class VocabularyTopicsController {
   @ApiResponse({ status: 404, description: 'Topic not found' })
   findOne(@Param('id') id: string) {
     return this.topicsService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a vocabulary topic' })
+  @ApiResponse({ status: 200, description: 'Topic updated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  @ApiResponse({ status: 404, description: 'Topic not found' })
+  update(@Param('id') id: string, @Body() dto: UpdateVocabularyTopicDto) {
+    return this.topicsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a vocabulary topic' })
+  @ApiResponse({ status: 204, description: 'Topic deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Topic not found' })
+  remove(@Param('id') id: string) {
+    return this.topicsService.remove(id);
   }
 }
 

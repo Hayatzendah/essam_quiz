@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { VocabularyTopic, VocabularyTopicDocument } from './schemas/vocabulary-topic.schema';
 import { CreateVocabularyTopicDto } from './dto/create-vocabulary-topic.dto';
+import { UpdateVocabularyTopicDto } from './dto/update-vocabulary-topic.dto';
 import { QueryVocabularyTopicDto } from './dto/query-vocabulary-topic.dto';
 
 @Injectable()
@@ -70,6 +71,35 @@ export class VocabularyTopicsService {
       throw new NotFoundException(`Topic with slug "${slug}" not found`);
     }
     return topic;
+  }
+
+  /**
+   * تحديث موضوع مفردات
+   */
+  async update(id: string, dto: UpdateVocabularyTopicDto): Promise<VocabularyTopic> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`Topic with ID ${id} not found`);
+    }
+
+    const topic = await this.topicModel.findByIdAndUpdate(id, dto, { new: true }).exec();
+    if (!topic) {
+      throw new NotFoundException(`Topic with ID ${id} not found`);
+    }
+    return topic;
+  }
+
+  /**
+   * حذف موضوع مفردات
+   */
+  async remove(id: string): Promise<void> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`Topic with ID ${id} not found`);
+    }
+
+    const result = await this.topicModel.findByIdAndDelete(id).exec();
+    if (!result) {
+      throw new NotFoundException(`Topic with ID ${id} not found`);
+    }
   }
 }
 

@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Put,
+  Patch,
   Param,
   Delete,
   Query,
@@ -65,6 +66,15 @@ export class VocabularyWordsController {
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
   @ApiResponse({ status: 404, description: 'Word not found' })
   update(@Param('id') id: string, @Body() updateDto: UpdateVocabularyWordDto) {
+    return this.wordsService.update(id, updateDto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a vocabulary word (partial update)' })
+  @ApiResponse({ status: 200, description: 'Word updated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  @ApiResponse({ status: 404, description: 'Word not found' })
+  patch(@Param('id') id: string, @Body() updateDto: UpdateVocabularyWordDto) {
     return this.wordsService.update(id, updateDto);
   }
 
