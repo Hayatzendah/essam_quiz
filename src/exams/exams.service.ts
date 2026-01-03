@@ -1982,26 +1982,48 @@ export class ExamsService {
     );
 
     if (attemptCount > 0 && !hard) {
+      // Soft delete: إذا كان هناك attempts، نطلب hard delete
+      // ✅ Teacher يمكنه استخدام hard=true لحذف الامتحان وجميع المحاولات المرتبطة به
       this.logger.warn(
-        `[removeExam] Cannot delete exam with ${attemptCount} attempt(s). Use hard=true to force delete.`,
+        `[removeExam] Cannot soft delete exam with ${attemptCount} attempt(s). Use hard=true to permanently delete exam and all related attempts.`,
       );
       throw new BadRequestException({
         code: 'EXAM_HAS_ATTEMPTS',
-        message: `Cannot delete exam with ${attemptCount} attempt(s). Use hard=true to force delete.`,
+        message: `Cannot delete exam with ${attemptCount} attempt(s). Use hard=true to permanently delete exam and all related attempts.`,
         attemptCount,
+        hint: 'Add ?hard=true to the query string to force delete (will delete exam and all attempts permanently)',
       });
     }
 
     if (hard) {
-      // Hard delete: حذف نهائي
-      // ⚠️ تحذير: الحذف النهائي لا يحذف المحاولات المرتبطة
-      // المحاولات تحفظ snapshot للأسئلة والإجابات، لذا تبقى صالحة حتى بعد حذف الامتحان
+      // Hard delete: حذف نهائي للامتحان وجميع المحاولات المرتبطة به
+      // ⚠️ تحذير: هذا سيحذف الامتحان وكل المحاولات المرتبطة به نهائياً
+      // العميل على علم كامل بالتأثير ووافق عليه
       this.logger.warn(
-        `[removeExam] Hard delete - examId: ${id}, attemptCount: ${attemptCount}. Attempts will remain in database with their snapshots.`,
+        `[removeExam] Hard delete requested - examId: ${id}, attemptCount: ${attemptCount}. This will permanently delete the exam and all related attempts.`,
       );
+
+      // حذف جميع المحاولات المرتبطة بالامتحان أولاً
+      let deletedAttemptsCount = 0;
+      if (attemptCount > 0) {
+        const deleteAttemptsResult = await AttemptModel.deleteMany({ examId: new Types.ObjectId(id) });
+        deletedAttemptsCount = deleteAttemptsResult.deletedCount || 0;
+        this.logger.warn(
+          `[removeExam] Deleted ${deletedAttemptsCount} attempt(s) related to exam ${id} (permanent deletion)`,
+        );
+      }
+
+      // حذف الامتحان نهائياً
       await this.model.findByIdAndDelete(id).exec();
-      this.logger.log(`[removeExam] Exam deleted permanently - examId: ${id}`);
-      return { message: 'Exam deleted permanently', id, attemptCount };
+      this.logger.log(
+        `[removeExam] Exam and all related attempts deleted permanently - examId: ${id}, deletedAttempts: ${deletedAttemptsCount}`,
+      );
+      return {
+        message: 'Exam and all related attempts deleted permanently',
+        id,
+        deletedAttempts: deletedAttemptsCount,
+        totalAttempts: attemptCount,
+      };
     } else {
       // Soft delete: تغيير الحالة إلى archived
       // ✅ Soft delete يحافظ على الامتحان والمحاولات المرتبطة به
