@@ -18,6 +18,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ExamsService } from './exams.service';
 import { CreateExamDto, CreatePracticeExamDto } from './dto/create-exam.dto';
+import { CreatePracticeModeDto } from './dto/create-practice-mode.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { QueryExamDto } from './dto/query-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
@@ -81,14 +82,14 @@ export class ExamsController {
   }
 
   // إنشاء امتحان تمرين ديناميكي (admin/teacher فقط)
-  // ⚠️ للطلاب: استخدم POST /attempts/practice لبدء محاولة تمرين
+  // ⚠️ للطلاب: استخدم POST /exams/practice/mode للتعلم مع الإجابات
   @Post('practice')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
   @ApiOperation({
     summary: 'Create practice exam (admin/teacher only)',
     description:
-      'إنشاء امتحان تمرين ديناميكي - يتطلب role: admin أو teacher. للطلاب: استخدم POST /attempts/practice لبدء محاولة تمرين',
+      'إنشاء امتحان تمرين ديناميكي - يتطلب role: admin أو teacher. للطلاب: استخدم POST /exams/practice/mode للتعلم مع الإجابات',
   })
   @ApiResponse({ status: 201, description: 'Practice exam created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
@@ -96,28 +97,36 @@ export class ExamsController {
   @ApiResponse({
     status: 403,
     description:
-      'Forbidden - requires admin or teacher role. Students should use POST /attempts/practice',
+      'Forbidden - requires admin or teacher role. Students should use POST /exams/practice/mode',
   })
   createPracticeExam(@Body() dto: CreatePracticeExamDto, @Req() req: any) {
     this.logger.log(
       `[POST /exams/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, sections: ${dto?.sections?.length || 0}`,
     );
 
-    // إذا كان المستخدم طالباً، أرسل رسالة خطأ واضحة
-    if (req.user?.role === 'student') {
-      this.logger.warn(
-        `[POST /exams/practice] Student attempted to create practice exam - userId: ${req.user?.userId}`,
-      );
-      throw new ForbiddenException({
-        status: 'error',
-        code: 403,
-        message:
-          'ليس لديك صلاحية لإنشاء امتحانات. استخدم POST /attempts/practice لبدء محاولة تمرين',
-        hint: 'Students cannot create exams. Use POST /attempts/practice to start a practice attempt instead.',
-      });
-    }
-
     return this.service.createPracticeExam(dto, req.user);
+  }
+
+  // Practice/Learn Mode للطلاب - يرجع الأسئلة مع الإجابات الصحيحة
+  @Post('practice/mode')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get practice questions for learning (students allowed)',
+    description:
+      'جلب أسئلة التمرين للتعلم - متاح للطلاب. يرجع الأسئلة مع الإجابات الصحيحة والشرح. يدعم general (300 سؤال) و state (160 سؤال حسب الولاية)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns practice questions with correct answers and explanations',
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'No questions found' })
+  createPracticeMode(@Body() dto: CreatePracticeModeDto, @Req() req: any) {
+    this.logger.log(
+      `[POST /exams/practice/mode] Request received - mode: ${dto.mode}, state: ${dto.state}, userId: ${req.user?.userId}, role: ${req.user?.role}`,
+    );
+    return this.service.createPracticeModeExam(dto, req.user);
   }
 
   // قائمة مزوّدي الامتحانات المتاحة + مستوياتهم

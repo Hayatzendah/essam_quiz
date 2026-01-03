@@ -8,10 +8,12 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateExamDto, CreatePracticeExamDto } from './dto/create-exam.dto';
+import { CreatePracticeModeDto, PracticeMode } from './dto/create-practice-mode.dto';
 import { QueryExamDto } from './dto/query-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
 import { Exam, ExamDocument } from './schemas/exam.schema';
+import { Question, QuestionDocument, QuestionStatus, QuestionType } from '../questions/schemas/question.schema';
 import { ExamCategoryEnum, ExamStatusEnum } from '../common/enums';
 import { ProviderEnum } from '../common/enums/provider.enum';
 import { normalizeProvider } from '../common/utils/provider-normalizer.util';
@@ -22,7 +24,10 @@ type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 export class ExamsService {
   private readonly logger = new Logger(ExamsService.name);
 
-  constructor(@InjectModel(Exam.name) private readonly model: Model<ExamDocument>) {}
+  constructor(
+    @InjectModel(Exam.name) private readonly model: Model<ExamDocument>,
+    @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
+  ) {}
 
   private assertTeacherOrAdmin(user: ReqUser) {
     if (!user || (user.role !== 'teacher' && user.role !== 'admin')) {
@@ -490,6 +495,89 @@ export class ExamsService {
       attemptLimit: doc.attemptLimit,
       ownerId: doc.ownerId,
       createdAt: (doc as any).createdAt,
+    };
+  }
+
+  /**
+   * إنشاء Practice Exam للطلاب (Learn Mode)
+   * - general: 300 سؤال عام
+   * - state: 160 سؤال ولادي (10 لكل ولاية)
+   * - يرجع الأسئلة مع الإجابات الصحيحة والشرح
+   */
+  async createPracticeModeExam(dto: CreatePracticeModeDto, user: ReqUser) {
+    this.logger.log(
+      `[createPracticeModeExam] Request - mode: ${dto.mode}, state: ${dto.state}, userId: ${user.userId}, role: ${user.role}`,
+    );
+
+    // التحقق من state إذا كان mode=state
+    if (dto.mode === PracticeMode.STATE && !dto.state) {
+      throw new BadRequestException('State is required when mode=state');
+    }
+
+    let query: any = {
+      provider: 'leben_in_deutschland',
+      mainSkill: 'leben_test',
+      status: QuestionStatus.PUBLISHED,
+    };
+
+    if (dto.mode === PracticeMode.GENERAL) {
+      // الأسئلة العامة (300 سؤال)
+      query.usageCategory = 'common';
+    } else if (dto.mode === PracticeMode.STATE) {
+      // أسئلة الولاية (160 سؤال - 10 لكل ولاية)
+      query.usageCategory = 'state_specific';
+      query.state = dto.state;
+    }
+
+    // جلب جميع الأسئلة
+    const questions = await this.questionModel.find(query).sort({ createdAt: 1 }).lean().exec();
+
+    if (questions.length === 0) {
+      throw new NotFoundException(
+        `No questions found for mode=${dto.mode}${dto.state ? `, state=${dto.state}` : ''}`,
+      );
+    }
+
+    this.logger.log(
+      `[createPracticeModeExam] Found ${questions.length} questions for mode=${dto.mode}${dto.state ? `, state=${dto.state}` : ''}`,
+    );
+
+    // معالجة الأسئلة لإرجاع الإجابات الصحيحة
+    const processedQuestions = questions.map((item: any) => {
+      let correctAnswer = item.correctAnswer;
+      let correctOptionId: string | undefined;
+
+      // استخراج correctAnswer من options إذا لم يكن موجوداً
+      if (item.qType === QuestionType.MCQ && item.options) {
+        const correctOption = item.options.find((opt: any) => opt.isCorrect === true);
+        if (correctOption) {
+          correctAnswer = correctOption.text;
+          correctOptionId = correctOption._id?.toString() || correctOption.id;
+        }
+      }
+
+      return {
+        id: item._id.toString(),
+        prompt: item.prompt || item.text,
+        qType: item.qType,
+        options: item.options || [],
+        correctAnswer,
+        correctOptionId,
+        explanation: item.explanation,
+        media: item.media,
+        images: item.images || [],
+        level: item.level,
+        tags: item.tags || [],
+        usageCategory: item.usageCategory,
+        state: item.state,
+      };
+    });
+
+    return {
+      mode: dto.mode,
+      state: dto.state,
+      totalQuestions: questions.length,
+      questions: processedQuestions,
     };
   }
 

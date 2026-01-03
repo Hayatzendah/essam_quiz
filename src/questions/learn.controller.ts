@@ -7,7 +7,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 @ApiTags('Learn')
 @ApiBearerAuth('JWT-auth')
 @Controller('learn')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard) // JWT مطلوب لكن بدون قيود roles - متاح للطلاب
 export class LearnController {
   constructor(private readonly questionsService: QuestionsService) {}
 
