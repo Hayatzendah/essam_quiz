@@ -522,37 +522,34 @@ export class ExamsService {
 
     if (dto.mode === PracticeMode.GENERAL) {
       // الأسئلة العامة (300 سؤال) - فقط الأسئلة بدون state
-      // ✅ فصل واضح: general = بدون state
+      // ✅ فصل واضح: general = بدون state تماماً
       query.$or = [
-        { category: 'general' }, // إذا كان category موجود
-        { 
-          category: { $exists: false }, // للتوافق مع البيانات القديمة
-          usageCategory: 'common',
-          state: { $exists: false }, // بدون state
-        },
+        { state: { $exists: false } },
+        { state: null },
+        { state: '' },
+      ];
+      query.$and = [
         {
-          category: { $exists: false },
-          usageCategory: { $exists: false },
-          state: { $exists: false }, // بدون state
+          $or: [
+            { category: 'general' },
+            { usageCategory: 'common' },
+            { 
+              category: { $exists: false },
+              usageCategory: { $exists: false },
+            },
+          ],
         },
       ];
     } else if (dto.mode === PracticeMode.STATE) {
       // أسئلة الولاية (160 سؤال - 10 لكل ولاية) - فقط الأسئلة مع state
-      // ✅ فصل واضح: state = مع state field
+      // ✅ فصل واضح: state = مع state field محدد
+      query.state = dto.state;
       query.$or = [
+        { category: 'state' },
+        { usageCategory: 'state_specific' },
         { 
-          category: 'state',
-          state: dto.state, // الولاية المحددة
-        },
-        {
-          category: { $exists: false }, // للتوافق مع البيانات القديمة
-          usageCategory: 'state_specific',
-          state: dto.state,
-        },
-        {
           category: { $exists: false },
           usageCategory: { $exists: false },
-          state: dto.state, // الولاية المحددة
         },
       ];
     }

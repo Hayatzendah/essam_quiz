@@ -1007,22 +1007,29 @@ export class QuestionsService {
     const skip = (page - 1) * limit;
 
     // فلترة الأسئلة العامة (common) من Leben in Deutschland
-    // ✅ فصل واضح: general = بدون state
+    // ✅ فصل واضح: general = بدون state تماماً
     const query: FilterQuery<QuestionDocument> = {
       provider: 'leben_in_deutschland',
       mainSkill: 'leben_test',
       status: QuestionStatus.PUBLISHED,
-      $or: [
-        { category: 'general' }, // إذا كان category موجود
-        { 
-          category: { $exists: false }, // للتوافق مع البيانات القديمة
-          usageCategory: 'common',
-          state: { $exists: false }, // بدون state
+      // شرط أساسي: بدون state تماماً (يجب يكون null أو غير موجود)
+      $and: [
+        {
+          $or: [
+            { state: { $exists: false } },
+            { state: null },
+            { state: '' },
+          ],
         },
         {
-          category: { $exists: false },
-          usageCategory: { $exists: false },
-          state: { $exists: false }, // بدون state
+          $or: [
+            { category: 'general' },
+            { usageCategory: 'common' },
+            { 
+              category: { $exists: false },
+              usageCategory: { $exists: false },
+            },
+          ],
         },
       ],
     };
@@ -1080,25 +1087,20 @@ export class QuestionsService {
     const skip = (page - 1) * limit;
 
     // فلترة أسئلة الولاية المحددة
-    // ✅ فصل واضح: state = مع state field
+    // ✅ فصل واضح: state = مع state field محدد
     const query: FilterQuery<QuestionDocument> = {
       provider: 'leben_in_deutschland',
       mainSkill: 'leben_test',
       status: QuestionStatus.PUBLISHED,
+      // شرط أساسي: مع state محدد
+      state: dto.state,
+      // تصنيف: state أو state_specific
       $or: [
+        { category: 'state' },
+        { usageCategory: 'state_specific' },
         { 
-          category: 'state',
-          state: dto.state, // الولاية المحددة
-        },
-        {
-          category: { $exists: false }, // للتوافق مع البيانات القديمة
-          usageCategory: 'state_specific',
-          state: dto.state,
-        },
-        {
           category: { $exists: false },
           usageCategory: { $exists: false },
-          state: dto.state, // الولاية المحددة
         },
       ],
     };
