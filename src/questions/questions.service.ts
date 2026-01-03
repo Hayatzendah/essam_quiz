@@ -20,6 +20,7 @@ import {
   QuestionDifficulty,
 } from './schemas/question.schema';
 import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
+import { LearnGeneralQuestionsDto, LearnStateQuestionsDto } from './dto/learn-questions.dto';
 import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
 import { GrammarTopic, GrammarTopicDocument } from '../modules/grammar/schemas/grammar-topic.schema';
 import { GrammarTopicsService } from '../modules/grammar/grammar-topics.service';
@@ -993,6 +994,129 @@ export class QuestionsService {
       examId: (exam as any)._id.toString(),
       sectionTitle: sectionName,
       section: sectionName,
+    };
+  }
+
+  /**
+   * جلب الأسئلة العامة للتعلم (300 سؤال)
+   * يرجع الأسئلة مع الإجابات الصحيحة والشرح
+   */
+  async getLearnGeneralQuestions(dto: LearnGeneralQuestionsDto) {
+    const page = Math.max(dto.page || 1, 1);
+    const limit = Math.max(Math.min(dto.limit || 20, 100), 1);
+    const skip = (page - 1) * limit;
+
+    // فلترة الأسئلة العامة (common) من Leben in Deutschland
+    const query: FilterQuery<QuestionDocument> = {
+      provider: 'leben_in_deutschland',
+      mainSkill: 'leben_test',
+      usageCategory: 'common',
+      status: QuestionStatus.PUBLISHED,
+    };
+
+    const [items, total] = await Promise.all([
+      this.model.find(query).skip(skip).limit(limit).sort({ createdAt: 1 }).lean().exec(),
+      this.model.countDocuments(query),
+    ]);
+
+    // معالجة الأسئلة لإرجاع الإجابات الصحيحة
+    const processedItems = items.map((item: any) => {
+      let correctAnswer = item.correctAnswer;
+      let correctOptionId: string | undefined;
+
+      // استخراج correctAnswer من options إذا لم يكن موجوداً
+      if (item.qType === QuestionType.MCQ && item.options) {
+        const correctOption = item.options.find((opt: any) => opt.isCorrect === true);
+        if (correctOption) {
+          correctAnswer = correctOption.text;
+          correctOptionId = correctOption._id?.toString() || correctOption.id;
+        }
+      }
+
+      return {
+        id: item._id.toString(),
+        prompt: item.prompt || item.text,
+        qType: item.qType,
+        options: item.options || [],
+        correctAnswer,
+        correctOptionId,
+        explanation: item.explanation,
+        media: item.media,
+        images: item.images || [],
+        level: item.level,
+        tags: item.tags || [],
+        usageCategory: item.usageCategory,
+      };
+    });
+
+    return {
+      page,
+      limit,
+      total,
+      items: processedItems,
+    };
+  }
+
+  /**
+   * جلب الأسئلة الولادية للتعلم (160 سؤال - 10 لكل ولاية)
+   * يرجع الأسئلة مع الإجابات الصحيحة والشرح
+   */
+  async getLearnStateQuestions(dto: LearnStateQuestionsDto) {
+    const page = Math.max(dto.page || 1, 1);
+    const limit = Math.max(Math.min(dto.limit || 20, 100), 1);
+    const skip = (page - 1) * limit;
+
+    // فلترة أسئلة الولاية المحددة
+    const query: FilterQuery<QuestionDocument> = {
+      provider: 'leben_in_deutschland',
+      mainSkill: 'leben_test',
+      usageCategory: 'state_specific',
+      state: dto.state,
+      status: QuestionStatus.PUBLISHED,
+    };
+
+    const [items, total] = await Promise.all([
+      this.model.find(query).skip(skip).limit(limit).sort({ createdAt: 1 }).lean().exec(),
+      this.model.countDocuments(query),
+    ]);
+
+    // معالجة الأسئلة لإرجاع الإجابات الصحيحة
+    const processedItems = items.map((item: any) => {
+      let correctAnswer = item.correctAnswer;
+      let correctOptionId: string | undefined;
+
+      // استخراج correctAnswer من options إذا لم يكن موجوداً
+      if (item.qType === QuestionType.MCQ && item.options) {
+        const correctOption = item.options.find((opt: any) => opt.isCorrect === true);
+        if (correctOption) {
+          correctAnswer = correctOption.text;
+          correctOptionId = correctOption._id?.toString() || correctOption.id;
+        }
+      }
+
+      return {
+        id: item._id.toString(),
+        prompt: item.prompt || item.text,
+        qType: item.qType,
+        options: item.options || [],
+        correctAnswer,
+        correctOptionId,
+        explanation: item.explanation,
+        media: item.media,
+        images: item.images || [],
+        level: item.level,
+        tags: item.tags || [],
+        state: item.state,
+        usageCategory: item.usageCategory,
+      };
+    });
+
+    return {
+      page,
+      limit,
+      total,
+      state: dto.state,
+      items: processedItems,
     };
   }
 }
