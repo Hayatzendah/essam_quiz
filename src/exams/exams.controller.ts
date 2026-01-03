@@ -81,30 +81,46 @@ export class ExamsController {
     return this.service.createExam(dto, req.user);
   }
 
-  // إنشاء امتحان تمرين ديناميكي (admin/teacher فقط)
-  // ⚠️ للطلاب: استخدم POST /exams/practice/mode للتعلم مع الإجابات
+  // إنشاء امتحان تمرين ديناميكي
+  // - admin/teacher: يمكنهم إنشاء practice exam عادي
+  // - students: يمكنهم استخدام mode=general أو mode=state للتعلم مع الإجابات
   @Post('practice')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'teacher')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
-    summary: 'Create practice exam (admin/teacher only)',
+    summary: 'Create practice exam or get practice questions for learning',
     description:
-      'إنشاء امتحان تمرين ديناميكي - يتطلب role: admin أو teacher. للطلاب: استخدم POST /exams/practice/mode للتعلم مع الإجابات',
+      'إنشاء امتحان تمرين ديناميكي - admin/teacher: يمكنهم إنشاء practice exam عادي. students: يمكنهم استخدام mode=general أو mode=state للتعلم مع الإجابات الصحيحة',
   })
-  @ApiResponse({ status: 201, description: 'Practice exam created successfully' })
+  @ApiResponse({ status: 201, description: 'Practice exam created successfully or practice questions returned' })
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description:
-      'Forbidden - requires admin or teacher role. Students should use POST /exams/practice/mode',
-  })
-  createPracticeExam(@Body() dto: CreatePracticeExamDto, @Req() req: any) {
+  @ApiResponse({ status: 404, description: 'No questions found (for learn mode)' })
+  createPracticeExam(@Body() dto: CreatePracticeExamDto | CreatePracticeModeDto, @Req() req: any) {
     this.logger.log(
-      `[POST /exams/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, sections: ${dto?.sections?.length || 0}`,
+      `[POST /exams/practice] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, hasMode: ${(dto as any).mode ? 'yes' : 'no'}`,
     );
 
-    return this.service.createPracticeExam(dto, req.user);
+    // إذا كان body يحتوي على mode، استخدم learn mode (للطلاب)
+    if ((dto as any).mode) {
+      this.logger.log(
+        `[POST /exams/practice] Learn mode requested - mode: ${(dto as any).mode}, state: ${(dto as any).state}`,
+      );
+      return this.service.createPracticeModeExam(dto as CreatePracticeModeDto, req.user);
+    }
+
+    // إذا لم يكن mode موجود، تحقق من roles (admin/teacher فقط)
+    if (req.user?.role !== 'admin' && req.user?.role !== 'teacher') {
+      throw new ForbiddenException({
+        status: 'error',
+        code: 403,
+        message:
+          'للطلاب: استخدم mode=general أو mode=state في body للحصول على أسئلة التعلم مع الإجابات. مثال: {"mode": "general"} أو {"mode": "state", "state": "Berlin"}',
+        hint: 'For students: Use mode=general or mode=state in body to get practice questions with answers. Example: {"mode": "general"} or {"mode": "state", "state": "Berlin"}',
+      });
+    }
+
+    // admin/teacher: إنشاء practice exam عادي
+    return this.service.createPracticeExam(dto as CreatePracticeExamDto, req.user);
   }
 
   // Practice/Learn Mode للطلاب - يرجع الأسئلة مع الإجابات الصحيحة
