@@ -1008,11 +1008,12 @@ export class QuestionsService {
 
     // فلترة الأسئلة العامة (common) من Leben in Deutschland
     // ✅ فصل واضح: general = بدون state تماماً
+    // استثناء صريح: أي سؤال له state (حتى لو category='general') لا يُعتبر general
     const query: FilterQuery<QuestionDocument> = {
       provider: 'leben_in_deutschland',
       mainSkill: 'leben_test',
       status: QuestionStatus.PUBLISHED,
-      // شرط أساسي: بدون state تماماً (يجب يكون null أو غير موجود)
+      // شرط أساسي: بدون state تماماً (يجب يكون null أو غير موجود أو string فارغ)
       $and: [
         {
           $or: [
@@ -1021,23 +1022,19 @@ export class QuestionsService {
             { state: '' },
           ],
         },
-        {
-          $or: [
-            { category: 'general' },
-            { usageCategory: 'common' },
-            { 
-              category: { $exists: false },
-              usageCategory: { $exists: false },
-            },
-          ],
-        },
+        // استثناء: أي سؤال له state value (حتى لو كان في tags) لا يُعتبر general
+        { state: { $nin: ['Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen', 'Nordrhein-Westfalen', 'NRW', 'Rheinland-Pfalz', 'Saarland', 'Sachsen', 'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'] } },
       ],
     };
+
+    this.logger.log(`[getLearnGeneralQuestions] Query: ${JSON.stringify(query)}`);
 
     const [items, total] = await Promise.all([
       this.model.find(query).skip(skip).limit(limit).sort({ createdAt: 1 }).lean().exec(),
       this.model.countDocuments(query),
     ]);
+
+    this.logger.log(`[getLearnGeneralQuestions] Found ${total} general questions (expected: 300)`);
 
     // معالجة الأسئلة لإرجاع الإجابات الصحيحة
     const processedItems = items.map((item: any) => {
@@ -1105,10 +1102,14 @@ export class QuestionsService {
       ],
     };
 
+    this.logger.log(`[getLearnStateQuestions] Query for state=${dto.state}: ${JSON.stringify(query)}`);
+
     const [items, total] = await Promise.all([
       this.model.find(query).skip(skip).limit(limit).sort({ createdAt: 1 }).lean().exec(),
       this.model.countDocuments(query),
     ]);
+
+    this.logger.log(`[getLearnStateQuestions] Found ${total} questions for state=${dto.state} (expected: 10 per state, total 160)`);
 
     // معالجة الأسئلة لإرجاع الإجابات الصحيحة
     const processedItems = items.map((item: any) => {

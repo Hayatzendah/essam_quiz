@@ -23,6 +23,7 @@ export class LearnController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'رقم الصفحة' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'عدد النتائج في الصفحة (max 100)' })
   getGeneralQuestions(@Query() dto: LearnGeneralQuestionsDto) {
+    console.log('[LearnController] GET /learn/general/questions - dto:', dto);
     return this.questionsService.getLearnGeneralQuestions(dto);
   }
 
@@ -39,6 +40,7 @@ export class LearnController {
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'رقم الصفحة' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'عدد النتائج في الصفحة (max 100)' })
   getStateQuestions(@Query() dto: LearnStateQuestionsDto) {
+    console.log('[LearnController] GET /learn/state/questions - dto:', dto);
     return this.questionsService.getLearnStateQuestions(dto);
   }
 }
