@@ -1002,9 +1002,12 @@ export class QuestionsService {
    * يرجع الأسئلة مع الإجابات الصحيحة والشرح
    */
   async getLearnGeneralQuestions(dto: LearnGeneralQuestionsDto) {
-    const page = Math.max(dto.page || 1, 1);
-    const limit = Math.max(Math.min(dto.limit || 20, 100), 1);
-    const skip = (page - 1) * limit;
+    // للتعلم: نرجع كل الأسئلة (300) بدون pagination
+    // إذا limit محدد، نستخدمه للـ pagination
+    const usePagination = dto.limit && dto.limit < 500;
+    const page = usePagination ? Math.max(dto.page || 1, 1) : 1;
+    const limit = usePagination ? Math.max(Math.min(dto.limit || 20, 100), 1) : 500; // حد أقصى 500
+    const skip = usePagination ? (page - 1) * limit : 0;
 
     // فلترة الأسئلة العامة (common) من Leben in Deutschland
     // ✅ فصل واضح: general = بدون state تماماً
@@ -1029,12 +1032,14 @@ export class QuestionsService {
 
     this.logger.log(`[getLearnGeneralQuestions] Query: ${JSON.stringify(query)}`);
 
-    const [items, total] = await Promise.all([
-      this.model.find(query).skip(skip).limit(limit).sort({ createdAt: 1 }).lean().exec(),
-      this.model.countDocuments(query),
-    ]);
+    // جلب جميع الأسئلة (300) بدون pagination للتعلم
+    const allQuestions = await this.model.find(query).sort({ createdAt: 1 }).lean().exec();
+    const total = allQuestions.length;
 
     this.logger.log(`[getLearnGeneralQuestions] Found ${total} general questions (expected: 300)`);
+
+    // إذا كان limit محدد وصغير، نستخدم pagination
+    const items = usePagination ? allQuestions.slice(skip, skip + limit) : allQuestions;
 
     // معالجة الأسئلة لإرجاع الإجابات الصحيحة
     const processedItems = items.map((item: any) => {
@@ -1057,12 +1062,13 @@ export class QuestionsService {
         options: item.options || [],
         correctAnswer,
         correctOptionId,
-        explanation: item.explanation,
-        media: item.media,
-        images: item.images || [],
+        explanation: item.explanation || null,
+        media: item.media || null,
+        images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []), // تأكد من أن images array
         level: item.level,
         tags: item.tags || [],
         usageCategory: item.usageCategory,
+        description: item.description || null, // إضافة description
       };
     });
 
@@ -1079,9 +1085,12 @@ export class QuestionsService {
    * يرجع الأسئلة مع الإجابات الصحيحة والشرح
    */
   async getLearnStateQuestions(dto: LearnStateQuestionsDto) {
-    const page = Math.max(dto.page || 1, 1);
-    const limit = Math.max(Math.min(dto.limit || 20, 100), 1);
-    const skip = (page - 1) * limit;
+    // للتعلم: نرجع كل أسئلة الولاية (10) بدون pagination
+    // إذا limit محدد، نستخدمه للـ pagination
+    const usePagination = dto.limit && dto.limit < 50;
+    const page = usePagination ? Math.max(dto.page || 1, 1) : 1;
+    const limit = usePagination ? Math.max(Math.min(dto.limit || 20, 100), 1) : 50; // حد أقصى 50
+    const skip = usePagination ? (page - 1) * limit : 0;
 
     // فلترة أسئلة الولاية المحددة
     // ✅ فصل واضح: state = مع state field محدد
@@ -1104,12 +1113,14 @@ export class QuestionsService {
 
     this.logger.log(`[getLearnStateQuestions] Query for state=${dto.state}: ${JSON.stringify(query)}`);
 
-    const [items, total] = await Promise.all([
-      this.model.find(query).skip(skip).limit(limit).sort({ createdAt: 1 }).lean().exec(),
-      this.model.countDocuments(query),
-    ]);
+    // جلب جميع أسئلة الولاية (10) بدون pagination للتعلم
+    const allQuestions = await this.model.find(query).sort({ createdAt: 1 }).lean().exec();
+    const total = allQuestions.length;
 
     this.logger.log(`[getLearnStateQuestions] Found ${total} questions for state=${dto.state} (expected: 10 per state, total 160)`);
+
+    // إذا كان limit محدد وصغير، نستخدم pagination
+    const items = usePagination ? allQuestions.slice(skip, skip + limit) : allQuestions;
 
     // معالجة الأسئلة لإرجاع الإجابات الصحيحة
     const processedItems = items.map((item: any) => {
@@ -1125,6 +1136,17 @@ export class QuestionsService {
         }
       }
 
+      // معالجة images: تأكد من أن images array وليس object واحد
+      let imagesArray = [];
+      if (item.images) {
+        if (Array.isArray(item.images)) {
+          imagesArray = item.images;
+        } else if (typeof item.images === 'object') {
+          // إذا كان object واحد، حوله لـ array
+          imagesArray = [item.images];
+        }
+      }
+
       return {
         id: item._id.toString(),
         prompt: item.prompt || item.text,
@@ -1132,13 +1154,14 @@ export class QuestionsService {
         options: item.options || [],
         correctAnswer,
         correctOptionId,
-        explanation: item.explanation,
-        media: item.media,
-        images: item.images || [],
+        explanation: item.explanation || null,
+        media: item.media || null,
+        images: imagesArray, // جميع الصور
         level: item.level,
         tags: item.tags || [],
         state: item.state,
         usageCategory: item.usageCategory,
+        description: item.description || null, // إضافة description
       };
     });
 
