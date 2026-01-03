@@ -1228,24 +1228,19 @@ export class ExamsService {
     const goingToPublish =
       dto.status === ExamStatusEnum.PUBLISHED && doc.status !== ExamStatusEnum.PUBLISHED;
 
-    if (doc.status === ExamStatusEnum.PUBLISHED && !isAdmin) {
-      // بعد النشر نقيّد التعديلات الجذرية
-      const structuralChange = typeof (dto as any).sections !== 'undefined';
-      if (structuralChange) {
-        // السماح للمعلم المالك بتعديل الأقسام إذا كانت فارغة (لا items ولا quota)
-        const hasEmptySections = doc.sections.some((s: any) => {
-          const hasItems = Array.isArray(s.items) && s.items.length > 0;
-          const hasQuota = typeof s.quota === 'number' && s.quota > 0;
-          return !hasItems && !hasQuota;
-        });
-        
-        if (!hasEmptySections) {
-        throw new BadRequestException(
-            'Cannot change sections after publish. Only admin can modify sections of published exams with existing content.',
-        );
-        }
-        // إذا كانت الأقسام فارغة، نسمح للمعلم المالك بتعديلها
-      }
+    // ✅ تم إزالة القيود على التعديل بعد النشر
+    // الآن Teacher يمكنه تعديل الامتحان بالكامل (sections, questions, answers) حتى بعد النشر
+    // التعديلات ستطبق فقط على المحاولات الجديدة لأن:
+    // 1. Attempts تحفظ snapshot للأسئلة والإجابات في AttemptItem
+    // 2. Attempts تحفظ examVersion وقت بدء المحاولة
+    // 3. Exam version يزيد عند تعديل sections/questions
+    if (doc.status === ExamStatusEnum.PUBLISHED) {
+      this.logger.log(
+        `[updateExam] Updating published exam - examId: ${id}, userId: ${userId}, role: ${user.role}, isOwner: ${isOwner}`,
+      );
+      this.logger.log(
+        `[updateExam] Changes will apply only to future attempts. Existing attempts preserve their snapshot.`,
+      );
     }
 
     // تحققات قبل النشر: لكل سكشن بquota لازم quota>0، والتوزيع يساوي الكوتا (فقط لامتحانات القواعد)
@@ -1282,12 +1277,16 @@ export class ExamsService {
     let shouldIncrementVersion = false;
     if ((dto as any).sections !== undefined) {
       // التحقق من وجود تغيير فعلي في sections
+      // نستخدم deep comparison لضمان اكتشاف أي تغيير في sections أو items أو questions
       const oldSectionsStr = JSON.stringify(doc.sections);
       const newSectionsStr = JSON.stringify((dto as any).sections);
       if (oldSectionsStr !== newSectionsStr) {
         shouldIncrementVersion = true;
         this.logger.log(
-          `[updateExam] Sections changed - incrementing version from ${doc.version || 1} to ${(doc.version || 1) + 1}`,
+          `[updateExam] Sections/Questions changed - incrementing version from ${doc.version || 1} to ${(doc.version || 1) + 1}`,
+        );
+        this.logger.log(
+          `[updateExam] This ensures existing attempts (with examVersion=${doc.version || 1}) remain unchanged. New attempts will use version ${(doc.version || 1) + 1}`,
         );
       }
       
@@ -1405,19 +1404,27 @@ export class ExamsService {
       }
     }
 
-    // زيادة version عند تعديل sections (Exam Versioning)
+    // زيادة version عند تعديل sections/questions (Exam Versioning)
+    // ✅ Data Integrity: عند زيادة version:
+    // 1. المحاولات القديمة (examVersion < new version) تبقى محفوظة مع snapshot للأسئلة والإجابات
+    // 2. المحاولات الجديدة ستستخدم version الجديد
+    // 3. AttemptItem يحفظ snapshot كامل للأسئلة والإجابات، لذا المحاولات القديمة تبقى صالحة
     if (shouldIncrementVersion) {
-      doc.version = (doc.version || 1) + 1;
-      this.logger.log(`[updateExam] Version incremented to ${doc.version}`);
+      const oldVersion = doc.version || 1;
+      doc.version = oldVersion + 1;
+      this.logger.log(
+        `[updateExam] Version incremented from ${oldVersion} to ${doc.version} - existing attempts (examVersion=${oldVersion}) remain unchanged`,
+      );
     }
 
-    // لو في تعديل في البنية قبل النشر، عادي — سيؤثر على اختيار الأسئلة لاحقًا في attempts
+    // ✅ Data Integrity: التعديلات تطبق فقط على المحاولات الجديدة
+    // المحاولات القديمة تحفظ snapshot في AttemptItem، لذا تبقى محفوظة بدون تأثر
     this.logger.log(
-      `[updateExam] Saving exam - examId: ${id}, version: ${doc.version}, sections before save: ${JSON.stringify(doc.sections)}`,
+      `[updateExam] Saving exam - examId: ${id}, version: ${doc.version}, status: ${doc.status}, sections count: ${doc.sections?.length || 0}`,
     );
     await doc.save();
     this.logger.log(
-      `[updateExam] Exam saved - examId: ${id}, sections after save: ${JSON.stringify(doc.sections)}`,
+      `[updateExam] Exam saved successfully - examId: ${id}, version: ${doc.version}. Changes will apply only to future attempts.`,
     );
     return doc.toObject();
   }
@@ -1970,7 +1977,14 @@ export class ExamsService {
     const AttemptModel = this.model.db.collection('attempts');
     const attemptCount = await AttemptModel.countDocuments({ examId: new Types.ObjectId(id) });
     
+    this.logger.log(
+      `[removeExam] Exam deletion request - examId: ${id}, userId: ${userId}, role: ${user.role}, isOwner: ${isOwner}, hard: ${hard}, attemptCount: ${attemptCount}`,
+    );
+
     if (attemptCount > 0 && !hard) {
+      this.logger.warn(
+        `[removeExam] Cannot delete exam with ${attemptCount} attempt(s). Use hard=true to force delete.`,
+      );
       throw new BadRequestException({
         code: 'EXAM_HAS_ATTEMPTS',
         message: `Cannot delete exam with ${attemptCount} attempt(s). Use hard=true to force delete.`,
@@ -1980,10 +1994,18 @@ export class ExamsService {
 
     if (hard) {
       // Hard delete: حذف نهائي
+      // ⚠️ تحذير: الحذف النهائي لا يحذف المحاولات المرتبطة
+      // المحاولات تحفظ snapshot للأسئلة والإجابات، لذا تبقى صالحة حتى بعد حذف الامتحان
+      this.logger.warn(
+        `[removeExam] Hard delete - examId: ${id}, attemptCount: ${attemptCount}. Attempts will remain in database with their snapshots.`,
+      );
       await this.model.findByIdAndDelete(id).exec();
-      return { message: 'Exam deleted permanently', id };
+      this.logger.log(`[removeExam] Exam deleted permanently - examId: ${id}`);
+      return { message: 'Exam deleted permanently', id, attemptCount };
     } else {
       // Soft delete: تغيير الحالة إلى archived
+      // ✅ Soft delete يحافظ على الامتحان والمحاولات المرتبطة به
+      // المحاولات القديمة تبقى محفوظة مع snapshot للأسئلة والإجابات
       doc.status = ExamStatusEnum.ARCHIVED;
       
       // Normalize provider before saving
@@ -1995,7 +2017,10 @@ export class ExamsService {
       }
       
       await doc.save();
-      return { message: 'Exam archived successfully', id: doc._id, status: doc.status };
+      this.logger.log(
+        `[removeExam] Exam archived successfully - examId: ${id}, attemptCount: ${attemptCount}`,
+      );
+      return { message: 'Exam archived successfully', id: doc._id, status: doc.status, attemptCount };
     }
   }
 
