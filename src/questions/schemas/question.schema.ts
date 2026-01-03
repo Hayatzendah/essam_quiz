@@ -29,6 +29,11 @@ export enum QuestionDifficulty {
   HARD = 'hard',
 }
 
+export enum QuestionCategory {
+  GENERAL = 'general',
+  STATE = 'state',
+}
+
 @Schema({ _id: true }) // تمكين _id للسماح بحفظ optionId
 export class McqOption {
   @Prop({ required: true, trim: true })
@@ -227,11 +232,19 @@ export class Question {
   @Prop({ type: String, enum: Object.values(ExamSkillEnum), trim: true })
   mainSkill?: ExamSkillEnum;
 
-  @Prop({ trim: true })
-  usageCategory?: string; // "common" | "state_specific"
+  @Prop({ 
+    type: String, 
+    enum: Object.values(QuestionCategory),
+    trim: true,
+    index: true,
+  })
+  category?: QuestionCategory; // "general" | "state" - التصنيف الواضح
 
-  @Prop({ trim: true })
-  state?: string; // للأسئلة الخاصة بالولايات
+  @Prop({ trim: true, index: true })
+  usageCategory?: string; // "common" | "state_specific" - للتوافق مع البيانات القديمة
+
+  @Prop({ trim: true, index: true })
+  state?: string; // للأسئلة الخاصة بالولايات (إلزامي إذا category='state')
 
   // ربط السؤال بامتحان (لأسئلة Create Question with Exam)
   @Prop({ type: Types.ObjectId, ref: 'Exam', index: true })

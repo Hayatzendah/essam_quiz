@@ -521,12 +521,40 @@ export class ExamsService {
     };
 
     if (dto.mode === PracticeMode.GENERAL) {
-      // الأسئلة العامة (300 سؤال)
-      query.usageCategory = 'common';
+      // الأسئلة العامة (300 سؤال) - فقط الأسئلة بدون state
+      // ✅ فصل واضح: general = بدون state
+      query.$or = [
+        { category: 'general' }, // إذا كان category موجود
+        { 
+          category: { $exists: false }, // للتوافق مع البيانات القديمة
+          usageCategory: 'common',
+          state: { $exists: false }, // بدون state
+        },
+        {
+          category: { $exists: false },
+          usageCategory: { $exists: false },
+          state: { $exists: false }, // بدون state
+        },
+      ];
     } else if (dto.mode === PracticeMode.STATE) {
-      // أسئلة الولاية (160 سؤال - 10 لكل ولاية)
-      query.usageCategory = 'state_specific';
-      query.state = dto.state;
+      // أسئلة الولاية (160 سؤال - 10 لكل ولاية) - فقط الأسئلة مع state
+      // ✅ فصل واضح: state = مع state field
+      query.$or = [
+        { 
+          category: 'state',
+          state: dto.state, // الولاية المحددة
+        },
+        {
+          category: { $exists: false }, // للتوافق مع البيانات القديمة
+          usageCategory: 'state_specific',
+          state: dto.state,
+        },
+        {
+          category: { $exists: false },
+          usageCategory: { $exists: false },
+          state: dto.state, // الولاية المحددة
+        },
+      ];
     }
 
     // جلب جميع الأسئلة

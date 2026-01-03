@@ -1007,11 +1007,24 @@ export class QuestionsService {
     const skip = (page - 1) * limit;
 
     // فلترة الأسئلة العامة (common) من Leben in Deutschland
+    // ✅ فصل واضح: general = بدون state
     const query: FilterQuery<QuestionDocument> = {
       provider: 'leben_in_deutschland',
       mainSkill: 'leben_test',
-      usageCategory: 'common',
       status: QuestionStatus.PUBLISHED,
+      $or: [
+        { category: 'general' }, // إذا كان category موجود
+        { 
+          category: { $exists: false }, // للتوافق مع البيانات القديمة
+          usageCategory: 'common',
+          state: { $exists: false }, // بدون state
+        },
+        {
+          category: { $exists: false },
+          usageCategory: { $exists: false },
+          state: { $exists: false }, // بدون state
+        },
+      ],
     };
 
     const [items, total] = await Promise.all([
@@ -1067,12 +1080,27 @@ export class QuestionsService {
     const skip = (page - 1) * limit;
 
     // فلترة أسئلة الولاية المحددة
+    // ✅ فصل واضح: state = مع state field
     const query: FilterQuery<QuestionDocument> = {
       provider: 'leben_in_deutschland',
       mainSkill: 'leben_test',
-      usageCategory: 'state_specific',
-      state: dto.state,
       status: QuestionStatus.PUBLISHED,
+      $or: [
+        { 
+          category: 'state',
+          state: dto.state, // الولاية المحددة
+        },
+        {
+          category: { $exists: false }, // للتوافق مع البيانات القديمة
+          usageCategory: 'state_specific',
+          state: dto.state,
+        },
+        {
+          category: { $exists: false },
+          usageCategory: { $exists: false },
+          state: dto.state, // الولاية المحددة
+        },
+      ],
     };
 
     const [items, total] = await Promise.all([
