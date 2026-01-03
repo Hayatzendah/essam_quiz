@@ -1025,8 +1025,6 @@ export class QuestionsService {
             { state: '' },
           ],
         },
-        // استثناء: أي سؤال له state value (حتى لو كان في tags) لا يُعتبر general
-        { state: { $nin: ['Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern', 'Niedersachsen', 'Nordrhein-Westfalen', 'NRW', 'Rheinland-Pfalz', 'Saarland', 'Sachsen', 'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'] } },
       ],
     };
 

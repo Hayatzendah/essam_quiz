@@ -523,12 +523,14 @@ export class ExamsService {
     if (dto.mode === PracticeMode.GENERAL) {
       // الأسئلة العامة (300 سؤال) - فقط الأسئلة بدون state
       // ✅ فصل واضح: general = بدون state تماماً
-      query.$or = [
-        { state: { $exists: false } },
-        { state: null },
-        { state: '' },
-      ];
       query.$and = [
+        {
+          $or: [
+            { state: { $exists: false } },
+            { state: null },
+            { state: '' },
+          ],
+        },
         {
           $or: [
             { category: 'general' },
@@ -554,18 +556,20 @@ export class ExamsService {
       ];
     }
 
+    this.logger.log(`[createPracticeModeExam] Query: ${JSON.stringify(query)}`);
+
     // جلب جميع الأسئلة
     const questions = await this.questionModel.find(query).sort({ createdAt: 1 }).lean().exec();
+
+    this.logger.log(
+      `[createPracticeModeExam] Found ${questions.length} questions for mode=${dto.mode}${dto.state ? `, state=${dto.state}` : ''} (expected: ${dto.mode === PracticeMode.GENERAL ? '300' : '10'})`,
+    );
 
     if (questions.length === 0) {
       throw new NotFoundException(
         `No questions found for mode=${dto.mode}${dto.state ? `, state=${dto.state}` : ''}`,
       );
     }
-
-    this.logger.log(
-      `[createPracticeModeExam] Found ${questions.length} questions for mode=${dto.mode}${dto.state ? `, state=${dto.state}` : ''}`,
-    );
 
     // معالجة الأسئلة لإرجاع الإجابات الصحيحة
     const processedQuestions = questions.map((item: any) => {
