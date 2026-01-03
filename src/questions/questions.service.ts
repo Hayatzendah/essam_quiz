@@ -1137,7 +1137,7 @@ export class QuestionsService {
       }
 
       // معالجة images: تأكد من أن images array وليس object واحد
-      let imagesArray = [];
+      let imagesArray: any[] = [];
       if (item.images) {
         if (Array.isArray(item.images)) {
           imagesArray = item.images;

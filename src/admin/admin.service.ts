@@ -602,7 +602,7 @@ export class AdminService {
 
     attempts.forEach((attempt: any) => {
       const exam = attempt.examId || {};
-      const skill = exam.mainSkill || 'unknown';
+      const skill = (exam as any).mainSkill || 'unknown';
       const level = exam.level || 'unknown';
       const key = `${skill}_${level}`;
 

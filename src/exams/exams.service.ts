@@ -2205,6 +2205,7 @@ export class ExamsService {
       provider: exam.provider,
       level: exam.level,
       status: exam.status,
+      mainSkill: (exam as any).mainSkill,
       sections: [],
       totalQuestionsAvailable: 0,
       issues: [],
@@ -2231,6 +2232,7 @@ export class ExamsService {
       const baseQuery: any = {
         status: 'published',
         level: exam.level,
+        mainSkill: (exam as any).mainSkill || 'leben_test',
       };
 
       if (sectionAny?.tags && Array.isArray(sectionAny.tags) && sectionAny.tags.length > 0) {
@@ -2245,10 +2247,11 @@ export class ExamsService {
         'Saarland', 'Sachsen', 'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'
       ];
       
+      const examMainSkill = (exam as any).mainSkill;
       if (
         (exam.provider === 'leben_in_deutschland' || exam.provider === 'Deutschland-in-Leben' || 
          exam.provider?.toLowerCase() === 'lid' || exam.provider?.toLowerCase() === 'deutschland-in-leben') &&
-        exam.mainSkill === 'leben_test'
+        examMainSkill === 'leben_test'
       ) {
         // البحث عن ولاية في tags
         const stateTag = sectionAny.tags?.find((tag: string) => validStates.includes(tag));
