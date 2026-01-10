@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { ContentBlock, ContentBlockSchema } from './content-block.schema';
 
 export type GrammarTopicDocument = GrammarTopic & Document;
 
@@ -21,7 +22,10 @@ export class GrammarTopic {
   tags?: string[];
 
   @Prop({ type: String })
-  contentHtml?: string;
+  contentHtml?: string; // للتوافق مع البيانات القديمة
+
+  @Prop({ type: [ContentBlockSchema], default: [] })
+  contentBlocks?: ContentBlock[]; // البنية الجديدة المرنة
 
   @Prop({ type: Types.ObjectId, ref: 'Exam', required: false })
   examId?: Types.ObjectId;

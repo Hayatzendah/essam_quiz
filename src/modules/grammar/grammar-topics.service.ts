@@ -17,6 +17,7 @@ import { LinkExamDto } from './dto/link-exam.dto';
 import { AttemptsService } from '../../attempts/attempts.service';
 import { QuestionsService } from '../../questions/questions.service';
 import { ProviderEnum } from '../../common/enums/provider.enum';
+import { ContentBlockType } from './schemas/content-block.schema';
 
 @Injectable()
 export class GrammarTopicsService {
@@ -30,6 +31,75 @@ export class GrammarTopicsService {
     @Inject(forwardRef(() => QuestionsService))
     private readonly questionsService: QuestionsService,
   ) {}
+
+  /**
+   * Validate contentBlocks according to their type
+   */
+  private validateContentBlocks(contentBlocks?: any[]): void {
+    if (!contentBlocks || contentBlocks.length === 0) {
+      return;
+    }
+
+    for (const block of contentBlocks) {
+      if (!block.id || typeof block.id !== 'string') {
+        throw new BadRequestException('Each contentBlock must have a valid id (string)');
+      }
+
+      if (!block.type || !Object.values(ContentBlockType).includes(block.type)) {
+        throw new BadRequestException(
+          `Invalid contentBlock type: ${block.type}. Must be one of: ${Object.values(ContentBlockType).join(', ')}`,
+        );
+      }
+
+      if (!block.data || typeof block.data !== 'object') {
+        throw new BadRequestException('Each contentBlock must have a valid data object');
+      }
+
+      // Validate data according to type
+      switch (block.type) {
+        case ContentBlockType.INTRO:
+          if (!block.data.text || typeof block.data.text !== 'string') {
+            throw new BadRequestException('Intro block must have data.text (string)');
+          }
+          break;
+
+        case ContentBlockType.IMAGE:
+          if (!block.data.url || typeof block.data.url !== 'string') {
+            throw new BadRequestException('Image block must have data.url (string)');
+          }
+          break;
+
+        case ContentBlockType.TABLE:
+          if (!Array.isArray(block.data.headers) || !Array.isArray(block.data.rows)) {
+            throw new BadRequestException('Table block must have data.headers (array) and data.rows (array)');
+          }
+          break;
+
+        case ContentBlockType.YOUTUBE:
+          if (!block.data.videoId || typeof block.data.videoId !== 'string') {
+            throw new BadRequestException('Youtube block must have data.videoId (string)');
+          }
+          break;
+
+        default:
+          throw new BadRequestException(`Unknown contentBlock type: ${block.type}`);
+      }
+    }
+  }
+
+  /**
+   * Generate unique IDs for contentBlocks if missing
+   */
+  private ensureContentBlockIds(contentBlocks?: any[]): any[] {
+    if (!contentBlocks || contentBlocks.length === 0) {
+      return [];
+    }
+
+    return contentBlocks.map((block, index) => ({
+      ...block,
+      id: block.id || `block-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+    }));
+  }
 
   /**
    * Helper method to map topic document to response format
@@ -47,6 +117,8 @@ export class GrammarTopicsService {
           : plainTopic.examId
         : null,
       sectionTitle: plainTopic.sectionTitle ?? null,
+      // Ensure contentBlocks are returned in the same order
+      contentBlocks: plainTopic.contentBlocks || [],
     };
   }
 
@@ -172,10 +244,18 @@ export class GrammarTopicsService {
       );
     }
 
+    // Validate contentBlocks if provided
+    if (dto.contentBlocks) {
+      this.validateContentBlocks(dto.contentBlocks);
+      dto.contentBlocks = this.ensureContentBlockIds(dto.contentBlocks);
+    }
+
     const topic = await this.model.create({
       ...dto,
       slug,
       ...(dto.examId && { examId: new Types.ObjectId(dto.examId) }),
+      // Ensure contentBlocks are saved in the same order
+      contentBlocks: dto.contentBlocks || [],
     });
 
     return this.mapToResponse(topic.toObject());
@@ -214,10 +294,20 @@ export class GrammarTopicsService {
       }
     }
 
+    // Validate contentBlocks if provided
+    if (dto.contentBlocks) {
+      this.validateContentBlocks(dto.contentBlocks);
+      dto.contentBlocks = this.ensureContentBlockIds(dto.contentBlocks);
+    }
+
     // Prepare update data with ObjectId conversion for examId
     const updateData: any = { ...dto };
     if (dto.examId) {
       updateData.examId = new Types.ObjectId(dto.examId);
+    }
+    // Ensure contentBlocks are saved in the same order
+    if (dto.contentBlocks !== undefined) {
+      updateData.contentBlocks = dto.contentBlocks;
     }
 
     const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).lean().exec();

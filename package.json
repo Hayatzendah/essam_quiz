@@ -43,7 +43,8 @@
     "update-urls-to-production": "ts-node scripts/update-urls-to-production.ts",
     "create-test-attempt-with-images": "ts-node scripts/create-test-attempt-with-images.ts",
     "upload-images-to-server": "ts-node scripts/upload-images-to-server.ts",
-    "fix-question-classification": "ts-node scripts/fix-question-classification.ts"
+    "fix-question-classification": "ts-node scripts/fix-question-classification.ts",
+    "migrate-grammar-content-blocks": "ts-node scripts/migrate-grammar-topics-to-content-blocks.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.927.0",

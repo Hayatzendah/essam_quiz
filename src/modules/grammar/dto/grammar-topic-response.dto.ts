@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
+import { ContentBlockDto } from './content-block.dto';
 
 export class GrammarTopicResponseDto {
   @ApiProperty({ type: String, description: 'Grammar topic ID' })
@@ -27,9 +28,13 @@ export class GrammarTopicResponseDto {
   @Expose()
   tags?: string[];
 
-  @ApiProperty({ type: String, required: false, nullable: true, description: 'HTML content' })
+  @ApiProperty({ type: String, required: false, nullable: true, description: 'HTML content (legacy)' })
   @Expose()
   contentHtml?: string | null;
+
+  @ApiProperty({ type: [ContentBlockDto], required: false, description: 'Content blocks array (new flexible structure)' })
+  @Expose()
+  contentBlocks?: ContentBlockDto[];
 
   @ApiProperty({ type: String, required: false, nullable: true, description: 'Associated exam ID' })
   @Expose()
