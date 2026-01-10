@@ -35,7 +35,16 @@ export class TableBlockData {
   @IsString({ each: true })
   headers: string[];
 
-  @ApiProperty({ description: 'صفوف الجدول', type: [[String]] })
+  @ApiProperty({ 
+    description: 'صفوف الجدول', 
+    type: 'array',
+    items: {
+      type: 'array',
+      items: {
+        type: 'string',
+      },
+    },
+  })
   @IsString({ each: true })
   rows: string[][];
 }
