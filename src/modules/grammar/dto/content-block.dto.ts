@@ -1,38 +1,30 @@
-import { IsString, IsEnum, IsObject, ValidateNested, IsNotEmpty } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsEnum, IsObject, IsNotEmpty } from 'class-validator';
+import { Allow } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ContentBlockType } from '../schemas/content-block.schema';
 
-// DTOs للبيانات حسب type
+// DTOs للبيانات حسب type (للتوثيق فقط - validation يتم في service)
 export class IntroBlockData {
   @ApiProperty({ description: 'نص المقدمة' })
-  @IsString()
-  @IsNotEmpty()
   text: string;
 }
 
 export class ImageBlockData {
   @ApiProperty({ description: 'رابط الصورة' })
-  @IsString()
-  @IsNotEmpty()
   url: string;
 
   @ApiProperty({ required: false, description: 'نص بديل للصورة' })
-  @IsString()
   alt?: string;
 
   @ApiProperty({ required: false, description: 'عنوان الصورة' })
-  @IsString()
   caption?: string;
 }
 
 export class TableBlockData {
   @ApiProperty({ description: 'عنوان الجدول', required: false })
-  @IsString()
   title?: string;
 
   @ApiProperty({ description: 'رؤوس الأعمدة', type: [String] })
-  @IsString({ each: true })
   headers: string[];
 
   @ApiProperty({ 
@@ -45,22 +37,19 @@ export class TableBlockData {
       },
     },
   })
-  @IsString({ each: true })
   rows: string[][];
 }
 
 export class YoutubeBlockData {
   @ApiProperty({ description: 'معرف فيديو YouTube' })
-  @IsString()
-  @IsNotEmpty()
   videoId: string;
 
   @ApiProperty({ required: false, description: 'عنوان الفيديو' })
-  @IsString()
   title?: string;
 }
 
 // DTO رئيسي للـ ContentBlock
+// ملاحظة: validation للـ data يتم في service بناءً على type
 export class ContentBlockDto {
   @ApiProperty({ description: 'معرف فريد للـ block' })
   @IsString()
@@ -81,7 +70,8 @@ export class ContentBlockDto {
     ],
   })
   @IsObject()
-  @ValidateNested()
-  @Type(() => Object)
+  @Allow() // السماح بجميع properties في data (validation يتم في service بناءً على type)
+  // Validation للـ data يتم في service بناءً على type
+  // لأن class-validator لا يدعم discriminator بشكل مباشر
   data: IntroBlockData | ImageBlockData | TableBlockData | YoutubeBlockData;
 }
