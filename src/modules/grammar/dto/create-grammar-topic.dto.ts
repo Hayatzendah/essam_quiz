@@ -41,6 +41,8 @@ export class CreateGrammarTopicDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ContentBlockDto)
+  // ⚠️ ملاحظة: validation للـ data داخل contentBlocks يتم في service
+  // لأن data يختلف حسب type ولا يمكن استخدام ValidateNested مع discriminator
   contentBlocks?: ContentBlockDto[];
 
   @ApiProperty({ required: false, description: 'معرف الامتحان المرتبط' })

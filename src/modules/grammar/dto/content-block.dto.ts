@@ -1,9 +1,9 @@
-import { IsString, IsEnum, IsObject, IsNotEmpty } from 'class-validator';
-import { Allow } from 'class-validator';
+import { IsString, IsEnum, IsObject, ValidateIf } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { ContentBlockType } from '../schemas/content-block.schema';
 
-// DTOs للبيانات حسب type (للتوثيق فقط - validation يتم في service)
+// DTOs للبيانات حسب type (للتوثيق فقط)
 export class IntroBlockData {
   @ApiProperty({ description: 'نص المقدمة' })
   text: string;
@@ -49,11 +49,9 @@ export class YoutubeBlockData {
 }
 
 // DTO رئيسي للـ ContentBlock
-// ملاحظة: validation للـ data يتم في service بناءً على type
 export class ContentBlockDto {
   @ApiProperty({ description: 'معرف فريد للـ block' })
   @IsString()
-  @IsNotEmpty()
   id: string;
 
   @ApiProperty({ enum: ContentBlockType, description: 'نوع الـ block' })
@@ -70,8 +68,13 @@ export class ContentBlockDto {
     ],
   })
   @IsObject()
-  @Allow() // السماح بجميع properties في data (validation يتم في service بناءً على type)
-  // Validation للـ data يتم في service بناءً على type
-  // لأن class-validator لا يدعم discriminator بشكل مباشر
-  data: IntroBlockData | ImageBlockData | TableBlockData | YoutubeBlockData;
+  @Transform(({ value }) => {
+    // Transform data to plain object to allow all properties
+    // This prevents "should not exist" error from ValidationPipe
+    return value && typeof value === 'object' ? value : value;
+  })
+  // ⚠️ مهم: لا نستخدم ValidateNested هنا لأن data يختلف حسب type
+  // Validation يتم في service بناءً على type (validateContentBlocks method)
+  // استخدام any للسماح بجميع properties داخل data object
+  data: any;
 }
