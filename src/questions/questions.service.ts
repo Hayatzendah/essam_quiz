@@ -27,6 +27,7 @@ import { GrammarTopicsService } from '../modules/grammar/grammar-topics.service'
 import { Inject, forwardRef } from '@nestjs/common';
 import { ProviderEnum } from '../common/enums/provider.enum';
 import { normalizeProvider } from '../common/utils/provider-normalizer.util';
+import { normalizeSkill } from '../common/utils/skill-normalizer.util';
 
 @Injectable()
 export class QuestionsService {
@@ -923,17 +924,31 @@ export class QuestionsService {
       ? exam.sections.filter((sec: any) => !!sec && typeof sec === 'object')
       : [];
 
+    // 5.1) Normalize skill في جميع الـ sections الموجودة (لإصلاح البيانات القديمة)
+    cleanSections.forEach((sec: any) => {
+      if (sec.skill && typeof sec.skill === 'string') {
+        const normalized = normalizeSkill(sec.skill);
+        if (normalized && typeof normalized === 'string') {
+          sec.skill = normalized;
+        }
+      }
+    });
+
     // 6) البحث عن سكشن بالاسم (استخدام section أو sectionTitle)
     let sectionIndex = cleanSections.findIndex(
       (sec: any) => sec.name === sectionName || sec.title === sectionName,
     );
+
+    // Normalize skill قبل إضافته للـ section
+    const normalizedSkill = skill ? normalizeSkill(skill) : undefined;
+    const finalSkill = normalizedSkill && typeof normalizedSkill === 'string' ? normalizedSkill : skill;
 
     if (sectionIndex === -1) {
       // 7) لو مش موجود → نضيف سكشن جديد فيه السؤال
       cleanSections.push({
         name: sectionName,
         title: sectionName, // للحفاظ على التوافق
-        skill: skill,
+        skill: finalSkill,
         teilNumber: teilNumber,
         items: [
           {
@@ -952,6 +967,10 @@ export class QuestionsService {
         points: points ?? 1,
       });
       cleanSections[sectionIndex].items = items;
+      // تحديث skill في الـ section الموجود إذا كان مختلفاً
+      if (finalSkill && cleanSections[sectionIndex].skill !== finalSkill) {
+        cleanSections[sectionIndex].skill = finalSkill;
+      }
     }
 
     // 9) حفظ السكاشن المعدّلة في الامتحان
