@@ -1357,7 +1357,7 @@ export class ExamsService {
       );
       this.logger.log(
         `[updateExam] Changes will apply only to future attempts. Existing attempts preserve their snapshot.`,
-      );
+        );
     }
 
     // تحققات قبل النشر: لكل سكشن بquota لازم quota>0، والتوزيع يساوي الكوتا (فقط لامتحانات القواعد)
@@ -2097,7 +2097,7 @@ export class ExamsService {
     this.logger.log(
       `[removeExam] Exam deletion request - examId: ${id}, userId: ${userId}, role: ${user.role}, isOwner: ${isOwner}, hard: ${hard}, attemptCount: ${attemptCount}`,
     );
-
+    
     if (attemptCount > 0 && !hard) {
       // Soft delete: إذا كان هناك attempts، نطلب hard delete
       // ✅ Teacher يمكنه استخدام hard=true لحذف الامتحان وجميع المحاولات المرتبطة به

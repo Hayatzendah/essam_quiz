@@ -20,6 +20,44 @@ export class VocabularyWordsService {
   ) {}
 
   /**
+   * تحويل meaning string إلى meanings array
+   * مثال: "بيت / house / maison" → [{text: "بيت", language: "ar"}, {text: "house", language: "en"}, {text: "maison", language: "fr"}]
+   */
+  private parseMeaningString(meaning: string): Array<{ text: string; language: string }> {
+    if (!meaning || typeof meaning !== 'string') {
+      return [];
+    }
+
+    const parts = meaning.split('/').map((part) => part.trim()).filter((part) => part.length > 0);
+    
+    // محاولة تخمين اللغة بناءً على النص (يمكن تحسينها لاحقاً)
+    const languageMap: Record<string, string> = {
+      ar: 'ar', // العربية
+      en: 'en', // الإنجليزية
+      fr: 'fr', // الفرنسية
+      de: 'de', // الألمانية
+    };
+
+    return parts.map((text, index) => {
+      // محاولة تخمين اللغة من النص (يمكن تحسينها)
+      let language = 'unknown';
+      
+      // إذا كان النص يحتوي على أحرف عربية
+      if (/[\u0600-\u06FF]/.test(text)) {
+        language = 'ar';
+      } else if (/^[a-zA-Z\s]+$/.test(text)) {
+        // إذا كان النص إنجليزي فقط
+        language = 'en';
+      } else {
+        // افتراض اللغة حسب الترتيب (يمكن تحسينها)
+        language = index === 0 ? 'ar' : index === 1 ? 'en' : 'fr';
+      }
+
+      return { text, language };
+    });
+  }
+
+  /**
    * إنشاء كلمة مفردات جديدة
    */
   async create(dto: CreateVocabularyWordDto): Promise<VocabularyWord> {
@@ -33,9 +71,23 @@ export class VocabularyWordsService {
       throw new NotFoundException(`Topic with ID ${dto.topicId} not found`);
     }
 
+    // معالجة meanings: إذا كان meanings موجوداً استخدمه، وإلا حول meaning string إلى meanings array
+    let meanings = dto.meanings || [];
+    if (meanings.length === 0 && dto.meaning) {
+      meanings = this.parseMeaningString(dto.meaning);
+    }
+
+    // التحقق من وجود meanings على الأقل
+    if (meanings.length === 0) {
+      throw new BadRequestException('Either meaning or meanings must be provided');
+    }
+
     const word = new this.wordModel({
-      ...dto,
       topicId: new Types.ObjectId(dto.topicId),
+      word: dto.word.trim(),
+      meaning: dto.meaning?.trim(), // للتوافق مع البيانات القديمة
+      meanings: meanings, // الصيغة الجديدة
+      exampleSentence: dto.exampleSentence?.trim(),
       isActive: dto.isActive !== undefined ? dto.isActive : true,
     });
     return word.save();
@@ -101,6 +153,22 @@ export class VocabularyWordsService {
       updateData.topicId = new Types.ObjectId(dto.topicId);
     }
 
+    // معالجة meanings: إذا كان meanings موجوداً استخدمه، وإذا كان meaning string موجوداً حوله
+    if (dto.meanings && dto.meanings.length > 0) {
+      updateData.meanings = dto.meanings;
+    } else if (dto.meaning) {
+      updateData.meanings = this.parseMeaningString(dto.meaning);
+      updateData.meaning = dto.meaning.trim(); // للتوافق مع البيانات القديمة
+    }
+
+    // تنظيف البيانات
+    if (updateData.word) {
+      updateData.word = updateData.word.trim();
+    }
+    if (updateData.exampleSentence) {
+      updateData.exampleSentence = updateData.exampleSentence.trim();
+    }
+
     const word = await this.wordModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!word) {
       throw new NotFoundException(`Word with ID ${id} not found`);
@@ -142,13 +210,27 @@ export class VocabularyWordsService {
     }
 
     // تحضير البيانات للإدراج
-    const wordsToInsert = dto.words.map((wordItem) => ({
-      topicId: new Types.ObjectId(dto.topicId),
-      word: wordItem.word.trim(),
-      meaning: wordItem.meaning.trim(),
-      exampleSentence: wordItem.exampleSentence?.trim(),
-      isActive: true,
-    }));
+    const wordsToInsert = dto.words.map((wordItem) => {
+      // معالجة meanings: إذا كان meanings موجوداً استخدمه، وإلا حول meaning string إلى meanings array
+      let meanings = wordItem.meanings || [];
+      if (meanings.length === 0 && wordItem.meaning) {
+        meanings = this.parseMeaningString(wordItem.meaning);
+      }
+
+      // التحقق من وجود meanings على الأقل
+      if (meanings.length === 0) {
+        throw new BadRequestException(`Word "${wordItem.word}" must have either meaning or meanings`);
+      }
+
+      return {
+        topicId: new Types.ObjectId(dto.topicId),
+        word: wordItem.word.trim(),
+        meaning: wordItem.meaning?.trim(), // للتوافق مع البيانات القديمة
+        meanings: meanings, // الصيغة الجديدة
+        exampleSentence: wordItem.exampleSentence?.trim(),
+        isActive: true,
+      };
+    });
 
     // إدراج الكلمات دفعة واحدة
     const result = await this.wordModel.insertMany(wordsToInsert);

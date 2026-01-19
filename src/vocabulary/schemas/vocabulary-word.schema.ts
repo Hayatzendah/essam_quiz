@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { VocabularyWordMeaning, VocabularyWordMeaningSchema } from './vocabulary-word-meaning.schema';
 
 export type VocabularyWordDocument = VocabularyWord & Document;
 
@@ -11,8 +12,11 @@ export class VocabularyWord {
   @Prop({ required: true, trim: true })
   word: string;
 
-  @Prop({ required: true, trim: true })
-  meaning: string;
+  @Prop({ trim: true })
+  meaning?: string; // للتوافق مع البيانات القديمة (optional)
+
+  @Prop({ type: [VocabularyWordMeaningSchema], default: [] })
+  meanings?: VocabularyWordMeaning[]; // الصيغة الجديدة: array من meanings
 
   @Prop({ trim: true })
   exampleSentence?: string;

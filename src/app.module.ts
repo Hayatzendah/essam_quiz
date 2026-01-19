@@ -27,6 +27,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { HealthController } from './health/health.controller';
 import { AppController } from './app.controller';
+import { EnumsController } from './common/enums.controller';
+
 
 @Module({
   imports: [
@@ -115,7 +117,7 @@ import { AppController } from './app.controller';
           res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
           res.setHeader('Access-Control-Allow-Origin', '*');
           res.setHeader('Accept-Ranges', 'bytes'); // دعم Range requests
-          
+
           // تحديد Content-Type بناءً على extension الملف
           const lowerPath = path.toLowerCase();
           if (lowerPath.endsWith('.opus')) {
@@ -163,12 +165,13 @@ import { AppController } from './app.controller';
     VocabularyModule,
   ],
 
-  controllers: [AppController, HealthController],
+  controllers: [AppController, HealthController, EnumsController],
+
 })
 export class AppModule implements OnModuleInit {
   private readonly logger = new Logger('MongoDB');
 
-  constructor(@InjectConnection() private connection: Connection) {}
+  constructor(@InjectConnection() private connection: Connection) { }
 
   onModuleInit() {
     // إنشاء مجلدات uploads إذا لم تكن موجودة
