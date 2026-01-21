@@ -52,7 +52,7 @@ async function migrateVocabularyMeanings() {
 
     console.log('🔍 Finding vocabulary words with old meaning format...');
     const wordsToMigrate = await vocabularyWordsCollection.find({
-      meaning: { $exists: true, $ne: null, $ne: '' },
+      meaning: { $exists: true, $ne: null, $nin: ['', null] },
       $or: [
         { meanings: { $exists: false } },
         { meanings: { $eq: [] } },
