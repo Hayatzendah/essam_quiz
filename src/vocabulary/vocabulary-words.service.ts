@@ -88,6 +88,7 @@ export class VocabularyWordsService {
       meaning: dto.meaning?.trim(), // للتوافق مع البيانات القديمة
       meanings: meanings, // الصيغة الجديدة
       exampleSentence: dto.exampleSentence?.trim(),
+      order: dto.order !== undefined ? dto.order : null,
       isActive: dto.isActive !== undefined ? dto.isActive : true,
     });
     return word.save();
@@ -110,7 +111,10 @@ export class VocabularyWordsService {
       filter.isActive = query.isActive === 'true';
     }
 
-    return this.wordModel.find(filter).sort({ createdAt: -1 }).exec();
+    // ترتيب حسب order ASC إذا كان موجوداً، وإلا حسب createdAt DESC
+    // استخدم ترتيب مختلط: order ASC أولاً (الكلمات مع order تأتي أولاً)، ثم createdAt DESC للكلمات بدون order
+    // في MongoDB، null values تأتي في النهاية عند الترتيب ASC
+    return this.wordModel.find(filter).sort({ order: 1, createdAt: -1 }).exec();
   }
 
   /**
@@ -228,6 +232,7 @@ export class VocabularyWordsService {
         meaning: wordItem.meaning?.trim(), // للتوافق مع البيانات القديمة
         meanings: meanings, // الصيغة الجديدة
         exampleSentence: wordItem.exampleSentence?.trim(),
+        order: wordItem.order !== undefined ? wordItem.order : null,
         isActive: true,
       };
     });

@@ -1,4 +1,4 @@
-import { IsMongoId, IsOptional, IsString, IsBoolean, IsArray, ValidateNested } from 'class-validator';
+import { IsMongoId, IsOptional, IsString, IsBoolean, IsArray, ValidateNested, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { VocabularyWordMeaningDto } from './vocabulary-word-meaning.dto';
@@ -37,6 +37,12 @@ export class UpdateVocabularyWordDto {
   @IsOptional()
   @IsString()
   exampleSentence?: string;
+
+  @ApiProperty({ required: false, description: 'ترتيب الكلمة في الموضوع (0, 1, 2, ...)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  order?: number;
 
   @ApiProperty({ required: false, description: 'حالة الكلمة' })
   @IsOptional()

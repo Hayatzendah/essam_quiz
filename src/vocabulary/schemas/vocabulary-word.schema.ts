@@ -21,6 +21,9 @@ export class VocabularyWord {
   @Prop({ trim: true })
   exampleSentence?: string;
 
+  @Prop({ type: Number, default: null, index: true })
+  order?: number; // ترتيب الكلمة في الموضوع (0, 1, 2, ...)
+
   @Prop({ type: Boolean, default: true, index: true })
   isActive: boolean;
 }
