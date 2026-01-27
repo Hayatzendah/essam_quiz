@@ -214,6 +214,8 @@ export class AppModule implements OnModuleInit {
     const uploadsDir = join(process.cwd(), 'uploads');
     const audioDir = join(uploadsDir, 'audio');
     const recordingsDir = join(uploadsDir, 'recordings');
+    const questionsDir = join(uploadsDir, 'questions'); // 🔥 مجلد ملفات الأسئلة (من MediaService)
+    const studentRecordingsDir = join(uploadsDir, 'student-recordings'); // 🔥 مجلد تسجيلات الطلاب
     const imagesDir = join(uploadsDir, 'images'); // 🔥 مجلد images العام
     const imagesQuestionsDir = join(uploadsDir, 'images', 'questions');
     const imagesStatesDir = join(uploadsDir, 'images', 'ولايات'); // 🔥 مجلد أسئلة الولايات
@@ -235,6 +237,18 @@ export class AppModule implements OnModuleInit {
       if (!existsSync(recordingsDir)) {
         mkdirSync(recordingsDir, { recursive: true });
         this.logger.log(`✅ Created recordings directory: ${recordingsDir}`);
+      }
+
+      // 🔥 إنشاء مجلد questions (يستخدمه MediaService للملفات الصوتية والصور)
+      if (!existsSync(questionsDir)) {
+        mkdirSync(questionsDir, { recursive: true });
+        this.logger.log(`✅ Created questions directory: ${questionsDir}`);
+      }
+
+      // 🔥 إنشاء مجلد student-recordings (يستخدمه MediaService لتسجيلات الطلاب)
+      if (!existsSync(studentRecordingsDir)) {
+        mkdirSync(studentRecordingsDir, { recursive: true });
+        this.logger.log(`✅ Created student-recordings directory: ${studentRecordingsDir}`);
       }
 
       // 🔥 إنشاء مجلد images العام (مهم لـ ServeStaticModule)

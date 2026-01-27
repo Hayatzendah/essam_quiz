@@ -2,6 +2,8 @@ import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class MediaService {
@@ -60,14 +62,30 @@ export class MediaService {
   async uploadBuffer(opts: { buffer: Buffer; mime: string; ext?: string; prefix?: string }) {
     const key = `${opts.prefix || 'questions'}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${opts.ext ? '.' + opts.ext : ''}`;
 
-    // وضع Mock للاختبار بدون S3
+    // وضع Mock للاختبار بدون S3 - نحفظ الملفات محلياً
     if (this.useMockMode) {
       // طباعة التحذيرات فقط في development
       if (process.env.NODE_ENV !== 'production') {
-      this.logger.warn(`⚠️ MOCK MODE: Simulating upload for ${key} (${opts.buffer.length} bytes)`);
+        this.logger.warn(`⚠️ MOCK MODE: Saving file locally for ${key} (${opts.buffer.length} bytes)`);
       } else {
-        this.logger.debug(`MOCK MODE: Simulating upload for ${key} (${opts.buffer.length} bytes)`);
+        this.logger.debug(`MOCK MODE: Saving file locally for ${key} (${opts.buffer.length} bytes)`);
       }
+
+      // 🔥 حفظ الملف محلياً في مجلد uploads
+      const uploadsDir = path.join(process.cwd(), 'uploads');
+      const filePath = path.join(uploadsDir, key);
+      const fileDir = path.dirname(filePath);
+
+      // إنشاء المجلد إذا لم يكن موجوداً
+      if (!fs.existsSync(fileDir)) {
+        fs.mkdirSync(fileDir, { recursive: true });
+        this.logger.log(`✅ Created directory: ${fileDir}`);
+      }
+
+      // حفظ الملف
+      fs.writeFileSync(filePath, opts.buffer);
+      this.logger.log(`✅ File saved locally: ${filePath}`);
+
       const baseUrl =
         process.env.PUBLIC_BASE_URL || process.env.APP_URL || process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
       // 🔥 في mock mode، نرجع URL مباشر إلى /uploads/... بدلاً من /media/mock/...
