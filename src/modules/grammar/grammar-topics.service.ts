@@ -17,7 +17,7 @@ import { LinkExamDto } from './dto/link-exam.dto';
 import { AttemptsService } from '../../attempts/attempts.service';
 import { QuestionsService } from '../../questions/questions.service';
 import { ProviderEnum } from '../../common/enums/provider.enum';
-import { ContentBlockType } from './schemas/content-block.schema';
+import { ContentBlockType, ExerciseQuestionType } from './schemas/content-block.schema';
 
 @Injectable()
 export class GrammarTopicsService {
@@ -78,6 +78,33 @@ export class GrammarTopicsService {
         case ContentBlockType.YOUTUBE:
           if (!block.data.videoId || typeof block.data.videoId !== 'string') {
             throw new BadRequestException('Youtube block must have data.videoId (string)');
+          }
+          break;
+
+        case ContentBlockType.EXERCISE:
+          // التحقق من وجود أسئلة
+          if (!Array.isArray(block.data.questions) || block.data.questions.length === 0) {
+            throw new BadRequestException('Exercise block must have data.questions (non-empty array)');
+          }
+          // التحقق من صحة كل سؤال
+          for (const q of block.data.questions) {
+            if (!q.prompt || typeof q.prompt !== 'string') {
+              throw new BadRequestException('Each exercise question must have a prompt (string)');
+            }
+            if (!q.type || !Object.values(ExerciseQuestionType).includes(q.type)) {
+              throw new BadRequestException(
+                `Invalid question type: ${q.type}. Must be one of: ${Object.values(ExerciseQuestionType).join(', ')}`,
+              );
+            }
+            if (!q.correctAnswer || typeof q.correctAnswer !== 'string') {
+              throw new BadRequestException('Each exercise question must have a correctAnswer (string)');
+            }
+            // أسئلة الاختيار من متعدد تحتاج خيارات
+            if (q.type === ExerciseQuestionType.MULTIPLE_CHOICE) {
+              if (!Array.isArray(q.options) || q.options.length < 2) {
+                throw new BadRequestException('Multiple choice questions must have at least 2 options');
+              }
+            }
           }
           break;
 

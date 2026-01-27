@@ -1,7 +1,7 @@
 import { IsString, IsEnum, IsObject, ValidateIf } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { ContentBlockType } from '../schemas/content-block.schema';
+import { ContentBlockType, ExerciseQuestionType } from '../schemas/content-block.schema';
 
 // DTOs للبيانات حسب type (للتوثيق فقط)
 export class IntroBlockData {
@@ -48,6 +48,46 @@ export class YoutubeBlockData {
   title?: string;
 }
 
+// 🔥 سؤال واحد في التمرين المضمّن
+export class ExerciseQuestion {
+  @ApiProperty({ description: 'نص السؤال' })
+  prompt: string;
+
+  @ApiProperty({ enum: ExerciseQuestionType, description: 'نوع السؤال' })
+  type: ExerciseQuestionType;
+
+  @ApiProperty({
+    required: false,
+    description: 'الخيارات (لأسئلة الاختيار من متعدد)',
+    type: [String],
+  })
+  options?: string[];
+
+  @ApiProperty({ description: 'الإجابة الصحيحة' })
+  correctAnswer: string;
+
+  @ApiProperty({ required: false, description: 'شرح الإجابة' })
+  explanation?: string;
+}
+
+// 🔥 بيانات التمرين المضمّن
+export class ExerciseBlockData {
+  @ApiProperty({ required: false, description: 'عنوان التمرين' })
+  title?: string;
+
+  @ApiProperty({
+    description: 'أسئلة التمرين',
+    type: [ExerciseQuestion],
+  })
+  questions: ExerciseQuestion[];
+
+  @ApiProperty({ required: false, description: 'إظهار النتيجة فوراً بعد كل سؤال', default: true })
+  showResultsImmediately?: boolean;
+
+  @ApiProperty({ required: false, description: 'السماح بإعادة المحاولة', default: true })
+  allowRetry?: boolean;
+}
+
 // DTO رئيسي للـ ContentBlock
 export class ContentBlockDto {
   @ApiProperty({ description: 'معرف فريد للـ block' })
@@ -65,6 +105,7 @@ export class ContentBlockDto {
       { $ref: '#/components/schemas/ImageBlockData' },
       { $ref: '#/components/schemas/TableBlockData' },
       { $ref: '#/components/schemas/YoutubeBlockData' },
+      { $ref: '#/components/schemas/ExerciseBlockData' },
     ],
   })
   @IsObject()

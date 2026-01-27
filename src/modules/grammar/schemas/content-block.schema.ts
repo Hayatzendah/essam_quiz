@@ -8,6 +8,14 @@ export enum ContentBlockType {
   IMAGE = 'image',
   TABLE = 'table',
   YOUTUBE = 'youtube',
+  EXERCISE = 'exercise', // 🔥 تمرين مضمّن في الشرح
+}
+
+// أنواع أسئلة التمارين المضمّنة
+export enum ExerciseQuestionType {
+  MULTIPLE_CHOICE = 'multiple_choice',  // اختيار من متعدد
+  FILL_BLANK = 'fill_blank',            // ملء الفراغ
+  TRUE_FALSE = 'true_false',            // صح أو خطأ
 }
 
 @Schema({ _id: false })
