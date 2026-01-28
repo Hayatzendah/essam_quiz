@@ -105,6 +105,15 @@ export class GrammarTopicsService {
                 throw new BadRequestException('Multiple choice questions must have at least 2 options');
               }
             }
+            // أسئلة ترتيب الكلمات تحتاج كلمات
+            if (q.type === ExerciseQuestionType.WORD_ORDER) {
+              if (!Array.isArray(q.words) || q.words.length < 2) {
+                throw new BadRequestException('Word order questions must have at least 2 words');
+              }
+              if (!q.words.every((w: any) => typeof w === 'string' && w.trim().length > 0)) {
+                throw new BadRequestException('Word order questions words must be non-empty strings');
+              }
+            }
           }
           break;
 

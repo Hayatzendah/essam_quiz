@@ -63,6 +63,13 @@ export class ExerciseQuestion {
   })
   options?: string[];
 
+  @ApiProperty({
+    required: false,
+    description: 'الكلمات للترتيب (لأسئلة ترتيب الكلمات)',
+    type: [String],
+  })
+  words?: string[];
+
   @ApiProperty({ description: 'الإجابة الصحيحة' })
   correctAnswer: string;
 

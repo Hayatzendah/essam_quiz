@@ -16,6 +16,7 @@ export enum ExerciseQuestionType {
   MULTIPLE_CHOICE = 'multiple_choice',  // اختيار من متعدد
   FILL_BLANK = 'fill_blank',            // ملء الفراغ
   TRUE_FALSE = 'true_false',            // صح أو خطأ
+  WORD_ORDER = 'word_order',            // ترتيب الكلمات
 }
 
 @Schema({ _id: false })
