@@ -19,6 +19,12 @@ export enum ExerciseQuestionType {
   WORD_ORDER = 'word_order',            // ترتيب الكلمات
 }
 
+// طريقة إدخال الإجابة لأسئلة ترتيب الكلمات
+export enum WordOrderInputMode {
+  DRAG = 'drag',   // سحب وإفلات
+  TYPE = 'type',   // كتابة
+}
+
 @Schema({ _id: false })
 export class ContentBlock {
   @Prop({ type: String, required: true })

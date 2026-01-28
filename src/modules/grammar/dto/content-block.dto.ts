@@ -1,7 +1,7 @@
 import { IsString, IsEnum, IsObject, ValidateIf } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { ContentBlockType, ExerciseQuestionType } from '../schemas/content-block.schema';
+import { ContentBlockType, ExerciseQuestionType, WordOrderInputMode } from '../schemas/content-block.schema';
 
 // DTOs للبيانات حسب type (للتوثيق فقط)
 export class IntroBlockData {
@@ -69,6 +69,14 @@ export class ExerciseQuestion {
     type: [String],
   })
   words?: string[];
+
+  @ApiProperty({
+    required: false,
+    enum: WordOrderInputMode,
+    description: 'طريقة الإدخال لأسئلة ترتيب الكلمات (drag = سحب، type = كتابة)',
+    default: 'drag',
+  })
+  inputMode?: WordOrderInputMode;
 
   @ApiProperty({ description: 'الإجابة الصحيحة' })
   correctAnswer: string;
