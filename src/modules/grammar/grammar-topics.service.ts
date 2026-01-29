@@ -167,7 +167,7 @@ export class GrammarTopicsService {
       query.level = filter.level;
     }
 
-    const items = await this.model.find(query).sort({ level: 1, title: 1 }).lean().exec();
+    const items = await this.model.find(query).sort({ level: 1, position: 1, title: 1 }).lean().exec();
 
     return {
       items: items.map((item) => this.mapToResponse(item)),
@@ -522,5 +522,26 @@ export class GrammarTopicsService {
     await topic.save();
 
     return topic;
+  }
+
+  /**
+   * إعادة ترتيب مواضيع القواعد
+   * @param topicIds مصفوفة معرفات المواضيع بالترتيب المطلوب
+   */
+  async reorderTopics(topicIds: string[]) {
+    const bulkOps = topicIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: new Types.ObjectId(id) },
+        update: { $set: { position: index } },
+      },
+    }));
+
+    await this.model.bulkWrite(bulkOps);
+
+    return {
+      success: true,
+      message: 'Topics reordered successfully',
+      count: topicIds.length,
+    };
   }
 }

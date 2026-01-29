@@ -32,13 +32,16 @@ export class GrammarTopic {
 
   @Prop({ type: String, required: false })
   sectionTitle?: string;
+
+  @Prop({ type: Number, default: 0 })
+  position: number; // ترتيب البطاقة داخل المستوى
 }
 
 export const GrammarTopicSchema = SchemaFactory.createForClass(GrammarTopic);
 
 // Indexes for performance
 GrammarTopicSchema.index({ slug: 1, level: 1 }, { unique: true });
-GrammarTopicSchema.index({ level: 1, title: 1 });
+GrammarTopicSchema.index({ level: 1, position: 1, title: 1 });
 
 
 

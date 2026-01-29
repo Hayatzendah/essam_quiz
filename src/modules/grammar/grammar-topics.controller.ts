@@ -16,6 +16,7 @@ import { UpdateGrammarTopicDto } from './dto/update-grammar-topic.dto';
 import { StartGrammarExerciseDto } from './dto/start-grammar-exercise.dto';
 import { GrammarTopicResponseDto } from './dto/grammar-topic-response.dto';
 import { LinkExamDto } from './dto/link-exam.dto';
+import { ReorderTopicsDto } from './dto/reorder-topics.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -36,6 +37,28 @@ export class GrammarTopicsController {
   @Get()
   findAll(@Query('level') level?: string) {
     return this.grammarTopicsService.findAll({ level });
+  }
+
+  @ApiOperation({ summary: 'Reorder grammar topics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Topics reordered successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Topics reordered successfully' },
+        count: { type: 'number', example: 5 },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  @Patch('reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  reorderTopics(@Body() dto: ReorderTopicsDto) {
+    return this.grammarTopicsService.reorderTopics(dto.topicIds);
   }
 
   @ApiOperation({ summary: 'Get a grammar topic by slug' })
