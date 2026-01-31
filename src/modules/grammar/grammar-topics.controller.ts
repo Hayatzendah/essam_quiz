@@ -53,10 +53,10 @@ export class GrammarTopicsController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - admin only' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin and teacher only' })
   @Patch('reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'teacher')
   reorderTopics(@Body() dto: ReorderTopicsDto) {
     return this.grammarTopicsService.reorderTopics(dto.topicIds);
   }
