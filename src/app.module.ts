@@ -18,6 +18,7 @@ import { AuthModule } from './auth/auth.module';
 import { MediaModule } from './modules/media/media.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { GrammarModule } from './modules/grammar/grammar.module';
+import { SchreibenModule } from './modules/schreiben/schreiben.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ListeningClipsModule } from './listening-clips/listening-clips.module';
 import { AdminModule } from './admin/admin.module';
@@ -159,6 +160,7 @@ import { EnumsController } from './common/enums.controller';
     MediaModule,
     AnalyticsModule,
     GrammarModule,
+    SchreibenModule,
     UploadsModule,
     ListeningClipsModule,
     AdminModule,
