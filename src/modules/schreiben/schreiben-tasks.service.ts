@@ -140,6 +140,60 @@ export class SchreibenTasksService {
     };
   }
 
+  // ربط مهمة الكتابة بامتحان
+  async linkExam(
+    id: string,
+    examId: string,
+  ): Promise<{ success: boolean; message: string; taskId: string; examId: string }> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('معرف المهمة غير صالح');
+    }
+    if (!Types.ObjectId.isValid(examId)) {
+      throw new BadRequestException('معرف الامتحان غير صالح');
+    }
+
+    const task = await this.model.findByIdAndUpdate(
+      id,
+      { examId: new Types.ObjectId(examId) },
+      { new: true },
+    );
+
+    if (!task) {
+      throw new NotFoundException('المهمة غير موجودة');
+    }
+
+    return {
+      success: true,
+      message: 'تم ربط المهمة بالامتحان بنجاح',
+      taskId: id,
+      examId: examId,
+    };
+  }
+
+  // إلغاء ربط مهمة الكتابة بامتحان
+  async unlinkExam(
+    id: string,
+  ): Promise<{ success: boolean; message: string }> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('معرف المهمة غير صالح');
+    }
+
+    const task = await this.model.findByIdAndUpdate(
+      id,
+      { $unset: { examId: 1 } },
+      { new: true },
+    );
+
+    if (!task) {
+      throw new NotFoundException('المهمة غير موجودة');
+    }
+
+    return {
+      success: true,
+      message: 'تم إلغاء ربط المهمة بالامتحان',
+    };
+  }
+
   // تحديث بلوكات المحتوى فقط
   async updateContentBlocks(
     id: string,

@@ -24,6 +24,7 @@ import { CreateSchreibenTaskDto } from './dto/create-schreiben-task.dto';
 import { UpdateSchreibenTaskDto } from './dto/update-schreiben-task.dto';
 import { ReorderSchreibenTasksDto } from './dto/reorder-tasks.dto';
 import { SchreibenContentBlockDto } from './dto/schreiben-content-block.dto';
+import { LinkSchreibenExamDto } from './dto/link-exam.dto';
 
 @ApiTags('schreiben-tasks')
 @Controller('schreiben/tasks')
@@ -123,5 +124,31 @@ export class SchreibenTasksController {
     @Body() contentBlocks: SchreibenContentBlockDto[],
   ) {
     return this.service.updateContentBlocks(id, contentBlocks);
+  }
+
+  @Patch(':id/link-exam')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ربط مهمة الكتابة بامتحان' })
+  @ApiResponse({ status: 200, description: 'تم ربط المهمة بالامتحان' })
+  @ApiResponse({ status: 404, description: 'المهمة غير موجودة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمعلم والأدمن فقط' })
+  linkExam(@Param('id') id: string, @Body() dto: LinkSchreibenExamDto) {
+    return this.service.linkExam(id, dto.examId);
+  }
+
+  @Delete(':id/link-exam')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'إلغاء ربط مهمة الكتابة بامتحان' })
+  @ApiResponse({ status: 200, description: 'تم إلغاء الربط' })
+  @ApiResponse({ status: 404, description: 'المهمة غير موجودة' })
+  @ApiResponse({ status: 401, description: 'غير مصرح' })
+  @ApiResponse({ status: 403, description: 'ممنوع - للمعلم والأدمن فقط' })
+  unlinkExam(@Param('id') id: string) {
+    return this.service.unlinkExam(id);
   }
 }

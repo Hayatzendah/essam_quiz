@@ -58,6 +58,9 @@ export class SchreibenTask {
 
   @Prop({ type: String, trim: true })
   successRate?: string; // نسبة النجاح (مثل: "28% (24 von 85)")
+
+  @Prop({ type: Types.ObjectId, ref: 'Exam', index: true })
+  examId?: Types.ObjectId; // ربط بامتحان
 }
 
 export const SchreibenTaskSchema = SchemaFactory.createForClass(SchreibenTask);
