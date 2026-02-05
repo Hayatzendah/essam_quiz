@@ -216,24 +216,32 @@ export class SchreibenTasksService {
     return task;
   }
 
-  // التحقق من صحة بلوكات المحتوى
+  // التحقق من صحة بلوكات المحتوى (مرن - يسمح بالمحتوى الفارغ)
   private validateContentBlocks(blocks: any[]): void {
+    if (!blocks || !Array.isArray(blocks)) {
+      return; // السماح بعدم وجود بلوكات
+    }
+
     const blockIds = new Set<string>();
 
     for (const block of blocks) {
+      // تجاهل البلوكات الفارغة
+      if (!block || !block.id || !block.type) {
+        continue;
+      }
+
       // التحقق من تكرار المعرفات
       if (blockIds.has(block.id)) {
         throw new BadRequestException(`معرف البلوك مكرر: ${block.id}`);
       }
       blockIds.add(block.id);
 
-      // التحقق حسب نوع البلوك
+      // التحقق حسب نوع البلوك (مرن)
       switch (block.type) {
         case SchreibenBlockType.TEXT:
-          if (!block.data?.content || typeof block.data.content !== 'string') {
-            throw new BadRequestException(
-              `بلوك النص ${block.id} يجب أن يحتوي على محتوى`,
-            );
+          // السماح بالنص الفارغ - فقط تأكد إن data موجود
+          if (!block.data) {
+            block.data = { content: '' };
           }
           break;
 
@@ -242,36 +250,45 @@ export class SchreibenTasksService {
           break;
 
         case SchreibenBlockType.IMAGE:
-          if (!block.data?.src || typeof block.data.src !== 'string') {
-            throw new BadRequestException(
-              `بلوك الصورة ${block.id} يجب أن يحتوي على رابط`,
-            );
+          // السماح بالصورة الفارغة
+          if (!block.data) {
+            block.data = { src: '' };
           }
           break;
 
         default:
-          throw new BadRequestException(`نوع بلوك غير معروف: ${block.type}`);
+          // تجاهل الأنواع غير المعروفة بدل رمي خطأ
+          break;
       }
     }
   }
 
-  // التحقق من صحة بلوك الاستمارة
+  // التحقق من صحة بلوك الاستمارة (مرن)
   private validateFormBlock(block: any): void {
-    if (!block.data?.title || typeof block.data.title !== 'string') {
-      throw new BadRequestException(
-        `بلوك الاستمارة ${block.id} يجب أن يحتوي على عنوان`,
-      );
+    // تأكد إن data موجود
+    if (!block.data) {
+      block.data = { title: '', fields: [] };
+      return;
     }
 
-    if (!Array.isArray(block.data?.fields) || block.data.fields.length === 0) {
-      throw new BadRequestException(
-        `بلوك الاستمارة ${block.id} يجب أن يحتوي على حقول`,
-      );
+    // السماح بعنوان فارغ
+    if (!block.data.title) {
+      block.data.title = '';
+    }
+
+    // السماح بحقول فارغة
+    if (!Array.isArray(block.data.fields)) {
+      block.data.fields = [];
+      return;
     }
 
     const fieldIds = new Set<string>();
 
     for (const field of block.data.fields) {
+      if (!field || !field.id) {
+        continue; // تجاهل الحقول الفارغة
+      }
+
       // التحقق من تكرار معرفات الحقول
       if (fieldIds.has(field.id)) {
         throw new BadRequestException(
@@ -280,55 +297,38 @@ export class SchreibenTasksService {
       }
       fieldIds.add(field.id);
 
-      // التحقق من الحقول المطلوبة
-      if (!field.label || typeof field.label !== 'string') {
-        throw new BadRequestException(
-          `الحقل ${field.id} يجب أن يحتوي على عنوان (label)`,
-        );
+      // التحقق من الحقول - مرن (السماح بالقيم الفارغة)
+      if (!field.label) {
+        field.label = '';
       }
 
-      // التحقق حسب نوع الحقل
+      // التحقق حسب نوع الحقل - مرن
       switch (field.fieldType) {
         case FormFieldType.TEXT_INPUT:
-          // حقل نصي - الإجابة الصحيحة في value
-          if (field.isStudentField !== false && !field.value) {
-            // إذا كان حقل الطالب، value هي الإجابة الصحيحة (اختياري)
-          }
+          // حقل نصي - السماح بقيمة فارغة
           break;
 
         case FormFieldType.PREFILLED:
-          // حقل معبأ مسبقاً - يجب أن يكون له قيمة
-          if (!field.value || typeof field.value !== 'string') {
-            throw new BadRequestException(
-              `الحقل المعبأ مسبقاً ${field.id} يجب أن يحتوي على قيمة`,
-            );
+          // حقل معبأ مسبقاً - السماح بقيمة فارغة
+          if (!field.value) {
+            field.value = '';
           }
           break;
 
         case FormFieldType.SELECT:
         case FormFieldType.MULTISELECT:
-          // حقل اختيار - يجب أن يكون له خيارات
-          if (!Array.isArray(field.options) || field.options.length < 2) {
-            throw new BadRequestException(
-              `حقل الاختيار ${field.id} يجب أن يحتوي على خيارين على الأقل`,
-            );
+          // حقل اختيار - السماح بخيارات فارغة
+          if (!Array.isArray(field.options)) {
+            field.options = [];
           }
-          // إذا كان حقل الطالب، يجب أن يكون له إجابات صحيحة
-          if (
-            field.isStudentField !== false &&
-            (!Array.isArray(field.correctAnswers) ||
-              field.correctAnswers.length === 0)
-          ) {
-            throw new BadRequestException(
-              `حقل الاختيار ${field.id} يجب أن يحتوي على إجابات صحيحة`,
-            );
+          if (!Array.isArray(field.correctAnswers)) {
+            field.correctAnswers = [];
           }
           break;
 
         default:
-          throw new BadRequestException(
-            `نوع حقل غير معروف: ${field.fieldType}`,
-          );
+          // تجاهل الأنواع غير المعروفة
+          break;
       }
     }
   }
