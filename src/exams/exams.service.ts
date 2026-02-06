@@ -1053,6 +1053,27 @@ export class ExamsService {
       throw new NotFoundException('Exam not found');
     }
 
+    // امتحانات الكتابة: إرجاعها مع بيانات خاصة
+    const isSchreibenExam = (doc as any).mainSkill === 'schreiben' && (doc as any).schreibenTaskId;
+    if (isSchreibenExam) {
+      return {
+        id: doc._id.toString(),
+        title: doc.title,
+        description: (doc as any).description,
+        level: doc.level,
+        provider: doc.provider,
+        timeLimitMin: doc.timeLimitMin,
+        attemptLimit: doc.attemptLimit,
+        mainSkill: 'schreiben',
+        schreibenTaskId: (doc as any).schreibenTaskId?.toString() || '',
+        sections: [{
+          skill: 'schreiben',
+          label: 'Schreiben',
+          partsCount: 1,
+        }],
+      };
+    }
+
     // التحقق من أن sections موجودة وليست فارغة
     if (!Array.isArray(doc.sections) || doc.sections.length === 0) {
       throw new NotFoundException('Exam not found or has no sections');
