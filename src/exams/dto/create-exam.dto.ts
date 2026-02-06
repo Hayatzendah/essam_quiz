@@ -207,6 +207,12 @@ export class CreateExamDto {
   @IsString({ each: true })
   questionTags?: string[];
 
+  // ========= حقول خاصة بالكتابة (Schreiben) =========
+
+  @IsOptional()
+  @IsMongoId()
+  schreibenTaskId?: string;
+
   // ========= حقول خاصة بـ Prüfungen =========
 
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)

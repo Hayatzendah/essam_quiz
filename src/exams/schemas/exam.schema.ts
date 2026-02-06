@@ -181,6 +181,11 @@ export class Exam {
 
   @Prop({ type: [String], default: [] })
   questionTags?: string[];
+
+  // ======  👇 إضافات خاصة بامتحان الكتابة (Schreiben)  ======
+
+  @Prop({ type: Types.ObjectId, ref: 'SchreibenTask', required: false })
+  schreibenTaskId?: Types.ObjectId;
 }
 
 export const ExamSchema = SchemaFactory.createForClass(Exam);

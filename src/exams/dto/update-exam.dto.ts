@@ -124,6 +124,11 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
   @IsMongoId()
   grammarTopicId?: string;
 
+  // حقول خاصة بالكتابة (Schreiben)
+  @IsOptional()
+  @IsMongoId()
+  schreibenTaskId?: string;
+
   // حقول خاصة بـ Prüfungen
   @IsOptional()
   @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
