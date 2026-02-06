@@ -151,9 +151,11 @@ export class ExamsService {
     
     // إزالة null/undefined sections
     const cleanedSections = dto.sections.filter((s: any) => s !== null && s !== undefined);
-    
-    // للامتحانات غير Grammar، يجب أن يكون هناك sections
-    if (dto.examCategory !== ExamCategoryEnum.GRAMMAR && cleanedSections.length === 0) {
+
+    // للامتحانات غير Grammar وغير Schreiben، يجب أن يكون هناك sections
+    // امتحانات الكتابة (Schreiben) تستخدم schreibenTaskId بدل sections
+    const isSchreibenExam = dto.mainSkill === 'schreiben' && dto.schreibenTaskId;
+    if (dto.examCategory !== ExamCategoryEnum.GRAMMAR && !isSchreibenExam && cleanedSections.length === 0) {
       throw new BadRequestException('Exam must have at least one valid section (null sections are not allowed)');
     }
     
@@ -307,8 +309,9 @@ export class ExamsService {
           return processedSection;
         });
       
-      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar)
-      if (dto.examCategory !== ExamCategoryEnum.GRAMMAR && processedDto.sections.length === 0) {
+      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Schreiben)
+      const isSchreibenExam = dto.mainSkill === 'schreiben' && dto.schreibenTaskId;
+      if (dto.examCategory !== ExamCategoryEnum.GRAMMAR && !isSchreibenExam && processedDto.sections.length === 0) {
         throw new BadRequestException('Exam must have at least one valid section');
       }
     }
@@ -1452,9 +1455,12 @@ export class ExamsService {
           return section;
         });
       
-      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar)
+      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Schreiben)
       const examCategory = (dto as any).examCategory || doc.examCategory;
-      if (examCategory !== ExamCategoryEnum.GRAMMAR && processedSections.length === 0) {
+      const mainSkill = (dto as any).mainSkill || doc.mainSkill;
+      const schreibenTaskId = (dto as any).schreibenTaskId || doc.schreibenTaskId;
+      const isSchreibenExam = mainSkill === 'schreiben' && schreibenTaskId;
+      if (examCategory !== ExamCategoryEnum.GRAMMAR && !isSchreibenExam && processedSections.length === 0) {
         throw new BadRequestException('Exam must have at least one valid section');
       }
       
@@ -1481,8 +1487,8 @@ export class ExamsService {
         return true;
       });
       
-      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar)
-      if (examCategory !== ExamCategoryEnum.GRAMMAR && normalizedSections.length === 0) {
+      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Schreiben)
+      if (examCategory !== ExamCategoryEnum.GRAMMAR && !isSchreibenExam && normalizedSections.length === 0) {
         throw new BadRequestException('Exam must have at least one valid section (after filtering null/empty values)');
       }
       
