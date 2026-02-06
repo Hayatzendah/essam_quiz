@@ -2845,6 +2845,14 @@ export class AttemptsService {
       percentage: percentage,
     };
 
+    // إضافة بيانات Schreiben exam إذا كان الامتحان من نوع Schreiben
+    if (exam.mainSkill === 'schreiben' && exam.schreibenTaskId) {
+      result.mainSkill = 'schreiben';
+      result.schreibenTaskId = exam.schreibenTaskId.toString();
+      result.examTitle = exam.title;
+      result.timeLimitMin = exam.timeLimitMin;
+    }
+
     // إضافة listeningClip إذا كان موجوداً
     if (listeningClip) {
       result.listeningClip = listeningClip;
