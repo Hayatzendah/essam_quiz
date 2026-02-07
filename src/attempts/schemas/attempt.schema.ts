@@ -175,6 +175,23 @@ export class Attempt {
 
   // هل يحتوي على أسئلة تحتاج تصحيح يدوي (FREE_TEXT)
   @Prop({ type: Boolean, default: false }) hasQuestionsNeedingManualReview?: boolean;
+
+  // إجابات الطالب لحقول نموذج Schreiben: { fieldId: answer }
+  @Prop({ type: Object, default: undefined, _id: false })
+  schreibenFormAnswers?: Record<string, string | string[]>;
+
+  // نتائج تصحيح حقول نموذج Schreiben
+  @Prop({ type: Object, default: undefined, _id: false })
+  schreibenFormResults?: Record<string, {
+    studentAnswer: string | string[];
+    correctAnswer: string | string[];
+    isCorrect: boolean;
+    points: number;
+  }>;
+
+  // درجات نموذج Schreiben
+  @Prop({ type: Number, default: 0 }) schreibenFormScore?: number;
+  @Prop({ type: Number, default: 0 }) schreibenFormMaxScore?: number;
 }
 
 export const AttemptSchema = SchemaFactory.createForClass(Attempt);

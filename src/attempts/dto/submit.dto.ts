@@ -143,3 +143,21 @@ export class SubmitAttemptDto {
 
 // للتوافق مع الكود القديم - استخدام SubmitAttemptDto بدلاً من SubmitAttemptSubmitDto
 export class SubmitAttemptSubmitDto extends SubmitAttemptDto {}
+
+// DTO لإرسال إجابات نموذج Schreiben
+export class SubmitSchreibenFormAnswerDto {
+  @IsString()
+  @IsNotEmpty()
+  fieldId: string;
+
+  @IsNotEmpty({ message: 'يجب ملء جميع الحقول' })
+  answer: string | string[];
+}
+
+export class SubmitSchreibenAttemptDto {
+  @IsArray()
+  @ArrayMinSize(1, { message: 'يجب إرسال إجابة واحدة على الأقل' })
+  @ValidateNested({ each: true })
+  @Type(() => SubmitSchreibenFormAnswerDto)
+  formAnswers: SubmitSchreibenFormAnswerDto[];
+}

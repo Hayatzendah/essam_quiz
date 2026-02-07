@@ -20,6 +20,8 @@ import { CreatePracticeExamDto } from '../exams/dto/create-exam.dto';
 import { StartLebenExamDto } from '../exams/dto/start-leben-exam.dto';
 import { normalizeAnswer } from '../common/utils/normalize.util';
 import { ListeningClipsService } from '../listening-clips/listening-clips.service';
+import { SchreibenTask, SchreibenTaskDocument } from '../modules/schreiben/schemas/schreiben-task.schema';
+import { FormFieldType } from '../modules/schreiben/schemas/schreiben-content-block.schema';
 import * as crypto from 'crypto';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -34,6 +36,7 @@ export class AttemptsService {
     @InjectModel(Attempt.name) private readonly attemptModel: Model<AttemptDocument>,
     @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
     @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
+    @InjectModel(SchreibenTask.name) private readonly schreibenTaskModel: Model<SchreibenTaskDocument>,
     @Inject(forwardRef(() => ExamsService))
     private readonly examsService: ExamsService,
     private readonly mediaService: MediaService,
@@ -2851,6 +2854,14 @@ export class AttemptsService {
       result.schreibenTaskId = exam.schreibenTaskId.toString();
       result.examTitle = exam.title;
       result.timeLimitMin = exam.timeLimitMin;
+
+      // إضافة نتائج النموذج إذا تم التسليم
+      if (attempt.schreibenFormResults) {
+        result.schreibenFormResults = attempt.schreibenFormResults;
+        result.schreibenFormScore = attempt.schreibenFormScore || 0;
+        result.schreibenFormMaxScore = attempt.schreibenFormMaxScore || 0;
+        result.schreibenFormAnswers = attempt.schreibenFormAnswers;
+      }
     }
 
     // إضافة listeningClip إذا كان موجوداً
@@ -3485,5 +3496,205 @@ export class AttemptsService {
       message: `Question ${questionId} removed from attempt ${attemptId}`,
       newItemsCount: attempt.items.length,
     };
+  }
+
+  // ==================== Schreiben Form Submission ====================
+
+  /**
+   * تسليم إجابات نموذج Schreiben وتصحيحها تلقائياً
+   */
+  async submitSchreibenAttempt(
+    user: ReqUser,
+    attemptId: string,
+    formAnswers: Array<{ fieldId: string; answer: string | string[] }>,
+  ) {
+    // التحقق من ملكية المحاولة
+    const attempt = await this.attemptModel
+      .findOne({
+        _id: new Types.ObjectId(attemptId),
+        studentId: new Types.ObjectId(user.userId),
+      })
+      .exec();
+
+    if (!attempt) {
+      throw new NotFoundException(`المحاولة غير موجودة أو ليس لديك صلاحية`);
+    }
+
+    if (attempt.studentId.toString() !== user.userId) {
+      throw new ForbiddenException('لا يمكنك تسليم محاولة غيرك');
+    }
+
+    if (attempt.status !== AttemptStatus.IN_PROGRESS) {
+      throw new ForbiddenException('المحاولة تم تسليمها مسبقاً');
+    }
+
+    // جلب الامتحان والتحقق أنه Schreiben
+    const exam = await this.examModel.findById(attempt.examId).lean();
+    if (!exam || exam.mainSkill !== 'schreiben' || !exam.schreibenTaskId) {
+      throw new BadRequestException('هذا الامتحان ليس من نوع Schreiben');
+    }
+
+    // جلب مهمة الكتابة مع الإجابات الصحيحة
+    const schreibenTask = await this.schreibenTaskModel
+      .findById(exam.schreibenTaskId)
+      .lean();
+
+    if (!schreibenTask) {
+      throw new NotFoundException('مهمة الكتابة غير موجودة');
+    }
+
+    // جمع كل حقول النموذج من contentBlocks
+    const allFormFields: any[] = [];
+    for (const block of schreibenTask.contentBlocks || []) {
+      if (block.type === 'form' && (block.data as any)?.fields) {
+        for (const field of (block.data as any).fields) {
+          allFormFields.push(field);
+        }
+      }
+    }
+
+    if (allFormFields.length === 0) {
+      throw new BadRequestException('المهمة لا تحتوي على حقول نموذج');
+    }
+
+    // التحقق أن كل الحقول المطلوبة تم ملؤها
+    const studentFields = allFormFields.filter(
+      (f: any) => f.isStudentField !== false && f.fieldType !== FormFieldType.PREFILLED,
+    );
+
+    const answerMap = new Map<string, string | string[]>();
+    for (const a of formAnswers) {
+      answerMap.set(a.fieldId, a.answer);
+    }
+
+    const emptyFields: string[] = [];
+    for (const field of studentFields) {
+      const answer = answerMap.get(field.id);
+      if (!answer || (typeof answer === 'string' && answer.trim() === '') || (Array.isArray(answer) && answer.length === 0)) {
+        emptyFields.push(field.label || field.id);
+      }
+    }
+
+    if (emptyFields.length > 0) {
+      throw new BadRequestException(
+        `يجب ملء جميع الحقول. الحقول الفارغة: ${emptyFields.join(', ')}`,
+      );
+    }
+
+    // تصحيح الإجابات
+    const { results, score, maxScore } = this.gradeSchreibenFormFields(
+      allFormFields,
+      answerMap,
+    );
+
+    // حفظ الإجابات والنتائج
+    attempt.schreibenFormAnswers = Object.fromEntries(answerMap);
+    attempt.schreibenFormResults = results;
+    attempt.schreibenFormScore = score;
+    attempt.schreibenFormMaxScore = maxScore;
+    attempt.totalMaxScore = maxScore;
+    attempt.finalScore = score;
+    attempt.status = AttemptStatus.SUBMITTED;
+    attempt.submittedAt = new Date();
+
+    await attempt.save();
+
+    this.logger.log(
+      `[submitSchreibenAttempt] Attempt ${attemptId} submitted. Score: ${score}/${maxScore}`,
+    );
+
+    return {
+      success: true,
+      message: 'تم تسليم الإجابات وتصحيحها',
+      score,
+      maxScore,
+      percentage: maxScore > 0 ? Math.round((score / maxScore) * 100) : 0,
+      results,
+    };
+  }
+
+  /**
+   * تصحيح حقول النموذج تلقائياً
+   */
+  private gradeSchreibenFormFields(
+    allFormFields: any[],
+    answerMap: Map<string, string | string[]>,
+  ): {
+    results: Record<string, any>;
+    score: number;
+    maxScore: number;
+  } {
+    const results: Record<string, any> = {};
+    let score = 0;
+    let maxScore = 0;
+
+    for (const field of allFormFields) {
+      // تخطي الحقول الـ prefilled أو التي ليست للطالب
+      if (field.fieldType === FormFieldType.PREFILLED || field.isStudentField === false) {
+        continue;
+      }
+
+      maxScore += 1; // كل حقل يساوي 1 نقطة
+      const studentAnswer = answerMap.get(field.id);
+      let isCorrect = false;
+      let correctAnswer: string | string[] = '';
+
+      switch (field.fieldType) {
+        case FormFieldType.TEXT_INPUT: {
+          // مقارنة نصية (case-insensitive, trimmed)
+          correctAnswer = field.value || '';
+          if (typeof studentAnswer === 'string' && typeof correctAnswer === 'string') {
+            isCorrect =
+              normalizeAnswer(studentAnswer) === normalizeAnswer(correctAnswer);
+          }
+          break;
+        }
+
+        case FormFieldType.SELECT: {
+          // اختيار واحد
+          correctAnswer = field.correctAnswers || [];
+          if (typeof studentAnswer === 'string' && Array.isArray(correctAnswer)) {
+            isCorrect = correctAnswer.some(
+              (ca: string) => normalizeAnswer(ca) === normalizeAnswer(studentAnswer),
+            );
+          }
+          break;
+        }
+
+        case FormFieldType.MULTISELECT: {
+          // اختيار متعدد - يجب أن تتطابق كل الإجابات
+          correctAnswer = field.correctAnswers || [];
+          if (Array.isArray(studentAnswer) && Array.isArray(correctAnswer)) {
+            const normalizedStudent = studentAnswer
+              .map((a: string) => normalizeAnswer(a))
+              .sort();
+            const normalizedCorrect = (correctAnswer as string[])
+              .map((a: string) => normalizeAnswer(a))
+              .sort();
+            isCorrect =
+              normalizedStudent.length === normalizedCorrect.length &&
+              normalizedStudent.every(
+                (a: string, i: number) => a === normalizedCorrect[i],
+              );
+          }
+          break;
+        }
+      }
+
+      if (isCorrect) {
+        score += 1;
+      }
+
+      results[field.id] = {
+        label: field.label,
+        fieldType: field.fieldType,
+        studentAnswer: studentAnswer || '',
+        correctAnswer,
+        isCorrect,
+        points: isCorrect ? 1 : 0,
+      };
+    }
+
+    return { results, score, maxScore };
   }
 }

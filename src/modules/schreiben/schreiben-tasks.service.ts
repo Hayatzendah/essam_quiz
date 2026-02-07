@@ -86,14 +86,6 @@ export class SchreibenTasksService {
     // تحويل الـ DTO إلى plain object لتجنب مشاكل class instances مع Mongoose
     const updateData = JSON.parse(JSON.stringify(dto));
 
-    // 🔍 Debug logging
-    console.log('📝 [SchreibenTask UPDATE] contentBlocks count:', updateData.contentBlocks?.length || 0);
-    if (updateData.contentBlocks) {
-      updateData.contentBlocks.forEach((block: any, i: number) => {
-        console.log(`📝 [SchreibenTask UPDATE] Block ${i}: type=${block.type}, id=${block.id}, data=`, JSON.stringify(block.data));
-      });
-    }
-
     // التحقق من بلوكات المحتوى
     if (updateData.contentBlocks && updateData.contentBlocks.length > 0) {
       this.validateContentBlocks(updateData.contentBlocks);
@@ -216,11 +208,6 @@ export class SchreibenTasksService {
 
     // تحويل لـ plain objects لتجنب مشاكل class instances
     const plainBlocks = JSON.parse(JSON.stringify(contentBlocks));
-
-    console.log('📝 [SchreibenTask UPDATE-BLOCKS] blocks count:', plainBlocks.length);
-    plainBlocks.forEach((block: any, i: number) => {
-      console.log(`📝 [SchreibenTask UPDATE-BLOCKS] Block ${i}: type=${block.type}, data=`, JSON.stringify(block.data));
-    });
 
     this.validateContentBlocks(plainBlocks);
 

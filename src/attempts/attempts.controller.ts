@@ -22,7 +22,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody
 import { AttemptsService } from './attempts.service';
 import { StartAttemptDto } from './dto/start-attempt.dto';
 import { AnswerOneDto } from './dto/answer.dto';
-import { SubmitAttemptDto } from './dto/submit.dto';
+import { SubmitAttemptDto, SubmitSchreibenAttemptDto } from './dto/submit.dto';
 import { GradeAttemptDto } from './dto/grade.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -284,6 +284,21 @@ export class AttemptsController {
       `[POST /attempts/${attemptId}/submit] Request received - userId: ${req.user?.userId}, answersCount: ${body?.answers?.length || 0}`,
     );
     return this.service.submitAttempt(req.user, attemptId, body.answers);
+  }
+
+  // تسليم إجابات نموذج Schreiben (طالب فقط)
+  @Post(':attemptId/submit-schreiben')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  submitSchreiben(
+    @Param('attemptId') attemptId: string,
+    @Body() body: SubmitSchreibenAttemptDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(
+      `[POST /attempts/${attemptId}/submit-schreiben] Request received - userId: ${req.user?.userId}, formAnswersCount: ${body?.formAnswers?.length || 0}`,
+    );
+    return this.service.submitSchreibenAttempt(req.user, attemptId, body.formAnswers);
   }
 
   // إدخال درجات يدوية (معلم مالك أو أدمن)
