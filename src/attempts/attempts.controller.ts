@@ -292,13 +292,33 @@ export class AttemptsController {
   @Roles('student')
   submitSchreiben(
     @Param('attemptId') attemptId: string,
-    @Body() body: SubmitSchreibenAttemptDto,
+    @Body() body: any,
     @Req() req: any,
   ) {
-    this.logger.log(
-      `[POST /attempts/${attemptId}/submit-schreiben] Request received - userId: ${req.user?.userId}, formAnswersCount: ${body?.formAnswers?.length || 0}`,
+    // مرونة في قبول الـ body بأكثر من شكل
+    let formAnswers: Array<{ fieldId: string; answer: string | string[] }> = [];
+
+    if (body?.formAnswers && Array.isArray(body.formAnswers)) {
+      // الشكل المتوقع: { formAnswers: [{ fieldId, answer }] }
+      formAnswers = body.formAnswers;
+    } else if (Array.isArray(body)) {
+      // الشكل البديل: [{ fieldId, answer }]
+      formAnswers = body;
+    } else if (body && typeof body === 'object' && !body.formAnswers) {
+      // الشكل البديل: { fieldId1: answer1, fieldId2: answer2 }
+      formAnswers = Object.entries(body)
+        .filter(([key]) => key !== 'attemptId')
+        .map(([fieldId, answer]) => ({ fieldId, answer: answer as string | string[] }));
+    }
+
+    this.logger.warn(
+      `[POST /attempts/${attemptId}/submit-schreiben] Raw body: ${JSON.stringify(body)}`,
     );
-    return this.service.submitSchreibenAttempt(req.user, attemptId, body.formAnswers);
+    this.logger.log(
+      `[POST /attempts/${attemptId}/submit-schreiben] Parsed formAnswers count: ${formAnswers.length}`,
+    );
+
+    return this.service.submitSchreibenAttempt(req.user, attemptId, formAnswers);
   }
 
   // إدخال درجات يدوية (معلم مالك أو أدمن)

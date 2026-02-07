@@ -3568,21 +3568,24 @@ export class AttemptsService {
       answerMap.set(String(a.fieldId), a.answer);
     }
 
-    // Debug logging
-    this.logger.debug(
-      `[submitSchreibenAttempt] Student fields IDs: ${studentFields.map((f: any) => JSON.stringify({ id: f.id, number: f.number, label: f.label })).join(', ')}`,
+    // Logging للتشخيص (warn عشان يظهر في الإنتاج)
+    this.logger.warn(
+      `[submitSchreibenAttempt] Student fields: ${JSON.stringify(studentFields.map((f: any) => ({ id: f.id, number: f.number, label: f.label, _id: f._id })))}`,
     );
-    this.logger.debug(
-      `[submitSchreibenAttempt] Submitted fieldIds: ${formAnswers.map((a) => a.fieldId).join(', ')}`,
+    this.logger.warn(
+      `[submitSchreibenAttempt] Submitted answers: ${JSON.stringify(formAnswers.map((a) => ({ fieldId: a.fieldId, answerType: typeof a.answer })))}`,
+    );
+    this.logger.warn(
+      `[submitSchreibenAttempt] AnswerMap keys: ${JSON.stringify([...answerMap.keys()])}`,
     );
 
     // دالة مساعدة للبحث عن إجابة الحقل بأكثر من طريقة
-    const findAnswer = (field: any): string | string[] | undefined => {
+    const findAnswer = (field: any, fieldIndex: number): string | string[] | undefined => {
       // محاولة 1: بالـ id مباشرة
       if (field.id && answerMap.has(String(field.id))) {
         return answerMap.get(String(field.id));
       }
-      // محاولة 2: بالـ number كنص
+      // محاولة 2: بالـ number كنص (1-based)
       if (field.number !== undefined && answerMap.has(String(field.number))) {
         return answerMap.get(String(field.number));
       }
@@ -3594,6 +3597,14 @@ export class AttemptsService {
       if (field._id && answerMap.has(String(field._id))) {
         return answerMap.get(String(field._id));
       }
+      // محاولة 5: بالـ index (0-based) كنص
+      if (answerMap.has(String(fieldIndex))) {
+        return answerMap.get(String(fieldIndex));
+      }
+      // محاولة 6: بالـ number - 1 (0-based index من number)
+      if (field.number !== undefined && answerMap.has(String(field.number - 1))) {
+        return answerMap.get(String(field.number - 1));
+      }
       return undefined;
     };
 
@@ -3601,19 +3612,25 @@ export class AttemptsService {
     const normalizedAnswerMap = new Map<string, string | string[]>();
 
     const emptyFields: string[] = [];
-    for (const field of studentFields) {
-      const answer = findAnswer(field);
+    for (let i = 0; i < studentFields.length; i++) {
+      const field = studentFields[i];
+      let answer = findAnswer(field, i);
+
+      // محاولة أخيرة: لو الفرونت بعت إجابات بالترتيب بدون fieldId صحيح
+      if (answer === undefined && i < formAnswers.length) {
+        answer = formAnswers[i]?.answer;
+      }
+
       if (!answer || (typeof answer === 'string' && answer.trim() === '') || (Array.isArray(answer) && answer.length === 0)) {
         emptyFields.push(field.label || field.id);
       } else {
-        // حفظ الإجابة بمفتاح الـ id الأصلي للحقل لاستخدامها في التصحيح
         normalizedAnswerMap.set(field.id || String(field.number), answer);
       }
     }
 
     if (emptyFields.length > 0) {
       throw new BadRequestException(
-        `يجب ملء جميع الحقول. الحقول الفارغة: ${emptyFields.join(', ')}`,
+        `يجب ملء جميع الحقول. الحقول الفارغة: ${emptyFields.join(', ')}. (تم إرسال ${formAnswers.length} إجابة، المطلوب ${studentFields.length})`,
       );
     }
 
