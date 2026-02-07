@@ -3562,16 +3562,52 @@ export class AttemptsService {
       (f: any) => f.isStudentField !== false && f.fieldType !== FormFieldType.PREFILLED,
     );
 
+    // بناء خريطة الإجابات بأكثر من مفتاح للمرونة
     const answerMap = new Map<string, string | string[]>();
     for (const a of formAnswers) {
-      answerMap.set(a.fieldId, a.answer);
+      answerMap.set(String(a.fieldId), a.answer);
     }
+
+    // Debug logging
+    this.logger.debug(
+      `[submitSchreibenAttempt] Student fields IDs: ${studentFields.map((f: any) => JSON.stringify({ id: f.id, number: f.number, label: f.label })).join(', ')}`,
+    );
+    this.logger.debug(
+      `[submitSchreibenAttempt] Submitted fieldIds: ${formAnswers.map((a) => a.fieldId).join(', ')}`,
+    );
+
+    // دالة مساعدة للبحث عن إجابة الحقل بأكثر من طريقة
+    const findAnswer = (field: any): string | string[] | undefined => {
+      // محاولة 1: بالـ id مباشرة
+      if (field.id && answerMap.has(String(field.id))) {
+        return answerMap.get(String(field.id));
+      }
+      // محاولة 2: بالـ number كنص
+      if (field.number !== undefined && answerMap.has(String(field.number))) {
+        return answerMap.get(String(field.number));
+      }
+      // محاولة 3: بالـ label
+      if (field.label && answerMap.has(field.label)) {
+        return answerMap.get(field.label);
+      }
+      // محاولة 4: بالـ _id (MongoDB ID)
+      if (field._id && answerMap.has(String(field._id))) {
+        return answerMap.get(String(field._id));
+      }
+      return undefined;
+    };
+
+    // بناء خريطة normalized: field.id -> answer (لاستخدامها في التصحيح)
+    const normalizedAnswerMap = new Map<string, string | string[]>();
 
     const emptyFields: string[] = [];
     for (const field of studentFields) {
-      const answer = answerMap.get(field.id);
+      const answer = findAnswer(field);
       if (!answer || (typeof answer === 'string' && answer.trim() === '') || (Array.isArray(answer) && answer.length === 0)) {
         emptyFields.push(field.label || field.id);
+      } else {
+        // حفظ الإجابة بمفتاح الـ id الأصلي للحقل لاستخدامها في التصحيح
+        normalizedAnswerMap.set(field.id || String(field.number), answer);
       }
     }
 
@@ -3581,14 +3617,14 @@ export class AttemptsService {
       );
     }
 
-    // تصحيح الإجابات
+    // تصحيح الإجابات - استخدام normalizedAnswerMap للتصحيح الصحيح
     const { results, score, maxScore } = this.gradeSchreibenFormFields(
       allFormFields,
-      answerMap,
+      normalizedAnswerMap,
     );
 
     // حفظ الإجابات والنتائج
-    attempt.schreibenFormAnswers = Object.fromEntries(answerMap);
+    attempt.schreibenFormAnswers = Object.fromEntries(normalizedAnswerMap);
     attempt.schreibenFormResults = results;
     attempt.schreibenFormScore = score;
     attempt.schreibenFormMaxScore = maxScore;
@@ -3635,7 +3671,8 @@ export class AttemptsService {
       }
 
       maxScore += 1; // كل حقل يساوي 1 نقطة
-      const studentAnswer = answerMap.get(field.id);
+      const fieldKey = field.id || String(field.number);
+      const studentAnswer = answerMap.get(fieldKey);
       let isCorrect = false;
       let correctAnswer: string | string[] = '';
 
@@ -3685,7 +3722,7 @@ export class AttemptsService {
         score += 1;
       }
 
-      results[field.id] = {
+      results[fieldKey] = {
         label: field.label,
         fieldType: field.fieldType,
         studentAnswer: studentAnswer || '',
