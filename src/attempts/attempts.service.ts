@@ -3557,10 +3557,20 @@ export class AttemptsService {
       throw new BadRequestException('المهمة لا تحتوي على حقول نموذج');
     }
 
-    // التحقق أن كل الحقول المطلوبة تم ملؤها
-    const studentFields = allFormFields.filter(
-      (f: any) => f.isStudentField !== false && f.fieldType !== FormFieldType.PREFILLED,
+    // Logging لكل الحقول للتشخيص
+    this.logger.warn(
+      `[submitSchreibenAttempt] ALL form fields: ${JSON.stringify(allFormFields.map((f: any) => ({ id: f.id, number: f.number, label: f.label, fieldType: f.fieldType, isStudentField: f.isStudentField })))}`,
     );
+
+    // التحقق أن كل الحقول المطلوبة تم ملؤها
+    // حقل مطلوب = ليس prefilled وليس readonly ويحتاج إجابة من الطالب
+    const studentFields = allFormFields.filter((f: any) => {
+      // استبعاد الحقول المعبأة مسبقاً بعدة طرق
+      if (f.fieldType === FormFieldType.PREFILLED || f.fieldType === 'prefilled') return false;
+      if (f.isStudentField === false) return false;
+      if (f.readOnly === true || f.readonly === true || f.disabled === true) return false;
+      return true;
+    });
 
     // بناء خريطة الإجابات بأكثر من مفتاح للمرونة
     const answerMap = new Map<string, string | string[]>();
@@ -3568,9 +3578,8 @@ export class AttemptsService {
       answerMap.set(String(a.fieldId), a.answer);
     }
 
-    // Logging للتشخيص (warn عشان يظهر في الإنتاج)
     this.logger.warn(
-      `[submitSchreibenAttempt] Student fields: ${JSON.stringify(studentFields.map((f: any) => ({ id: f.id, number: f.number, label: f.label, _id: f._id })))}`,
+      `[submitSchreibenAttempt] Student fields (after filter): ${JSON.stringify(studentFields.map((f: any) => ({ id: f.id, number: f.number, label: f.label, fieldType: f.fieldType, isStudentField: f.isStudentField })))}`,
     );
     this.logger.warn(
       `[submitSchreibenAttempt] Submitted answers: ${JSON.stringify(formAnswers.map((a) => ({ fieldId: a.fieldId, answerType: typeof a.answer })))}`,
@@ -3608,10 +3617,9 @@ export class AttemptsService {
       return undefined;
     };
 
-    // بناء خريطة normalized: field.id -> answer (لاستخدامها في التصحيح)
+    // بناء خريطة normalized: field key -> answer (لاستخدامها في التصحيح)
     const normalizedAnswerMap = new Map<string, string | string[]>();
 
-    const emptyFields: string[] = [];
     for (let i = 0; i < studentFields.length; i++) {
       const field = studentFields[i];
       let answer = findAnswer(field, i);
@@ -3621,17 +3629,14 @@ export class AttemptsService {
         answer = formAnswers[i]?.answer;
       }
 
-      if (!answer || (typeof answer === 'string' && answer.trim() === '') || (Array.isArray(answer) && answer.length === 0)) {
-        emptyFields.push(field.label || field.id);
-      } else {
+      if (answer && !((typeof answer === 'string' && answer.trim() === '') || (Array.isArray(answer) && answer.length === 0))) {
         normalizedAnswerMap.set(field.id || String(field.number), answer);
       }
     }
 
-    if (emptyFields.length > 0) {
-      throw new BadRequestException(
-        `يجب ملء جميع الحقول. الحقول الفارغة: ${emptyFields.join(', ')}. (تم إرسال ${formAnswers.length} إجابة، المطلوب ${studentFields.length})`,
-      );
+    // التحقق أن الطالب أرسل إجابة واحدة على الأقل
+    if (normalizedAnswerMap.size === 0 && formAnswers.length === 0) {
+      throw new BadRequestException('يجب إرسال إجابة واحدة على الأقل');
     }
 
     // تصحيح الإجابات - استخدام normalizedAnswerMap للتصحيح الصحيح
