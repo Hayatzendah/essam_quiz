@@ -8,6 +8,8 @@ import {
   Param,
   Query,
   UseGuards,
+  ValidationPipe,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,7 +25,7 @@ import { SchreibenTasksService } from './schreiben-tasks.service';
 import { CreateSchreibenTaskDto } from './dto/create-schreiben-task.dto';
 import { UpdateSchreibenTaskDto } from './dto/update-schreiben-task.dto';
 import { ReorderSchreibenTasksDto } from './dto/reorder-tasks.dto';
-import { UpdateContentBlocksDto } from './dto/schreiben-content-block.dto';
+
 import { LinkSchreibenExamDto } from './dto/link-exam.dto';
 
 @ApiTags('schreiben-tasks')
@@ -66,7 +68,7 @@ export class SchreibenTasksController {
   @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
   @ApiResponse({ status: 401, description: 'غير مصرح' })
   @ApiResponse({ status: 403, description: 'ممنوع - للمعلم والأدمن فقط' })
-  create(@Body() dto: CreateSchreibenTaskDto) {
+  create(@Body(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true })) dto: CreateSchreibenTaskDto) {
     return this.service.create(dto);
   }
 
@@ -79,7 +81,7 @@ export class SchreibenTasksController {
   @ApiResponse({ status: 404, description: 'المهمة غير موجودة' })
   @ApiResponse({ status: 401, description: 'غير مصرح' })
   @ApiResponse({ status: 403, description: 'ممنوع - للمعلم والأدمن فقط' })
-  update(@Param('id') id: string, @Body() dto: UpdateSchreibenTaskDto) {
+  update(@Param('id') id: string, @Body(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true })) dto: UpdateSchreibenTaskDto) {
     return this.service.update(id, dto);
   }
 
@@ -121,9 +123,12 @@ export class SchreibenTasksController {
   @ApiResponse({ status: 403, description: 'ممنوع - للمعلم والأدمن فقط' })
   updateContentBlocks(
     @Param('id') id: string,
-    @Body() dto: UpdateContentBlocksDto,
+    @Req() req: any,
   ) {
-    return this.service.updateContentBlocks(id, dto.contentBlocks);
+    // نستقبل الـ body مباشرة بدون ValidationPipe لضمان عدم حذف أي بيانات
+    const body = req.body;
+    const contentBlocks = Array.isArray(body) ? body : body.contentBlocks || [];
+    return this.service.updateContentBlocks(id, contentBlocks);
   }
 
   @Patch(':id/link-exam')
