@@ -83,22 +83,24 @@ export class SchreibenTasksService {
       throw new BadRequestException('معرف غير صالح');
     }
 
-    // 🔍 Debug: ما الذي يصل من الـ frontend
-    console.log('📝 [SchreibenTask UPDATE] Received DTO:', JSON.stringify(dto, null, 2));
-    console.log('📝 [SchreibenTask UPDATE] contentBlocks count:', dto.contentBlocks?.length || 0);
-    if (dto.contentBlocks) {
-      dto.contentBlocks.forEach((block, i) => {
-        console.log(`📝 [SchreibenTask UPDATE] Block ${i}: type=${block.type}, id=${block.id}, data keys=${Object.keys(block.data || {}).join(',')}`);
+    // تحويل الـ DTO إلى plain object لتجنب مشاكل class instances مع Mongoose
+    const updateData = JSON.parse(JSON.stringify(dto));
+
+    // 🔍 Debug logging
+    console.log('📝 [SchreibenTask UPDATE] contentBlocks count:', updateData.contentBlocks?.length || 0);
+    if (updateData.contentBlocks) {
+      updateData.contentBlocks.forEach((block: any, i: number) => {
+        console.log(`📝 [SchreibenTask UPDATE] Block ${i}: type=${block.type}, id=${block.id}, data=`, JSON.stringify(block.data));
       });
     }
 
     // التحقق من بلوكات المحتوى
-    if (dto.contentBlocks && dto.contentBlocks.length > 0) {
-      this.validateContentBlocks(dto.contentBlocks);
+    if (updateData.contentBlocks && updateData.contentBlocks.length > 0) {
+      this.validateContentBlocks(updateData.contentBlocks);
     }
 
     const task = await this.model
-      .findByIdAndUpdate(id, dto, { new: true })
+      .findByIdAndUpdate(id, updateData, { new: true })
       .lean();
 
     if (!task) {
@@ -212,10 +214,18 @@ export class SchreibenTasksService {
       throw new BadRequestException('معرف غير صالح');
     }
 
-    this.validateContentBlocks(contentBlocks);
+    // تحويل لـ plain objects لتجنب مشاكل class instances
+    const plainBlocks = JSON.parse(JSON.stringify(contentBlocks));
+
+    console.log('📝 [SchreibenTask UPDATE-BLOCKS] blocks count:', plainBlocks.length);
+    plainBlocks.forEach((block: any, i: number) => {
+      console.log(`📝 [SchreibenTask UPDATE-BLOCKS] Block ${i}: type=${block.type}, data=`, JSON.stringify(block.data));
+    });
+
+    this.validateContentBlocks(plainBlocks);
 
     const task = await this.model
-      .findByIdAndUpdate(id, { contentBlocks }, { new: true })
+      .findByIdAndUpdate(id, { contentBlocks: plainBlocks }, { new: true })
       .lean();
 
     if (!task) {
