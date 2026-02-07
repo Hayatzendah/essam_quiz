@@ -83,6 +83,15 @@ export class SchreibenTasksService {
       throw new BadRequestException('معرف غير صالح');
     }
 
+    // 🔍 Debug: ما الذي يصل من الـ frontend
+    console.log('📝 [SchreibenTask UPDATE] Received DTO:', JSON.stringify(dto, null, 2));
+    console.log('📝 [SchreibenTask UPDATE] contentBlocks count:', dto.contentBlocks?.length || 0);
+    if (dto.contentBlocks) {
+      dto.contentBlocks.forEach((block, i) => {
+        console.log(`📝 [SchreibenTask UPDATE] Block ${i}: type=${block.type}, id=${block.id}, data keys=${Object.keys(block.data || {}).join(',')}`);
+      });
+    }
+
     // التحقق من بلوكات المحتوى
     if (dto.contentBlocks && dto.contentBlocks.length > 0) {
       this.validateContentBlocks(dto.contentBlocks);

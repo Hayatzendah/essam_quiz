@@ -23,7 +23,7 @@ import { SchreibenTasksService } from './schreiben-tasks.service';
 import { CreateSchreibenTaskDto } from './dto/create-schreiben-task.dto';
 import { UpdateSchreibenTaskDto } from './dto/update-schreiben-task.dto';
 import { ReorderSchreibenTasksDto } from './dto/reorder-tasks.dto';
-import { SchreibenContentBlockDto } from './dto/schreiben-content-block.dto';
+import { UpdateContentBlocksDto } from './dto/schreiben-content-block.dto';
 import { LinkSchreibenExamDto } from './dto/link-exam.dto';
 
 @ApiTags('schreiben-tasks')
@@ -121,9 +121,9 @@ export class SchreibenTasksController {
   @ApiResponse({ status: 403, description: 'ممنوع - للمعلم والأدمن فقط' })
   updateContentBlocks(
     @Param('id') id: string,
-    @Body() contentBlocks: SchreibenContentBlockDto[],
+    @Body() dto: UpdateContentBlocksDto,
   ) {
-    return this.service.updateContentBlocks(id, contentBlocks);
+    return this.service.updateContentBlocks(id, dto.contentBlocks);
   }
 
   @Patch(':id/link-exam')

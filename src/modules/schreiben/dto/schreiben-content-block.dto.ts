@@ -10,8 +10,9 @@ import {
   Min,
   IsBoolean,
   ArrayMinSize,
+  IsObject,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import {
   SchreibenBlockType,
   FormFieldType,
@@ -133,6 +134,8 @@ export class ImageBlockDataDto {
 }
 
 // DTO للبلوك الرئيسي
+// ملاحظة: نستخدم @IsObject() بدلاً من @ValidateNested() لأن data هي union type
+// والتحقق التفصيلي يتم في SchreibenTasksService.validateContentBlocks()
 export class SchreibenContentBlockDto {
   @ApiProperty({ description: 'معرف البلوك', example: 'block_1' })
   @IsString()
@@ -156,5 +159,19 @@ export class SchreibenContentBlockDto {
     ],
   })
   @IsNotEmpty()
-  data: TextBlockDataDto | FormBlockDataDto | ImageBlockDataDto;
+  @IsObject()
+  @Transform(({ value }) => value, { toClassOnly: true }) // الحفاظ على البيانات كما هي
+  data: Record<string, any>; // نستخدم Record بدلاً من union type لتجنب مشاكل whitelist
+}
+
+// DTO لتحديث بلوكات المحتوى
+export class UpdateContentBlocksDto {
+  @ApiProperty({
+    type: [SchreibenContentBlockDto],
+    description: 'بلوكات المحتوى',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SchreibenContentBlockDto)
+  contentBlocks: SchreibenContentBlockDto[];
 }
