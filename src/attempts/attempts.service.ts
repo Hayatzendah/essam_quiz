@@ -2861,6 +2861,41 @@ export class AttemptsService {
         result.schreibenFormScore = attempt.schreibenFormScore || 0;
         result.schreibenFormMaxScore = attempt.schreibenFormMaxScore || 0;
         result.schreibenFormAnswers = attempt.schreibenFormAnswers;
+
+        // بناء fieldsResults مرتبة من SchreibenTask لعرضها تحت كل حقل
+        try {
+          const schreibenTask = await this.schreibenTaskModel
+            .findById(exam.schreibenTaskId)
+            .lean();
+          if (schreibenTask) {
+            const taskFormFields: any[] = [];
+            for (const block of schreibenTask.contentBlocks || []) {
+              if (block.type === 'form' && (block.data as any)?.fields) {
+                for (const field of (block.data as any).fields) {
+                  taskFormFields.push(field);
+                }
+              }
+            }
+            result.fieldsResults = taskFormFields.map((field: any) => {
+              const fieldKey = field.id || String(field.number);
+              const fieldResult = attempt.schreibenFormResults?.[fieldKey];
+              return {
+                fieldId: field.id,
+                fieldNumber: field.number,
+                label: field.label,
+                fieldType: field.fieldType,
+                isStudentField: field.isStudentField !== false && field.fieldType !== 'prefilled',
+                studentAnswer: fieldResult?.studentAnswer || null,
+                correctAnswer: fieldResult?.correctAnswer || field.value || null,
+                isCorrect: fieldResult?.isCorrect || false,
+                points: fieldResult?.points || 0,
+                wasAnswered: !!fieldResult,
+              };
+            });
+          }
+        } catch (e) {
+          // لو فشل جلب المهمة، نرجع النتائج بدون fieldsResults
+        }
       }
     }
 
@@ -3665,13 +3700,32 @@ export class AttemptsService {
       `[submitSchreibenAttempt] Attempt ${attemptId} submitted. Score: ${score}/${maxScore}`,
     );
 
+    // بناء مصفوفة النتائج مرتبة بنفس ترتيب الحقول عشان الفرونت يعرضها تحت كل حقل
+    const fieldsResults = allFormFields.map((field: any) => {
+      const fieldKey = field.id || String(field.number);
+      const result = results[fieldKey];
+      return {
+        fieldId: field.id,
+        fieldNumber: field.number,
+        label: field.label,
+        fieldType: field.fieldType,
+        isStudentField: field.isStudentField !== false && field.fieldType !== 'prefilled',
+        studentAnswer: result?.studentAnswer || null,
+        correctAnswer: result?.correctAnswer || field.value || null,
+        isCorrect: result?.isCorrect || false,
+        points: result?.points || 0,
+        wasAnswered: !!result,
+      };
+    });
+
     return {
       success: true,
       message: 'تم تسليم الإجابات وتصحيحها',
       score,
       maxScore,
       percentage: maxScore > 0 ? Math.round((score / maxScore) * 100) : 0,
-      results,
+      results, // النتائج كـ object بالـ fieldId
+      fieldsResults, // النتائج كمصفوفة مرتبة بنفس ترتيب الحقول
     };
   }
 
