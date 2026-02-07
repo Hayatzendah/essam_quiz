@@ -3639,9 +3639,13 @@ export class AttemptsService {
       throw new BadRequestException('يجب إرسال إجابة واحدة على الأقل');
     }
 
-    // تصحيح الإجابات - استخدام normalizedAnswerMap للتصحيح الصحيح
+    // تصحيح الإجابات - فقط الحقول اللي الطالب جاوب عليها
+    const answeredFields = allFormFields.filter((f: any) => {
+      const key = f.id || String(f.number);
+      return normalizedAnswerMap.has(key);
+    });
     const { results, score, maxScore } = this.gradeSchreibenFormFields(
-      allFormFields,
+      answeredFields,
       normalizedAnswerMap,
     );
 
@@ -3687,11 +3691,6 @@ export class AttemptsService {
     let maxScore = 0;
 
     for (const field of allFormFields) {
-      // تخطي الحقول الـ prefilled أو التي ليست للطالب
-      if (field.fieldType === FormFieldType.PREFILLED || field.isStudentField === false) {
-        continue;
-      }
-
       maxScore += 1; // كل حقل يساوي 1 نقطة
       const fieldKey = field.id || String(field.number);
       const studentAnswer = answerMap.get(fieldKey);
