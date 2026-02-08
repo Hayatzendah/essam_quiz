@@ -1053,9 +1053,40 @@ export class ExamsService {
       throw new NotFoundException('Exam not found');
     }
 
-    // امتحانات الكتابة: إرجاعها مع بيانات خاصة
+    // امتحانات الكتابة: إرجاعها مع بيانات خاصة + الأسئلة العادية لو موجودة
     const isSchreibenExam = (doc as any).mainSkill === 'schreiben' && (doc as any).schreibenTaskId;
     if (isSchreibenExam) {
+      // بناء sections: Schreiben أولاً + أي أسئلة عادية بعده
+      const resultSections: any[] = [{
+        skill: 'schreiben',
+        label: 'Schreiben',
+        partsCount: 1,
+      }];
+
+      // إضافة الأقسام العادية لو موجودة (أسئلة بعد مهمة الكتابة)
+      if (Array.isArray(doc.sections) && doc.sections.length > 0) {
+        const regularSections = doc.sections.filter((s: any) => {
+          if (!s || s === null) return false;
+          const hasItems = Array.isArray(s.items) && s.items.length > 0;
+          const hasQuota = typeof s.quota === 'number' && s.quota > 0;
+          return hasItems || hasQuota;
+        });
+        for (const s of regularSections) {
+          let partsCount = 0;
+          if (Array.isArray(s.items) && s.items.length > 0) {
+            partsCount = s.items.length;
+          } else if (typeof s.quota === 'number' && s.quota > 0) {
+            partsCount = s.quota;
+          }
+          resultSections.push({
+            skill: s.skill,
+            label: s.label || s.name || s.title,
+            durationMin: s.durationMin,
+            partsCount: s.partsCount || partsCount,
+          });
+        }
+      }
+
       return {
         id: doc._id.toString(),
         title: doc.title,
@@ -1066,11 +1097,8 @@ export class ExamsService {
         attemptLimit: doc.attemptLimit,
         mainSkill: 'schreiben',
         schreibenTaskId: (doc as any).schreibenTaskId?.toString() || '',
-        sections: [{
-          skill: 'schreiben',
-          label: 'Schreiben',
-          partsCount: 1,
-        }],
+        hasQuestions: resultSections.length > 1, // فيه أسئلة بعد المهمة؟
+        sections: resultSections,
       };
     }
 
@@ -1296,7 +1324,12 @@ export class ExamsService {
         
         return result;
       });
-      return { ...docWithNormalizedSections, sections: sectionsWithItems };
+      const fullResult: any = { ...docWithNormalizedSections, sections: sectionsWithItems };
+      // لامتحانات الكتابة: إضافة hasQuestions لمعرفة إذا فيه أسئلة بعد المهمة
+      if ((doc as any).mainSkill === 'schreiben' && (doc as any).schreibenTaskId) {
+        fullResult.hasQuestions = sectionsWithItems.length > 0;
+      }
+      return fullResult;
     }
 
     if (user.role === 'student') {
@@ -1352,7 +1385,12 @@ export class ExamsService {
           
           return result;
         });
-      return { ...docWithNormalizedSections, sections: safeSections };
+      const studentResult: any = { ...docWithNormalizedSections, sections: safeSections };
+      // لامتحانات الكتابة: إضافة hasQuestions لمعرفة إذا فيه أسئلة بعد المهمة
+      if ((doc as any).mainSkill === 'schreiben' && (doc as any).schreibenTaskId) {
+        studentResult.hasQuestions = safeSections.length > 0;
+      }
+      return studentResult;
     }
     // مدرس غير مالك: ما نسمحش
     if (user.role === 'teacher') {
