@@ -197,6 +197,81 @@ export class SchreibenTasksService {
     };
   }
 
+  // عرض كل حقول النموذج مع الإجابات الصحيحة
+  async getFieldsWithAnswers(taskId: string) {
+    if (!Types.ObjectId.isValid(taskId)) {
+      throw new BadRequestException('معرف المهمة غير صالح');
+    }
+
+    const task = await this.model.findById(taskId).lean();
+    if (!task) {
+      throw new NotFoundException('المهمة غير موجودة');
+    }
+
+    const fields: any[] = [];
+    for (const block of task.contentBlocks || []) {
+      if (block.type === 'form' && (block.data as any)?.fields) {
+        for (const field of (block.data as any).fields) {
+          fields.push({
+            id: field.id,
+            number: field.number,
+            label: field.label,
+            fieldType: field.fieldType,
+            isStudentField: field.isStudentField,
+            value: field.value || null,
+            correctAnswers: field.correctAnswers || null,
+            hasCorrectAnswer: !!(field.value || (field.correctAnswers && field.correctAnswers.length > 0)),
+          });
+        }
+      }
+    }
+
+    return { taskId, fields };
+  }
+
+  // تحديث الإجابات الصحيحة لكل الحقول دفعة واحدة
+  async updateAllCorrectAnswers(
+    taskId: string,
+    answers: Array<{ fieldId: string; value?: string; correctAnswers?: string[] }>,
+  ) {
+    if (!Types.ObjectId.isValid(taskId)) {
+      throw new BadRequestException('معرف المهمة غير صالح');
+    }
+
+    const task = await this.model.findById(taskId);
+    if (!task) {
+      throw new NotFoundException('المهمة غير موجودة');
+    }
+
+    let updatedCount = 0;
+    for (const ans of answers) {
+      for (const block of task.contentBlocks || []) {
+        if (block.type === 'form' && (block.data as any)?.fields) {
+          for (const field of (block.data as any).fields) {
+            if (
+              String(field.id) === String(ans.fieldId) ||
+              String(field.number) === String(ans.fieldId) ||
+              field.label === ans.fieldId
+            ) {
+              if (ans.value !== undefined) field.value = ans.value;
+              if (ans.correctAnswers !== undefined) field.correctAnswers = ans.correctAnswers;
+              updatedCount++;
+            }
+          }
+        }
+      }
+    }
+
+    task.markModified('contentBlocks');
+    await task.save();
+
+    return {
+      success: true,
+      message: `تم تحديث ${updatedCount} حقل`,
+      updatedCount,
+    };
+  }
+
   // تحديث الإجابة الصحيحة لحقل معين
   async updateFieldCorrectAnswer(
     taskId: string,

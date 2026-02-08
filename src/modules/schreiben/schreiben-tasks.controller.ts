@@ -131,6 +131,27 @@ export class SchreibenTasksController {
     return this.service.updateContentBlocks(id, contentBlocks);
   }
 
+  @Get(':id/fields')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'عرض كل حقول النموذج مع الإجابات الصحيحة' })
+  getFields(@Param('id') id: string) {
+    return this.service.getFieldsWithAnswers(id);
+  }
+
+  @Patch(':id/fields/correct-answers')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'تحديث الإجابات الصحيحة لكل الحقول دفعة واحدة' })
+  updateAllCorrectAnswers(
+    @Param('id') id: string,
+    @Body() body: { answers: Array<{ fieldId: string; value?: string; correctAnswers?: string[] }> },
+  ) {
+    return this.service.updateAllCorrectAnswers(id, body.answers);
+  }
+
   @Patch(':id/fields/:fieldId/correct-answer')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
