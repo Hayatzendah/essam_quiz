@@ -3572,22 +3572,81 @@ export class AttemptsService {
       throw new NotFoundException('مهمة الكتابة غير موجودة');
     }
 
-    // البحث عن الحقل بأكثر من طريقة (id, number, label)
-    let targetField: any = null;
+    // جمع كل حقول النموذج مع معلومات الموقع (blockIndex, fieldIndex)
+    const allFieldsWithPosition: Array<{ field: any; formBlockIndex: number; fieldIndex: number; globalIndex: number }> = [];
+    let formBlockCounter = 0;
+    let globalFieldIndex = 0;
     for (const block of schreibenTask.contentBlocks || []) {
       if (block.type === 'form' && (block.data as any)?.fields) {
-        for (const field of (block.data as any).fields) {
-          if (
-            String(field.id) === String(fieldId) ||
-            String(field.number) === String(fieldId) ||
-            field.label === fieldId ||
-            (field._id && String(field._id) === String(fieldId))
-          ) {
-            targetField = field;
-            break;
-          }
+        formBlockCounter++;
+        const fields = (block.data as any).fields;
+        for (let fi = 0; fi < fields.length; fi++) {
+          allFieldsWithPosition.push({
+            field: fields[fi],
+            formBlockIndex: formBlockCounter, // 1-based
+            fieldIndex: fi, // 0-based within block
+            globalIndex: globalFieldIndex++, // 0-based global
+          });
         }
-        if (targetField) break;
+      }
+    }
+
+    this.logger.warn(
+      `[checkSchreibenField] Looking for fieldId="${fieldId}". Available fields: ${JSON.stringify(
+        allFieldsWithPosition.map(f => ({
+          id: f.field.id,
+          number: f.field.number,
+          label: f.field.label,
+          _id: f.field._id,
+          formBlock: f.formBlockIndex,
+          fieldIdx: f.fieldIndex,
+          globalIdx: f.globalIndex,
+        })),
+      )}`,
+    );
+
+    // البحث عن الحقل بأكثر من طريقة
+    let targetField: any = null;
+
+    for (const entry of allFieldsWithPosition) {
+      const f = entry.field;
+      if (
+        String(f.id) === String(fieldId) ||
+        String(f.number) === String(fieldId) ||
+        f.label === fieldId ||
+        (f._id && String(f._id) === String(fieldId))
+      ) {
+        targetField = f;
+        break;
+      }
+    }
+
+    // محاولة تحليل صيغة field_X_Y (مثل field_1_0)
+    if (!targetField) {
+      const match = String(fieldId).match(/^field_(\d+)_(\d+)$/);
+      if (match) {
+        const blockIdx = parseInt(match[1], 10); // 1-based form block index
+        const fieldIdx = parseInt(match[2], 10); // 0-based field index within block
+        const found = allFieldsWithPosition.find(
+          e => e.formBlockIndex === blockIdx && e.fieldIndex === fieldIdx,
+        );
+        if (found) {
+          targetField = found.field;
+          this.logger.warn(
+            `[checkSchreibenField] Matched field_${blockIdx}_${fieldIdx} -> field id=${found.field.id}, label=${found.field.label}`,
+          );
+        }
+      }
+    }
+
+    // محاولة بالـ global index
+    if (!targetField) {
+      const idx = parseInt(String(fieldId), 10);
+      if (!isNaN(idx)) {
+        const found = allFieldsWithPosition.find(e => e.globalIndex === idx);
+        if (found) {
+          targetField = found.field;
+        }
       }
     }
 
@@ -3687,12 +3746,22 @@ export class AttemptsService {
       throw new NotFoundException('مهمة الكتابة غير موجودة');
     }
 
-    // جمع كل حقول النموذج من contentBlocks
+    // جمع كل حقول النموذج من contentBlocks مع معلومات الموقع
     const allFormFields: any[] = [];
+    const fieldPositionMap = new Map<any, { formBlockIndex: number; fieldIndex: number; globalIndex: number }>();
+    let formBlockCounter = 0;
+    let globalFieldIndex = 0;
     for (const block of schreibenTask.contentBlocks || []) {
       if (block.type === 'form' && (block.data as any)?.fields) {
-        for (const field of (block.data as any).fields) {
-          allFormFields.push(field);
+        formBlockCounter++;
+        const fields = (block.data as any).fields;
+        for (let fi = 0; fi < fields.length; fi++) {
+          allFormFields.push(fields[fi]);
+          fieldPositionMap.set(fields[fi], {
+            formBlockIndex: formBlockCounter, // 1-based
+            fieldIndex: fi, // 0-based within block
+            globalIndex: globalFieldIndex++, // 0-based global
+          });
         }
       }
     }
@@ -3703,13 +3772,14 @@ export class AttemptsService {
 
     // Logging لكل الحقول للتشخيص
     this.logger.warn(
-      `[submitSchreibenAttempt] ALL form fields: ${JSON.stringify(allFormFields.map((f: any) => ({ id: f.id, number: f.number, label: f.label, fieldType: f.fieldType, isStudentField: f.isStudentField })))}`,
+      `[submitSchreibenAttempt] ALL form fields: ${JSON.stringify(allFormFields.map((f: any) => {
+        const pos = fieldPositionMap.get(f);
+        return { id: f.id, number: f.number, label: f.label, fieldType: f.fieldType, isStudentField: f.isStudentField, pos: pos ? `field_${pos.formBlockIndex}_${pos.fieldIndex}` : null };
+      }))}`,
     );
 
     // التحقق أن كل الحقول المطلوبة تم ملؤها
-    // حقل مطلوب = ليس prefilled وليس readonly ويحتاج إجابة من الطالب
     const studentFields = allFormFields.filter((f: any) => {
-      // استبعاد الحقول المعبأة مسبقاً بعدة طرق
       if (f.fieldType === FormFieldType.PREFILLED || f.fieldType === 'prefilled') return false;
       if (f.isStudentField === false) return false;
       if (f.readOnly === true || f.readonly === true || f.disabled === true) return false;
@@ -3722,8 +3792,29 @@ export class AttemptsService {
       answerMap.set(String(a.fieldId), a.answer);
     }
 
+    // بناء خريطة عكسية: field_X_Y -> answer (لدعم صيغة الفرونت)
+    for (const a of formAnswers) {
+      const fid = String(a.fieldId);
+      const match = fid.match(/^field_(\d+)_(\d+)$/);
+      if (match) {
+        const blockIdx = parseInt(match[1], 10);
+        const fieldIdx = parseInt(match[2], 10);
+        // إيجاد الحقل المقابل وربط الإجابة بالـ id الحقيقي
+        for (const [field, pos] of fieldPositionMap.entries()) {
+          if (pos.formBlockIndex === blockIdx && pos.fieldIndex === fieldIdx) {
+            const realKey = field.id || String(field.number);
+            answerMap.set(realKey, a.answer);
+            this.logger.warn(
+              `[submitSchreibenAttempt] Mapped ${fid} -> realKey="${realKey}" (label=${field.label})`,
+            );
+            break;
+          }
+        }
+      }
+    }
+
     this.logger.warn(
-      `[submitSchreibenAttempt] Student fields (after filter): ${JSON.stringify(studentFields.map((f: any) => ({ id: f.id, number: f.number, label: f.label, fieldType: f.fieldType, isStudentField: f.isStudentField })))}`,
+      `[submitSchreibenAttempt] Student fields (after filter): ${JSON.stringify(studentFields.map((f: any) => ({ id: f.id, number: f.number, label: f.label, fieldType: f.fieldType })))}`,
     );
     this.logger.warn(
       `[submitSchreibenAttempt] Submitted answers: ${JSON.stringify(formAnswers.map((a) => ({ fieldId: a.fieldId, answerType: typeof a.answer })))}`,

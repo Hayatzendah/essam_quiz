@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -18,6 +19,8 @@ import { UpdateSchreibenTaskDto } from './dto/update-schreiben-task.dto';
 
 @Injectable()
 export class SchreibenTasksService {
+  private readonly logger = new Logger(SchreibenTasksService.name);
+
   constructor(
     @InjectModel(SchreibenTask.name)
     private readonly model: Model<SchreibenTaskDocument>,
@@ -209,9 +212,13 @@ export class SchreibenTasksService {
     }
 
     const fields: any[] = [];
+    let formBlockCounter = 0;
     for (const block of task.contentBlocks || []) {
       if (block.type === 'form' && (block.data as any)?.fields) {
-        for (const field of (block.data as any).fields) {
+        formBlockCounter++;
+        const blockFields = (block.data as any).fields;
+        for (let fi = 0; fi < blockFields.length; fi++) {
+          const field = blockFields[fi];
           fields.push({
             id: field.id,
             number: field.number,
@@ -221,6 +228,7 @@ export class SchreibenTasksService {
             value: field.value || null,
             correctAnswers: field.correctAnswers || null,
             hasCorrectAnswer: !!(field.value || (field.correctAnswers && field.correctAnswers.length > 0)),
+            frontendId: `field_${formBlockCounter}_${fi}`, // الـ ID اللي بيستخدمه الفرونت
           });
         }
       }
@@ -245,14 +253,28 @@ export class SchreibenTasksService {
 
     let updatedCount = 0;
     for (const ans of answers) {
+      let formBlockCounter = 0;
       for (const block of task.contentBlocks || []) {
         if (block.type === 'form' && (block.data as any)?.fields) {
-          for (const field of (block.data as any).fields) {
-            if (
+          formBlockCounter++;
+          const fields = (block.data as any).fields;
+          for (let fi = 0; fi < fields.length; fi++) {
+            const field = fields[fi];
+            const matchesById =
               String(field.id) === String(ans.fieldId) ||
               String(field.number) === String(ans.fieldId) ||
-              field.label === ans.fieldId
-            ) {
+              field.label === ans.fieldId ||
+              (field._id && String(field._id) === String(ans.fieldId));
+
+            let matchesByPosition = false;
+            const posMatch = String(ans.fieldId).match(/^field_(\d+)_(\d+)$/);
+            if (posMatch) {
+              matchesByPosition =
+                formBlockCounter === parseInt(posMatch[1], 10) &&
+                fi === parseInt(posMatch[2], 10);
+            }
+
+            if (matchesById || matchesByPosition) {
               if (ans.value !== undefined) field.value = ans.value;
               if (ans.correctAnswers !== undefined) field.correctAnswers = ans.correctAnswers;
               updatedCount++;
@@ -287,16 +309,31 @@ export class SchreibenTasksService {
       throw new NotFoundException('المهمة غير موجودة');
     }
 
-    // البحث عن الحقل في كل بلوكات النموذج
+    // البحث عن الحقل في كل بلوكات النموذج (بأكثر من طريقة)
     let found = false;
+    let formBlockCounter = 0;
     for (const block of task.contentBlocks || []) {
       if (block.type === 'form' && (block.data as any)?.fields) {
-        for (const field of (block.data as any).fields) {
-          if (
+        formBlockCounter++;
+        const fields = (block.data as any).fields;
+        for (let fi = 0; fi < fields.length; fi++) {
+          const field = fields[fi];
+          const matchesById =
             String(field.id) === String(fieldId) ||
             String(field.number) === String(fieldId) ||
-            field.label === fieldId
-          ) {
+            field.label === fieldId ||
+            (field._id && String(field._id) === String(fieldId));
+
+          // دعم صيغة field_X_Y
+          let matchesByPosition = false;
+          const posMatch = String(fieldId).match(/^field_(\d+)_(\d+)$/);
+          if (posMatch) {
+            matchesByPosition =
+              formBlockCounter === parseInt(posMatch[1], 10) &&
+              fi === parseInt(posMatch[2], 10);
+          }
+
+          if (matchesById || matchesByPosition) {
             // تحديث الإجابة الصحيحة
             if (body.value !== undefined) {
               field.value = body.value;
@@ -336,6 +373,25 @@ export class SchreibenTasksService {
 
     // تحويل لـ plain objects لتجنب مشاكل class instances
     const plainBlocks = JSON.parse(JSON.stringify(contentBlocks));
+
+    // Logging لمعرفة ما يرسله الفرونت (خاصة قيم الحقول والإجابات الصحيحة)
+    for (const block of plainBlocks) {
+      if (block?.type === 'form' && block?.data?.fields) {
+        this.logger.warn(
+          `[updateContentBlocks] Form block "${block.data.title}" fields: ${JSON.stringify(
+            block.data.fields.map((f: any) => ({
+              id: f.id,
+              number: f.number,
+              label: f.label,
+              fieldType: f.fieldType,
+              value: f.value,
+              correctAnswers: f.correctAnswers,
+              isStudentField: f.isStudentField,
+            })),
+          )}`,
+        );
+      }
+    }
 
     this.validateContentBlocks(plainBlocks);
 

@@ -132,9 +132,6 @@ export class SchreibenTasksController {
   }
 
   @Get(':id/fields')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'teacher')
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'عرض كل حقول النموذج مع الإجابات الصحيحة' })
   getFields(@Param('id') id: string) {
     return this.service.getFieldsWithAnswers(id);
