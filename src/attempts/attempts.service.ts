@@ -3533,6 +3533,115 @@ export class AttemptsService {
     };
   }
 
+  // ==================== Schreiben Form Field Check ====================
+
+  /**
+   * فحص إجابة حقل واحد في نموذج Schreiben (بدون تسليم)
+   * يرجع إذا الإجابة صحيحة + الإجابة الصحيحة
+   */
+  async checkSchreibenField(
+    user: ReqUser,
+    attemptId: string,
+    fieldId: string,
+    answer: string | string[],
+  ) {
+    // التحقق من ملكية المحاولة
+    const attempt = await this.attemptModel
+      .findOne({
+        _id: new Types.ObjectId(attemptId),
+        studentId: new Types.ObjectId(user.userId),
+      })
+      .exec();
+
+    if (!attempt) {
+      throw new NotFoundException('المحاولة غير موجودة');
+    }
+
+    // جلب الامتحان
+    const exam = await this.examModel.findById(attempt.examId).lean();
+    if (!exam || exam.mainSkill !== 'schreiben' || !exam.schreibenTaskId) {
+      throw new BadRequestException('هذا الامتحان ليس من نوع Schreiben');
+    }
+
+    // جلب مهمة الكتابة
+    const schreibenTask = await this.schreibenTaskModel
+      .findById(exam.schreibenTaskId)
+      .lean();
+
+    if (!schreibenTask) {
+      throw new NotFoundException('مهمة الكتابة غير موجودة');
+    }
+
+    // البحث عن الحقل بأكثر من طريقة (id, number, label)
+    let targetField: any = null;
+    for (const block of schreibenTask.contentBlocks || []) {
+      if (block.type === 'form' && (block.data as any)?.fields) {
+        for (const field of (block.data as any).fields) {
+          if (
+            String(field.id) === String(fieldId) ||
+            String(field.number) === String(fieldId) ||
+            field.label === fieldId ||
+            (field._id && String(field._id) === String(fieldId))
+          ) {
+            targetField = field;
+            break;
+          }
+        }
+        if (targetField) break;
+      }
+    }
+
+    if (!targetField) {
+      throw new NotFoundException(`الحقل ${fieldId} غير موجود`);
+    }
+
+    // فحص الإجابة
+    let isCorrect = false;
+    let correctAnswer: string | string[] = '';
+
+    switch (targetField.fieldType) {
+      case 'text_input':
+      case FormFieldType.TEXT_INPUT: {
+        correctAnswer = targetField.value || '';
+        if (typeof answer === 'string' && typeof correctAnswer === 'string') {
+          isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+        }
+        break;
+      }
+      case 'select':
+      case FormFieldType.SELECT: {
+        correctAnswer = targetField.correctAnswers || [];
+        if (typeof answer === 'string' && Array.isArray(correctAnswer)) {
+          isCorrect = correctAnswer.some(
+            (ca: string) => normalizeAnswer(ca) === normalizeAnswer(answer as string),
+          );
+        }
+        break;
+      }
+      case 'multiselect':
+      case FormFieldType.MULTISELECT: {
+        correctAnswer = targetField.correctAnswers || [];
+        if (Array.isArray(answer) && Array.isArray(correctAnswer)) {
+          const normStudent = (answer as string[]).map(a => normalizeAnswer(a)).sort();
+          const normCorrect = (correctAnswer as string[]).map(a => normalizeAnswer(a)).sort();
+          isCorrect =
+            normStudent.length === normCorrect.length &&
+            normStudent.every((a, i) => a === normCorrect[i]);
+        }
+        break;
+      }
+    }
+
+    return {
+      fieldId: targetField.id || String(targetField.number),
+      label: targetField.label,
+      studentAnswer: answer,
+      correctAnswer,
+      isCorrect,
+      points: isCorrect ? 1 : 0,
+    };
+  }
+
   // ==================== Schreiben Form Submission ====================
 
   /**

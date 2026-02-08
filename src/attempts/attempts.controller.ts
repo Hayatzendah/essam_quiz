@@ -321,6 +321,18 @@ export class AttemptsController {
     return this.service.submitSchreibenAttempt(req.user, attemptId, formAnswers);
   }
 
+  // فحص إجابة حقل واحد في نموذج Schreiben (بدون تسليم - زي القواعد)
+  @Post(':attemptId/check-schreiben-field')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  checkSchreibenField(
+    @Param('attemptId') attemptId: string,
+    @Body() body: { fieldId: string; answer: string | string[] },
+    @Req() req: any,
+  ) {
+    return this.service.checkSchreibenField(req.user, attemptId, body.fieldId, body.answer);
+  }
+
   // إدخال درجات يدوية (معلم مالك أو أدمن)
   @Post(':attemptId/grade')
   @UseGuards(JwtAuthGuard, RolesGuard)
