@@ -16,6 +16,7 @@ import {
 } from './schemas/schreiben-content-block.schema';
 import { CreateSchreibenTaskDto } from './dto/create-schreiben-task.dto';
 import { UpdateSchreibenTaskDto } from './dto/update-schreiben-task.dto';
+import { normalizeAnswer } from '../../common/utils/normalize.util';
 
 @Injectable()
 export class SchreibenTasksService {
@@ -451,6 +452,136 @@ export class SchreibenTasksService {
           break;
       }
     }
+  }
+
+  // فحص إجابة حقل واحد مباشرة (بدون attempt)
+  async checkField(
+    taskId: string,
+    fieldId: string,
+    answer: string | string[],
+  ) {
+    if (!Types.ObjectId.isValid(taskId)) {
+      throw new BadRequestException('معرف المهمة غير صالح');
+    }
+
+    const task = await this.model.findById(taskId).lean();
+    if (!task) {
+      throw new NotFoundException('المهمة غير موجودة');
+    }
+
+    // جمع الحقول مع معلومات الموقع
+    const allFieldsWithPosition: Array<{ field: any; formBlockIndex: number; fieldIndex: number }> = [];
+    let formBlockCounter = 0;
+    for (const block of task.contentBlocks || []) {
+      if (block.type === 'form' && (block.data as any)?.fields) {
+        formBlockCounter++;
+        const fields = (block.data as any).fields;
+        for (let fi = 0; fi < fields.length; fi++) {
+          allFieldsWithPosition.push({
+            field: fields[fi],
+            formBlockIndex: formBlockCounter,
+            fieldIndex: fi,
+          });
+        }
+      }
+    }
+
+    // البحث عن الحقل
+    let targetField: any = null;
+    for (const entry of allFieldsWithPosition) {
+      const f = entry.field;
+      if (
+        String(f.id) === String(fieldId) ||
+        String(f.number) === String(fieldId) ||
+        f.label === fieldId ||
+        (f._id && String(f._id) === String(fieldId))
+      ) {
+        targetField = f;
+        break;
+      }
+    }
+
+    // محاولة field_X_Y
+    if (!targetField) {
+      const match = String(fieldId).match(/^field_(\d+)_(\d+)$/);
+      if (match) {
+        const blockIdx = parseInt(match[1], 10);
+        const fieldIdx = parseInt(match[2], 10);
+        const found = allFieldsWithPosition.find(
+          e => e.formBlockIndex === blockIdx && e.fieldIndex === fieldIdx,
+        );
+        if (found) targetField = found.field;
+      }
+    }
+
+    if (!targetField) {
+      throw new NotFoundException(`الحقل ${fieldId} غير موجود`);
+    }
+
+    // دوال مساعدة للبحث عن الإجابة الصحيحة
+    const getCorrectValue = (f: any): string =>
+      f.value || f.correctAnswer || f.answer || f.correctValue || '';
+    const getCorrectArray = (f: any): string[] =>
+      f.correctAnswers || f.correctOptions || f.answers || [];
+
+    let isCorrect = false;
+    let correctAnswer: string | string[] = '';
+    const fieldType = targetField.fieldType || '';
+
+    switch (fieldType) {
+      case 'text_input':
+      case FormFieldType.TEXT_INPUT: {
+        correctAnswer = getCorrectValue(targetField);
+        if (!correctAnswer && getCorrectArray(targetField).length > 0) {
+          correctAnswer = getCorrectArray(targetField)[0];
+        }
+        if (typeof answer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
+          isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+        }
+        break;
+      }
+      case 'select':
+      case FormFieldType.SELECT: {
+        correctAnswer = getCorrectArray(targetField);
+        if ((!correctAnswer || (correctAnswer as string[]).length === 0) && getCorrectValue(targetField)) {
+          correctAnswer = [getCorrectValue(targetField)];
+        }
+        if (typeof answer === 'string' && Array.isArray(correctAnswer)) {
+          isCorrect = (correctAnswer as string[]).some(
+            (ca: string) => normalizeAnswer(ca) === normalizeAnswer(answer as string),
+          );
+        }
+        break;
+      }
+      case 'multiselect':
+      case FormFieldType.MULTISELECT: {
+        correctAnswer = getCorrectArray(targetField);
+        if (Array.isArray(answer) && Array.isArray(correctAnswer)) {
+          const normStudent = (answer as string[]).map(a => normalizeAnswer(a)).sort();
+          const normCorrect = (correctAnswer as string[]).map(a => normalizeAnswer(a)).sort();
+          isCorrect =
+            normStudent.length === normCorrect.length &&
+            normStudent.every((a, i) => a === normCorrect[i]);
+        }
+        break;
+      }
+      default: {
+        correctAnswer = getCorrectValue(targetField) || getCorrectArray(targetField);
+        if (typeof answer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
+          isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+        }
+        break;
+      }
+    }
+
+    return {
+      fieldId: targetField.id || String(targetField.number),
+      label: targetField.label,
+      studentAnswer: answer,
+      correctAnswer,
+      isCorrect,
+      points: isCorrect ? 1 : 0,
+    };
   }
 
   // التحقق من صحة بلوك الاستمارة (مرن)

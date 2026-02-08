@@ -137,6 +137,17 @@ export class SchreibenTasksController {
     return this.service.getFieldsWithAnswers(id);
   }
 
+  @Post(':id/check-field')
+  @ApiOperation({ summary: 'فحص إجابة حقل واحد مباشرة (بدون attempt)' })
+  @ApiResponse({ status: 200, description: 'نتيجة الفحص' })
+  @ApiResponse({ status: 404, description: 'المهمة أو الحقل غير موجود' })
+  checkField(
+    @Param('id') id: string,
+    @Body() body: { fieldId: string; answer: string | string[] },
+  ) {
+    return this.service.checkField(id, body.fieldId, body.answer);
+  }
+
   @Patch(':id/fields/correct-answers')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')
