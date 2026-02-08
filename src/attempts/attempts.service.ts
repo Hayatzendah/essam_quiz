@@ -3667,6 +3667,10 @@ export class AttemptsService {
       return field.correctAnswers || field.correctOptions || field.answers || [];
     };
 
+    // تحويل إجابة الطالب لصيغة موحدة
+    const studentStr: string = Array.isArray(answer) ? answer[0] || '' : String(answer || '');
+    const studentArr: string[] = Array.isArray(answer) ? answer.map(String) : [String(answer || '')];
+
     // فحص الإجابة
     let isCorrect = false;
     let correctAnswer: string | string[] = '';
@@ -3675,36 +3679,39 @@ export class AttemptsService {
     switch (fieldType) {
       case 'text_input':
       case FormFieldType.TEXT_INPUT: {
-        // البحث في أماكن مختلفة للإجابة الصحيحة
         correctAnswer = getCorrectValue(targetField);
-        // لو مافيش value، جرب correctAnswers[0]
         if (!correctAnswer && getCorrectArray(targetField).length > 0) {
           correctAnswer = getCorrectArray(targetField)[0];
         }
-        if (typeof answer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
-          isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+        if (typeof correctAnswer === 'string' && correctAnswer) {
+          isCorrect = normalizeAnswer(studentStr) === normalizeAnswer(correctAnswer);
         }
         break;
       }
       case 'select':
       case FormFieldType.SELECT: {
-        correctAnswer = getCorrectArray(targetField);
-        // لو مافيش correctAnswers، جرب value كإجابة واحدة
-        if ((!correctAnswer || (correctAnswer as string[]).length === 0) && getCorrectValue(targetField)) {
-          correctAnswer = [getCorrectValue(targetField)];
+        const correctArr = getCorrectArray(targetField);
+        const correctVal = getCorrectValue(targetField);
+        if (correctArr.length > 0) {
+          correctAnswer = correctArr;
+        } else if (correctVal) {
+          correctAnswer = [correctVal];
+        } else {
+          correctAnswer = [];
         }
-        if (typeof answer === 'string' && Array.isArray(correctAnswer)) {
+        if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
           isCorrect = (correctAnswer as string[]).some(
-            (ca: string) => normalizeAnswer(ca) === normalizeAnswer(answer as string),
+            (ca: string) => normalizeAnswer(ca) === normalizeAnswer(studentStr),
           );
         }
         break;
       }
       case 'multiselect':
       case FormFieldType.MULTISELECT: {
-        correctAnswer = getCorrectArray(targetField);
-        if (Array.isArray(answer) && Array.isArray(correctAnswer)) {
-          const normStudent = (answer as string[]).map(a => normalizeAnswer(a)).sort();
+        const correctArr = getCorrectArray(targetField);
+        correctAnswer = correctArr.length > 0 ? correctArr : (getCorrectValue(targetField) ? [getCorrectValue(targetField)] : []);
+        if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
+          const normStudent = studentArr.filter(a => a.trim()).map(a => normalizeAnswer(a)).sort();
           const normCorrect = (correctAnswer as string[]).map(a => normalizeAnswer(a)).sort();
           isCorrect =
             normStudent.length === normCorrect.length &&
@@ -3713,10 +3720,13 @@ export class AttemptsService {
         break;
       }
       default: {
-        // نوع حقل غير معروف - حاول المقارنة المباشرة
         correctAnswer = getCorrectValue(targetField) || getCorrectArray(targetField);
-        if (typeof answer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
-          isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+        if (typeof correctAnswer === 'string' && correctAnswer) {
+          isCorrect = normalizeAnswer(studentStr) === normalizeAnswer(correctAnswer);
+        } else if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
+          isCorrect = (correctAnswer as string[]).some(
+            (ca: string) => normalizeAnswer(ca) === normalizeAnswer(studentStr),
+          );
         }
         break;
       }
@@ -3994,6 +4004,10 @@ export class AttemptsService {
       let isCorrect = false;
       let correctAnswer: string | string[] = '';
 
+      // تحويل إجابة الطالب لصيغة موحدة (string و array)
+      const studentStr: string = Array.isArray(studentAnswer) ? studentAnswer[0] || '' : String(studentAnswer || '');
+      const studentArr: string[] = Array.isArray(studentAnswer) ? studentAnswer.map(String) : (studentAnswer ? [String(studentAnswer)] : []);
+
       const fieldType = field.fieldType || '';
       switch (fieldType) {
         case 'text_input':
@@ -4002,22 +4016,27 @@ export class AttemptsService {
           if (!correctAnswer && getCorrectArray(field).length > 0) {
             correctAnswer = getCorrectArray(field)[0];
           }
-          if (typeof studentAnswer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
+          if (typeof correctAnswer === 'string' && correctAnswer) {
             isCorrect =
-              normalizeAnswer(studentAnswer) === normalizeAnswer(correctAnswer);
+              normalizeAnswer(studentStr) === normalizeAnswer(correctAnswer);
           }
           break;
         }
 
         case 'select':
         case FormFieldType.SELECT: {
-          correctAnswer = getCorrectArray(field);
-          if ((!correctAnswer || (correctAnswer as string[]).length === 0) && getCorrectValue(field)) {
-            correctAnswer = [getCorrectValue(field)];
+          const correctArr = getCorrectArray(field);
+          const correctVal = getCorrectValue(field);
+          if (correctArr.length > 0) {
+            correctAnswer = correctArr;
+          } else if (correctVal) {
+            correctAnswer = [correctVal];
+          } else {
+            correctAnswer = [];
           }
-          if (typeof studentAnswer === 'string' && Array.isArray(correctAnswer)) {
+          if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
             isCorrect = (correctAnswer as string[]).some(
-              (ca: string) => normalizeAnswer(ca) === normalizeAnswer(studentAnswer),
+              (ca: string) => normalizeAnswer(ca) === normalizeAnswer(studentStr),
             );
           }
           break;
@@ -4025,18 +4044,15 @@ export class AttemptsService {
 
         case 'multiselect':
         case FormFieldType.MULTISELECT: {
-          correctAnswer = getCorrectArray(field);
-          if (Array.isArray(studentAnswer) && Array.isArray(correctAnswer)) {
-            const normalizedStudent = studentAnswer
-              .map((a: string) => normalizeAnswer(a))
-              .sort();
-            const normalizedCorrect = (correctAnswer as string[])
-              .map((a: string) => normalizeAnswer(a))
-              .sort();
+          const correctArr = getCorrectArray(field);
+          correctAnswer = correctArr.length > 0 ? correctArr : (getCorrectValue(field) ? [getCorrectValue(field)] : []);
+          if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
+            const normStudent = studentArr.filter(a => a.trim()).map(a => normalizeAnswer(a)).sort();
+            const normCorrect = (correctAnswer as string[]).map(a => normalizeAnswer(a)).sort();
             isCorrect =
-              normalizedStudent.length === normalizedCorrect.length &&
-              normalizedStudent.every(
-                (a: string, i: number) => a === normalizedCorrect[i],
+              normStudent.length === normCorrect.length &&
+              normStudent.every(
+                (a: string, i: number) => a === normCorrect[i],
               );
           }
           break;
@@ -4044,8 +4060,12 @@ export class AttemptsService {
 
         default: {
           correctAnswer = getCorrectValue(field) || getCorrectArray(field);
-          if (typeof studentAnswer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
-            isCorrect = normalizeAnswer(studentAnswer) === normalizeAnswer(correctAnswer);
+          if (typeof correctAnswer === 'string' && correctAnswer) {
+            isCorrect = normalizeAnswer(studentStr) === normalizeAnswer(correctAnswer);
+          } else if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
+            isCorrect = (correctAnswer as string[]).some(
+              (ca: string) => normalizeAnswer(ca) === normalizeAnswer(studentStr),
+            );
           }
           break;
         }

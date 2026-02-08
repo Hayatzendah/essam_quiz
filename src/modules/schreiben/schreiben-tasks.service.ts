@@ -524,6 +524,10 @@ export class SchreibenTasksService {
     const getCorrectArray = (f: any): string[] =>
       f.correctAnswers || f.correctOptions || f.answers || [];
 
+    // تحويل الإجابة لصيغة موحدة
+    const studentStr: string = Array.isArray(answer) ? answer[0] || '' : String(answer || '');
+    const studentArr: string[] = Array.isArray(answer) ? answer.map(String) : [String(answer || '')];
+
     let isCorrect = false;
     let correctAnswer: string | string[] = '';
     const fieldType = targetField.fieldType || '';
@@ -535,29 +539,37 @@ export class SchreibenTasksService {
         if (!correctAnswer && getCorrectArray(targetField).length > 0) {
           correctAnswer = getCorrectArray(targetField)[0];
         }
-        if (typeof answer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
-          isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+        if (typeof correctAnswer === 'string' && correctAnswer) {
+          isCorrect = normalizeAnswer(studentStr) === normalizeAnswer(correctAnswer);
         }
         break;
       }
       case 'select':
       case FormFieldType.SELECT: {
-        correctAnswer = getCorrectArray(targetField);
-        if ((!correctAnswer || (correctAnswer as string[]).length === 0) && getCorrectValue(targetField)) {
-          correctAnswer = [getCorrectValue(targetField)];
+        const correctArr = getCorrectArray(targetField);
+        const correctVal = getCorrectValue(targetField);
+        // بناء قائمة الإجابات الصحيحة
+        if (correctArr.length > 0) {
+          correctAnswer = correctArr;
+        } else if (correctVal) {
+          correctAnswer = [correctVal];
+        } else {
+          correctAnswer = [];
         }
-        if (typeof answer === 'string' && Array.isArray(correctAnswer)) {
+        // مقارنة - الطالب يختار إجابة واحدة
+        if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
           isCorrect = (correctAnswer as string[]).some(
-            (ca: string) => normalizeAnswer(ca) === normalizeAnswer(answer as string),
+            (ca: string) => normalizeAnswer(ca) === normalizeAnswer(studentStr),
           );
         }
         break;
       }
       case 'multiselect':
       case FormFieldType.MULTISELECT: {
-        correctAnswer = getCorrectArray(targetField);
-        if (Array.isArray(answer) && Array.isArray(correctAnswer)) {
-          const normStudent = (answer as string[]).map(a => normalizeAnswer(a)).sort();
+        const correctArr = getCorrectArray(targetField);
+        correctAnswer = correctArr.length > 0 ? correctArr : (getCorrectValue(targetField) ? [getCorrectValue(targetField)] : []);
+        if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
+          const normStudent = studentArr.filter(a => a.trim()).map(a => normalizeAnswer(a)).sort();
           const normCorrect = (correctAnswer as string[]).map(a => normalizeAnswer(a)).sort();
           isCorrect =
             normStudent.length === normCorrect.length &&
@@ -567,8 +579,12 @@ export class SchreibenTasksService {
       }
       default: {
         correctAnswer = getCorrectValue(targetField) || getCorrectArray(targetField);
-        if (typeof answer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
-          isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+        if (typeof correctAnswer === 'string' && correctAnswer) {
+          isCorrect = normalizeAnswer(studentStr) === normalizeAnswer(correctAnswer);
+        } else if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
+          isCorrect = (correctAnswer as string[]).some(
+            (ca: string) => normalizeAnswer(ca) === normalizeAnswer(studentStr),
+          );
         }
         break;
       }
