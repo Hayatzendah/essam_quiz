@@ -3654,24 +3654,47 @@ export class AttemptsService {
       throw new NotFoundException(`الحقل ${fieldId} غير موجود`);
     }
 
+    // طباعة كل خصائص الحقل لتشخيص مشكلة الإجابة الصحيحة الفارغة
+    this.logger.warn(
+      `[checkSchreibenField] Found field - ALL PROPERTIES: ${JSON.stringify(targetField)}`,
+    );
+
+    // دالة مساعدة: البحث عن الإجابة الصحيحة في أماكن مختلفة
+    const getCorrectValue = (field: any): string => {
+      return field.value || field.correctAnswer || field.answer || field.correctValue || '';
+    };
+    const getCorrectArray = (field: any): string[] => {
+      return field.correctAnswers || field.correctOptions || field.answers || [];
+    };
+
     // فحص الإجابة
     let isCorrect = false;
     let correctAnswer: string | string[] = '';
 
-    switch (targetField.fieldType) {
+    const fieldType = targetField.fieldType || '';
+    switch (fieldType) {
       case 'text_input':
       case FormFieldType.TEXT_INPUT: {
-        correctAnswer = targetField.value || '';
-        if (typeof answer === 'string' && typeof correctAnswer === 'string') {
+        // البحث في أماكن مختلفة للإجابة الصحيحة
+        correctAnswer = getCorrectValue(targetField);
+        // لو مافيش value، جرب correctAnswers[0]
+        if (!correctAnswer && getCorrectArray(targetField).length > 0) {
+          correctAnswer = getCorrectArray(targetField)[0];
+        }
+        if (typeof answer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
           isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
         }
         break;
       }
       case 'select':
       case FormFieldType.SELECT: {
-        correctAnswer = targetField.correctAnswers || [];
+        correctAnswer = getCorrectArray(targetField);
+        // لو مافيش correctAnswers، جرب value كإجابة واحدة
+        if ((!correctAnswer || (correctAnswer as string[]).length === 0) && getCorrectValue(targetField)) {
+          correctAnswer = [getCorrectValue(targetField)];
+        }
         if (typeof answer === 'string' && Array.isArray(correctAnswer)) {
-          isCorrect = correctAnswer.some(
+          isCorrect = (correctAnswer as string[]).some(
             (ca: string) => normalizeAnswer(ca) === normalizeAnswer(answer as string),
           );
         }
@@ -3679,7 +3702,7 @@ export class AttemptsService {
       }
       case 'multiselect':
       case FormFieldType.MULTISELECT: {
-        correctAnswer = targetField.correctAnswers || [];
+        correctAnswer = getCorrectArray(targetField);
         if (Array.isArray(answer) && Array.isArray(correctAnswer)) {
           const normStudent = (answer as string[]).map(a => normalizeAnswer(a)).sort();
           const normCorrect = (correctAnswer as string[]).map(a => normalizeAnswer(a)).sort();
@@ -3689,7 +3712,19 @@ export class AttemptsService {
         }
         break;
       }
+      default: {
+        // نوع حقل غير معروف - حاول المقارنة المباشرة
+        correctAnswer = getCorrectValue(targetField) || getCorrectArray(targetField);
+        if (typeof answer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
+          isCorrect = normalizeAnswer(answer) === normalizeAnswer(correctAnswer);
+        }
+        break;
+      }
     }
+
+    this.logger.warn(
+      `[checkSchreibenField] Result: fieldType=${fieldType}, studentAnswer=${JSON.stringify(answer)}, correctAnswer=${JSON.stringify(correctAnswer)}, isCorrect=${isCorrect}`,
+    );
 
     return {
       fieldId: targetField.id || String(targetField.number),
@@ -3944,6 +3979,14 @@ export class AttemptsService {
     let score = 0;
     let maxScore = 0;
 
+    // دالة مساعدة: البحث عن الإجابة الصحيحة في أماكن مختلفة
+    const getCorrectValue = (f: any): string => {
+      return f.value || f.correctAnswer || f.answer || f.correctValue || '';
+    };
+    const getCorrectArray = (f: any): string[] => {
+      return f.correctAnswers || f.correctOptions || f.answers || [];
+    };
+
     for (const field of allFormFields) {
       maxScore += 1; // كل حقل يساوي 1 نقطة
       const fieldKey = field.id || String(field.number);
@@ -3951,31 +3994,38 @@ export class AttemptsService {
       let isCorrect = false;
       let correctAnswer: string | string[] = '';
 
-      switch (field.fieldType) {
+      const fieldType = field.fieldType || '';
+      switch (fieldType) {
+        case 'text_input':
         case FormFieldType.TEXT_INPUT: {
-          // مقارنة نصية (case-insensitive, trimmed)
-          correctAnswer = field.value || '';
-          if (typeof studentAnswer === 'string' && typeof correctAnswer === 'string') {
+          correctAnswer = getCorrectValue(field);
+          if (!correctAnswer && getCorrectArray(field).length > 0) {
+            correctAnswer = getCorrectArray(field)[0];
+          }
+          if (typeof studentAnswer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
             isCorrect =
               normalizeAnswer(studentAnswer) === normalizeAnswer(correctAnswer);
           }
           break;
         }
 
+        case 'select':
         case FormFieldType.SELECT: {
-          // اختيار واحد
-          correctAnswer = field.correctAnswers || [];
+          correctAnswer = getCorrectArray(field);
+          if ((!correctAnswer || (correctAnswer as string[]).length === 0) && getCorrectValue(field)) {
+            correctAnswer = [getCorrectValue(field)];
+          }
           if (typeof studentAnswer === 'string' && Array.isArray(correctAnswer)) {
-            isCorrect = correctAnswer.some(
+            isCorrect = (correctAnswer as string[]).some(
               (ca: string) => normalizeAnswer(ca) === normalizeAnswer(studentAnswer),
             );
           }
           break;
         }
 
+        case 'multiselect':
         case FormFieldType.MULTISELECT: {
-          // اختيار متعدد - يجب أن تتطابق كل الإجابات
-          correctAnswer = field.correctAnswers || [];
+          correctAnswer = getCorrectArray(field);
           if (Array.isArray(studentAnswer) && Array.isArray(correctAnswer)) {
             const normalizedStudent = studentAnswer
               .map((a: string) => normalizeAnswer(a))
@@ -3988,6 +4038,14 @@ export class AttemptsService {
               normalizedStudent.every(
                 (a: string, i: number) => a === normalizedCorrect[i],
               );
+          }
+          break;
+        }
+
+        default: {
+          correctAnswer = getCorrectValue(field) || getCorrectArray(field);
+          if (typeof studentAnswer === 'string' && typeof correctAnswer === 'string' && correctAnswer) {
+            isCorrect = normalizeAnswer(studentAnswer) === normalizeAnswer(correctAnswer);
           }
           break;
         }
