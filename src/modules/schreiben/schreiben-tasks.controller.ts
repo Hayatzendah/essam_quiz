@@ -131,6 +131,21 @@ export class SchreibenTasksController {
     return this.service.updateContentBlocks(id, contentBlocks);
   }
 
+  @Patch(':id/fields/:fieldId/correct-answer')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'تحديث الإجابة الصحيحة لحقل في النموذج' })
+  @ApiResponse({ status: 200, description: 'تم تحديث الإجابة الصحيحة' })
+  @ApiResponse({ status: 404, description: 'المهمة أو الحقل غير موجود' })
+  updateFieldCorrectAnswer(
+    @Param('id') id: string,
+    @Param('fieldId') fieldId: string,
+    @Body() body: { value?: string; correctAnswers?: string[] },
+  ) {
+    return this.service.updateFieldCorrectAnswer(id, fieldId, body);
+  }
+
   @Patch(':id/link-exam')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')

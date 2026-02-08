@@ -197,6 +197,59 @@ export class SchreibenTasksService {
     };
   }
 
+  // تحديث الإجابة الصحيحة لحقل معين
+  async updateFieldCorrectAnswer(
+    taskId: string,
+    fieldId: string,
+    body: { value?: string; correctAnswers?: string[] },
+  ) {
+    if (!Types.ObjectId.isValid(taskId)) {
+      throw new BadRequestException('معرف المهمة غير صالح');
+    }
+
+    const task = await this.model.findById(taskId);
+    if (!task) {
+      throw new NotFoundException('المهمة غير موجودة');
+    }
+
+    // البحث عن الحقل في كل بلوكات النموذج
+    let found = false;
+    for (const block of task.contentBlocks || []) {
+      if (block.type === 'form' && (block.data as any)?.fields) {
+        for (const field of (block.data as any).fields) {
+          if (
+            String(field.id) === String(fieldId) ||
+            String(field.number) === String(fieldId) ||
+            field.label === fieldId
+          ) {
+            // تحديث الإجابة الصحيحة
+            if (body.value !== undefined) {
+              field.value = body.value;
+            }
+            if (body.correctAnswers !== undefined) {
+              field.correctAnswers = body.correctAnswers;
+            }
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+    }
+
+    if (!found) {
+      throw new NotFoundException(`الحقل ${fieldId} غير موجود في المهمة`);
+    }
+
+    task.markModified('contentBlocks');
+    await task.save();
+
+    return {
+      success: true,
+      message: 'تم تحديث الإجابة الصحيحة',
+    };
+  }
+
   // تحديث بلوكات المحتوى فقط
   async updateContentBlocks(
     id: string,
