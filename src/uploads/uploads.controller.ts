@@ -255,6 +255,8 @@ export class UploadsController {
       // إذا نجح الرفع إلى S3، نرجع URL من S3
       return {
         imageUrl: s3Result.url,
+        url: s3Result.url, // للتوافق مع الفرونت
+        src: s3Result.url, // للتوافق مع Schreiben image blocks
         filename: file.originalname,
         mime: file.mimetype,
         key: s3Result.key,
@@ -294,8 +296,10 @@ export class UploadsController {
       const imageUrl = `${baseUrl}/uploads/images/${decodedFolder}/${file.originalname}`;
       const key = `images/${decodedFolder}/${file.originalname}`;
 
-      return { 
+      return {
         imageUrl,
+        url: imageUrl, // للتوافق مع الفرونت
+        src: imageUrl, // للتوافق مع Schreiben image blocks
         filename: file.originalname,
         mime: file.mimetype,
         key,
@@ -361,8 +365,10 @@ export class UploadsController {
       const baseUrl = publicBaseUrl || `${req.protocol}://${req.get('host')}`;
       const imageUrl = `${baseUrl}/uploads/images/${imageFolder}/${body.filename}`;
 
-      return { 
+      return {
         imageUrl,
+        url: imageUrl, // للتوافق مع الفرونت
+        src: imageUrl, // للتوافق مع Schreiben image blocks
         filename: body.filename,
         mime: 'image/jpeg',
         key: `images/${imageFolder}/${body.filename}`,
