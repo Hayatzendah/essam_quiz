@@ -157,6 +157,20 @@ export class ExamsController {
     return this.service.getProviders();
   }
 
+  @Get('provider-skills')
+  @ApiOperation({
+    summary: 'Get available skills for a provider (with exam counts)',
+    description: 'إرجاع المهارات المتاحة مع عدد الامتحانات لكل مهارة - لعرض أقسام مثل Hören, Lesen, Schreiben...',
+  })
+  @ApiResponse({ status: 200, description: 'List of skills with exam counts' })
+  getProviderSkills(
+    @Query('provider') provider: string,
+    @Query('level') level?: string,
+  ) {
+    this.logger.log(`[GET /exams/provider-skills] provider=${provider}, level=${level}`);
+    return this.service.getProviderSkills(provider, level);
+  }
+
   // قائمة الامتحانات
   // - admin: جميع الامتحانات
   // - teacher: امتحاناته فقط

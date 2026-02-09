@@ -1014,6 +1014,7 @@ export class ExamsService {
               title: exam.title || '',
               level: exam.level || undefined,
               provider: exam.provider || undefined,
+              mainSkill: exam.mainSkill || undefined,
               timeLimitMin: exam.timeLimitMin || 0,
               sections,
             };
@@ -1226,6 +1227,66 @@ export class ExamsService {
     });
 
     return result;
+  }
+
+  /**
+   * إرجاع المهارات المتاحة مع عدد الامتحانات لكل مهارة (لمزود ومستوى معين)
+   */
+  async getProviderSkills(provider: string, level?: string) {
+    const filter: any = {
+      status: ExamStatusEnum.PUBLISHED,
+      examCategory: 'provider_exam',
+    };
+
+    if (provider) {
+      filter.provider = new RegExp(`^${provider}$`, 'i');
+    }
+    if (level) {
+      filter.level = level;
+    }
+
+    const exams = await this.model
+      .find(filter)
+      .select('mainSkill title')
+      .lean()
+      .exec();
+
+    // تجميع بحسب المهارة
+    const skillMap = new Map<string, number>();
+    for (const exam of exams) {
+      const skill = (exam as any).mainSkill || 'mixed';
+      skillMap.set(skill, (skillMap.get(skill) || 0) + 1);
+    }
+
+    // ترتيب المهارات بترتيب منطقي
+    const skillOrder = ['hoeren', 'lesen', 'schreiben', 'sprechen', 'grammar', 'mixed', 'misc', 'leben_test'];
+    const skillLabels: Record<string, string> = {
+      hoeren: 'Hören',
+      lesen: 'Lesen',
+      schreiben: 'Schreiben',
+      sprechen: 'Sprechen',
+      grammar: 'Grammatik',
+      mixed: 'Gemischt',
+      misc: 'Sonstiges',
+      leben_test: 'Leben in Deutschland',
+    };
+
+    const skills = Array.from(skillMap.entries())
+      .map(([skill, count]) => ({
+        skill,
+        label: skillLabels[skill] || skill,
+        count,
+      }))
+      .sort((a, b) => {
+        const aIdx = skillOrder.indexOf(a.skill);
+        const bIdx = skillOrder.indexOf(b.skill);
+        if (aIdx === -1 && bIdx === -1) return a.skill.localeCompare(b.skill);
+        if (aIdx === -1) return 1;
+        if (bIdx === -1) return -1;
+        return aIdx - bIdx;
+      });
+
+    return { provider, level: level || 'all', skills, totalExams: exams.length };
   }
 
   async findById(id: string, user?: ReqUser) {
