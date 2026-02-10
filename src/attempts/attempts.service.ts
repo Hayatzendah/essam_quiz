@@ -353,8 +353,12 @@ export class AttemptsService {
         ...rest
       } = item;
       
-      // إذا كان listeningClip من section وكان item له نفس listeningClipId، نحذف mediaSnapshot
-      if (sectionListeningClipId && item.listeningClipId && item.listeningClipId.toString() === sectionListeningClipId) {
+      // إذا كان هناك صوت على مستوى القسم، نحذف صوت السؤال (لتجنب ظهور مشغلين صوت)
+      const itemMatchesSectionAudio1 = sectionListeningClipId && (
+        (item.listeningClipId && item.listeningClipId.toString() === sectionListeningClipId) ||
+        (item.mediaSnapshot?.type === 'audio')
+      );
+      if (itemMatchesSectionAudio1) {
         const { mediaSnapshot, mediaType, mediaUrl, mediaMime, ...itemWithoutMedia } = rest;
         // استخدام optionsSnapshot إذا كان موجوداً (يحتوي على optionId)، وإلا استخدام optionsText
         const options = item.optionsSnapshot && item.optionsSnapshot.length > 0
@@ -857,8 +861,12 @@ export class AttemptsService {
       
       const { answerKeyBoolean, fillExact, regexList, correctOptionIndexes, answerKeyMatch, answerKeyReorder, matchPairs, ...rest } = item;
       
-      // إذا كان listeningClip من section وكان item له نفس listeningClipId، نحذف mediaSnapshot
-      if (sectionListeningClipId && item.listeningClipId && item.listeningClipId.toString() === sectionListeningClipId) {
+      // إذا كان هناك صوت على مستوى القسم، نحذف صوت السؤال (لتجنب ظهور مشغلين صوت)
+      const itemMatchesSectionAudio2 = sectionListeningClipId && (
+        (item.listeningClipId && item.listeningClipId.toString() === sectionListeningClipId) ||
+        (item.mediaSnapshot?.type === 'audio')
+      );
+      if (itemMatchesSectionAudio2) {
         const { mediaSnapshot, mediaType, mediaUrl, mediaMime, imagesSnapshot, ...itemWithoutMedia } = rest;
         
         // إضافة matchPairs و answerKeyMatch للأسئلة من نوع match (من snapshot إذا كان موجوداً)
