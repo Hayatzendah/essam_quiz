@@ -198,6 +198,10 @@ export class CreateQuestionWithExamDto {
   @IsString()
   section?: string;          // "Hoeren" أو "Hören – Teil 1"
 
+  @IsOptional()
+  @IsString()
+  sectionKey?: string;       // مثل "hoeren_teil1" - ربط السؤال بقسم عبر key
+
   @IsMongoId()
   @IsNotEmpty()
   examId: string;

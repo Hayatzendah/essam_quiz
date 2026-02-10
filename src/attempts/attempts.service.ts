@@ -353,11 +353,10 @@ export class AttemptsService {
         ...rest
       } = item;
       
-      // إذا كان هناك صوت على مستوى القسم، نحذف صوت السؤال (لتجنب ظهور مشغلين صوت)
-      const itemMatchesSectionAudio1 = sectionListeningClipId && (
-        (item.listeningClipId && item.listeningClipId.toString() === sectionListeningClipId) ||
-        (item.mediaSnapshot?.type === 'audio')
-      );
+      // إذا كان صوت السؤال هو نفس صوت القسم (نفس الـ ID)، نحذف صوت السؤال (لتجنب ظهور مشغلين صوت)
+      // لكن نحافظ على الصوت الخاص بكل سؤال (per-question audio) إذا كان مختلفاً
+      const itemMatchesSectionAudio1 = sectionListeningClipId &&
+        item.listeningClipId && item.listeningClipId.toString() === sectionListeningClipId;
       if (itemMatchesSectionAudio1) {
         const { mediaSnapshot, mediaType, mediaUrl, mediaMime, ...itemWithoutMedia } = rest;
         // استخدام optionsSnapshot إذا كان موجوداً (يحتوي على optionId)، وإلا استخدام optionsText
@@ -861,11 +860,10 @@ export class AttemptsService {
       
       const { answerKeyBoolean, fillExact, regexList, correctOptionIndexes, answerKeyMatch, answerKeyReorder, matchPairs, ...rest } = item;
       
-      // إذا كان هناك صوت على مستوى القسم، نحذف صوت السؤال (لتجنب ظهور مشغلين صوت)
-      const itemMatchesSectionAudio2 = sectionListeningClipId && (
-        (item.listeningClipId && item.listeningClipId.toString() === sectionListeningClipId) ||
-        (item.mediaSnapshot?.type === 'audio')
-      );
+      // إذا كان صوت السؤال هو نفس صوت القسم (نفس الـ ID)، نحذف صوت السؤال
+      // نحافظ على الصوت الخاص بكل سؤال إذا كان مختلفاً عن صوت القسم
+      const itemMatchesSectionAudio2 = sectionListeningClipId &&
+        item.listeningClipId && item.listeningClipId.toString() === sectionListeningClipId;
       if (itemMatchesSectionAudio2) {
         const { mediaSnapshot, mediaType, mediaUrl, mediaMime, imagesSnapshot, ...itemWithoutMedia } = rest;
         

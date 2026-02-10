@@ -731,7 +731,7 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, points, text, interactiveText, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, answerKeyMatch, answerKeyReorder, grammarTopicId, grammarLevel, grammarTopic, ...questionData } = dto;
+    const { examId, sectionTitle, section, sectionKey, points, text, interactiveText, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, answerKeyMatch, answerKeyReorder, grammarTopicId, grammarLevel, grammarTopic, ...questionData } = dto;
     
     // استخدام type إذا كان موجوداً، وإلا استخدام qType
     const questionType = type || qType;
@@ -934,10 +934,20 @@ export class QuestionsService {
       }
     });
 
-    // 6) البحث عن سكشن بالاسم (استخدام section أو sectionTitle)
-    let sectionIndex = cleanSections.findIndex(
-      (sec: any) => sec.name === sectionName || sec.title === sectionName,
-    );
+    // 6) البحث عن سكشن بـ sectionKey أولاً، ثم بالاسم
+    let sectionIndex = -1;
+    if (sectionKey) {
+      // البحث عبر key أولاً (الطريقة الجديدة)
+      sectionIndex = cleanSections.findIndex(
+        (sec: any) => sec.key === sectionKey,
+      );
+    }
+    if (sectionIndex === -1 && sectionName) {
+      // fallback: البحث بالاسم (الطريقة القديمة)
+      sectionIndex = cleanSections.findIndex(
+        (sec: any) => sec.name === sectionName || sec.title === sectionName,
+      );
+    }
 
     // Normalize skill قبل إضافته للـ section
     const normalizedSkill = skill ? normalizeSkill(skill) : undefined;
@@ -945,9 +955,11 @@ export class QuestionsService {
 
     if (sectionIndex === -1) {
       // 7) لو مش موجود → نضيف سكشن جديد فيه السؤال
+      const newKey = sectionKey || (finalSkill && teilNumber ? `${finalSkill}_teil${teilNumber}` : undefined);
       cleanSections.push({
-        name: sectionName,
-        title: sectionName, // للحفاظ على التوافق
+        key: newKey,
+        name: sectionName || (sectionKey ? sectionKey : undefined),
+        title: sectionName || (sectionKey ? sectionKey : undefined),
         skill: finalSkill,
         teilNumber: teilNumber,
         items: [

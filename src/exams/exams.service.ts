@@ -157,12 +157,8 @@ export class ExamsService {
     // إزالة null/undefined sections
     const cleanedSections = dto.sections.filter((s: any) => s !== null && s !== undefined);
 
-    // للامتحانات غير Grammar وغير Schreiben، يجب أن يكون هناك sections
-    // امتحانات الكتابة (Schreiben) تستخدم schreibenTaskId بدل sections
-    const isSchreibenExam = dto.mainSkill === 'schreiben' && dto.schreibenTaskId;
-    if (dto.examCategory !== ExamCategoryEnum.GRAMMAR && !isSchreibenExam && cleanedSections.length === 0) {
-      throw new BadRequestException('Exam must have at least one valid section (null sections are not allowed)');
-    }
+    // sections أصبحت اختيارية لجميع أنواع الامتحانات
+    // يمكن إضافة الأقسام لاحقاً عبر POST /exams/:examId/sections
     
     // تحققات إضافية على مستوى الخدمة
     for (const s of cleanedSections) {
@@ -314,11 +310,7 @@ export class ExamsService {
           return processedSection;
         });
       
-      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Schreiben)
-      const isSchreibenExam = dto.mainSkill === 'schreiben' && dto.schreibenTaskId;
-      if (dto.examCategory !== ExamCategoryEnum.GRAMMAR && !isSchreibenExam && processedDto.sections.length === 0) {
-        throw new BadRequestException('Exam must have at least one valid section');
-      }
+      // sections اختيارية - يمكن أن تكون فارغة
     }
     
     // Ensure sections is always an array (never null or undefined)
@@ -2897,7 +2889,7 @@ export class ExamsService {
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds } })
-      .select('prompt text qType media images difficulty tags status')
+      .select('prompt text qType media images difficulty tags status listeningClipId audioUrl')
       .lean();
 
     const questionMap = new Map(questions.map((q: any) => [q._id.toString(), q]));
@@ -2947,6 +2939,8 @@ export class ExamsService {
         difficulty: q?.difficulty,
         media: q?.media,
         images: q?.images,
+        listeningClipId: q?.listeningClipId,
+        audioUrl: q?.audioUrl,
         points: item.points ?? 1,
         status,
         score,
