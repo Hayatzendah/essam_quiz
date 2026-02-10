@@ -2806,9 +2806,39 @@ export class ExamsService {
       }
     }
 
+    // جلب الأسئلة لحساب عدد التمارين (Übungen) حسب listeningClipId
+    const allQuestionIds = (exam.sections || [])
+      .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
+      .filter(Boolean);
+
+    let questionClipMap = new Map<string, string | null>();
+    if (allQuestionIds.length > 0) {
+      const allQuestions = await this.questionModel
+        .find({ _id: { $in: allQuestionIds } })
+        .select('listeningClipId')
+        .lean();
+      for (const q of allQuestions) {
+        const clipId = q.listeningClipId ? q.listeningClipId.toString() : null;
+        questionClipMap.set((q as any)._id.toString(), clipId);
+      }
+    }
+
     const sections = (exam.sections || []).map((s: any, index: number) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
       const questionCount = s.items?.length || 0;
+
+      // حساب عدد التمارين (مجموعات listeningClipId الفريدة + أسئلة بدون صوت)
+      const clipIds = new Set<string>();
+      let noAudioCount = 0;
+      for (const item of s.items || []) {
+        const clipId = questionClipMap.get(item.questionId?.toString());
+        if (clipId) {
+          clipIds.add(clipId);
+        } else {
+          noAudioCount++;
+        }
+      }
+      const exerciseCount = clipIds.size + noAudioCount;
 
       // حساب التقدم
       let answered = 0;
@@ -2842,8 +2872,8 @@ export class ExamsService {
         skill: s.skill,
         teilNumber: s.teilNumber,
         questionCount,
+        exerciseCount,
         order: s.order ?? index,
-        listeningAudioId: s.listeningAudioId,
         timeLimitMin: s.timeLimitMin,
         progress: {
           answered,
@@ -2880,16 +2910,17 @@ export class ExamsService {
       return {
         sectionKey,
         sectionTitle: section.title || section.name,
-        listeningAudioId: section.listeningAudioId,
-        questions: [],
+        exercises: [],
+        exerciseCount: 0,
       };
     }
 
-    // جلب تفاصيل الأسئلة
+    // جلب تفاصيل الأسئلة مع populate لبيانات الكليب الصوتي
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds } })
       .select('prompt text qType media images difficulty tags status listeningClipId audioUrl')
+      .populate('listeningClipId', 'title audioUrl teil')
       .lean();
 
     const questionMap = new Map(questions.map((q: any) => [q._id.toString(), q]));
@@ -2912,49 +2943,173 @@ export class ExamsService {
       }
     }
 
-    const questionsList = items.map((item: any, index: number) => {
-      const q = questionMap.get(item.questionId?.toString());
-      const attemptItem = attemptItemMap.get(item.questionId?.toString());
+    // Helper: تحديد حالة السؤال
+    const getQuestionStatus = (questionId: string) => {
+      const attemptItem = attemptItemMap.get(questionId);
+      if (!attemptItem) return { status: 'unanswered', score: undefined };
+      const hasAnswer =
+        attemptItem.studentAnswerText !== undefined ||
+        attemptItem.studentAnswerIndexes !== undefined ||
+        attemptItem.studentAnswerBoolean !== undefined ||
+        attemptItem.studentAnswerMatch !== undefined ||
+        attemptItem.studentReorderAnswer !== undefined ||
+        attemptItem.studentInteractiveAnswers !== undefined;
+      return {
+        status: hasAnswer ? 'answered' : 'unanswered',
+        score: hasAnswer ? attemptItem.autoScore : undefined,
+      };
+    };
 
-      // تحديد الحالة
-      let status = 'unanswered';
-      let score: number | undefined;
-      if (attemptItem) {
-        const hasAnswer =
-          attemptItem.studentAnswerText !== undefined ||
-          attemptItem.studentAnswerIndexes !== undefined ||
-          attemptItem.studentAnswerBoolean !== undefined ||
-          attemptItem.studentAnswerMatch !== undefined ||
-          attemptItem.studentReorderAnswer !== undefined ||
-          attemptItem.studentInteractiveAnswers !== undefined;
-        status = hasAnswer ? 'answered' : 'unanswered';
-        if (hasAnswer) score = attemptItem.autoScore;
+    // تجميع الأسئلة في تمارين (Übungen) حسب listeningClipId
+    // الأسئلة بنفس الـ listeningClipId = تمرين واحد (صوت مشترك + أسئلة)
+    const exerciseMap = new Map<string, { clipData: any; questions: any[] }>();
+    const exerciseOrder: string[] = []; // ترتيب التمارين حسب الظهور الأول
+    const noAudioQuestions: any[] = [];
+
+    for (const item of items) {
+      const q = questionMap.get(item.questionId?.toString());
+      if (!q) continue;
+
+      // استخراج بيانات الكليب (قد يكون populated object أو ObjectId)
+      let clipId: string | null = null;
+      let clipData: any = null;
+
+      if (q.listeningClipId) {
+        if (typeof q.listeningClipId === 'object' && q.listeningClipId._id) {
+          // populated
+          clipId = q.listeningClipId._id.toString();
+          clipData = q.listeningClipId;
+        } else {
+          // غير populated (ObjectId فقط)
+          clipId = q.listeningClipId.toString();
+        }
       }
 
-      return {
-        index: index + 1,
+      const { status, score } = getQuestionStatus(item.questionId?.toString());
+
+      const questionData = {
         questionId: item.questionId,
-        prompt: q?.prompt || q?.text || '',
-        qType: q?.qType,
-        difficulty: q?.difficulty,
-        media: q?.media,
-        images: q?.images,
-        listeningClipId: q?.listeningClipId,
-        audioUrl: q?.audioUrl,
+        prompt: q.prompt || q.text || '',
+        qType: q.qType,
+        difficulty: q.difficulty,
+        media: q.media,
+        images: q.images,
         points: item.points ?? 1,
         status,
         score,
       };
-    });
+
+      if (clipId) {
+        if (!exerciseMap.has(clipId)) {
+          exerciseMap.set(clipId, { clipData, questions: [] });
+          exerciseOrder.push(clipId);
+        }
+        exerciseMap.get(clipId)!.questions.push(questionData);
+      } else {
+        noAudioQuestions.push(questionData);
+      }
+    }
+
+    // بناء مصفوفة التمارين
+    const exercises: any[] = [];
+    let exerciseIndex = 1;
+    const teilNum = section.teilNumber || 1;
+
+    // تمارين مع صوت (بترتيب الظهور الأول)
+    for (const clipId of exerciseOrder) {
+      const group = exerciseMap.get(clipId)!;
+      const answered = group.questions.filter((q: any) => q.status === 'answered').length;
+      const total = group.questions.length;
+
+      exercises.push({
+        exerciseNumber: `${teilNum}.${exerciseIndex}`,
+        title: group.clipData?.title || group.questions[0]?.prompt || '',
+        listeningClipId: clipId,
+        audioUrl: group.clipData?.audioUrl || null,
+        questionCount: total,
+        progress: {
+          answered,
+          total,
+          percent: total > 0 ? Math.round((answered / total) * 100) : 0,
+        },
+        questions: group.questions,
+      });
+      exerciseIndex++;
+    }
+
+    // أسئلة بدون صوت → كل سؤال تمرين لحاله
+    for (const qData of noAudioQuestions) {
+      exercises.push({
+        exerciseNumber: `${teilNum}.${exerciseIndex}`,
+        title: qData.prompt,
+        listeningClipId: null,
+        audioUrl: null,
+        questionCount: 1,
+        progress: {
+          answered: qData.status === 'answered' ? 1 : 0,
+          total: 1,
+          percent: qData.status === 'answered' ? 100 : 0,
+        },
+        questions: [qData],
+      });
+      exerciseIndex++;
+    }
 
     return {
       sectionKey,
       sectionTitle: section.title || section.name,
       skill: section.skill,
       teilNumber: section.teilNumber,
-      listeningAudioId: section.listeningAudioId,
       timeLimitMin: section.timeLimitMin,
-      questions: questionsList,
+      exerciseCount: exercises.length,
+      exercises,
+    };
+  }
+
+  /**
+   * جلب التسجيلات الصوتية المستخدمة في قسم معين
+   * لإعادة استخدامها عند إنشاء أسئلة جديدة
+   */
+  async getSectionClips(examId: string, sectionKey: string) {
+    const exam = await this.model.findById(examId).lean();
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    const section = this.findSectionByKey(exam, sectionKey);
+    const items = section.items || [];
+
+    if (items.length === 0) {
+      return { sectionKey, clips: [] };
+    }
+
+    // جلب الأسئلة مع populate لبيانات الكليب
+    const questionIds = items.map((item: any) => item.questionId);
+    const questions = await this.questionModel
+      .find({ _id: { $in: questionIds }, listeningClipId: { $exists: true, $ne: null } })
+      .select('listeningClipId')
+      .populate('listeningClipId', 'title audioUrl teil')
+      .lean();
+
+    // استخراج الكليبات الفريدة
+    const clipMap = new Map<string, any>();
+    for (const q of questions) {
+      if (!q.listeningClipId) continue;
+      const clip = q.listeningClipId as any;
+      const clipId = clip._id?.toString() || clip.toString();
+      if (!clipMap.has(clipId)) {
+        clipMap.set(clipId, {
+          listeningClipId: clipId,
+          title: clip.title || '',
+          audioUrl: clip.audioUrl || '',
+          teil: clip.teil,
+          questionCount: 0,
+        });
+      }
+      clipMap.get(clipId)!.questionCount++;
+    }
+
+    return {
+      sectionKey,
+      clips: Array.from(clipMap.values()),
     };
   }
 }

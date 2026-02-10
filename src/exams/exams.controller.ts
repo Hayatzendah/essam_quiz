@@ -356,6 +356,23 @@ export class ExamsController {
     return this.service.getSectionQuestions(examId, sectionKey, userId);
   }
 
+  // جلب التسجيلات الصوتية الموجودة في قسم معين (لإعادة استخدامها)
+  @Get(':examId/sections/:sectionKey/clips')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Get existing listening clips in a section',
+    description: 'جلب التسجيلات الصوتية المستخدمة في قسم معين - لإعادة ربطها بأسئلة جديدة',
+  })
+  @ApiResponse({ status: 200, description: 'Listening clips in the section' })
+  getSectionClips(
+    @Param('examId') examId: string,
+    @Param('sectionKey') sectionKey: string,
+  ) {
+    this.logger.log(`[GET /exams/${examId}/sections/${sectionKey}/clips] Request received`);
+    return this.service.getSectionClips(examId, sectionKey);
+  }
+
   // إضافة قسم جديد للامتحان
   @Post(':examId/sections')
   @UseGuards(JwtAuthGuard, RolesGuard)
