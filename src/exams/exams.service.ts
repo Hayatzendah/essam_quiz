@@ -12,11 +12,15 @@ import { CreatePracticeModeDto, PracticeMode } from './dto/create-practice-mode.
 import { QueryExamDto } from './dto/query-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
-import { Exam, ExamDocument } from './schemas/exam.schema';
+import { Exam, ExamDocument, ExamSection } from './schemas/exam.schema';
 import { Question, QuestionDocument, QuestionStatus, QuestionType } from '../questions/schemas/question.schema';
+import { Attempt, AttemptDocument } from '../attempts/schemas/attempt.schema';
 import { ExamCategoryEnum, ExamStatusEnum } from '../common/enums';
 import { ProviderEnum } from '../common/enums/provider.enum';
 import { normalizeProvider } from '../common/utils/provider-normalizer.util';
+import { AddSectionDto } from './dto/add-section.dto';
+import { UpdateSectionDto } from './dto/update-section.dto';
+import { AddQuestionToSectionDto, ReorderSectionQuestionsDto } from './dto/section-question.dto';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -27,6 +31,7 @@ export class ExamsService {
   constructor(
     @InjectModel(Exam.name) private readonly model: Model<ExamDocument>,
     @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
+    @InjectModel(Attempt.name) private readonly attemptModel: Model<AttemptDocument>,
   ) {}
 
   private assertTeacherOrAdmin(user: ReqUser) {
@@ -2450,5 +2455,512 @@ export class ExamsService {
     }
 
     return debugInfo;
+  }
+
+  // =====================================================
+  // ============ Section Management (Admin) =============
+  // =====================================================
+
+  /**
+   * توليد key فريد للقسم
+   */
+  private generateSectionKey(title?: string, skill?: string, teilNumber?: number): string {
+    if (skill && teilNumber) return `${skill}_teil${teilNumber}`;
+    if (title) return title.toLowerCase().replace(/[^a-z0-9äöüß]+/g, '_').replace(/(^_|_$)/g, '');
+    return `section_${Date.now()}`;
+  }
+
+  /**
+   * البحث عن قسم بواسطة key
+   */
+  private findSectionByKey(exam: any, sectionKey: string): any {
+    const section = exam.sections?.find((s: any) => {
+      const k = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+      return k === sectionKey;
+    });
+    if (!section) {
+      throw new NotFoundException(`Section with key "${sectionKey}" not found in exam`);
+    }
+    return section;
+  }
+
+  /**
+   * إضافة قسم جديد للامتحان
+   */
+  async addSection(examId: string, dto: AddSectionDto, user: ReqUser) {
+    this.assertTeacherOrAdmin(user);
+
+    const exam = await this.model.findById(examId);
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    // التحقق من الملكية
+    const isOwner = exam.ownerId?.toString() === user.userId;
+    if (user.role !== 'admin' && !isOwner) {
+      throw new ForbiddenException('Only owner or admin can modify this exam');
+    }
+
+    // توليد key إذا لم يكن موجود
+    const key = dto.key || this.generateSectionKey(dto.title, dto.skill, dto.teilNumber);
+
+    // التحقق من عدم تكرار الـ key
+    const existingKeys = (exam.sections || []).map((s: any) =>
+      s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber),
+    );
+    if (existingKeys.includes(key)) {
+      throw new BadRequestException(`Section key "${key}" already exists in this exam`);
+    }
+
+    const newSection: any = {
+      key,
+      title: dto.title,
+      name: dto.title, // للتوافق مع الكود القديم
+      description: dto.description,
+      skill: dto.skill,
+      teilNumber: dto.teilNumber,
+      timeLimitMin: dto.timeLimitMin,
+      quota: dto.quota,
+      difficultyDistribution: dto.difficultyDistribution,
+      listeningAudioId: dto.listeningAudioId ? new Types.ObjectId(dto.listeningAudioId) : undefined,
+      randomize: dto.randomize,
+      tags: dto.tags,
+      order: dto.order ?? (exam.sections?.length || 0),
+      items: [],
+    };
+
+    exam.sections = exam.sections || [];
+    exam.sections.push(newSection);
+    exam.version = (exam.version || 1) + 1;
+    await exam.save();
+
+    this.logger.log(`[addSection] Added section "${key}" to exam ${examId}`);
+    return newSection;
+  }
+
+  /**
+   * تحديث بيانات قسم
+   */
+  async updateSection(examId: string, sectionKey: string, dto: UpdateSectionDto, user: ReqUser) {
+    this.assertTeacherOrAdmin(user);
+
+    const exam = await this.model.findById(examId);
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    const isOwner = exam.ownerId?.toString() === user.userId;
+    if (user.role !== 'admin' && !isOwner) {
+      throw new ForbiddenException('Only owner or admin can modify this exam');
+    }
+
+    const sectionIndex = (exam.sections || []).findIndex((s: any) => {
+      const k = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+      return k === sectionKey;
+    });
+    if (sectionIndex === -1) {
+      throw new NotFoundException(`Section with key "${sectionKey}" not found`);
+    }
+
+    // إذا تم تغيير الـ key، تحقق من عدم التكرار
+    if (dto.key && dto.key !== sectionKey) {
+      const existingKeys = exam.sections
+        .filter((_: any, i: number) => i !== sectionIndex)
+        .map((s: any) => s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber));
+      if (existingKeys.includes(dto.key)) {
+        throw new BadRequestException(`Section key "${dto.key}" already exists`);
+      }
+    }
+
+    const section = exam.sections[sectionIndex] as any;
+
+    // دمج التحديثات
+    if (dto.title !== undefined) { section.title = dto.title; section.name = dto.title; }
+    if (dto.key !== undefined) section.key = dto.key;
+    if (dto.description !== undefined) section.description = dto.description;
+    if (dto.skill !== undefined) section.skill = dto.skill;
+    if (dto.teilNumber !== undefined) section.teilNumber = dto.teilNumber;
+    if (dto.timeLimitMin !== undefined) section.timeLimitMin = dto.timeLimitMin;
+    if (dto.quota !== undefined) section.quota = dto.quota;
+    if (dto.difficultyDistribution !== undefined) section.difficultyDistribution = dto.difficultyDistribution;
+    if (dto.listeningAudioId !== undefined) section.listeningAudioId = dto.listeningAudioId ? new Types.ObjectId(dto.listeningAudioId) : undefined;
+    if (dto.randomize !== undefined) section.randomize = dto.randomize;
+    if (dto.tags !== undefined) section.tags = dto.tags;
+    if (dto.order !== undefined) section.order = dto.order;
+
+    exam.markModified('sections');
+    exam.version = (exam.version || 1) + 1;
+    await exam.save();
+
+    this.logger.log(`[updateSection] Updated section "${sectionKey}" in exam ${examId}`);
+    return section;
+  }
+
+  /**
+   * حذف قسم من الامتحان
+   */
+  async removeSection(examId: string, sectionKey: string, user: ReqUser) {
+    this.assertTeacherOrAdmin(user);
+
+    const exam = await this.model.findById(examId);
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    const isOwner = exam.ownerId?.toString() === user.userId;
+    if (user.role !== 'admin' && !isOwner) {
+      throw new ForbiddenException('Only owner or admin can modify this exam');
+    }
+
+    const beforeCount = exam.sections?.length || 0;
+    exam.sections = (exam.sections || []).filter((s: any) => {
+      const k = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+      return k !== sectionKey;
+    });
+
+    if (exam.sections.length === beforeCount) {
+      throw new NotFoundException(`Section with key "${sectionKey}" not found`);
+    }
+
+    exam.markModified('sections');
+    exam.version = (exam.version || 1) + 1;
+    await exam.save();
+
+    this.logger.log(`[removeSection] Removed section "${sectionKey}" from exam ${examId}`);
+    return { deleted: true, sectionKey };
+  }
+
+  /**
+   * جلب أقسام الامتحان للأدمن (مع تفاصيل الأسئلة)
+   */
+  async getAdminSections(examId: string, user: ReqUser) {
+    this.assertTeacherOrAdmin(user);
+
+    const exam = await this.model.findById(examId).lean();
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    const sections = (exam.sections || []).map((s: any, index: number) => {
+      const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+      return {
+        key,
+        title: s.title || s.name,
+        description: s.description,
+        skill: s.skill,
+        teilNumber: s.teilNumber,
+        timeLimitMin: s.timeLimitMin,
+        quota: s.quota,
+        difficultyDistribution: s.difficultyDistribution,
+        listeningAudioId: s.listeningAudioId,
+        randomize: s.randomize,
+        tags: s.tags,
+        order: s.order ?? index,
+        questionCount: s.items?.length || 0,
+        items: (s.items || []).map((item: any) => ({
+          questionId: item.questionId,
+          points: item.points ?? 1,
+        })),
+      };
+    });
+
+    // ترتيب حسب order ثم teilNumber
+    sections.sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0));
+
+    return { examId, title: exam.title, sections };
+  }
+
+  /**
+   * إضافة سؤال لقسم معين
+   */
+  async addQuestionToSection(examId: string, sectionKey: string, dto: AddQuestionToSectionDto, user: ReqUser) {
+    this.assertTeacherOrAdmin(user);
+
+    const exam = await this.model.findById(examId);
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    const isOwner = exam.ownerId?.toString() === user.userId;
+    if (user.role !== 'admin' && !isOwner) {
+      throw new ForbiddenException('Only owner or admin can modify this exam');
+    }
+
+    // التحقق من وجود السؤال
+    const question = await this.questionModel.findById(dto.questionId);
+    if (!question) throw new NotFoundException(`Question ${dto.questionId} not found`);
+
+    // البحث عن القسم
+    const section = this.findSectionByKey(exam, sectionKey) as any;
+
+    // التحقق من عدم تكرار السؤال في القسم
+    const alreadyExists = (section.items || []).some(
+      (item: any) => item.questionId?.toString() === dto.questionId,
+    );
+    if (alreadyExists) {
+      throw new BadRequestException(`Question ${dto.questionId} already exists in section "${sectionKey}"`);
+    }
+
+    section.items = section.items || [];
+    section.items.push({
+      questionId: new Types.ObjectId(dto.questionId),
+      points: dto.points ?? 1,
+    });
+
+    exam.markModified('sections');
+    exam.version = (exam.version || 1) + 1;
+    await exam.save();
+
+    // ربط السؤال بالامتحان (metadata)
+    await this.questionModel.findByIdAndUpdate(dto.questionId, {
+      examId: new Types.ObjectId(examId),
+      sectionTitle: section.title || section.name,
+    });
+
+    this.logger.log(`[addQuestionToSection] Added question ${dto.questionId} to section "${sectionKey}" in exam ${examId}`);
+    return { questionId: dto.questionId, points: dto.points ?? 1, sectionKey };
+  }
+
+  /**
+   * حذف سؤال من قسم
+   */
+  async removeQuestionFromSection(examId: string, sectionKey: string, questionId: string, user: ReqUser) {
+    this.assertTeacherOrAdmin(user);
+
+    const exam = await this.model.findById(examId);
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    const isOwner = exam.ownerId?.toString() === user.userId;
+    if (user.role !== 'admin' && !isOwner) {
+      throw new ForbiddenException('Only owner or admin can modify this exam');
+    }
+
+    const section = this.findSectionByKey(exam, sectionKey) as any;
+
+    const beforeCount = section.items?.length || 0;
+    section.items = (section.items || []).filter(
+      (item: any) => item.questionId?.toString() !== questionId,
+    );
+
+    if (section.items.length === beforeCount) {
+      throw new NotFoundException(`Question ${questionId} not found in section "${sectionKey}"`);
+    }
+
+    exam.markModified('sections');
+    exam.version = (exam.version || 1) + 1;
+    await exam.save();
+
+    this.logger.log(`[removeQuestionFromSection] Removed question ${questionId} from section "${sectionKey}" in exam ${examId}`);
+    return { removed: true, questionId, sectionKey };
+  }
+
+  /**
+   * إعادة ترتيب الأسئلة في قسم
+   */
+  async reorderSectionQuestions(examId: string, sectionKey: string, dto: ReorderSectionQuestionsDto, user: ReqUser) {
+    this.assertTeacherOrAdmin(user);
+
+    const exam = await this.model.findById(examId);
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    const isOwner = exam.ownerId?.toString() === user.userId;
+    if (user.role !== 'admin' && !isOwner) {
+      throw new ForbiddenException('Only owner or admin can modify this exam');
+    }
+
+    const section = this.findSectionByKey(exam, sectionKey) as any;
+    const currentItems = section.items || [];
+
+    // التحقق من تطابق الـ IDs
+    const currentIds = currentItems.map((item: any) => item.questionId?.toString());
+    const newIds = dto.questionIds;
+
+    if (currentIds.length !== newIds.length) {
+      throw new BadRequestException('questionIds count must match current questions count in section');
+    }
+
+    for (const id of newIds) {
+      if (!currentIds.includes(id)) {
+        throw new BadRequestException(`Question ${id} not found in section "${sectionKey}"`);
+      }
+    }
+
+    // إعادة الترتيب
+    const itemMap = new Map(currentItems.map((item: any) => [item.questionId?.toString(), item]));
+    section.items = newIds.map((id: string) => itemMap.get(id));
+
+    exam.markModified('sections');
+    exam.version = (exam.version || 1) + 1;
+    await exam.save();
+
+    this.logger.log(`[reorderSectionQuestions] Reordered questions in section "${sectionKey}" in exam ${examId}`);
+    return section.items;
+  }
+
+  // =====================================================
+  // ============ Section Navigation (Student) ===========
+  // =====================================================
+
+  /**
+   * نظرة عامة على الأقسام مع تقدم الطالب
+   */
+  async getSectionsOverview(examId: string, userId?: string) {
+    const exam = await this.model.findById(examId).lean();
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    // جلب آخر محاولة للطالب (إذا كان مسجل دخول)
+    let attemptItems: any[] = [];
+    if (userId) {
+      const latestAttempt = await this.attemptModel
+        .findOne({
+          examId: new Types.ObjectId(examId),
+          studentId: new Types.ObjectId(userId),
+        })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      if (latestAttempt) {
+        attemptItems = latestAttempt.items || [];
+      }
+    }
+
+    const sections = (exam.sections || []).map((s: any, index: number) => {
+      const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+      const questionCount = s.items?.length || 0;
+
+      // حساب التقدم
+      let answered = 0;
+      if (attemptItems.length > 0) {
+        const sectionItemIds = (s.items || []).map((item: any) => item.questionId?.toString());
+        answered = attemptItems.filter((ai: any) => {
+          if (ai.sectionKey === key) {
+            return ai.studentAnswerText !== undefined ||
+              ai.studentAnswerIndexes !== undefined ||
+              ai.studentAnswerBoolean !== undefined ||
+              ai.studentAnswerMatch !== undefined ||
+              ai.studentReorderAnswer !== undefined ||
+              ai.studentInteractiveAnswers !== undefined;
+          }
+          // fallback: تطابق بواسطة questionId
+          if (!ai.sectionKey && sectionItemIds.includes(ai.questionId?.toString())) {
+            return ai.studentAnswerText !== undefined ||
+              ai.studentAnswerIndexes !== undefined ||
+              ai.studentAnswerBoolean !== undefined ||
+              ai.studentAnswerMatch !== undefined ||
+              ai.studentReorderAnswer !== undefined ||
+              ai.studentInteractiveAnswers !== undefined;
+          }
+          return false;
+        }).length;
+      }
+
+      return {
+        key,
+        title: s.title || s.name,
+        skill: s.skill,
+        teilNumber: s.teilNumber,
+        questionCount,
+        order: s.order ?? index,
+        listeningAudioId: s.listeningAudioId,
+        timeLimitMin: s.timeLimitMin,
+        progress: {
+          answered,
+          total: questionCount,
+          percent: questionCount > 0 ? Math.round((answered / questionCount) * 100) : 0,
+        },
+      };
+    });
+
+    // ترتيب حسب order ثم teilNumber
+    sections.sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0));
+
+    return {
+      examId: (exam as any)._id,
+      title: exam.title,
+      level: exam.level,
+      provider: exam.provider,
+      mainSkill: exam.mainSkill,
+      sections,
+    };
+  }
+
+  /**
+   * جلب أسئلة قسم معين مع تقدم الطالب
+   */
+  async getSectionQuestions(examId: string, sectionKey: string, userId?: string) {
+    const exam = await this.model.findById(examId).lean();
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    const section = this.findSectionByKey(exam, sectionKey);
+    const items = section.items || [];
+
+    if (items.length === 0) {
+      return {
+        sectionKey,
+        sectionTitle: section.title || section.name,
+        listeningAudioId: section.listeningAudioId,
+        questions: [],
+      };
+    }
+
+    // جلب تفاصيل الأسئلة
+    const questionIds = items.map((item: any) => item.questionId);
+    const questions = await this.questionModel
+      .find({ _id: { $in: questionIds } })
+      .select('prompt text qType media images difficulty tags status')
+      .lean();
+
+    const questionMap = new Map(questions.map((q: any) => [q._id.toString(), q]));
+
+    // جلب بيانات التقدم من آخر محاولة
+    let attemptItemMap = new Map<string, any>();
+    if (userId) {
+      const latestAttempt = await this.attemptModel
+        .findOne({
+          examId: new Types.ObjectId(examId),
+          studentId: new Types.ObjectId(userId),
+        })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      if (latestAttempt) {
+        for (const ai of latestAttempt.items || []) {
+          attemptItemMap.set(ai.questionId?.toString(), ai);
+        }
+      }
+    }
+
+    const questionsList = items.map((item: any, index: number) => {
+      const q = questionMap.get(item.questionId?.toString());
+      const attemptItem = attemptItemMap.get(item.questionId?.toString());
+
+      // تحديد الحالة
+      let status = 'unanswered';
+      let score: number | undefined;
+      if (attemptItem) {
+        const hasAnswer =
+          attemptItem.studentAnswerText !== undefined ||
+          attemptItem.studentAnswerIndexes !== undefined ||
+          attemptItem.studentAnswerBoolean !== undefined ||
+          attemptItem.studentAnswerMatch !== undefined ||
+          attemptItem.studentReorderAnswer !== undefined ||
+          attemptItem.studentInteractiveAnswers !== undefined;
+        status = hasAnswer ? 'answered' : 'unanswered';
+        if (hasAnswer) score = attemptItem.autoScore;
+      }
+
+      return {
+        index: index + 1,
+        questionId: item.questionId,
+        prompt: q?.prompt || q?.text || '',
+        qType: q?.qType,
+        difficulty: q?.difficulty,
+        media: q?.media,
+        images: q?.images,
+        points: item.points ?? 1,
+        status,
+        score,
+      };
+    });
+
+    return {
+      sectionKey,
+      sectionTitle: section.title || section.name,
+      skill: section.skill,
+      teilNumber: section.teilNumber,
+      listeningAudioId: section.listeningAudioId,
+      timeLimitMin: section.timeLimitMin,
+      questions: questionsList,
+    };
   }
 }

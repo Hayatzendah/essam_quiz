@@ -1050,6 +1050,7 @@ export class AttemptsService {
         const questionMap = new Map(sectionQuestions.map((q: any) => [String(q._id), q]));
 
         // Build items array maintaining original order
+        const sectionKey = section.key || section.name || `section_${exam.sections.indexOf(section)}`;
         const sectionItems: AttemptItem[] = [];
         for (const questionId of sectionQuestionIds) {
           const question = questionMap.get(String(questionId));
@@ -1059,6 +1060,7 @@ export class AttemptsService {
               questionId,
               qType: question.qType,
               points: itemInfo?.points || 1,
+              sectionKey,
             } as AttemptItem);
           } else {
             this.logger.warn(
@@ -1096,11 +1098,13 @@ export class AttemptsService {
           attemptCount,
           (exam as any).mainSkill, // FIX: تمرير exam.mainSkill للفلترة الصحيحة
         );
+        const quotaSectionKey = section.key || section.name || `section_${exam.sections.indexOf(section)}`;
         for (const q of selectedQuestions) {
           items.push({
             questionId: q._id,
             qType: q.qType,
             points: 1,
+            sectionKey: quotaSectionKey,
           } as AttemptItem);
         }
       }

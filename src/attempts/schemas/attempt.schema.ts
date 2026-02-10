@@ -118,6 +118,10 @@ export class AttemptItem {
     durationMs?: number;
   }; // تسجيل صوت الطالب للإجابة
 
+  // ربط العنصر بقسم معين في الامتحان (لتتبع التقدم حسب القسم)
+  @Prop({ type: String, trim: true })
+  sectionKey?: string;
+
   // نتيجة هذا السؤال
   @Prop({ type: Number, default: 0 }) autoScore: number;
   @Prop({ type: Number, default: 0 }) manualScore: number;

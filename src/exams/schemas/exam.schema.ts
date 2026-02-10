@@ -86,6 +86,9 @@ export class ExamSection {
   @Prop({ type: Boolean, default: false })
   randomize?: boolean;
 
+  @Prop({ type: Number, default: 0 })
+  order?: number; // ترتيب القسم في الشريط الجانبي
+
   // للأسئلة السمعية (Hören) - معرف ملف الصوت
   @Prop({ type: Types.ObjectId, ref: 'ListeningClip', required: false })
   listeningAudioId?: Types.ObjectId;

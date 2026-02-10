@@ -24,6 +24,9 @@ import { QueryExamDto } from './dto/query-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
 import { StartLebenExamDto } from './dto/start-leben-exam.dto';
 import { UpdateSectionAudioDto } from './dto/update-section-audio.dto';
+import { AddSectionDto } from './dto/add-section.dto';
+import { UpdateSectionDto } from './dto/update-section.dto';
+import { AddQuestionToSectionDto, ReorderSectionQuestionsDto } from './dto/section-question.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -301,6 +304,168 @@ export class ExamsController {
       `[POST /exams/fix-all-empty-sections] Request received - userId: ${req?.user?.userId}, role: ${req?.user?.role}`,
     );
     return this.service.fixAllExamsWithEmptySections(req.user);
+  }
+
+  // =====================================================
+  // ============ Section Management (Admin) =============
+  // =====================================================
+
+  // جلب أقسام الامتحان (admin/teacher)
+  @Get(':examId/sections')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Get exam sections with question counts (admin/teacher)',
+    description: 'جلب أقسام الامتحان مع عدد الأسئلة لكل قسم - admin/teacher فقط',
+  })
+  @ApiResponse({ status: 200, description: 'Sections list' })
+  getExamSections(@Param('examId') examId: string, @Req() req: any) {
+    this.logger.log(`[GET /exams/${examId}/sections] Request received`);
+    return this.service.getAdminSections(examId, req.user);
+  }
+
+  // نظرة عامة على الأقسام للطالب (مع التقدم)
+  @Get(':examId/sections/overview')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get sections overview with student progress',
+    description: 'نظرة عامة على أقسام الامتحان مع تقدم الطالب - يتطلب JWT لعرض التقدم',
+  })
+  @ApiResponse({ status: 200, description: 'Sections overview with progress' })
+  getSectionsOverview(@Param('examId') examId: string, @Req() req: any) {
+    this.logger.log(`[GET /exams/${examId}/sections/overview] Request received`);
+    const userId = req.user?.userId || req.user?.sub;
+    return this.service.getSectionsOverview(examId, userId);
+  }
+
+  // جلب أسئلة قسم معين (للطالب)
+  @Get(':examId/sections/:sectionKey/questions')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get questions for a specific section with progress',
+    description: 'جلب أسئلة قسم معين مع تقدم الطالب - يتطلب JWT لعرض التقدم',
+  })
+  @ApiResponse({ status: 200, description: 'Section questions with progress' })
+  getSectionQuestions(
+    @Param('examId') examId: string,
+    @Param('sectionKey') sectionKey: string,
+    @Req() req: any,
+  ) {
+    this.logger.log(`[GET /exams/${examId}/sections/${sectionKey}/questions] Request received`);
+    const userId = req.user?.userId || req.user?.sub;
+    return this.service.getSectionQuestions(examId, sectionKey, userId);
+  }
+
+  // إضافة قسم جديد للامتحان
+  @Post(':examId/sections')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Add a new section to exam',
+    description: 'إضافة قسم (Teil) جديد للامتحان - يتم توليد key تلقائياً إذا لم يُحدد',
+  })
+  @ApiResponse({ status: 201, description: 'Section added successfully' })
+  addSection(
+    @Param('examId') examId: string,
+    @Body() dto: AddSectionDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(`[POST /exams/${examId}/sections] Request received - title: ${dto.title}`);
+    return this.service.addSection(examId, dto, req.user);
+  }
+
+  // تحديث بيانات قسم
+  @Patch(':examId/sections/:sectionKey')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Update section metadata',
+    description: 'تحديث بيانات قسم معين (العنوان، المهارة، الوقت، إلخ)',
+  })
+  @ApiResponse({ status: 200, description: 'Section updated successfully' })
+  updateSection(
+    @Param('examId') examId: string,
+    @Param('sectionKey') sectionKey: string,
+    @Body() dto: UpdateSectionDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(`[PATCH /exams/${examId}/sections/${sectionKey}] Request received`);
+    return this.service.updateSection(examId, sectionKey, dto, req.user);
+  }
+
+  // حذف قسم
+  @Delete(':examId/sections/:sectionKey')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Remove a section from exam',
+    description: 'حذف قسم من الامتحان - الأسئلة تبقى في قاعدة البيانات',
+  })
+  @ApiResponse({ status: 200, description: 'Section removed successfully' })
+  removeSection(
+    @Param('examId') examId: string,
+    @Param('sectionKey') sectionKey: string,
+    @Req() req: any,
+  ) {
+    this.logger.log(`[DELETE /exams/${examId}/sections/${sectionKey}] Request received`);
+    return this.service.removeSection(examId, sectionKey, req.user);
+  }
+
+  // إضافة سؤال لقسم
+  @Post(':examId/sections/:sectionKey/questions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Add a question to a section',
+    description: 'إضافة سؤال موجود إلى قسم معين في الامتحان',
+  })
+  @ApiResponse({ status: 201, description: 'Question added to section' })
+  addQuestionToSection(
+    @Param('examId') examId: string,
+    @Param('sectionKey') sectionKey: string,
+    @Body() dto: AddQuestionToSectionDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(`[POST /exams/${examId}/sections/${sectionKey}/questions] Request received - questionId: ${dto.questionId}`);
+    return this.service.addQuestionToSection(examId, sectionKey, dto, req.user);
+  }
+
+  // إعادة ترتيب الأسئلة في قسم
+  @Patch(':examId/sections/:sectionKey/questions/reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Reorder questions within a section',
+    description: 'إعادة ترتيب الأسئلة في قسم معين',
+  })
+  @ApiResponse({ status: 200, description: 'Questions reordered successfully' })
+  reorderSectionQuestions(
+    @Param('examId') examId: string,
+    @Param('sectionKey') sectionKey: string,
+    @Body() dto: ReorderSectionQuestionsDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(`[PATCH /exams/${examId}/sections/${sectionKey}/questions/reorder] Request received`);
+    return this.service.reorderSectionQuestions(examId, sectionKey, dto, req.user);
+  }
+
+  // حذف سؤال من قسم
+  @Delete(':examId/sections/:sectionKey/questions/:questionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Remove a question from a section',
+    description: 'حذف سؤال من قسم معين - السؤال يبقى في قاعدة البيانات',
+  })
+  @ApiResponse({ status: 200, description: 'Question removed from section' })
+  removeQuestionFromSection(
+    @Param('examId') examId: string,
+    @Param('sectionKey') sectionKey: string,
+    @Param('questionId') questionId: string,
+    @Req() req: any,
+  ) {
+    this.logger.log(`[DELETE /exams/${examId}/sections/${sectionKey}/questions/${questionId}] Request received`);
+    return this.service.removeQuestionFromSection(examId, sectionKey, questionId, req.user);
   }
 
   // تحديث listeningAudioId في section معين (مع teilNumber) - يجب أن يكون قبل @Patch(':id')
