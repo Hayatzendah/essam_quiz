@@ -877,10 +877,19 @@ export class QuestionsService {
     // 6) البحث عن سكشن بـ sectionKey أولاً، ثم بالاسم
     let sectionIndex = -1;
     if (sectionKey) {
-      // البحث عبر key أولاً (الطريقة الجديدة)
-      sectionIndex = cleanSections.findIndex(
-        (sec: any) => sec.key === sectionKey,
-      );
+      // البحث عبر key المحفوظ أو المولّد تلقائياً
+      sectionIndex = cleanSections.findIndex((sec: any) => {
+        // مطابقة key المحفوظ
+        if (sec.key === sectionKey) return true;
+        // مطابقة key المولّد (للأقسام القديمة بدون key)
+        if (!sec.key) {
+          const generatedKey = (sec.skill && sec.teilNumber)
+            ? `${sec.skill.toLowerCase()}_teil${sec.teilNumber}`
+            : (sec.title || sec.name || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, '_').replace(/(^_|_$)/g, '');
+          return generatedKey === sectionKey;
+        }
+        return false;
+      });
     }
     if (sectionIndex === -1 && sectionName) {
       // fallback: البحث بالاسم (الطريقة القديمة)
