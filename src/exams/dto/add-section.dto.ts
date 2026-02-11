@@ -3,17 +3,14 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
-  IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
   Min,
-  ValidateNested,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ExamSkillEnum } from '../../common/enums';
 import { normalizeSkill } from '../../common/utils/skill-normalizer.util';
-import { DifficultyDistributionDto } from './create-exam.dto';
 
 export class AddSectionDto {
   @IsString()
@@ -45,20 +42,8 @@ export class AddSectionDto {
   @Min(0)
   timeLimitMin?: number;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  quota?: number;
-
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => DifficultyDistributionDto)
-  difficultyDistribution?: DifficultyDistributionDto;
-
-  @IsOptional()
-  @IsMongoId()
-  listeningAudioId?: string;
+  // الصوت يُرفع مع السؤال (listeningClipId) وليس مع القسم
+  // الأسئلة تُضاف يدوياً عبر POST /exams/:examId/sections/:key/questions
 
   @IsOptional()
   @IsBoolean()

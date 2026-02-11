@@ -2510,9 +2510,6 @@ export class ExamsService {
       skill: dto.skill,
       teilNumber: dto.teilNumber,
       timeLimitMin: dto.timeLimitMin,
-      quota: dto.quota,
-      difficultyDistribution: dto.difficultyDistribution,
-      listeningAudioId: dto.listeningAudioId ? new Types.ObjectId(dto.listeningAudioId) : undefined,
       randomize: dto.randomize,
       tags: dto.tags,
       order: dto.order ?? (exam.sections?.length || 0),
@@ -2569,9 +2566,6 @@ export class ExamsService {
     if (dto.skill !== undefined) section.skill = dto.skill;
     if (dto.teilNumber !== undefined) section.teilNumber = dto.teilNumber;
     if (dto.timeLimitMin !== undefined) section.timeLimitMin = dto.timeLimitMin;
-    if (dto.quota !== undefined) section.quota = dto.quota;
-    if (dto.difficultyDistribution !== undefined) section.difficultyDistribution = dto.difficultyDistribution;
-    if (dto.listeningAudioId !== undefined) section.listeningAudioId = dto.listeningAudioId ? new Types.ObjectId(dto.listeningAudioId) : undefined;
     if (dto.randomize !== undefined) section.randomize = dto.randomize;
     if (dto.tags !== undefined) section.tags = dto.tags;
     if (dto.order !== undefined) section.order = dto.order;
