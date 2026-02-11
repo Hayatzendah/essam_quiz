@@ -1528,6 +1528,173 @@ export class AttemptsService {
   }
 
   /**
+   * فحص إجابة سؤال واحد - يحفظ الإجابة ويصححها ويرجع النتيجة
+   */
+  async checkAnswer(
+    user: ReqUser,
+    attemptId: string,
+    answerData: {
+      itemIndex?: number;
+      questionId?: string;
+      selectedOptionIndexes?: number[];
+      studentAnswerIndexes?: number[];
+      studentAnswerText?: string;
+      studentAnswerBoolean?: boolean;
+      studentAnswerMatch?: [string, string][];
+      studentAnswerReorder?: string[];
+      studentAnswerAudioKey?: string;
+      answerText?: string;
+      fillAnswers?: string;
+      textAnswer?: string;
+      interactiveAnswers?: Record<string, string>;
+      studentInteractiveAnswers?: Record<string, string>;
+      reorderAnswer?: string[];
+      studentReorderAnswer?: string[];
+      userAnswer?: any;
+    },
+  ) {
+    const attempt = await this.attemptModel.findById(attemptId).exec();
+    if (!attempt) {
+      throw new NotFoundException(`Attempt ${attemptId} not found`);
+    }
+
+    if (attempt.studentId.toString() !== user.userId) {
+      throw new ForbiddenException('You can only modify your own attempts');
+    }
+
+    if (attempt.status !== AttemptStatus.IN_PROGRESS) {
+      throw new ForbiddenException('Attempt is not in progress');
+    }
+
+    if (attempt.expiresAt && new Date() > attempt.expiresAt) {
+      throw new ForbiddenException('Attempt time has expired');
+    }
+
+    // إيجاد item
+    let item: any;
+    let itemIdx: number = -1;
+    if (answerData.questionId) {
+      itemIdx = attempt.items.findIndex(
+        (i: any) => i.questionId.toString() === answerData.questionId,
+      );
+      if (itemIdx !== -1) item = attempt.items[itemIdx];
+    } else if (answerData.itemIndex !== undefined) {
+      itemIdx = answerData.itemIndex;
+      item = attempt.items[itemIdx];
+    }
+
+    if (!item) {
+      throw new BadRequestException(
+        answerData.questionId
+          ? `Question ${answerData.questionId} not found in attempt`
+          : `Item at index ${answerData.itemIndex} not found`,
+      );
+    }
+
+    // تجميع الإجابة - دعم جميع الأشكال
+    const indexes = answerData.selectedOptionIndexes || answerData.studentAnswerIndexes;
+    const textAns = answerData.answerText || answerData.studentAnswerText || answerData.fillAnswers || answerData.textAnswer;
+    const interactiveAns = answerData.interactiveAnswers || answerData.studentInteractiveAnswers;
+    const reorderAns = answerData.reorderAnswer || answerData.studentReorderAnswer || answerData.studentAnswerReorder;
+
+    // حفظ الإجابة حسب نوع السؤال
+    if (item.qType === QuestionType.MCQ || item.qType === QuestionType.LISTEN) {
+      if (answerData.userAnswer && Array.isArray(answerData.userAnswer)) {
+        // دعم userAnswer من الفرونت
+        if (item.qType === QuestionType.TRUE_FALSE) {
+          const frontendIndex = answerData.userAnswer[0];
+          item.studentAnswerIndexes = [frontendIndex === 0 ? 1 : 0];
+        } else {
+          item.studentAnswerIndexes = answerData.userAnswer;
+        }
+      } else if (indexes) {
+        item.studentAnswerIndexes = indexes;
+      }
+    } else if (item.qType === QuestionType.TRUE_FALSE) {
+      if (answerData.userAnswer !== undefined) {
+        if (Array.isArray(answerData.userAnswer)) {
+          const frontendIndex = answerData.userAnswer[0];
+          item.studentAnswerIndexes = [frontendIndex === 0 ? 1 : 0];
+          item.studentAnswerBoolean = frontendIndex === 0;
+        } else if (typeof answerData.userAnswer === 'boolean') {
+          item.studentAnswerIndexes = [answerData.userAnswer ? 1 : 0];
+          item.studentAnswerBoolean = answerData.userAnswer;
+        }
+      } else if (answerData.studentAnswerBoolean !== undefined) {
+        item.studentAnswerIndexes = [answerData.studentAnswerBoolean ? 1 : 0];
+        item.studentAnswerBoolean = answerData.studentAnswerBoolean;
+      } else if (indexes) {
+        item.studentAnswerIndexes = indexes;
+      }
+    } else if (item.qType === QuestionType.FILL) {
+      if (textAns) item.studentAnswerText = textAns;
+    } else if (item.qType === QuestionType.FREE_TEXT) {
+      if (textAns) item.studentAnswerText = textAns;
+    } else if (item.qType === QuestionType.MATCH) {
+      if (answerData.studentAnswerMatch) item.studentAnswerMatch = answerData.studentAnswerMatch;
+    } else if (item.qType === QuestionType.REORDER) {
+      if (answerData.studentAnswerReorder) item.studentAnswerReorder = answerData.studentAnswerReorder;
+    } else if (item.qType === QuestionType.INTERACTIVE_TEXT) {
+      if (interactiveAns) item.studentInteractiveAnswers = interactiveAns;
+      if (reorderAns) item.studentReorderAnswer = reorderAns;
+    } else if (item.qType === QuestionType.SPEAKING) {
+      if (answerData.studentAnswerAudioKey) item.studentAnswerAudioKey = answerData.studentAnswerAudioKey;
+    }
+
+    // تصحيح هذا السؤال فقط
+    let score = 0;
+    let isCorrect = false;
+    let correctAnswer: any = undefined;
+
+    if (item.qType === QuestionType.MCQ || item.qType === QuestionType.LISTEN) {
+      score = this.gradeMcq(item);
+      correctAnswer = { correctOptionIndexes: item.correctOptionIndexes };
+    } else if (item.qType === QuestionType.TRUE_FALSE) {
+      score = this.gradeTrueFalse(item);
+      correctAnswer = { correctOptionIndexes: item.correctOptionIndexes };
+      if (item.answerKeyBoolean !== undefined) {
+        correctAnswer.answerKeyBoolean = item.answerKeyBoolean;
+      }
+    } else if (item.qType === QuestionType.FILL) {
+      score = this.gradeFill(item);
+      correctAnswer = { fillExact: item.fillExact };
+    } else if (item.qType === QuestionType.MATCH) {
+      score = this.gradeMatch(item);
+      correctAnswer = { answerKeyMatch: item.answerKeyMatch || item.matchPairs };
+    } else if (item.qType === QuestionType.REORDER) {
+      score = this.gradeReorder(item);
+      correctAnswer = { answerKeyReorder: item.answerKeyReorder };
+    } else if (item.qType === QuestionType.INTERACTIVE_TEXT) {
+      if (item.interactiveBlanksSnapshot && Array.isArray(item.interactiveBlanksSnapshot) && item.interactiveBlanksSnapshot.length > 0) {
+        score = this.gradeInteractiveBlanks(item);
+        correctAnswer = { interactiveBlanks: item.interactiveBlanksSnapshot };
+      } else if (item.interactiveReorderSnapshot) {
+        score = this.gradeInteractiveReorder(item);
+        correctAnswer = { interactiveReorder: item.interactiveReorderSnapshot };
+      }
+    } else if (item.qType === QuestionType.FREE_TEXT || item.qType === QuestionType.SPEAKING) {
+      // لا يوجد تصحيح آلي
+      score = 0;
+      item.needsManualReview = true;
+    }
+
+    isCorrect = score > 0 && score >= (item.points || 1);
+    item.autoScore = score;
+
+    await attempt.save();
+
+    return {
+      questionId: item.questionId.toString(),
+      qType: item.qType,
+      isCorrect,
+      score,
+      maxPoints: item.points || 1,
+      correctAnswer,
+      ...(item.explanation && { explanation: item.explanation }),
+    };
+  }
+
+  /**
    * تسليم المحاولة
    */
   async submitAttempt(user: ReqUser, attemptId: string, answers?: any[]) {
@@ -1570,179 +1737,60 @@ export class AttemptsService {
           throw new NotFoundException(`Question ${answer.questionId} not found`);
         }
 
-        // التحقق من نوع السؤال والتحقق من الإجابة المطلوبة
+        // التحقق من نوع السؤال - تخطي الأسئلة غير المجاب عليها (لدعم الإرسال الجزئي)
+        let hasAnswer = true;
         if (question.qType === QuestionType.FREE_TEXT) {
-          // لأسئلة الكتابة: textAnswer مطلوب
           if (!answer.textAnswer?.trim()) {
-            throw new BadRequestException(
-              `textAnswer is required for FREE_TEXT question (questionId: ${answer.questionId})`,
-            );
+            hasAnswer = false;
           }
         } else if (question.qType === QuestionType.FILL) {
-          // لأسئلة Fill blank: answerText أو studentAnswerText أو fillAnswers مطلوب
           if (!answer.answerText?.trim() && !answer.studentAnswerText?.trim() && !answer.fillAnswers?.trim()) {
-            throw new BadRequestException(
-              `answerText (or studentAnswerText or fillAnswers) is required for FILL question (questionId: ${answer.questionId})`,
-            );
+            hasAnswer = false;
           }
         } else if (question.qType === QuestionType.SPEAKING) {
-          // لأسئلة التحدث: studentRecording مطلوب
           if (!answer.studentRecording && !answer.audioAnswer?.trim()) {
-            throw new BadRequestException(
-              `studentRecording (with url and mime) is required for SPEAKING question (questionId: ${answer.questionId})`,
-            );
+            hasAnswer = false;
           }
         } else if (question.qType === QuestionType.MATCH) {
-          // لأسئلة Match: studentAnswerMatch مطلوب (يمكن أن يكون array أو object)
           if (!answer.studentAnswerMatch) {
-            throw new BadRequestException(
-              `studentAnswerMatch is required for MATCH question (questionId: ${answer.questionId})`,
-            );
-          }
-          // التحقق من أن studentAnswerMatch إما array أو object
-          if (!Array.isArray(answer.studentAnswerMatch) && typeof answer.studentAnswerMatch !== 'object') {
-            throw new BadRequestException(
-              `studentAnswerMatch must be an array of tuples or an object for MATCH question (questionId: ${answer.questionId})`,
-            );
+            hasAnswer = false;
+          } else if (!Array.isArray(answer.studentAnswerMatch) && typeof answer.studentAnswerMatch !== 'object') {
+            hasAnswer = false;
           }
         } else if (question.qType === QuestionType.REORDER) {
-          // لأسئلة Reorder: studentAnswerReorder مطلوب
           if (!answer.studentAnswerReorder || !Array.isArray(answer.studentAnswerReorder) || answer.studentAnswerReorder.length === 0) {
-            throw new BadRequestException(
-              `studentAnswerReorder is required for REORDER question (questionId: ${answer.questionId})`,
-            );
+            hasAnswer = false;
           }
         } else if (question.qType === QuestionType.INTERACTIVE_TEXT) {
-          // لأسئلة INTERACTIVE_TEXT: يجب أن يكون إما interactiveAnswers/studentInteractiveAnswers أو studentReorderAnswer
           if (question.interactiveBlanks && Array.isArray(question.interactiveBlanks) && question.interactiveBlanks.length > 0) {
-            // Fill-in-the-blanks: interactiveAnswers أو studentInteractiveAnswers مطلوب
             const interactiveAnswers = answer.interactiveAnswers || answer.studentInteractiveAnswers;
             if (!interactiveAnswers || typeof interactiveAnswers !== 'object') {
-              throw new BadRequestException(
-                `interactiveAnswers is required for INTERACTIVE_TEXT fill-blanks question (questionId: ${answer.questionId})`,
-              );
-            }
-            
-            // التحقق من أن جميع blank IDs موجودة في السؤال
-            const blankIds = new Set(question.interactiveBlanks.map((blank: any) => blank.id));
-            const providedIds = Object.keys(interactiveAnswers);
-            
-            // التحقق من أن جميع IDs المقدمة موجودة في السؤال
-            for (const providedId of providedIds) {
-              if (!blankIds.has(providedId)) {
-                throw new BadRequestException(
-                  `Invalid blank ID "${providedId}" for INTERACTIVE_TEXT question (questionId: ${answer.questionId}). Valid IDs are: ${Array.from(blankIds).join(', ')}`,
-                );
-              }
-            }
-            
-            // التحقق من أن جميع blank IDs المطلوبة موجودة في الإجابة
-            for (const blank of question.interactiveBlanks) {
-              if (!(blank.id in interactiveAnswers)) {
-                throw new BadRequestException(
-                  `Missing answer for blank "${blank.id}" in INTERACTIVE_TEXT question (questionId: ${answer.questionId})`,
-                );
-              }
-              // التحقق من أن القيمة string وغير فارغة
-              const answerValue = interactiveAnswers[blank.id];
-              if (typeof answerValue !== 'string' || answerValue.trim().length === 0) {
-                throw new BadRequestException(
-                  `Answer for blank "${blank.id}" must be a non-empty string in INTERACTIVE_TEXT question (questionId: ${answer.questionId})`,
-                );
-              }
+              hasAnswer = false;
             }
           } else if (question.interactiveReorder) {
-            // Reorder: reorderAnswer أو studentReorderAnswer مطلوب
             const reorderAnswer = answer.reorderAnswer || answer.studentReorderAnswer || answer.studentAnswerReorder;
             if (!reorderAnswer || !Array.isArray(reorderAnswer) || reorderAnswer.length === 0) {
-              throw new BadRequestException(
-                `reorderAnswer is required for INTERACTIVE_TEXT reorder question (questionId: ${answer.questionId})`,
-              );
-            }
-            
-            // البحث عن attempt item للحصول على interactiveReorderSnapshot
-            const attemptItem = attempt.items.find(
-              (item: any) => item.questionId.toString() === answer.questionId
-            );
-            
-            if (attemptItem && attemptItem.interactiveReorderSnapshot) {
-              const parts = attemptItem.interactiveReorderSnapshot.parts;
-              const partIds = new Set(parts.map((part: any) => part.id));
-              
-              // التحقق من أن الطول مطابق
-              if (reorderAnswer.length !== parts.length) {
-                throw new BadRequestException(
-                  `reorderAnswer length (${reorderAnswer.length}) must match number of parts (${parts.length}) for INTERACTIVE_TEXT reorder question (questionId: ${answer.questionId})`,
-                );
-              }
-              
-              // التحقق من أن كل id موجود في parts
-              const providedIds = new Set(reorderAnswer);
-              for (const id of providedIds) {
-                if (!partIds.has(id)) {
-                  throw new BadRequestException(
-                    `Invalid part ID "${id}" in reorderAnswer for INTERACTIVE_TEXT question (questionId: ${answer.questionId}). Valid IDs are: ${Array.from(partIds).join(', ')}`,
-                  );
-                }
-              }
-              
-              // التحقق من عدم وجود تكرار
-              if (providedIds.size !== reorderAnswer.length) {
-                throw new BadRequestException(
-                  `reorderAnswer contains duplicate IDs for INTERACTIVE_TEXT question (questionId: ${answer.questionId})`,
-                );
-              }
-            } else if (question.interactiveReorder && question.interactiveReorder.parts) {
-              // Fallback: استخدام parts من السؤال الأصلي إذا لم يكن snapshot موجوداً
-              const parts = question.interactiveReorder.parts;
-              const partIds = new Set(parts.map((part: any) => part.id));
-              
-              // التحقق من أن الطول مطابق
-              if (reorderAnswer.length !== parts.length) {
-                throw new BadRequestException(
-                  `reorderAnswer length (${reorderAnswer.length}) must match number of parts (${parts.length}) for INTERACTIVE_TEXT reorder question (questionId: ${answer.questionId})`,
-                );
-              }
-              
-              // التحقق من أن كل id موجود في parts
-              const providedIds = new Set(reorderAnswer);
-              for (const id of providedIds) {
-                if (!partIds.has(id)) {
-                  throw new BadRequestException(
-                    `Invalid part ID "${id}" in reorderAnswer for INTERACTIVE_TEXT question (questionId: ${answer.questionId}). Valid IDs are: ${Array.from(partIds).join(', ')}`,
-                  );
-                }
-              }
-              
-              // التحقق من عدم وجود تكرار
-              if (providedIds.size !== reorderAnswer.length) {
-                throw new BadRequestException(
-                  `reorderAnswer contains duplicate IDs for INTERACTIVE_TEXT question (questionId: ${answer.questionId})`,
-                );
-              }
+              hasAnswer = false;
             }
           }
         } else if (question.qType === QuestionType.MCQ || question.qType === QuestionType.LISTEN) {
-          // لأسئلة MCQ و LISTEN: selectedOptionIndexes مطلوب
-          if (!answer.selectedOptionIndexes?.length && !answer.studentAnswerIndexes?.length) {
-            throw new BadRequestException(
-              `selectedOptionIndexes is required for ${question.qType} question (questionId: ${answer.questionId})`,
-            );
+          if (!answer.selectedOptionIndexes?.length && !answer.studentAnswerIndexes?.length && !answer.userAnswer) {
+            hasAnswer = false;
           }
         } else if (question.qType === QuestionType.TRUE_FALSE) {
-          // لأسئلة True/False: selectedOptionIndexes أو studentAnswerBoolean مطلوب
-          if (!answer.selectedOptionIndexes?.length && !answer.studentAnswerIndexes?.length && answer.studentAnswerBoolean === undefined) {
-            throw new BadRequestException(
-              `selectedOptionIndexes or studentAnswerBoolean is required for TRUE_FALSE question (questionId: ${answer.questionId})`,
-            );
+          if (!answer.selectedOptionIndexes?.length && !answer.studentAnswerIndexes?.length && answer.studentAnswerBoolean === undefined && !answer.userAnswer) {
+            hasAnswer = false;
           }
         } else {
-          // أنواع أخرى غير معروفة - نطلب selectedOptionIndexes كـ fallback
-          if (!answer.selectedOptionIndexes?.length && !answer.studentAnswerIndexes?.length) {
-            throw new BadRequestException(
-              `selectedOptionIndexes is required for ${question.qType} question (questionId: ${answer.questionId})`,
-            );
+          if (!answer.selectedOptionIndexes?.length && !answer.studentAnswerIndexes?.length && !answer.userAnswer) {
+            hasAnswer = false;
           }
+        }
+
+        // تخطي الأسئلة غير المجاب عليها
+        if (!hasAnswer) {
+          this.logger.debug(`[submitAttempt] Skipping unanswered question ${answer.questionId} (type: ${question.qType})`);
+          continue;
         }
 
         // البحث عن الـ item باستخدام questionId أو itemIndex

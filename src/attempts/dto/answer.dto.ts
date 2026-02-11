@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsMongoId,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Min,
@@ -20,28 +21,77 @@ export class AnswerOneDto {
   questionId?: string;
 
   // أنواع الإجابات المحتملة (واحد فقط حسب qType)
+
+  // MCQ / TRUE_FALSE: indexes (الشكل الجديد)
   @IsOptional()
   @IsArray()
-  studentAnswerIndexes?: number[]; // mcq
+  @IsNumber({}, { each: true })
+  selectedOptionIndexes?: number[];
+
+  // MCQ / TRUE_FALSE: indexes (للتوافق مع الكود القديم)
+  @IsOptional()
+  @IsArray()
+  studentAnswerIndexes?: number[];
+
+  // Fill / Free Text
+  @IsOptional()
+  @IsString()
+  studentAnswerText?: string;
 
   @IsOptional()
   @IsString()
-  studentAnswerText?: string; // fill
+  answerText?: string;
 
+  @IsOptional()
+  @IsString()
+  fillAnswers?: string;
+
+  @IsOptional()
+  @IsString()
+  textAnswer?: string;
+
+  // True/False
   @IsOptional()
   @IsBoolean()
-  studentAnswerBoolean?: boolean; // true_false
+  studentAnswerBoolean?: boolean;
 
+  // Match: أزواج [left, right]
   @IsOptional()
   @IsArray()
-  studentAnswerMatch?: [string, string][]; // match: أزواج [left, right]
+  studentAnswerMatch?: [string, string][];
+
+  // Reorder: ترتيب الطالب
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  studentAnswerReorder?: string[];
+
+  // Sprechen: مفتاح الملف الصوتي
+  @IsOptional()
+  @IsString()
+  studentAnswerAudioKey?: string;
+
+  // INTERACTIVE_TEXT: fill-in-the-blanks
+  @IsOptional()
+  @IsObject()
+  interactiveAnswers?: Record<string, string>;
+
+  @IsOptional()
+  @IsObject()
+  studentInteractiveAnswers?: Record<string, string>;
+
+  // INTERACTIVE_TEXT: reorder
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  reorderAnswer?: string[];
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  studentAnswerReorder?: string[]; // reorder: ترتيب الطالب
+  studentReorderAnswer?: string[];
 
+  // دعم userAnswer العام من الفرونت
   @IsOptional()
-  @IsString()
-  studentAnswerAudioKey?: string; // Sprechen: مفتاح الملف الصوتي (من /media/upload/student)
+  userAnswer?: any;
 }

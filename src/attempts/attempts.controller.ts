@@ -275,6 +275,46 @@ export class AttemptsController {
     }
   }
 
+  // فحص إجابة سؤال واحد - يحفظ ويصحح ويرجع النتيجة (طالب فقط)
+  @Post(':attemptId/check-answer')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  async checkAnswer(@Param('attemptId') attemptId: string, @Body() dto: AnswerOneDto, @Req() req: any) {
+    this.logger.log(
+      `[POST /attempts/${attemptId}/check-answer] Request received - questionId: ${dto?.questionId}, itemIndex: ${dto?.itemIndex}, userId: ${req.user?.userId}`,
+    );
+    try {
+      const result = await this.service.checkAnswer(req.user, attemptId, {
+        itemIndex: dto.itemIndex,
+        questionId: dto.questionId,
+        selectedOptionIndexes: dto.selectedOptionIndexes,
+        studentAnswerIndexes: dto.studentAnswerIndexes,
+        studentAnswerText: dto.studentAnswerText,
+        answerText: dto.answerText,
+        fillAnswers: dto.fillAnswers,
+        textAnswer: dto.textAnswer,
+        studentAnswerBoolean: dto.studentAnswerBoolean,
+        studentAnswerMatch: dto.studentAnswerMatch,
+        studentAnswerReorder: dto.studentAnswerReorder,
+        studentAnswerAudioKey: dto.studentAnswerAudioKey,
+        interactiveAnswers: dto.interactiveAnswers,
+        studentInteractiveAnswers: dto.studentInteractiveAnswers,
+        reorderAnswer: dto.reorderAnswer,
+        studentReorderAnswer: dto.studentReorderAnswer,
+        userAnswer: dto.userAnswer,
+      });
+      this.logger.log(
+        `[POST /attempts/${attemptId}/check-answer] Result - questionId: ${result.questionId}, isCorrect: ${result.isCorrect}, score: ${result.score}/${result.maxPoints}`,
+      );
+      return result;
+    } catch (error: any) {
+      this.logger.error(
+        `[POST /attempts/${attemptId}/check-answer] Error - ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
   // تسليم المحاولة (طالب فقط)
   @Post(':attemptId/submit')
   @UseGuards(JwtAuthGuard, RolesGuard)
