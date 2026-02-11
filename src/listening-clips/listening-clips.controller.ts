@@ -197,7 +197,7 @@ export class ListeningClipsController {
           description: 'Teil number',
         },
       },
-      required: ['file', 'provider', 'level', 'teil'],
+      required: ['file'],
     },
   })
   @ApiResponse({ 
@@ -214,14 +214,10 @@ export class ListeningClipsController {
   @ApiResponse({ status: 400, description: 'Bad request - invalid file or missing data' })
   async uploadAudio(
     @UploadedFile() file: Express.Multer.File,
-    @Body() dto: { provider: string; level: string; teil: number },
+    @Body() dto: { provider?: string; level?: string; teil?: number; title?: string },
   ) {
     if (!file) {
       throw new BadRequestException('No audio file uploaded');
-    }
-
-    if (!dto.provider || !dto.level || !dto.teil) {
-      throw new BadRequestException('Missing required fields: provider, level, teil');
     }
 
     console.log('Saved listening clip audio at', file.path);
@@ -230,7 +226,7 @@ export class ListeningClipsController {
     let finalPath = file.path;
     let finalFilename = file.filename;
     const ext = extname(file.filename).toLowerCase();
-    
+
     if (ext === '.opus' || ext === '.ogg') {
       const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
       if (convertedPath) {
@@ -244,13 +240,14 @@ export class ListeningClipsController {
 
     const audioUrl = `/uploads/audio/${finalFilename}`;
 
-    // إنشاء ListeningClip في MongoDB
+    // إنشاء ListeningClip في MongoDB مع قيم افتراضية إذا لم تُرسل
     const clip = await this.service.create({
-      provider: dto.provider as any,
-      level: dto.level as any,
-      skill: SkillEnum.HOEREN, // Default to hoeren
-      teil: Number(dto.teil),
+      provider: (dto.provider || 'goethe') as any,
+      level: (dto.level || 'A1') as any,
+      skill: SkillEnum.HOEREN,
+      teil: Number(dto.teil) || 1,
       audioUrl,
+      ...(dto.title && { title: dto.title }),
     });
 
     const response: any = {
