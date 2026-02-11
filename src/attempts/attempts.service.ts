@@ -711,11 +711,6 @@ export class AttemptsService {
       totalMaxScore: attempt.totalMaxScore,
     };
 
-    // إضافة listeningClip إذا كان موجوداً
-    if (listeningClip) {
-      response.listeningClip = listeningClip;
-    }
-
     // إضافة readingText إذا كان موجوداً (لقسم القراءة LESEN)
     if (attempt.readingText) {
       response.readingText = attempt.readingText;
