@@ -21,6 +21,8 @@ import { normalizeProvider } from '../common/utils/provider-normalizer.util';
 import { AddSectionDto } from './dto/add-section.dto';
 import { UpdateSectionDto } from './dto/update-section.dto';
 import { AddQuestionToSectionDto, ReorderSectionQuestionsDto } from './dto/section-question.dto';
+import { BulkCreateSectionQuestionsDto } from './dto/bulk-section-questions.dto';
+import { ListeningClip, ListeningClipDocument } from '../listening-clips/schemas/listening-clip.schema';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -32,6 +34,7 @@ export class ExamsService {
     @InjectModel(Exam.name) private readonly model: Model<ExamDocument>,
     @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
     @InjectModel(Attempt.name) private readonly attemptModel: Model<AttemptDocument>,
+    @InjectModel(ListeningClip.name) private readonly listeningClipModel: Model<ListeningClipDocument>,
   ) {}
 
   private assertTeacherOrAdmin(user: ReqUser) {
@@ -2695,6 +2698,133 @@ export class ExamsService {
 
     this.logger.log(`[addQuestionToSection] Added question ${dto.questionId} to section "${sectionKey}" in exam ${examId}`);
     return { questionId: dto.questionId, points: dto.points ?? 1, sectionKey };
+  }
+
+  /**
+   * إنشاء عدة أسئلة دفعة واحدة وإضافتها لقسم مع صوت مشترك
+   */
+  async bulkCreateAndAddToSection(
+    examId: string,
+    sectionKey: string,
+    dto: BulkCreateSectionQuestionsDto,
+    user: ReqUser,
+  ) {
+    this.assertTeacherOrAdmin(user);
+
+    const exam = await this.model.findById(examId);
+    if (!exam) throw new NotFoundException('Exam not found');
+
+    const isOwner = exam.ownerId?.toString() === user.userId;
+    if (user.role !== 'admin' && !isOwner) {
+      throw new ForbiddenException('Only owner or admin can modify this exam');
+    }
+
+    const section = this.findSectionByKey(exam, sectionKey) as any;
+
+    // التحقق من وجود كليب الصوت
+    const clip = await this.listeningClipModel.findById(dto.listeningClipId).lean();
+    if (!clip) {
+      throw new NotFoundException(`ListeningClip ${dto.listeningClipId} not found`);
+    }
+
+    const results: Array<{
+      index: number;
+      questionId: any;
+      prompt: string;
+      qType: string;
+      points: number;
+    }> = [];
+    const errors: Array<{ index: number; prompt: string; error: string }> = [];
+
+    const userId = user.userId;
+
+    for (let i = 0; i < dto.questions.length; i++) {
+      try {
+        const question = dto.questions[i];
+        const { examId: _ignoreExamId, listeningClipId: _ignoreClipId, points, ...questionData } = question as any;
+
+        const doc = await this.questionModel.create({
+          ...questionData,
+          listeningClipId: new Types.ObjectId(dto.listeningClipId),
+          status: question.status ?? QuestionStatus.DRAFT,
+          createdBy: userId,
+          // FREE_TEXT fields
+          ...(question.qType === QuestionType.FREE_TEXT && {
+            ...(question.sampleAnswer && { sampleAnswer: question.sampleAnswer }),
+            ...(question.minWords !== undefined && { minWords: question.minWords }),
+            ...(question.maxWords !== undefined && { maxWords: question.maxWords }),
+          }),
+          // SPEAKING fields
+          ...(question.qType === QuestionType.SPEAKING && {
+            ...(question.modelAnswerText && { modelAnswerText: question.modelAnswerText }),
+            ...(question.minSeconds !== undefined && { minSeconds: question.minSeconds }),
+            ...(question.maxSeconds !== undefined && { maxSeconds: question.maxSeconds }),
+          }),
+          // INTERACTIVE_TEXT fields
+          ...(question.qType === QuestionType.INTERACTIVE_TEXT && {
+            ...(question.text && { text: question.text }),
+            ...(question.interactiveBlanks && Array.isArray(question.interactiveBlanks) && question.interactiveBlanks.length > 0 && {
+              interactiveBlanks: question.interactiveBlanks.map((blank: any) => {
+                const type = blank.type === 'select' ? 'dropdown' : blank.type;
+                const options = blank.options || blank.choices;
+                const choices = blank.choices || blank.options;
+                return { ...blank, type, options, choices };
+              }),
+            }),
+            ...(question.interactiveReorder && { interactiveReorder: question.interactiveReorder }),
+          }),
+        });
+
+        const questionPoints = points ?? 1;
+
+        section.items = section.items || [];
+        section.items.push({
+          questionId: new Types.ObjectId(doc._id as any),
+          points: questionPoints,
+        });
+
+        // ربط السؤال بالامتحان (metadata)
+        await this.questionModel.findByIdAndUpdate(doc._id, {
+          examId: new Types.ObjectId(examId),
+          sectionTitle: section.title || section.name,
+        });
+
+        results.push({
+          index: i,
+          questionId: doc._id,
+          prompt: doc.prompt,
+          qType: doc.qType,
+          points: questionPoints,
+        });
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        errors.push({
+          index: i,
+          prompt: dto.questions[i]?.prompt || 'Unknown',
+          error: errorMessage,
+        });
+      }
+    }
+
+    if (results.length > 0) {
+      exam.markModified('sections');
+      exam.version = (exam.version || 1) + 1;
+      await exam.save();
+    }
+
+    this.logger.log(
+      `[bulkCreateAndAddToSection] Created ${results.length}/${dto.questions.length} questions in section "${sectionKey}" of exam ${examId}`,
+    );
+
+    return {
+      success: results.length,
+      failed: errors.length,
+      total: dto.questions.length,
+      sectionKey,
+      listeningClipId: dto.listeningClipId,
+      results,
+      ...(errors.length > 0 && { errors }),
+    };
   }
 
   /**

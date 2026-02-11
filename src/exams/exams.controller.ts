@@ -27,6 +27,7 @@ import { UpdateSectionAudioDto } from './dto/update-section-audio.dto';
 import { AddSectionDto } from './dto/add-section.dto';
 import { UpdateSectionDto } from './dto/update-section.dto';
 import { AddQuestionToSectionDto, ReorderSectionQuestionsDto } from './dto/section-question.dto';
+import { BulkCreateSectionQuestionsDto } from './dto/bulk-section-questions.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -445,6 +446,28 @@ export class ExamsController {
   ) {
     this.logger.log(`[POST /exams/${examId}/sections/${sectionKey}/questions] Request received - questionId: ${dto.questionId}`);
     return this.service.addQuestionToSection(examId, sectionKey, dto, req.user);
+  }
+
+  // إنشاء عدة أسئلة دفعة واحدة وإضافتها لقسم مع صوت مشترك
+  @Post(':examId/sections/:sectionKey/questions/bulk-create')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Bulk create questions and add to section',
+    description: 'إنشاء عدة أسئلة مع صوت مشترك (listeningClipId) وإضافتها لقسم معين',
+  })
+  @ApiResponse({ status: 201, description: 'Questions created and added to section' })
+  bulkCreateSectionQuestions(
+    @Param('examId') examId: string,
+    @Param('sectionKey') sectionKey: string,
+    @Body() dto: BulkCreateSectionQuestionsDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(
+      `[POST /exams/${examId}/sections/${sectionKey}/questions/bulk-create] ` +
+      `Request received - ${dto.questions.length} questions, clipId: ${dto.listeningClipId}`,
+    );
+    return this.service.bulkCreateAndAddToSection(examId, sectionKey, dto, req.user);
   }
 
   // إعادة ترتيب الأسئلة في قسم
