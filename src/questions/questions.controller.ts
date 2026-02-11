@@ -77,6 +77,15 @@ export class QuestionsController {
     return this.service.createBulkQuestions(dto.questions, userId);
   }
 
+  @ApiOperation({ summary: 'Publish all draft questions (admin only)' })
+  @ApiResponse({ status: 200, description: 'All draft questions published' })
+  @Post('publish-all-drafts')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  publishAllDrafts() {
+    return this.service.publishAllDrafts();
+  }
+
   // GET /questions/vocab - البحث عن أسئلة المفردات (Wortschatz)
   @ApiOperation({ summary: 'Find vocabulary questions (Wortschatz)' })
   @ApiResponse({

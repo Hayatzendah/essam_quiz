@@ -84,7 +84,7 @@ export class QuestionsService {
     
     const doc = await this.model.create({
       ...restQuestionData,
-      status: dto.status ?? QuestionStatus.DRAFT,
+      status: dto.status ?? QuestionStatus.PUBLISHED,
       createdBy,
       // MATCH fields
       ...(dto.qType === QuestionType.MATCH && dto.answerKeyMatch && Array.isArray(dto.answerKeyMatch) && { answerKeyMatch: dto.answerKeyMatch }),
@@ -178,7 +178,7 @@ export class QuestionsService {
         
         const doc = await this.model.create({
           ...questionData,
-          status: question.status ?? QuestionStatus.DRAFT,
+          status: question.status ?? QuestionStatus.PUBLISHED,
           createdBy,
           // FREE_TEXT fields (إذا كانت موجودة)
           ...(question.qType === QuestionType.FREE_TEXT && {
@@ -842,7 +842,7 @@ export class QuestionsService {
       ...(questionData.explanation && { explanation: questionData.explanation }),
       ...(questionData.difficulty && { difficulty: questionData.difficulty as QuestionDifficulty }),
       level: questionData.level,
-      status: questionData.status as QuestionStatus,
+      status: (questionData.status as QuestionStatus) || QuestionStatus.PUBLISHED,
       tags: questionData.tags,
       provider: provider,
       section: sectionName,
@@ -1158,5 +1158,13 @@ export class QuestionsService {
       state: dto.state,
       items: processedItems,
     };
+  }
+
+  async publishAllDrafts(): Promise<{ modifiedCount: number }> {
+    const result = await this.model.updateMany(
+      { status: QuestionStatus.DRAFT },
+      { $set: { status: QuestionStatus.PUBLISHED } },
+    );
+    return { modifiedCount: result.modifiedCount };
   }
 }

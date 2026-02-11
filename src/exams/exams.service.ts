@@ -2746,7 +2746,7 @@ export class ExamsService {
         const doc = await this.questionModel.create({
           ...questionData,
           listeningClipId: new Types.ObjectId(dto.listeningClipId),
-          status: question.status ?? QuestionStatus.DRAFT,
+          status: question.status ?? QuestionStatus.PUBLISHED,
           createdBy: userId,
           // FREE_TEXT fields
           ...(question.qType === QuestionType.FREE_TEXT && {
