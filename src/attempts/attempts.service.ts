@@ -23,8 +23,6 @@ import { ListeningClipsService } from '../listening-clips/listening-clips.servic
 import { SchreibenTask, SchreibenTaskDocument } from '../modules/schreiben/schemas/schreiben-task.schema';
 import { FormFieldType } from '../modules/schreiben/schemas/schreiben-content-block.schema';
 import * as crypto from 'crypto';
-import { existsSync } from 'fs';
-import { join } from 'path';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -2539,89 +2537,7 @@ export class AttemptsService {
     const policy = exam.resultsPolicy || 'explanations_with_scores';
     const isStudent = user.role === 'student' && isOwner;
 
-    // البحث عن listeningClip مشترك (إذا كان جميع items لها نفس listeningClipId)
-    let listeningClip: any = null;
-    const firstItemWithClip = attempt.items.find((item: any) => item.listeningClipId || item.mediaSnapshot?.type === 'audio');
-    if (firstItemWithClip) {
-      try {
-        const clipId = firstItemWithClip.listeningClipId;
-        if (clipId) {
-          const clip = await this.listeningClipsService.findById(String(clipId));
-          if (clip) {
-            const ext = clip.audioUrl ? clip.audioUrl.split('.').pop()?.toLowerCase() : '';
-            let audioUrl = clip.audioUrl;
-            const audioSources: any[] = [];
-            
-            // إذا كان الملف .opus، نحاول البحث عن نسخة .mp3
-            if (ext === 'opus' || ext === 'ogg') {
-              const mp3Url = clip.audioUrl.replace(/\.(opus|ogg)$/i, '.mp3');
-              const opusPath = join(process.cwd(), 'uploads', 'audio', clip.audioUrl.replace(/^\/uploads\/audio\//, ''));
-              const mp3Path = opusPath.replace(/\.(opus|ogg)$/i, '.mp3');
-              
-              // التحقق من وجود ملف .mp3
-              if (existsSync(mp3Path)) {
-                audioUrl = mp3Url;
-                audioSources.push({ url: mp3Url, type: 'audio/mpeg', format: 'mp3' });
-              } else {
-                // إذا لم يوجد .mp3، نستخدم .opus مع Content-Type صحيح
-                audioSources.push({ url: clip.audioUrl, type: 'audio/ogg; codecs=opus', format: 'opus' });
-                // نضيف أيضاً محاولة للبحث عن .mp3
-                audioSources.push({ url: mp3Url, type: 'audio/mpeg', format: 'mp3' });
-              }
-            } else if (ext === 'mp3') {
-              audioSources.push({ url: clip.audioUrl, type: 'audio/mpeg', format: 'mp3' });
-            } else if (ext === 'm4a') {
-              audioSources.push({ url: clip.audioUrl, type: 'audio/mp4', format: 'm4a' });
-            } else {
-              audioSources.push({ url: clip.audioUrl, type: 'audio/mpeg', format: 'mp3' });
-            }
-            
-            listeningClip = {
-              audioUrl,
-              teil: clip.teil,
-              audioSources,
-            };
-          }
-        } else if (firstItemWithClip.mediaSnapshot?.url) {
-          // إذا كان mediaSnapshot موجوداً بدون listeningClipId، نستخدمه
-          let audioUrl = firstItemWithClip.mediaSnapshot.url;
-          const ext = audioUrl ? audioUrl.split('.').pop()?.toLowerCase() : '';
-          const audioSources: any[] = [];
-          
-          // إذا كان الملف .opus، نحاول البحث عن نسخة .mp3
-          if (ext === 'opus' || ext === 'ogg') {
-            const mp3Url = audioUrl.replace(/\.(opus|ogg)$/i, '.mp3');
-            const opusPath = join(process.cwd(), 'uploads', 'audio', audioUrl.replace(/^\/uploads\/audio\//, ''));
-            const mp3Path = opusPath.replace(/\.(opus|ogg)$/i, '.mp3');
-            
-            // التحقق من وجود ملف .mp3
-            if (existsSync(mp3Path)) {
-              audioUrl = mp3Url;
-              audioSources.push({ url: mp3Url, type: 'audio/mpeg', format: 'mp3' });
-            } else {
-              // إذا لم يوجد .mp3، نستخدم .opus مع Content-Type صحيح
-              audioSources.push({ url: audioUrl, type: 'audio/ogg; codecs=opus', format: 'opus' });
-              // نضيف أيضاً محاولة للبحث عن .mp3
-              audioSources.push({ url: mp3Url, type: 'audio/mpeg', format: 'mp3' });
-            }
-          } else if (ext === 'mp3') {
-            audioSources.push({ url: audioUrl, type: 'audio/mpeg', format: 'mp3' });
-          } else if (ext === 'm4a') {
-            audioSources.push({ url: audioUrl, type: 'audio/mp4', format: 'm4a' });
-          } else {
-            audioSources.push({ url: audioUrl, type: firstItemWithClip.mediaSnapshot.mime || 'audio/mpeg', format: ext || 'mp3' });
-          }
-          
-          listeningClip = {
-            audioUrl,
-            teil: undefined,
-            audioSources,
-          };
-        }
-      } catch (error) {
-        this.logger.warn(`Failed to get listening clip for attempt: ${error}`);
-      }
-    }
+    // الصوت أصبح per-question فقط - لا نضيف listeningClip على مستوى المحاولة
 
     // إصلاح examId - إذا كان object بعد populate، نأخذ _id
     const examIdValue = (attempt.examId as any)?._id 
@@ -2697,11 +2613,6 @@ export class AttemptsService {
           // لو فشل جلب المهمة، نرجع النتائج بدون fieldsResults
         }
       }
-    }
-
-    // إضافة listeningClip إذا كان موجوداً
-    if (listeningClip) {
-      result.listeningClip = listeningClip;
     }
 
     // إضافة readingText إذا كان موجوداً (لقسم القراءة LESEN)
