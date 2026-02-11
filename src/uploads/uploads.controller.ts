@@ -90,7 +90,7 @@ export class UploadsController {
     let finalPath = file.path;
     let finalFilename = file.filename;
     const ext = extname(file.filename).toLowerCase();
-    
+
     if (ext === '.opus' || ext === '.ogg') {
       const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
       if (convertedPath) {
@@ -102,38 +102,29 @@ export class UploadsController {
       }
     }
 
-    // استخدام PUBLIC_BASE_URL من environment variables، أو بناء URL من request
-    const publicBaseUrl = this.configService.get<string>('PUBLIC_BASE_URL');
-    let baseUrl: string;
-    
-    if (publicBaseUrl) {
-      baseUrl = publicBaseUrl;
-    } else {
-      // Fallback: بناء URL من request
-      baseUrl = `${req.protocol}://${req.get('host')}`;
-    }
+    // رفع الملف على S3 للتخزين الدائم (بدل التخزين المحلي اللي بينمحي مع كل deploy)
+    const fileBuffer = fs.readFileSync(finalPath);
+    const finalExt = extname(finalFilename).replace(/^\./, '').toLowerCase();
+    const mime = finalExt === 'mp3' ? 'audio/mpeg' : (file.mimetype || 'audio/mpeg');
 
-    const audioUrl = `${baseUrl}/uploads/audio/${finalFilename}`;
+    const s3Result = await this.mediaService.uploadBuffer({
+      buffer: fileBuffer,
+      mime,
+      ext: finalExt,
+      prefix: 'audio',
+    });
 
-    const response: any = { audioUrl };
+    // حذف الملف المحلي بعد الرفع على S3
+    try { fs.unlinkSync(finalPath); } catch (e) { /* ignore */ }
 
-    // إضافة multiple sources للتوافق مع المتصفحات المختلفة
-    if (ext === '.opus' || ext === '.ogg') {
-      response.audioSources = [
-        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
-      ];
-    } else if (ext === '.mp3') {
-      response.audioSources = [
-        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
-      ];
-    } else {
-      const mimeType = file.mimetype || 'audio/mpeg';
-      response.audioSources = [
-        { url: audioUrl, type: mimeType, format: ext.replace('.', '') },
-      ];
-    }
+    const audioUrl = s3Result.url;
 
-    return response;
+    return {
+      audioUrl,
+      audioSources: [
+        { url: audioUrl, type: mime, format: finalExt },
+      ],
+    };
   }
 
   @Post('image')

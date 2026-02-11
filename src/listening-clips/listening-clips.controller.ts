@@ -22,6 +22,8 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
 import { AudioConverterService } from '../common/services/audio-converter.service';
+import { MediaService } from '../modules/media/media.service';
+import * as fs from 'fs';
 
 @ApiTags('Listening Clips')
 @ApiBearerAuth('JWT-auth')
@@ -30,6 +32,7 @@ export class ListeningClipsController {
   constructor(
     private readonly service: ListeningClipsService,
     private readonly audioConverter: AudioConverterService,
+    private readonly mediaService: MediaService,
   ) {}
 
   @Post()
@@ -100,7 +103,7 @@ export class ListeningClipsController {
     let finalPath = file.path;
     let finalFilename = file.filename;
     const ext = extname(file.filename).toLowerCase();
-    
+
     if (ext === '.opus' || ext === '.ogg') {
       const convertedPath = await this.audioConverter.convertOpusToMp3(file.path);
       if (convertedPath) {
@@ -112,13 +115,25 @@ export class ListeningClipsController {
       }
     }
 
-    // استخدام مسار نسبي فقط (بدون baseUrl) لأن الفرونت سيبني الـ URL الكامل
-    const audioUrl = `/uploads/audio/${finalFilename}`;
+    // رفع الملف على S3 للتخزين الدائم (بدل التخزين المحلي اللي بينمحي مع كل deploy)
+    const fileBuffer = fs.readFileSync(finalPath);
+    const finalExt = extname(finalFilename).replace(/^\./, '').toLowerCase();
+    const mime = finalExt === 'mp3' ? 'audio/mpeg' : (file.mimetype || 'audio/mpeg');
 
+    const s3Result = await this.mediaService.uploadBuffer({
+      buffer: fileBuffer,
+      mime,
+      ext: finalExt,
+      prefix: 'audio',
+    });
+
+    // حذف الملف المحلي بعد الرفع على S3
+    try { fs.unlinkSync(finalPath); } catch (e) { /* ignore */ }
+
+    const audioUrl = s3Result.url;
     dto.audioUrl = audioUrl;
     const clip = await this.service.create(dto);
-    
-    // إرجاع كل البيانات المطلوبة مع دعم multiple sources
+
     const response: any = {
       _id: clip._id,
       audioUrl: clip.audioUrl,
@@ -127,26 +142,10 @@ export class ListeningClipsController {
       provider: clip.provider,
       skill: clip.skill,
       title: clip.title,
+      audioSources: [
+        { url: audioUrl, type: mime, format: finalExt },
+      ],
     };
-
-    // إضافة multiple sources للتوافق مع المتصفحات المختلفة
-    if (ext === '.opus' || ext === '.ogg') {
-      // إذا كان الملف الأصلي opus/ogg وتم تحويله، نضيف mp3 كـ primary source
-      response.audioSources = [
-        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
-      ];
-    } else if (ext === '.mp3') {
-      // إذا كان mp3، نضيفه كـ primary source
-      response.audioSources = [
-        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
-      ];
-    } else {
-      // للصيغ الأخرى، نضيفها كما هي
-      const mimeType = file.mimetype || 'audio/mpeg';
-      response.audioSources = [
-        { url: audioUrl, type: mimeType, format: ext.replace('.', '') },
-      ];
-    }
 
     return response;
   }
@@ -238,9 +237,24 @@ export class ListeningClipsController {
       }
     }
 
-    const audioUrl = `/uploads/audio/${finalFilename}`;
+    // رفع الملف على S3 للتخزين الدائم
+    const fileBuffer = fs.readFileSync(finalPath);
+    const finalExt = extname(finalFilename).replace(/^\./, '').toLowerCase();
+    const mime = finalExt === 'mp3' ? 'audio/mpeg' : (file.mimetype || 'audio/mpeg');
 
-    // إنشاء ListeningClip في MongoDB مع قيم افتراضية إذا لم تُرسل
+    const s3Result = await this.mediaService.uploadBuffer({
+      buffer: fileBuffer,
+      mime,
+      ext: finalExt,
+      prefix: 'audio',
+    });
+
+    // حذف الملف المحلي بعد الرفع على S3
+    try { fs.unlinkSync(finalPath); } catch (e) { /* ignore */ }
+
+    const audioUrl = s3Result.url;
+
+    // إنشاء ListeningClip في MongoDB
     const clip = await this.service.create({
       provider: (dto.provider || 'goethe') as any,
       level: (dto.level || 'A1') as any,
@@ -250,28 +264,13 @@ export class ListeningClipsController {
       ...(dto.title && { title: dto.title }),
     });
 
-    const response: any = {
+    return {
       listeningClipId: String(clip._id),
       audioUrl,
+      audioSources: [
+        { url: audioUrl, type: mime, format: finalExt },
+      ],
     };
-
-    // إضافة multiple sources للتوافق مع المتصفحات المختلفة
-    if (ext === '.opus' || ext === '.ogg') {
-      response.audioSources = [
-        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
-      ];
-    } else if (ext === '.mp3') {
-      response.audioSources = [
-        { url: audioUrl, type: 'audio/mpeg', format: 'mp3' },
-      ];
-    } else {
-      const mimeType = file.mimetype || 'audio/mpeg';
-      response.audioSources = [
-        { url: audioUrl, type: mimeType, format: ext.replace('.', '') },
-      ];
-    }
-
-    return response;
   }
 
   @Get()
