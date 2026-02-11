@@ -112,7 +112,7 @@ class InteractiveReorderDto {
 
 export class CreateQuestionDto {
   @IsString()
-  @MinLength(3)
+  @MinLength(1)
   prompt: string;
 
   // type كـ alias لـ qType (للتوافق مع الفرونت)
