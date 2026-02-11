@@ -2913,7 +2913,7 @@ export class ExamsService {
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds } })
-      .select('prompt text qType media images difficulty tags status listeningClipId audioUrl')
+      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl sampleAnswer minWords maxWords')
       .populate('listeningClipId', 'title audioUrl teil')
       .lean();
 
@@ -2991,6 +2991,25 @@ export class ExamsService {
         points: item.points ?? 1,
         status,
         score,
+        // MCQ options
+        ...(q.options && { options: q.options }),
+        // TRUE_FALSE
+        ...(q.answerKeyBoolean !== undefined && { answerKeyBoolean: q.answerKeyBoolean }),
+        // MATCH
+        ...(q.answerKeyMatch && { answerKeyMatch: q.answerKeyMatch }),
+        ...(q.matchPairs && { matchPairs: q.matchPairs }),
+        // REORDER
+        ...(q.answerKeyReorder && { answerKeyReorder: q.answerKeyReorder }),
+        // FILL
+        ...(q.fillExact && { fillExact: q.fillExact }),
+        // INTERACTIVE_TEXT
+        ...(q.interactiveText && { interactiveText: q.interactiveText }),
+        ...(q.interactiveBlanks && { interactiveBlanks: q.interactiveBlanks }),
+        ...(q.interactiveReorder && { interactiveReorder: q.interactiveReorder }),
+        // FREE_TEXT
+        ...(q.sampleAnswer && { sampleAnswer: q.sampleAnswer }),
+        ...(q.minWords !== undefined && { minWords: q.minWords }),
+        ...(q.maxWords !== undefined && { maxWords: q.maxWords }),
       };
 
       if (clipId) {
