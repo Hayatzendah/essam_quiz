@@ -563,6 +563,36 @@ export class AttemptsService {
       }
     }
 
+    // Fallback: كشف الصوت المشترك من الأسئلة (للامتحانات القديمة بدون section.listeningAudioId)
+    if (sectionListeningAudioIds.size === 0 && items.length > 0) {
+      const qIdsForClips = items.map(i => i.questionId);
+      const questionsForClips = await this.questionModel
+        .find({ _id: { $in: qIdsForClips } })
+        .select('listeningClipId')
+        .lean();
+      const qClipMap = new Map(questionsForClips.map((q: any) => [String(q._id), q.listeningClipId?.toString()]));
+
+      const sectionClipCounts = new Map<string, Map<string, number>>();
+      for (const item of items) {
+        const clipId = qClipMap.get(String(item.questionId));
+        if (!clipId || !item.sectionKey) continue;
+        if (!sectionClipCounts.has(item.sectionKey)) {
+          sectionClipCounts.set(item.sectionKey, new Map());
+        }
+        const clips = sectionClipCounts.get(item.sectionKey)!;
+        clips.set(clipId, (clips.get(clipId) || 0) + 1);
+      }
+
+      for (const [sectionKey, clips] of sectionClipCounts) {
+        for (const [clipId, count] of clips) {
+          if (count >= 2) {
+            sectionListeningAudioIds.set(sectionKey, clipId);
+            this.logger.log(`[startAttempt] Fallback: detected shared audio clip ${clipId} in section "${sectionKey}" (${count} questions)`);
+          }
+        }
+      }
+    }
+
     // 7. إنشاء snapshots للأسئلة
     const itemsWithSnapshots = await Promise.all(
       items.map((item) => this.createItemSnapshot(item, sectionListeningAudioIds)),
@@ -629,6 +659,12 @@ export class AttemptsService {
         if (sec.listeningAudioId) {
           sectionAudioClipIdsForResponse.add(sec.listeningAudioId.toString());
         }
+      }
+    }
+    // Fallback: إذا فارغ، نستخدم البيانات المكتشفة من الأسئلة
+    if (sectionAudioClipIdsForResponse.size === 0 && sectionListeningAudioIds.size > 0) {
+      for (const [, clipId] of sectionListeningAudioIds) {
+        sectionAudioClipIdsForResponse.add(clipId);
       }
     }
 
@@ -2816,6 +2852,23 @@ export class AttemptsService {
         const sec = section as any;
         if (sec.listeningAudioId) {
           sectionAudioClipIds.add(sec.listeningAudioId.toString());
+        }
+      }
+    }
+    // Fallback: كشف الصوت المشترك من attempt items (للامتحانات القديمة بدون section.listeningAudioId)
+    if (sectionAudioClipIds.size === 0) {
+      const sClipCounts = new Map<string, Map<string, number>>();
+      for (const item of (attempt.items || [])) {
+        const clipId = (item as any).listeningClipId?.toString();
+        const sk = (item as any).sectionKey;
+        if (!clipId || !sk) continue;
+        if (!sClipCounts.has(sk)) sClipCounts.set(sk, new Map());
+        const clips = sClipCounts.get(sk)!;
+        clips.set(clipId, (clips.get(clipId) || 0) + 1);
+      }
+      for (const [, clips] of sClipCounts) {
+        for (const [clipId, count] of clips) {
+          if (count >= 2) sectionAudioClipIds.add(clipId);
         }
       }
     }

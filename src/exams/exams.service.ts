@@ -2727,6 +2727,9 @@ export class ExamsService {
       throw new NotFoundException(`ListeningClip ${dto.listeningClipId} not found`);
     }
 
+    // تعيين listeningAudioId على الـ section عشان الـ attempt يعرف إن الصوت مشترك ولا يكرره
+    section.listeningAudioId = new Types.ObjectId(dto.listeningClipId);
+
     const results: Array<{
       index: number;
       questionId: any;
