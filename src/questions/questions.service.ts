@@ -874,7 +874,11 @@ export class QuestionsService {
       }
     });
 
-    // 6) البحث عن سكشن بـ sectionKey أولاً، ثم بالاسم
+    // Normalize skill قبل البحث عن القسم
+    const normalizedSkill = skill ? normalizeSkill(skill) : undefined;
+    const finalSkill = normalizedSkill && typeof normalizedSkill === 'string' ? normalizedSkill : skill;
+
+    // 6) البحث عن سكشن بـ sectionKey أولاً، ثم بالاسم، ثم بـ skill+teilNumber
     let sectionIndex = -1;
     if (sectionKey) {
       // البحث عبر key المحفوظ أو المولّد تلقائياً
@@ -892,15 +896,19 @@ export class QuestionsService {
       });
     }
     if (sectionIndex === -1 && sectionName) {
-      // fallback: البحث بالاسم (الطريقة القديمة)
+      // fallback 1: البحث بالاسم (الطريقة القديمة)
       sectionIndex = cleanSections.findIndex(
         (sec: any) => sec.name === sectionName || sec.title === sectionName,
       );
     }
-
-    // Normalize skill قبل إضافته للـ section
-    const normalizedSkill = skill ? normalizeSkill(skill) : undefined;
-    const finalSkill = normalizedSkill && typeof normalizedSkill === 'string' ? normalizedSkill : skill;
+    if (sectionIndex === -1 && finalSkill && teilNumber) {
+      // fallback 2: البحث عبر skill + teilNumber (يطابق أقسام موجودة بنفس المهارة والجزء)
+      sectionIndex = cleanSections.findIndex(
+        (sec: any) => sec.skill && sec.teilNumber &&
+          sec.skill.toLowerCase() === finalSkill.toLowerCase() &&
+          sec.teilNumber === teilNumber,
+      );
+    }
 
     if (sectionIndex === -1) {
       // 7) لو مش موجود → نضيف سكشن جديد فيه السؤال
