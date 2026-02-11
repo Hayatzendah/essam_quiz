@@ -2909,10 +2909,10 @@ export class ExamsService {
       };
     }
 
-    // جلب تفاصيل الأسئلة مع populate لبيانات الكليب الصوتي
+    // جلب تفاصيل الأسئلة مع populate لبيانات الكليب الصوتي (فقط المنشورة)
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
-      .find({ _id: { $in: questionIds } })
+      .find({ _id: { $in: questionIds }, status: 'published' })
       .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl sampleAnswer minWords maxWords')
       .populate('listeningClipId', 'title audioUrl teil')
       .lean();

@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -1160,6 +1160,120 @@ export class AttemptsService {
   }
 
   /**
+   * إضافة سؤال تلقائياً للمحاولة إذا كان ينتمي للامتحان
+   */
+  private async autoAddQuestionToAttempt(attempt: any, questionId: string): Promise<any | null> {
+    const question: any = await this.questionModel.findById(questionId).lean().exec();
+    if (!question) return null;
+
+    // التحقق من أن السؤال ينتمي لامتحان المحاولة
+    const exam = await this.examModel.findById(attempt.examId).lean().exec();
+    if (!exam || !exam.sections) return null;
+
+    let foundSectionKey = '';
+    let belongsToExam = false;
+    for (const section of exam.sections) {
+      if (section.items && Array.isArray(section.items)) {
+        const found = section.items.find((si: any) => si.questionId && String(si.questionId) === questionId);
+        if (found) {
+          belongsToExam = true;
+          foundSectionKey = section.key || section.name || '';
+          break;
+        }
+      }
+    }
+    if (!belongsToExam) return null;
+
+    // إنشاء item جديد
+    const newItem: any = {
+      questionId: new Types.ObjectId(questionId),
+      qType: question.qType,
+      points: question.points || 1,
+      sectionKey: foundSectionKey,
+      promptSnapshot: question.prompt || question.text,
+      autoScore: 0,
+    };
+
+    if (question.correctOptionIndexes) newItem.correctOptionIndexes = question.correctOptionIndexes;
+    if (question.answerKeyBoolean !== undefined) newItem.answerKeyBoolean = question.answerKeyBoolean;
+    if (question.fillExact) newItem.fillExact = question.fillExact;
+    if (question.regexList) newItem.regexList = question.regexList;
+    if (question.answerKeyMatch) newItem.answerKeyMatch = question.answerKeyMatch;
+    if (question.matchPairs) newItem.matchPairs = question.matchPairs;
+    if (question.answerKeyReorder) newItem.answerKeyReorder = question.answerKeyReorder;
+    if (question.interactiveText) newItem.interactiveTextSnapshot = question.interactiveText;
+    if (question.interactiveBlanks) newItem.interactiveBlanksSnapshot = question.interactiveBlanks;
+    if (question.interactiveReorder) newItem.interactiveReorderSnapshot = question.interactiveReorder;
+
+    if (question.options && Array.isArray(question.options)) {
+      newItem.optionsSnapshot = question.options.map((opt: any) => ({
+        text: opt.text,
+        isCorrect: opt.isCorrect,
+      }));
+      newItem.optionsText = question.options.map((opt: any) => opt.text);
+      if (!newItem.correctOptionIndexes) {
+        newItem.correctOptionIndexes = question.options
+          .map((opt: any, idx: number) => opt.isCorrect ? idx : -1)
+          .filter((idx: number) => idx !== -1);
+      }
+    }
+
+    attempt.items.push(newItem);
+    this.logger.log(`[autoAddQuestionToAttempt] Added question ${questionId} to attempt (section: ${foundSectionKey})`);
+    return attempt.items[attempt.items.length - 1];
+  }
+
+  /**
+   * إيجاد عنصر المحاولة حسب questionId - مع fallback عبر تعريف الامتحان (قسم الاستماع وغيره)
+   * يحل مشكلة أن الفرونت قد يرسل questionId من تعريف القسم وليس من عناصر المحاولة
+   */
+  private async findAttemptItemByQuestionId(
+    attempt: any,
+    questionId: string,
+  ): Promise<{ item: any; itemIdx: number } | null> {
+    const qId = (questionId || '').trim();
+    if (!qId) return null;
+
+    // 1) بحث مباشر في attempt.items
+    const directIdx = attempt.items.findIndex(
+      (i: any) => i.questionId && String(i.questionId) === qId,
+    );
+    if (directIdx !== -1) {
+      return { item: attempt.items[directIdx], itemIdx: directIdx };
+    }
+
+    // 2) Fallback: البحث في أقسام الامتحان ثم مطابقة العنصر بنفس القسم ونفس الترتيب
+    const exam = await this.examModel.findById(attempt.examId).lean().exec();
+    if (!exam || !exam.sections || !Array.isArray(exam.sections)) return null;
+
+    for (const section of exam.sections) {
+      if (!section?.items || !Array.isArray(section.items)) continue;
+      const sectionKey = section.key || section.name || '';
+      const indexInSection = section.items.findIndex(
+        (si: any) => si && si.questionId && String(si.questionId) === qId,
+      );
+      if (indexInSection === -1) continue;
+
+      const sectionItems = (attempt.items || []).filter(
+        (i: any) => (i.sectionKey || '') === sectionKey,
+      );
+      const itemInSection = sectionItems[indexInSection];
+      if (!itemInSection) continue;
+
+      const realIdx = attempt.items.findIndex(
+        (i: any) => i === itemInSection || (i.questionId && String(i.questionId) === String(itemInSection.questionId)),
+      );
+      if (realIdx !== -1) {
+        this.logger.log(
+          `[findAttemptItemByQuestionId] Resolved questionId ${qId} via section "${sectionKey}" index ${indexInSection} -> attempt itemIdx ${realIdx}`,
+        );
+        return { item: attempt.items[realIdx], itemIdx: realIdx };
+      }
+    }
+    return null;
+  }
+
+  /**
    * إنشاء snapshot للسؤال
    */
   private async createItemSnapshot(item: AttemptItem, sectionListeningAudioIds?: Map<string, string>): Promise<AttemptItem> {
@@ -1490,8 +1604,16 @@ export class AttemptsService {
       }
     } else if (answerData.questionId) {
       item = attempt.items.find(
-        (i: any) => i.questionId.toString() === answerData.questionId,
+        (i: any) => i.questionId && i.questionId.toString() === answerData.questionId,
       );
+      if (!item) {
+        const resolved = await this.findAttemptItemByQuestionId(attempt, answerData.questionId);
+        if (resolved) item = resolved.item;
+      }
+      // إذا السؤال مش موجود بالمحاولة، نضيفه تلقائياً
+      if (!item) {
+        item = await this.autoAddQuestionToAttempt(attempt, answerData.questionId);
+      }
       if (!item) {
         throw new BadRequestException(`Question ${answerData.questionId} not found in attempt`);
       }
@@ -1575,12 +1697,29 @@ export class AttemptsService {
     let itemIdx: number = -1;
     if (answerData.questionId) {
       itemIdx = attempt.items.findIndex(
-        (i: any) => i.questionId.toString() === answerData.questionId,
+        (i: any) => i.questionId && i.questionId.toString() === answerData.questionId,
       );
-      if (itemIdx !== -1) item = attempt.items[itemIdx];
+      if (itemIdx !== -1) {
+        item = attempt.items[itemIdx];
+      } else {
+        // Fallback: قسم الاستماع وغيره - إيجاد العنصر عبر تعريف الامتحان (نفس القسم ونفس الترتيب)
+        const resolved = await this.findAttemptItemByQuestionId(attempt, answerData.questionId);
+        if (resolved) {
+          item = resolved.item;
+          itemIdx = resolved.itemIdx;
+        }
+      }
     } else if (answerData.itemIndex !== undefined) {
       itemIdx = answerData.itemIndex;
       item = attempt.items[itemIdx];
+    }
+
+    // إذا السؤال مش موجود بالمحاولة، نضيفه تلقائياً (لو موجود بالامتحان)
+    if (!item && answerData.questionId) {
+      item = await this.autoAddQuestionToAttempt(attempt, answerData.questionId);
+      if (item) {
+        itemIdx = attempt.items.length - 1;
+      }
     }
 
     if (!item) {
