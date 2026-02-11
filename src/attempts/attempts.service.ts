@@ -552,14 +552,22 @@ export class AttemptsService {
       this.shuffleArray(items, randomSeed);
     }
 
-    // الصوت أصبح per-question - لا حاجة لربط صوت القسم
+    // بناء map لصوت السكشنات عشان ما نكرر الصوت بكل سؤال
     const sectionListeningAudioIds = new Map<string, string>();
+    if (exam.sections && Array.isArray(exam.sections)) {
+      for (const section of exam.sections) {
+        const sec = section as any;
+        if (sec.listeningAudioId) {
+          sectionListeningAudioIds.set(sec.key || sec.name || sec.title, sec.listeningAudioId.toString());
+        }
+      }
+    }
 
     // 7. إنشاء snapshots للأسئلة
     const itemsWithSnapshots = await Promise.all(
       items.map((item) => this.createItemSnapshot(item, sectionListeningAudioIds)),
     );
-    
+
     // Log للتحقق من answerKeyMatch قبل save
     itemsWithSnapshots.forEach((snapshot: any) => {
       if (snapshot.qType === QuestionType.MATCH) {
@@ -613,9 +621,16 @@ export class AttemptsService {
     // 10. إرجاع البيانات (بدون answer keys)
     const attemptObj = attempt.toObject();
 
-    // الصوت أصبح per-question فقط - لا نبحث عن صوت على مستوى القسم
-    const listeningClip: any = null;
-    const sectionListeningClipId: string | null = null;
+    // بناء set لصوت السكشنات عشان نشيل mediaSnapshot من الأسئلة اللي صوتها من الـ section
+    const sectionAudioClipIdsForResponse = new Set<string>();
+    if (exam.sections && Array.isArray(exam.sections)) {
+      for (const section of exam.sections) {
+        const sec = section as any;
+        if (sec.listeningAudioId) {
+          sectionAudioClipIdsForResponse.add(sec.listeningAudioId.toString());
+        }
+      }
+    }
 
     // بناء response items
     // جمع جميع questionIds للأسئلة Match التي لا تحتوي على matchPairs أو answerKeyMatch
@@ -645,7 +660,14 @@ export class AttemptsService {
         this.logger.warn(`[getAttempt] [MATCH BEFORE DESTRUCT] item keys: ${Object.keys(item).join(', ')}`);
       }
       
-      const { answerKeyBoolean, fillExact, regexList, correctOptionIndexes, answerKeyMatch, answerKeyReorder, matchPairs, mediaType: _mt2, mediaMime: _mm2, mediaUrl: _mu2, listeningClipId: _lc2, ...rest } = item;
+      const { answerKeyBoolean, fillExact, regexList, correctOptionIndexes, answerKeyMatch, answerKeyReorder, matchPairs, mediaType: _mt2, mediaMime: _mm2, mediaUrl: _mu2, listeningClipId: _lc2, mediaSnapshot: _ms2, ...rest } = item;
+
+      // إذا كان الصوت خاص بالسؤال (مش من section)، نرجعه
+      const itemClipId2 = item.listeningClipId?.toString();
+      const isAudioFromSection2 = itemClipId2 && sectionAudioClipIdsForResponse.has(itemClipId2);
+      if (_ms2 && !isAudioFromSection2) {
+        rest.mediaSnapshot = _ms2;
+      }
 
       // إضافة matchPairs و answerKeyMatch للأسئلة من نوع match
       if (item.qType === QuestionType.MATCH) {
@@ -2792,7 +2814,16 @@ export class AttemptsService {
     const policy = exam.resultsPolicy || 'explanations_with_scores';
     const isStudent = user.role === 'student' && isOwner;
 
-    // الصوت أصبح per-question فقط - لا نضيف listeningClip على مستوى المحاولة
+    // بناء set لصوت السكشنات عشان نشيل mediaSnapshot من الأسئلة اللي صوتها من الـ section
+    const sectionAudioClipIds = new Set<string>();
+    if (exam.sections && Array.isArray(exam.sections)) {
+      for (const section of exam.sections) {
+        const sec = section as any;
+        if (sec.listeningAudioId) {
+          sectionAudioClipIds.add(sec.listeningAudioId.toString());
+        }
+      }
+    }
 
     // إصلاح examId - إذا كان object بعد populate، نأخذ _id
     const examIdValue = (attempt.examId as any)?._id 
@@ -3331,7 +3362,10 @@ export class AttemptsService {
         }
 
         // إضافة media (الأولوية لـ mediaSnapshot)
-        if (item.mediaSnapshot) {
+        // تخطي mediaSnapshot إذا كان الصوت تبع الـ section (لمنع ظهور مشغلين صوت)
+        const itemClipId = item.listeningClipId?.toString();
+        const isItemAudioFromSection = itemClipId && sectionAudioClipIds.has(itemClipId);
+        if (item.mediaSnapshot && !isItemAudioFromSection) {
           const baseUrl = this.configService.get<string>('PUBLIC_BASE_URL') || this.configService.get<string>('APP_URL', 'https://api.deutsch-tests.com');
           // تحديث URL إذا كان مسار نسبي أو localhost
           let mediaUrl = item.mediaSnapshot.url;
