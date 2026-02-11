@@ -52,10 +52,9 @@ export class SubmitAttemptAnswerDto {
   // لأسئلة الاختيار / صح وغلط - استخدام indexes (0-based)
   // للـ MCQ: indexes للخيارات المختارة
   // للـ True/False: 0 = false, 1 = true
-  @ValidateIf((o) => !o.answerText && !o.textAnswer)
+  // يمكن إرسال مصفوفة فارغة [] لأسئلة لم يتم الإجابة عليها
   @IsOptional()
   @IsArray()
-  @ArrayMinSize(1, { message: 'selectedOptionIndexes must contain at least 1 element' })
   @IsNumber({}, { each: true })
   @Min(0, { each: true })
   selectedOptionIndexes?: number[];
@@ -74,7 +73,6 @@ export class SubmitAttemptAnswerDto {
   // للتوافق مع الكود القديم - للـ MCQ: indexes كـ numbers (0-based)
   @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @IsNumber({}, { each: true })
   @Min(0, { each: true })
   studentAnswerIndexes?: number[];
