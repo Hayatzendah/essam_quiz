@@ -356,7 +356,6 @@ export class AttemptsService {
         qType: item.qType,
         options,
         ...(rest.mediaSnapshot && { mediaSnapshot: rest.mediaSnapshot }),
-        ...(rest.mediaUrl && { mediaUrl: rest.mediaUrl }),
         ...(rest.imagesSnapshot && { imagesSnapshot: rest.imagesSnapshot }),
       };
 
@@ -646,94 +645,36 @@ export class AttemptsService {
         this.logger.warn(`[getAttempt] [MATCH BEFORE DESTRUCT] item keys: ${Object.keys(item).join(', ')}`);
       }
       
-      const { answerKeyBoolean, fillExact, regexList, correctOptionIndexes, answerKeyMatch, answerKeyReorder, matchPairs, ...rest } = item;
-      
-      // إذا كان صوت السؤال هو نفس صوت القسم (نفس الـ ID)، نحذف صوت السؤال
-      // نحافظ على الصوت الخاص بكل سؤال إذا كان مختلفاً عن صوت القسم
-      const itemMatchesSectionAudio2 = sectionListeningClipId &&
-        item.listeningClipId && item.listeningClipId.toString() === sectionListeningClipId;
-      if (itemMatchesSectionAudio2) {
-        const { mediaSnapshot, mediaType, mediaUrl, mediaMime, imagesSnapshot, ...itemWithoutMedia } = rest;
-        
-        // إضافة matchPairs و answerKeyMatch للأسئلة من نوع match (من snapshot إذا كان موجوداً)
-        if (item.qType === QuestionType.MATCH) {
-          let finalAnswerKeyMatch: [string, string][] | undefined = undefined;
-          let finalMatchPairs: Array<{ left: string; right: string }> | undefined = undefined;
-          
-          if (matchPairs && Array.isArray(matchPairs) && matchPairs.length > 0) {
-            finalMatchPairs = matchPairs;
-            // تحويل matchPairs إلى answerKeyMatch للتوافق
-            finalAnswerKeyMatch = matchPairs.map((p: { left: string; right: string }) => [p.left, p.right] as [string, string]);
-          } else if (answerKeyMatch && Array.isArray(answerKeyMatch) && answerKeyMatch.length > 0) {
-            // fallback: إذا لم يكن matchPairs في snapshot، نحوله من answerKeyMatch
-            finalAnswerKeyMatch = answerKeyMatch;
-            finalMatchPairs = answerKeyMatch.map(([left, right]: [string, string]) => ({ left, right }));
-          } else {
-            // fallback 2: استرجاع answerKeyMatch من السؤال الأصلي
-            const questionIdStr = String(item.questionId);
-            const originalQuestion = questionsMap.get(questionIdStr);
-            if (originalQuestion && originalQuestion.answerKeyMatch && Array.isArray(originalQuestion.answerKeyMatch) && originalQuestion.answerKeyMatch.length > 0) {
-              finalAnswerKeyMatch = originalQuestion.answerKeyMatch;
-              finalMatchPairs = originalQuestion.answerKeyMatch.map(([left, right]: [string, string]) => ({ left, right }));
-              this.logger.log(`[getAttempt] Match question ${item.questionId}: Retrieved answerKeyMatch from original question (fallback)`);
-            } else {
-              this.logger.warn(`[getAttempt] Match question ${item.questionId} has no matchPairs, answerKeyMatch in snapshot, or answerKeyMatch in original question!`);
-            }
-          }
-          
-          return {
-            ...itemWithoutMedia,
-            ...(imagesSnapshot && { imagesSnapshot }),
-            ...(finalAnswerKeyMatch && { answerKeyMatch: finalAnswerKeyMatch }),
-            ...(finalMatchPairs && { matchPairs: finalMatchPairs }),
-          };
-        }
-        
-        return {
-          ...itemWithoutMedia,
-          ...(imagesSnapshot && { imagesSnapshot }),
-        };
-      }
-      
-      // إضافة matchPairs و answerKeyMatch للأسئلة من نوع match (من snapshot إذا كان موجوداً)
+      const { answerKeyBoolean, fillExact, regexList, correctOptionIndexes, answerKeyMatch, answerKeyReorder, matchPairs, mediaType: _mt2, mediaMime: _mm2, mediaUrl: _mu2, listeningClipId: _lc2, ...rest } = item;
+
+      // إضافة matchPairs و answerKeyMatch للأسئلة من نوع match
       if (item.qType === QuestionType.MATCH) {
         let finalAnswerKeyMatch: [string, string][] | undefined = undefined;
         let finalMatchPairs: Array<{ left: string; right: string }> | undefined = undefined;
-        
+
         if (matchPairs && Array.isArray(matchPairs) && matchPairs.length > 0) {
           finalMatchPairs = matchPairs;
-          // تحويل matchPairs إلى answerKeyMatch للتوافق
           finalAnswerKeyMatch = matchPairs.map((p: { left: string; right: string }) => [p.left, p.right] as [string, string]);
         } else if (answerKeyMatch && Array.isArray(answerKeyMatch) && answerKeyMatch.length > 0) {
-          // fallback: إذا لم يكن matchPairs في snapshot، نحوله من answerKeyMatch
           finalAnswerKeyMatch = answerKeyMatch;
           finalMatchPairs = answerKeyMatch.map(([left, right]: [string, string]) => ({ left, right }));
         } else {
-          // fallback 2: استرجاع answerKeyMatch من السؤال الأصلي
           const questionIdStr = String(item.questionId);
           const originalQuestion = questionsMap.get(questionIdStr);
           if (originalQuestion && originalQuestion.answerKeyMatch && Array.isArray(originalQuestion.answerKeyMatch) && originalQuestion.answerKeyMatch.length > 0) {
             finalAnswerKeyMatch = originalQuestion.answerKeyMatch;
             finalMatchPairs = originalQuestion.answerKeyMatch.map(([left, right]: [string, string]) => ({ left, right }));
-            this.logger.log(`[getAttempt] Match question ${item.questionId}: Retrieved answerKeyMatch from original question (fallback)`);
-          } else {
-            this.logger.warn(`[getAttempt] Match question ${item.questionId} has no matchPairs, answerKeyMatch in snapshot, or answerKeyMatch in original question!`);
           }
         }
-        
-          const finalItem = {
-            ...rest,
-            ...(finalAnswerKeyMatch && { answerKeyMatch: finalAnswerKeyMatch }),
-            ...(finalMatchPairs && { matchPairs: finalMatchPairs }),
-          };
-          
-          // Log للتحقق من answerKeyMatch/matchPairs بعد إضافتها
-          this.logger.warn(`[getAttempt] [MATCH AFTER ADD] qId: ${String(item.questionId)}, hasAnswerKeyMatch: ${!!finalItem.answerKeyMatch}, hasMatchPairs: ${!!finalItem.matchPairs}, answerKeyMatchLen: ${finalItem.answerKeyMatch?.length || 0}, matchPairsLen: ${finalItem.matchPairs?.length || 0}`);
-          
-          return finalItem;
-        }
-        
-        return rest;
+
+        return {
+          ...rest,
+          ...(finalAnswerKeyMatch && { answerKeyMatch: finalAnswerKeyMatch }),
+          ...(finalMatchPairs && { matchPairs: finalMatchPairs }),
+        };
+      }
+
+      return rest;
     });
 
     const response: any = {
