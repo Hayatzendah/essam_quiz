@@ -1695,6 +1695,133 @@ export class AttemptsService {
   }
 
   /**
+   * نتيجة قسم واحد فقط - يصحح أسئلة القسم ويرجع الإحصائيات بدون تسليم الامتحان
+   */
+  async getSectionSummary(user: ReqUser, attemptId: string, sectionKey: string) {
+    const attempt = await this.attemptModel.findById(attemptId).exec();
+    if (!attempt) {
+      throw new NotFoundException(`Attempt ${attemptId} not found`);
+    }
+
+    if (attempt.studentId.toString() !== user.userId) {
+      throw new ForbiddenException('You can only view your own attempts');
+    }
+
+    // فلترة الأسئلة حسب sectionKey
+    const sectionItems = attempt.items.filter(
+      (item: any) => item.sectionKey === sectionKey,
+    );
+
+    if (sectionItems.length === 0) {
+      throw new NotFoundException(`No questions found for section "${sectionKey}" in this attempt`);
+    }
+
+    // تصحيح كل سؤال في القسم
+    let totalScore = 0;
+    let totalMaxPoints = 0;
+    let correctCount = 0;
+    let wrongCount = 0;
+    let unansweredCount = 0;
+    const questions: any[] = [];
+
+    for (const item of sectionItems) {
+      let score = 0;
+      let hasStudentAnswer = false;
+      let correctAnswer: any = undefined;
+
+      // التحقق من وجود إجابة
+      if (item.qType === QuestionType.MCQ || item.qType === QuestionType.LISTEN) {
+        hasStudentAnswer = !!(item.studentAnswerIndexes && item.studentAnswerIndexes.length > 0);
+        score = this.gradeMcq(item);
+        correctAnswer = { correctOptionIndexes: item.correctOptionIndexes };
+      } else if (item.qType === QuestionType.TRUE_FALSE) {
+        hasStudentAnswer = !!(item.studentAnswerIndexes && item.studentAnswerIndexes.length > 0) || item.studentAnswerBoolean !== undefined;
+        score = this.gradeTrueFalse(item);
+        correctAnswer = { correctOptionIndexes: item.correctOptionIndexes };
+      } else if (item.qType === QuestionType.FILL) {
+        hasStudentAnswer = !!item.studentAnswerText;
+        score = this.gradeFill(item);
+        correctAnswer = { fillExact: item.fillExact };
+      } else if (item.qType === QuestionType.MATCH) {
+        hasStudentAnswer = !!(item.studentAnswerMatch && item.studentAnswerMatch.length > 0);
+        score = this.gradeMatch(item);
+        correctAnswer = { answerKeyMatch: item.answerKeyMatch || item.matchPairs };
+      } else if (item.qType === QuestionType.REORDER) {
+        hasStudentAnswer = !!(item.studentAnswerReorder && item.studentAnswerReorder.length > 0);
+        score = this.gradeReorder(item);
+        correctAnswer = { answerKeyReorder: item.answerKeyReorder };
+      } else if (item.qType === QuestionType.INTERACTIVE_TEXT) {
+        if (item.interactiveBlanksSnapshot && item.interactiveBlanksSnapshot.length > 0) {
+          hasStudentAnswer = !!(item.studentInteractiveAnswers && Object.keys(item.studentInteractiveAnswers).length > 0);
+          score = this.gradeInteractiveBlanks(item);
+          correctAnswer = { interactiveBlanks: item.interactiveBlanksSnapshot };
+        } else if (item.interactiveReorderSnapshot) {
+          hasStudentAnswer = !!(item.studentReorderAnswer && item.studentReorderAnswer.length > 0);
+          score = this.gradeInteractiveReorder(item);
+          correctAnswer = { interactiveReorder: item.interactiveReorderSnapshot };
+        }
+      } else if (item.qType === QuestionType.FREE_TEXT || item.qType === QuestionType.SPEAKING) {
+        hasStudentAnswer = !!item.studentAnswerText || !!item.studentAnswerAudioKey || !!item.studentRecording;
+        score = 0; // تصحيح يدوي
+      }
+
+      item.autoScore = score;
+      const points = item.points || 1;
+      const isCorrect = score > 0 && score >= points;
+
+      if (!hasStudentAnswer) {
+        unansweredCount++;
+      } else if (isCorrect) {
+        correctCount++;
+      } else {
+        wrongCount++;
+      }
+
+      totalScore += score;
+      totalMaxPoints += points;
+
+      questions.push({
+        questionId: item.questionId.toString(),
+        qType: item.qType,
+        prompt: item.promptSnapshot,
+        hasAnswer: hasStudentAnswer,
+        isCorrect: hasStudentAnswer ? isCorrect : null,
+        score,
+        maxPoints: points,
+        correctAnswer,
+        ...(item.optionsSnapshot && { options: item.optionsSnapshot }),
+        ...(item.studentAnswerIndexes && { studentAnswerIndexes: item.studentAnswerIndexes }),
+        ...(item.studentAnswerText && { studentAnswerText: item.studentAnswerText }),
+        ...(item.studentAnswerBoolean !== undefined && { studentAnswerBoolean: item.studentAnswerBoolean }),
+        ...(item.studentAnswerMatch && { studentAnswerMatch: item.studentAnswerMatch }),
+        ...(item.studentAnswerReorder && { studentAnswerReorder: item.studentAnswerReorder }),
+        ...(item.studentInteractiveAnswers && { studentInteractiveAnswers: item.studentInteractiveAnswers }),
+        ...(item.studentReorderAnswer && { studentReorderAnswer: item.studentReorderAnswer }),
+      });
+    }
+
+    // حفظ الدرجات المحدثة
+    await attempt.save();
+
+    const answeredCount = correctCount + wrongCount;
+    const totalQuestions = sectionItems.length;
+    const percent = totalMaxPoints > 0 ? Math.round((totalScore / totalMaxPoints) * 100) : 0;
+
+    return {
+      sectionKey,
+      totalQuestions,
+      answered: answeredCount,
+      correct: correctCount,
+      wrong: wrongCount,
+      unanswered: unansweredCount,
+      score: totalScore,
+      maxScore: totalMaxPoints,
+      percent,
+      questions,
+    };
+  }
+
+  /**
    * تسليم المحاولة
    */
   async submitAttempt(user: ReqUser, attemptId: string, answers?: any[]) {

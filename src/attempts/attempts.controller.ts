@@ -275,6 +275,21 @@ export class AttemptsController {
     }
   }
 
+  // نتيجة قسم واحد فقط - بدون تسليم الامتحان (طالب فقط)
+  @Get(':attemptId/sections/:sectionKey/summary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('student')
+  async sectionSummary(
+    @Param('attemptId') attemptId: string,
+    @Param('sectionKey') sectionKey: string,
+    @Req() req: any,
+  ) {
+    this.logger.log(
+      `[GET /attempts/${attemptId}/sections/${sectionKey}/summary] Request received - userId: ${req.user?.userId}`,
+    );
+    return this.service.getSectionSummary(req.user, attemptId, sectionKey);
+  }
+
   // فحص إجابة سؤال واحد - يحفظ ويصحح ويرجع النتيجة (طالب فقط)
   @Post(':attemptId/check-answer')
   @UseGuards(JwtAuthGuard, RolesGuard)
