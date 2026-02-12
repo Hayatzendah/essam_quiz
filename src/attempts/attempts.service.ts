@@ -1213,6 +1213,15 @@ export class AttemptsService {
   }
 
   /**
+   * استخراج S3 key من رابط الصوت (للكليبات القديمة بدون audioKey)
+   */
+  private extractAudioKeyFromUrl(url: string): string | null {
+    if (!url) return null;
+    const match = url.match(/(audio\/[^?#]+)/);
+    return match ? match[1] : null;
+  }
+
+  /**
    * إضافة سؤال تلقائياً للمحاولة إذا كان ينتمي للامتحان
    */
   private async autoAddQuestionToAttempt(attempt: any, questionId: string): Promise<any | null> {
@@ -1590,15 +1599,28 @@ export class AttemptsService {
         if (clip && clip.audioUrl) {
             // تحديد mime type بناءً على extension الملف
             const mimeType = this.getMimeTypeFromUrl(clip.audioUrl);
+
+            // توليد pre-signed URL (24 ساعة) بدل الرابط المباشر
+            let signedUrl: string | undefined;
+            const audioKey = (clip as any).audioKey || this.extractAudioKeyFromUrl(clip.audioUrl);
+            if (audioKey) {
+              try {
+                signedUrl = await this.mediaService.getPresignedUrl(audioKey, 86400);
+              } catch (e) {
+                this.logger.warn(`Failed to presign audio key ${audioKey}: ${e}`);
+              }
+            }
+            const finalUrl = signedUrl || (clip.audioUrl.startsWith('http') || clip.audioUrl.startsWith('/') ? clip.audioUrl : undefined);
+
           snapshot.mediaSnapshot = {
             type: 'audio',
-            key: clip.audioUrl,
+            key: audioKey || clip.audioUrl,
               mime: mimeType,
-            url: clip.audioUrl.startsWith('http') || clip.audioUrl.startsWith('/') ? clip.audioUrl : undefined,
+            url: finalUrl,
           };
           snapshot.mediaType = 'audio';
             snapshot.mediaMime = mimeType;
-          snapshot.mediaUrl = clip.audioUrl.startsWith('http') || clip.audioUrl.startsWith('/') ? clip.audioUrl : undefined;
+          snapshot.mediaUrl = finalUrl;
           // حفظ listeningClipId للرجوع إليه لاحقاً
           snapshot.listeningClipId = question.listeningClipId;
         }

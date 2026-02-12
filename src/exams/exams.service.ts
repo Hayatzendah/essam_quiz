@@ -23,6 +23,7 @@ import { UpdateSectionDto } from './dto/update-section.dto';
 import { AddQuestionToSectionDto, ReorderSectionQuestionsDto } from './dto/section-question.dto';
 import { BulkCreateSectionQuestionsDto } from './dto/bulk-section-questions.dto';
 import { ListeningClip, ListeningClipDocument } from '../listening-clips/schemas/listening-clip.schema';
+import { MediaService } from '../modules/media/media.service';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
 
@@ -35,6 +36,7 @@ export class ExamsService {
     @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
     @InjectModel(Attempt.name) private readonly attemptModel: Model<AttemptDocument>,
     @InjectModel(ListeningClip.name) private readonly listeningClipModel: Model<ListeningClipDocument>,
+    private readonly mediaService: MediaService,
   ) {}
 
   private assertTeacherOrAdmin(user: ReqUser) {
@@ -3057,7 +3059,7 @@ export class ExamsService {
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds }, status: 'published' })
       .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage sampleAnswer minWords maxWords')
-      .populate('listeningClipId', 'title audioUrl teil')
+      .populate('listeningClipId', 'title audioUrl audioKey teil')
       .lean();
 
     const questionMap = new Map(questions.map((q: any) => [q._id.toString(), q]));
@@ -3190,11 +3192,17 @@ export class ExamsService {
       const answered = group.questions.filter((q: any) => q.status === 'answered').length;
       const total = group.questions.length;
 
+      // توليد pre-signed URL للصوت (صالح 24 ساعة)
+      let audioUrl: string | null = null;
+      if (group.type === 'audio' && group.clipData) {
+        audioUrl = await this.getSignedAudioUrl(group.clipData);
+      }
+
       exercises.push({
         exerciseNumber: `${teilNum}.${exerciseIndex}`,
         title: group.clipData?.title || group.questions[0]?.prompt || '',
         listeningClipId: group.type === 'audio' ? groupId : null,
-        audioUrl: group.type === 'audio' ? (group.clipData?.audioUrl || null) : null,
+        audioUrl,
         readingPassage: group.type === 'passage' ? group.passageText : null,
         questionCount: total,
         progress: {
@@ -3238,6 +3246,38 @@ export class ExamsService {
   }
 
   /**
+   * توليد pre-signed URL للصوت (صالح 24 ساعة)
+   * يدعم الكليبات القديمة (بدون audioKey) عبر استخراج الـ key من الـ URL
+   */
+  private async getSignedAudioUrl(clipData: any): Promise<string | null> {
+    if (!clipData) return null;
+
+    // استخدام audioKey إذا موجود (الكليبات الجديدة)
+    const key = clipData.audioKey || this.extractS3KeyFromUrl(clipData.audioUrl);
+    if (key) {
+      try {
+        return await this.mediaService.getPresignedUrl(key, 86400); // 24 ساعة
+      } catch (err) {
+        this.logger.warn(`Failed to generate presigned URL for key ${key}: ${err}`);
+      }
+    }
+
+    // fallback: الرابط المخزّن مباشرة
+    return clipData.audioUrl || null;
+  }
+
+  /**
+   * استخراج S3 key من رابط الصوت (للكليبات القديمة بدون audioKey)
+   * URL format: https://endpoint/bucket/audio/timestamp-random.mp3
+   */
+  private extractS3KeyFromUrl(url: string): string | null {
+    if (!url) return null;
+    // البحث عن مسار يبدأ بـ audio/ في الـ URL
+    const match = url.match(/(audio\/[^?#]+)/);
+    return match ? match[1] : null;
+  }
+
+  /**
    * جلب التسجيلات الصوتية المستخدمة في قسم معين
    * لإعادة استخدامها عند إنشاء أسئلة جديدة
    */
@@ -3257,20 +3297,21 @@ export class ExamsService {
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds }, listeningClipId: { $exists: true, $ne: null } })
       .select('listeningClipId')
-      .populate('listeningClipId', 'title audioUrl teil')
+      .populate('listeningClipId', 'title audioUrl audioKey teil')
       .lean();
 
-    // استخراج الكليبات الفريدة
+    // استخراج الكليبات الفريدة مع توليد pre-signed URLs
     const clipMap = new Map<string, any>();
     for (const q of questions) {
       if (!q.listeningClipId) continue;
       const clip = q.listeningClipId as any;
       const clipId = clip._id?.toString() || clip.toString();
       if (!clipMap.has(clipId)) {
+        const signedUrl = await this.getSignedAudioUrl(clip);
         clipMap.set(clipId, {
           listeningClipId: clipId,
           title: clip.title || '',
-          audioUrl: clip.audioUrl || '',
+          audioUrl: signedUrl || clip.audioUrl || '',
           teil: clip.teil,
           questionCount: 0,
         });

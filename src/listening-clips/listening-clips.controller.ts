@@ -132,6 +132,7 @@ export class ListeningClipsController {
 
     const audioUrl = s3Result.url;
     dto.audioUrl = audioUrl;
+    (dto as any).audioKey = s3Result.key;
     const clip = await this.service.create(dto);
 
     const response: any = {
@@ -261,8 +262,9 @@ export class ListeningClipsController {
       skill: SkillEnum.HOEREN,
       teil: Number(dto.teil) || 1,
       audioUrl,
+      audioKey: s3Result.key,
       ...(dto.title && { title: dto.title }),
-    });
+    } as any);
 
     return {
       listeningClipId: String(clip._id),

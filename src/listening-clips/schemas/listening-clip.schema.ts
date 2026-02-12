@@ -41,6 +41,9 @@ export class ListeningClip {
 
   @Prop({ required: true })
   audioUrl: string;
+
+  @Prop({ trim: true })
+  audioKey?: string; // S3 key for generating fresh pre-signed URLs
 }
 
 export const ListeningClipSchema = SchemaFactory.createForClass(ListeningClip);

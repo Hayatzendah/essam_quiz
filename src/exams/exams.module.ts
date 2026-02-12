@@ -8,6 +8,7 @@ import { Attempt, AttemptSchema } from '../attempts/schemas/attempt.schema';
 import { ListeningClip, ListeningClipSchema } from '../listening-clips/schemas/listening-clip.schema';
 import { AuthModule } from '../auth/auth.module';
 import { AttemptsModule } from '../attempts/attempts.module';
+import { MediaModule } from '../modules/media/media.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AttemptsModule } from '../attempts/attempts.module';
     ]),
     AuthModule,
     forwardRef(() => AttemptsModule),
+    MediaModule,
   ],
   controllers: [ExamsController],
   providers: [ExamsService],
