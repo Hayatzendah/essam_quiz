@@ -20,9 +20,9 @@ export class BulkQuestionItemDto extends CreateQuestionDto {
 }
 
 export class BulkCreateSectionQuestionsDto {
+  @IsOptional()
   @IsMongoId()
-  @IsNotEmpty()
-  listeningClipId: string;
+  listeningClipId?: string;
 
   @IsArray()
   @ArrayMinSize(1)

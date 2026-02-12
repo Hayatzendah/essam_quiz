@@ -2721,14 +2721,17 @@ export class ExamsService {
 
     const section = this.findSectionByKey(exam, sectionKey) as any;
 
-    // التحقق من وجود كليب الصوت
-    const clip = await this.listeningClipModel.findById(dto.listeningClipId).lean();
-    if (!clip) {
-      throw new NotFoundException(`ListeningClip ${dto.listeningClipId} not found`);
+    // التحقق من وجود كليب الصوت (اختياري - للكتابة وغيرها لا يوجد صوت)
+    let clipId: Types.ObjectId | null = null;
+    if (dto.listeningClipId) {
+      const clip = await this.listeningClipModel.findById(dto.listeningClipId).lean();
+      if (!clip) {
+        throw new NotFoundException(`ListeningClip ${dto.listeningClipId} not found`);
+      }
+      clipId = new Types.ObjectId(dto.listeningClipId);
+      // تعيين listeningAudioId على الـ section عشان الـ attempt يعرف إن الصوت مشترك ولا يكرره
+      section.listeningAudioId = clipId;
     }
-
-    // تعيين listeningAudioId على الـ section عشان الـ attempt يعرف إن الصوت مشترك ولا يكرره
-    section.listeningAudioId = new Types.ObjectId(dto.listeningClipId);
 
     const results: Array<{
       index: number;
@@ -2748,7 +2751,7 @@ export class ExamsService {
 
         const doc = await this.questionModel.create({
           ...questionData,
-          listeningClipId: new Types.ObjectId(dto.listeningClipId),
+          ...(clipId && { listeningClipId: clipId }),
           status: question.status ?? QuestionStatus.PUBLISHED,
           createdBy: userId,
           // FREE_TEXT fields
@@ -2824,7 +2827,7 @@ export class ExamsService {
       failed: errors.length,
       total: dto.questions.length,
       sectionKey,
-      listeningClipId: dto.listeningClipId,
+      ...(dto.listeningClipId && { listeningClipId: dto.listeningClipId }),
       results,
       ...(errors.length > 0 && { errors }),
     };
