@@ -228,6 +228,13 @@ export class Question {
   @Prop({ type: Types.ObjectId, ref: 'ListeningClip', required: false, index: true })
   listeningClipId?: Types.ObjectId;
 
+  // ربط بفقرة قراءة مشتركة (لأسئلة Lesen)
+  @Prop({ type: Types.ObjectId, required: false, index: true })
+  readingPassageId?: Types.ObjectId;
+
+  @Prop({ type: String, trim: true })
+  readingPassage?: string;
+
   // للحقول الخاصة بـ Leben in Deutschland
   @Prop({ type: String, enum: Object.values(ExamSkillEnum), trim: true })
   mainSkill?: ExamSkillEnum;

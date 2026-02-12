@@ -2733,6 +2733,12 @@ export class ExamsService {
       section.listeningAudioId = clipId;
     }
 
+    // فقرة القراءة المشتركة (اختياري - لأسئلة Lesen)
+    let passageId: Types.ObjectId | null = null;
+    if (dto.readingPassage?.trim()) {
+      passageId = new Types.ObjectId();
+    }
+
     const results: Array<{
       index: number;
       questionId: any;
@@ -2752,6 +2758,7 @@ export class ExamsService {
         const doc = await this.questionModel.create({
           ...questionData,
           ...(clipId && { listeningClipId: clipId }),
+          ...(passageId && { readingPassageId: passageId, readingPassage: dto.readingPassage!.trim() }),
           status: question.status ?? QuestionStatus.PUBLISHED,
           createdBy: userId,
           // FREE_TEXT fields
@@ -3049,7 +3056,7 @@ export class ExamsService {
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds }, status: 'published' })
-      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl sampleAnswer minWords maxWords')
+      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage sampleAnswer minWords maxWords')
       .populate('listeningClipId', 'title audioUrl teil')
       .lean();
 
@@ -3090,11 +3097,11 @@ export class ExamsService {
       };
     };
 
-    // تجميع الأسئلة في تمارين (Übungen) حسب listeningClipId
-    // الأسئلة بنفس الـ listeningClipId = تمرين واحد (صوت مشترك + أسئلة)
-    const exerciseMap = new Map<string, { clipData: any; questions: any[] }>();
+    // تجميع الأسئلة في تمارين (Übungen) حسب listeningClipId أو readingPassageId
+    // الأسئلة بنفس الـ groupId = تمرين واحد (صوت مشترك أو فقرة مشتركة + أسئلة)
+    const exerciseMap = new Map<string, { type: 'audio' | 'passage'; clipData: any; passageText: string | null; questions: any[] }>();
     const exerciseOrder: string[] = []; // ترتيب التمارين حسب الظهور الأول
-    const noAudioQuestions: any[] = [];
+    const ungroupedQuestions: any[] = [];
 
     for (const item of items) {
       const q = questionMap.get(item.questionId?.toString());
@@ -3106,13 +3113,17 @@ export class ExamsService {
 
       if (q.listeningClipId) {
         if (typeof q.listeningClipId === 'object' && q.listeningClipId._id) {
-          // populated
           clipId = q.listeningClipId._id.toString();
           clipData = q.listeningClipId;
         } else {
-          // غير populated (ObjectId فقط)
           clipId = q.listeningClipId.toString();
         }
+      }
+
+      // استخراج readingPassageId
+      let passageId: string | null = null;
+      if (q.readingPassageId) {
+        passageId = q.readingPassageId.toString();
       }
 
       const { status, score } = getQuestionStatus(item.questionId?.toString());
@@ -3148,14 +3159,23 @@ export class ExamsService {
         ...(q.maxWords !== undefined && { maxWords: q.maxWords }),
       };
 
-      if (clipId) {
-        if (!exerciseMap.has(clipId)) {
-          exerciseMap.set(clipId, { clipData, questions: [] });
-          exerciseOrder.push(clipId);
+      // تحديد groupId: إما clipId (صوت) أو passageId (فقرة)
+      const groupId = clipId || passageId;
+      const groupType: 'audio' | 'passage' = clipId ? 'audio' : 'passage';
+
+      if (groupId) {
+        if (!exerciseMap.has(groupId)) {
+          exerciseMap.set(groupId, {
+            type: groupType,
+            clipData,
+            passageText: q.readingPassage || null,
+            questions: [],
+          });
+          exerciseOrder.push(groupId);
         }
-        exerciseMap.get(clipId)!.questions.push(questionData);
+        exerciseMap.get(groupId)!.questions.push(questionData);
       } else {
-        noAudioQuestions.push(questionData);
+        ungroupedQuestions.push(questionData);
       }
     }
 
@@ -3164,17 +3184,18 @@ export class ExamsService {
     let exerciseIndex = 1;
     const teilNum = section.teilNumber || 1;
 
-    // تمارين مع صوت (بترتيب الظهور الأول)
-    for (const clipId of exerciseOrder) {
-      const group = exerciseMap.get(clipId)!;
+    // تمارين مجمّعة (صوت أو فقرة) بترتيب الظهور الأول
+    for (const groupId of exerciseOrder) {
+      const group = exerciseMap.get(groupId)!;
       const answered = group.questions.filter((q: any) => q.status === 'answered').length;
       const total = group.questions.length;
 
       exercises.push({
         exerciseNumber: `${teilNum}.${exerciseIndex}`,
         title: group.clipData?.title || group.questions[0]?.prompt || '',
-        listeningClipId: clipId,
-        audioUrl: group.clipData?.audioUrl || null,
+        listeningClipId: group.type === 'audio' ? groupId : null,
+        audioUrl: group.type === 'audio' ? (group.clipData?.audioUrl || null) : null,
+        readingPassage: group.type === 'passage' ? group.passageText : null,
         questionCount: total,
         progress: {
           answered,
@@ -3186,13 +3207,14 @@ export class ExamsService {
       exerciseIndex++;
     }
 
-    // أسئلة بدون صوت → كل سؤال تمرين لحاله
-    for (const qData of noAudioQuestions) {
+    // أسئلة غير مجمّعة → كل سؤال تمرين لحاله
+    for (const qData of ungroupedQuestions) {
       exercises.push({
         exerciseNumber: `${teilNum}.${exerciseIndex}`,
         title: qData.prompt,
         listeningClipId: null,
         audioUrl: null,
+        readingPassage: null,
         questionCount: 1,
         progress: {
           answered: qData.status === 'answered' ? 1 : 0,

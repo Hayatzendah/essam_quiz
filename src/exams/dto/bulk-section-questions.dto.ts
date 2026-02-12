@@ -4,6 +4,7 @@ import {
   IsMongoId,
   IsNotEmpty,
   IsOptional,
+  IsString,
   Min,
   ValidateNested,
   ArrayMinSize,
@@ -23,6 +24,10 @@ export class BulkCreateSectionQuestionsDto {
   @IsOptional()
   @IsMongoId()
   listeningClipId?: string;
+
+  @IsOptional()
+  @IsString()
+  readingPassage?: string;
 
   @IsArray()
   @ArrayMinSize(1)
