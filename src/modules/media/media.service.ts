@@ -1,9 +1,12 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { v2 as cloudinary } from 'cloudinary';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+
+type StorageMode = 'cloudinary' | 's3' | 'mock';
 
 @Injectable()
 export class MediaService {
@@ -11,39 +14,24 @@ export class MediaService {
   private s3: S3Client;
   private bucket: string;
   private defaultExpires: number;
-
-  private useMockMode: boolean;
+  private storageMode: StorageMode;
 
   constructor() {
-    // التحقق من متغيرات البيئة
-    const requiredEnvVars = [
-      'S3_REGION',
-      'S3_ENDPOINT',
-      'S3_ACCESS_KEY',
-      'S3_SECRET_KEY',
-      'S3_BUCKET',
-    ];
-    const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
-
-    // إذا لم تكن متغيرات S3 موجودة، نستخدم وضع Mock للاختبار
-    this.useMockMode = missingVars.length > 0 || process.env.MEDIA_USE_MOCK === 'true';
-
-    if (this.useMockMode) {
-      // طباعة التحذيرات فقط في development أو debug mode
-      const isProduction = process.env.NODE_ENV === 'production';
-      const logLevel = isProduction ? 'debug' : 'warn';
-      
-      if (!isProduction) {
-      this.logger.warn(
-        '⚠️ MediaService running in MOCK MODE (no S3). Files will not be actually stored.',
-      );
-      this.logger.warn('⚠️ This is for testing only. Set S3 environment variables for production.');
-      } else {
-        this.logger.debug(
-          'MediaService running in MOCK MODE (no S3). Set S3 environment variables to enable file storage.',
-        );
-      }
-    } else {
+    // 1) Cloudinary — أولوية أولى (لأن عندنا CLOUDINARY_URL)
+    if (process.env.CLOUDINARY_URL) {
+      this.storageMode = 'cloudinary';
+      // cloudinary SDK بيقرأ CLOUDINARY_URL تلقائياً
+      this.logger.log('MediaService using CLOUDINARY for file storage.');
+    }
+    // 2) S3
+    else if (
+      process.env.S3_REGION &&
+      process.env.S3_ENDPOINT &&
+      process.env.S3_ACCESS_KEY &&
+      process.env.S3_SECRET_KEY &&
+      process.env.S3_BUCKET
+    ) {
+      this.storageMode = 's3';
       this.s3 = new S3Client({
         region: process.env.S3_REGION,
         endpoint: process.env.S3_ENDPOINT,
@@ -54,6 +42,14 @@ export class MediaService {
         forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
       });
       this.bucket = process.env.S3_BUCKET!;
+      this.logger.log('MediaService using S3 for file storage.');
+    }
+    // 3) Mock — تخزين محلي (للتطوير فقط)
+    else {
+      this.storageMode = 'mock';
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.warn('MediaService running in MOCK MODE. Files saved locally (will be lost on redeploy).');
+      }
     }
 
     this.defaultExpires = Number(process.env.MEDIA_DEFAULT_EXPIRES_SEC || 3600);
@@ -62,110 +58,105 @@ export class MediaService {
   async uploadBuffer(opts: { buffer: Buffer; mime: string; ext?: string; prefix?: string }) {
     const key = `${opts.prefix || 'questions'}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${opts.ext ? '.' + opts.ext : ''}`;
 
-    // وضع Mock للاختبار بدون S3 - نحفظ الملفات محلياً
-    if (this.useMockMode) {
-      // طباعة التحذيرات فقط في development
+    // ============ CLOUDINARY ============
+    if (this.storageMode === 'cloudinary') {
+      try {
+        this.logger.log(`Uploading to Cloudinary: ${key} (${opts.buffer.length} bytes)`);
+
+        const result: any = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: `deutsch-tests/${opts.prefix || 'questions'}`,
+              resource_type: 'auto', // auto-detect: image, video (audio), raw
+              public_id: `${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
+            },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            },
+          );
+          stream.end(opts.buffer);
+        });
+
+        this.logger.log(`Uploaded to Cloudinary: ${result.public_id}`);
+
+        return {
+          key: result.public_id,
+          url: result.secure_url,
+          mime: opts.mime,
+        };
+      } catch (e: any) {
+        this.logger.error(`Failed to upload to Cloudinary: ${e?.message}`);
+        throw new InternalServerErrorException(`Failed to upload media: ${e?.message}`);
+      }
+    }
+
+    // ============ MOCK MODE ============
+    if (this.storageMode === 'mock') {
       if (process.env.NODE_ENV !== 'production') {
-        this.logger.warn(`⚠️ MOCK MODE: Saving file locally for ${key} (${opts.buffer.length} bytes)`);
-      } else {
-        this.logger.debug(`MOCK MODE: Saving file locally for ${key} (${opts.buffer.length} bytes)`);
+        this.logger.warn(`MOCK MODE: Saving file locally for ${key} (${opts.buffer.length} bytes)`);
       }
 
-      // 🔥 حفظ الملف محلياً في مجلد uploads
       const uploadsDir = path.join(process.cwd(), 'uploads');
       const filePath = path.join(uploadsDir, key);
       const fileDir = path.dirname(filePath);
 
-      // إنشاء المجلد إذا لم يكن موجوداً
       if (!fs.existsSync(fileDir)) {
         fs.mkdirSync(fileDir, { recursive: true });
-        this.logger.log(`✅ Created directory: ${fileDir}`);
       }
 
-      // حفظ الملف
       fs.writeFileSync(filePath, opts.buffer);
-      this.logger.log(`✅ File saved locally: ${filePath}`);
 
       const baseUrl =
         process.env.PUBLIC_BASE_URL || process.env.APP_URL || process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
-      // 🔥 في mock mode، نرجع URL مباشر إلى /uploads/... بدلاً من /media/mock/...
-      // لأن الـ static file serving موجود ويخدم /uploads مباشرة
       const uploadsUrl = `${baseUrl}/uploads/${key}`;
       return { key, url: uploadsUrl, mime: opts.mime };
     }
 
+    // ============ S3 ============
     try {
-      // التحقق من وجود متغيرات البيئة
-      if (!this.bucket || !process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY) {
-        this.logger.error('S3 configuration is missing. Please check environment variables.');
-        throw new InternalServerErrorException(
-          'S3 configuration is missing. Please check environment variables in Railway.',
-        );
-      }
-
       const putCommand: any = {
         Bucket: this.bucket,
         Key: key,
         Body: opts.buffer,
         ContentType: opts.mime,
       };
-      // ACL قد لا يكون مدعومًا في بعض S3-compatible storage (مثل MinIO)
-      // نضيفه فقط إذا كان متوفرًا
       if (process.env.S3_USE_ACL !== 'false') {
-        putCommand.ACL = 'private'; // نخليه خاص
+        putCommand.ACL = 'private';
       }
 
       this.logger.log(`Uploading file to S3: ${key} (${opts.buffer.length} bytes)`);
       await this.s3.send(new PutObjectCommand(putCommand));
-      this.logger.log(`✅ File uploaded successfully: ${key}`);
+      this.logger.log(`File uploaded to S3: ${key}`);
 
-      // public URL (هيكون غير صالح لو ACL private) - هنستخدم presign وقت العرض
       const url = `${process.env.S3_ENDPOINT?.replace(/\/+$/, '')}/${this.bucket}/${key}`;
       return { key, url, mime: opts.mime };
     } catch (e: any) {
-      this.logger.error(`❌ Failed to upload media: ${e?.message || 'Unknown error'}`);
-      this.logger.error(`Error details: ${JSON.stringify(e)}`);
-      this.logger.error(`Stack: ${e?.stack}`);
-
-      // رسالة خطأ أكثر وضوحاً
-      const errorMessage = e?.message || 'Unknown error';
-      if (errorMessage.includes('credentials') || errorMessage.includes('AccessDenied')) {
-        throw new InternalServerErrorException(
-          'S3 credentials are invalid or insufficient permissions. Please check S3_ACCESS_KEY and S3_SECRET_KEY in Railway.',
-        );
-      }
-      if (errorMessage.includes('bucket') || errorMessage.includes('Bucket')) {
-        throw new InternalServerErrorException(
-          `S3 bucket "${this.bucket}" not found or inaccessible. Please check S3_BUCKET in Railway.`,
-        );
-      }
-      if (errorMessage.includes('endpoint') || errorMessage.includes('ENOTFOUND')) {
-        throw new InternalServerErrorException(
-          `Cannot connect to S3 endpoint "${process.env.S3_ENDPOINT}". Please check S3_ENDPOINT in Railway.`,
-        );
-      }
-
-      throw new InternalServerErrorException(`Failed to upload media: ${errorMessage}`);
+      this.logger.error(`Failed to upload to S3: ${e?.message}`);
+      throw new InternalServerErrorException(`Failed to upload media: ${e?.message}`);
     }
   }
 
   async getPresignedUrl(key: string, expiresSec?: number) {
-    // وضع Mock للاختبار بدون S3
-    if (this.useMockMode) {
-      // طباعة التحذيرات فقط في development
-      if (process.env.NODE_ENV !== 'production') {
-      this.logger.warn(`⚠️ MOCK MODE: Generating mock presigned URL for ${key}`);
-      } else {
-        this.logger.debug(`MOCK MODE: Generating mock presigned URL for ${key}`);
+    // Cloudinary URLs دائمة — ما بتنتهي
+    if (this.storageMode === 'cloudinary') {
+      // لو الـ key هو public_id، نبني الـ URL
+      // لو الـ key هو URL كامل (يبدأ بـ http)، نرجعه مباشرة
+      if (key.startsWith('http')) {
+        return key;
       }
+      // بناء URL من public_id
+      return cloudinary.url(key, { resource_type: 'video', secure: true });
+    }
+
+    // Mock mode
+    if (this.storageMode === 'mock') {
       const baseUrl =
         process.env.PUBLIC_BASE_URL || process.env.APP_URL || process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
-      // 🔥 في mock mode، نرجع URL مباشر إلى /uploads/... بدلاً من /media/mock/...
-      // لأن الـ static file serving موجود ويخدم /uploads مباشرة
-      // لا نحتاج expires parameter لأن الملفات static
       return `${baseUrl}/uploads/${key}`;
     }
 
+    // S3 pre-signed URL
     const cmd = new GetObjectCommand({ Bucket: this.bucket, Key: key });
     return await getSignedUrl(this.s3, cmd, { expiresIn: expiresSec ?? this.defaultExpires });
   }
