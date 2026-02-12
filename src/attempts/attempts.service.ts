@@ -3432,7 +3432,7 @@ export class AttemptsService {
             ...item.mediaSnapshot,
             url: mediaUrl || item.mediaSnapshot.url,
           };
-        } else if (item.mediaUrl || item.mediaType) {
+        } else if ((item.mediaUrl || item.mediaType) && !isItemAudioFromSection) {
           // للتوافق مع الكود القديم
           const baseUrl = this.configService.get<string>('PUBLIC_BASE_URL') || this.configService.get<string>('APP_URL', 'https://api.deutsch-tests.com');
           let mediaUrl = item.mediaUrl;
