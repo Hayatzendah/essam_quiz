@@ -24,7 +24,12 @@ export class VocabularyTopic {
 
   @Prop({ type: Boolean, default: true, index: true })
   isActive: boolean;
+
+  @Prop({ type: Number, default: 0 })
+  position: number;
 }
 
 export const VocabularyTopicSchema = SchemaFactory.createForClass(VocabularyTopic);
+
+VocabularyTopicSchema.index({ level: 1, position: 1 });
 

@@ -9,12 +9,17 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { VocabularyTopicsService } from './vocabulary-topics.service';
 import { CreateVocabularyTopicDto } from './dto/create-vocabulary-topic.dto';
 import { UpdateVocabularyTopicDto } from './dto/update-vocabulary-topic.dto';
 import { QueryVocabularyTopicDto } from './dto/query-vocabulary-topic.dto';
+import { ReorderVocabularyTopicsDto } from './dto/reorder-vocabulary-topics.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 @ApiTags('Vocabulary Topics')
 @Controller('vocabulary-topics')
@@ -38,6 +43,14 @@ export class VocabularyTopicsController {
   @ApiResponse({ status: 200, description: 'List of topics' })
   findAll(@Query() query: QueryVocabularyTopicDto) {
     return this.topicsService.findAll(query);
+  }
+
+  @Patch('reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({ summary: 'Reorder vocabulary topics' })
+  reorderTopics(@Body() dto: ReorderVocabularyTopicsDto) {
+    return this.topicsService.reorderTopics(dto.topicIds);
   }
 
   @Get('by-slug/:slug')

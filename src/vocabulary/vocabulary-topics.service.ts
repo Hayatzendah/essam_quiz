@@ -44,7 +44,7 @@ export class VocabularyTopicsService {
       filter.isActive = query.isActive === 'true';
     }
 
-    return this.topicModel.find(filter).sort({ createdAt: -1 }).exec();
+    return this.topicModel.find(filter).sort({ position: 1, createdAt: -1 }).exec();
   }
 
   /**
@@ -86,6 +86,26 @@ export class VocabularyTopicsService {
       throw new NotFoundException(`Topic with ID ${id} not found`);
     }
     return topic;
+  }
+
+  /**
+   * إعادة ترتيب المواضيع
+   */
+  async reorderTopics(topicIds: string[]) {
+    const bulkOps = topicIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: new Types.ObjectId(id) },
+        update: { $set: { position: index } },
+      },
+    }));
+
+    await this.topicModel.bulkWrite(bulkOps);
+
+    return {
+      success: true,
+      message: 'Topics reordered successfully',
+      count: topicIds.length,
+    };
   }
 
   /**
