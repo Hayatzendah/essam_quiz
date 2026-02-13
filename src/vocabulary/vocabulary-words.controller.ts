@@ -10,6 +10,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { VocabularyWordsService } from './vocabulary-words.service';
@@ -17,6 +18,10 @@ import { CreateVocabularyWordDto } from './dto/create-vocabulary-word.dto';
 import { UpdateVocabularyWordDto } from './dto/update-vocabulary-word.dto';
 import { QueryVocabularyWordDto } from './dto/query-vocabulary-word.dto';
 import { CreateBulkVocabularyWordsDto } from './dto/create-bulk-vocabulary-words.dto';
+import { ReorderVocabularyTopicsDto } from './dto/reorder-vocabulary-topics.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 @ApiTags('Vocabulary Words')
 @Controller('vocabulary-words')
@@ -50,6 +55,14 @@ export class VocabularyWordsController {
   @ApiResponse({ status: 404, description: 'Topic not found' })
   createBulk(@Body() createBulkDto: CreateBulkVocabularyWordsDto) {
     return this.wordsService.createBulk(createBulkDto);
+  }
+
+  @Patch('reorder')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({ summary: 'Reorder vocabulary words' })
+  reorderWords(@Body() dto: ReorderVocabularyTopicsDto) {
+    return this.wordsService.reorderWords(dto.topicIds);
   }
 
   @Get(':id')

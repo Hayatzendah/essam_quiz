@@ -181,6 +181,26 @@ export class VocabularyWordsService {
   }
 
   /**
+   * إعادة ترتيب الكلمات
+   */
+  async reorderWords(wordIds: string[]) {
+    const bulkOps = wordIds.map((id, index) => ({
+      updateOne: {
+        filter: { _id: new Types.ObjectId(id) },
+        update: { $set: { order: index } },
+      },
+    }));
+
+    await this.wordModel.bulkWrite(bulkOps);
+
+    return {
+      success: true,
+      message: 'Words reordered successfully',
+      count: wordIds.length,
+    };
+  }
+
+  /**
    * حذف كلمة مفردات
    */
   async remove(id: string): Promise<void> {
