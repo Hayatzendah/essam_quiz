@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  MinLength,
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
@@ -20,6 +21,20 @@ export class BulkQuestionItemDto extends CreateQuestionDto {
   points?: number; // default 1
 }
 
+class ReadingCardDto {
+  @IsString()
+  @MinLength(1)
+  title: string;
+
+  @IsString()
+  @MinLength(1)
+  content: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+}
+
 export class BulkCreateSectionQuestionsDto {
   @IsOptional()
   @IsMongoId()
@@ -28,6 +43,12 @@ export class BulkCreateSectionQuestionsDto {
   @IsOptional()
   @IsString()
   readingPassage?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ReadingCardDto)
+  readingCards?: ReadingCardDto[];
 
   @IsArray()
   @ArrayMinSize(1)

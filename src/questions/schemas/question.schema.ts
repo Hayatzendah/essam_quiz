@@ -235,6 +235,10 @@ export class Question {
   @Prop({ type: String, trim: true })
   readingPassage?: string;
 
+  // بطاقات معلومات القراءة (لأسئلة Lesen - مثل الإعلانات والكورسات)
+  @Prop({ type: [{ title: { type: String, required: true, trim: true }, content: { type: String, required: true, trim: true }, color: { type: String, trim: true } }], default: undefined })
+  readingCards?: { title: string; content: string; color?: string }[];
+
   // للحقول الخاصة بـ Leben in Deutschland
   @Prop({ type: String, enum: Object.values(ExamSkillEnum), trim: true })
   mainSkill?: ExamSkillEnum;

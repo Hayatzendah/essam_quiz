@@ -2737,7 +2737,7 @@ export class ExamsService {
 
     // فقرة القراءة المشتركة (اختياري - لأسئلة Lesen)
     let passageId: Types.ObjectId | null = null;
-    if (dto.readingPassage?.trim()) {
+    if (dto.readingPassage?.trim() || (dto.readingCards && dto.readingCards.length > 0)) {
       passageId = new Types.ObjectId();
     }
 
@@ -2760,7 +2760,11 @@ export class ExamsService {
         const doc = await this.questionModel.create({
           ...questionData,
           ...(clipId && { listeningClipId: clipId }),
-          ...(passageId && { readingPassageId: passageId, readingPassage: dto.readingPassage!.trim() }),
+          ...(passageId && {
+            readingPassageId: passageId,
+            ...(dto.readingPassage?.trim() && { readingPassage: dto.readingPassage.trim() }),
+            ...(dto.readingCards && dto.readingCards.length > 0 && { readingCards: dto.readingCards }),
+          }),
           status: question.status ?? QuestionStatus.PUBLISHED,
           createdBy: userId,
           // FREE_TEXT fields
@@ -3058,7 +3062,7 @@ export class ExamsService {
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds }, status: 'published' })
-      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage sampleAnswer minWords maxWords')
+      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingCards sampleAnswer minWords maxWords')
       .populate('listeningClipId', 'title audioUrl audioKey teil')
       .lean();
 
@@ -3101,7 +3105,7 @@ export class ExamsService {
 
     // تجميع الأسئلة في تمارين (Übungen) حسب listeningClipId أو readingPassageId
     // الأسئلة بنفس الـ groupId = تمرين واحد (صوت مشترك أو فقرة مشتركة + أسئلة)
-    const exerciseMap = new Map<string, { type: 'audio' | 'passage'; clipData: any; passageText: string | null; questions: any[] }>();
+    const exerciseMap = new Map<string, { type: 'audio' | 'passage'; clipData: any; passageText: string | null; readingCards: any[] | null; questions: any[] }>();
     const exerciseOrder: string[] = []; // ترتيب التمارين حسب الظهور الأول
     const ungroupedQuestions: any[] = [];
 
@@ -3171,6 +3175,7 @@ export class ExamsService {
             type: groupType,
             clipData,
             passageText: q.readingPassage || null,
+            readingCards: q.readingCards || null,
             questions: [],
           });
           exerciseOrder.push(groupId);
@@ -3204,6 +3209,7 @@ export class ExamsService {
         listeningClipId: group.type === 'audio' ? groupId : null,
         audioUrl,
         readingPassage: group.type === 'passage' ? group.passageText : null,
+        readingCards: group.type === 'passage' ? group.readingCards : null,
         questionCount: total,
         progress: {
           answered,
@@ -3223,6 +3229,7 @@ export class ExamsService {
         listeningClipId: null,
         audioUrl: null,
         readingPassage: null,
+        readingCards: null,
         questionCount: 1,
         progress: {
           answered: qData.status === 'answered' ? 1 : 0,
