@@ -1261,12 +1261,13 @@ export class ExamsService {
     }
 
     // ترتيب المهارات بترتيب منطقي
-    const skillOrder = ['hoeren', 'lesen', 'schreiben', 'sprechen', 'grammar', 'mixed', 'misc', 'leben_test'];
+    const skillOrder = ['hoeren', 'lesen', 'schreiben', 'sprechen', 'sprachbausteine', 'grammar', 'mixed', 'misc', 'leben_test'];
     const skillLabels: Record<string, string> = {
       hoeren: 'Hören',
       lesen: 'Lesen',
       schreiben: 'Schreiben',
       sprechen: 'Sprechen',
+      sprachbausteine: 'Sprachbausteine',
       grammar: 'Grammatik',
       mixed: 'Gemischt',
       misc: 'Sonstiges',

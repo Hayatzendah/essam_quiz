@@ -27,6 +27,7 @@ export function normalizeSkill(skill: string | undefined | null): ExamSkillEnum 
     'lesen': ExamSkillEnum.LESEN,
     'schreiben': ExamSkillEnum.SCHREIBEN,
     'sprechen': ExamSkillEnum.SPRECHEN,
+    'sprachbausteine': ExamSkillEnum.SPRACHBAUSTEINE,
     'grammar': ExamSkillEnum.GRAMMAR,
     'mixed': ExamSkillEnum.MIXED,
     'misc': ExamSkillEnum.MISC,

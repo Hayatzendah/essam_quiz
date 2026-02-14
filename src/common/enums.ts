@@ -45,6 +45,7 @@ export enum ExamSkillEnum {
   LESEN = 'lesen',
   SCHREIBEN = 'schreiben',
   SPRECHEN = 'sprechen',
+  SPRACHBAUSTEINE = 'sprachbausteine',
   MIXED = 'mixed',
   MISC = 'misc', // مهارة عامة
   LEBEN_TEST = 'leben_test', // Leben in Deutschland Test
