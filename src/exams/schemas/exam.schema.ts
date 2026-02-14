@@ -153,8 +153,8 @@ export class Exam {
   // إعدادات عامة
   @Prop() timeLimitMin?: number;
   @Prop() attemptLimit?: number;
-  @Prop({ default: true }) randomizeQuestions?: boolean;
-  @Prop({ default: true }) randomizeOptions?: boolean;
+  @Prop({ default: false }) randomizeQuestions?: boolean;
+  @Prop({ default: false }) randomizeOptions?: boolean;
 
   @Prop({ type: DifficultyDistributionSchema, _id: false })
   difficultyDistribution?: DifficultyDistribution;
