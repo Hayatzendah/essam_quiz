@@ -211,12 +211,12 @@ export class AttemptsService {
       points: 1,
     } as AttemptItem));
 
-    // 8. ترتيب عشوائي إذا كان مطلوباً
-    if (exam.randomizeQuestions) {
-      const seedString = `${dto.examId}-${studentId}-${attemptCount}`;
-      const randomSeed = this.generateSeed(seedString);
-      this.shuffleArray(items, randomSeed);
-    }
+    // 8. ترتيب عشوائي معطّل - الأسئلة تبقى بترتيبها الأصلي
+    // if (exam.randomizeQuestions) {
+    //   const seedString = `${dto.examId}-${studentId}-${attemptCount}`;
+    //   const randomSeed = this.generateSeed(seedString);
+    //   this.shuffleArray(items, randomSeed);
+    // }
 
     // الصوت أصبح per-question - لا حاجة لربط صوت القسم
     const sectionListeningAudioIds = new Map<string, string>();
@@ -547,10 +547,10 @@ export class AttemptsService {
     const seedString = `${examId}-${user.userId}-${attemptCount}`;
     const randomSeed = this.generateSeed(seedString);
 
-    // 5. ترتيب عشوائي إذا كان مطلوباً
-    if (exam.randomizeQuestions) {
-      this.shuffleArray(items, randomSeed);
-    }
+    // 5. ترتيب عشوائي معطّل - الأسئلة تبقى بترتيبها الأصلي
+    // if (exam.randomizeQuestions) {
+    //   this.shuffleArray(items, randomSeed);
+    // }
 
     // بناء map لصوت السكشنات عشان ما نكرر الصوت بكل سؤال
     const sectionListeningAudioIds = new Map<string, string>();
@@ -857,14 +857,14 @@ export class AttemptsService {
           }
         }
 
-        // Apply randomize if needed (section-level or exam-level)
-        const shouldRandomize = section.randomize || exam.randomizeQuestions;
-        if (shouldRandomize && sectionItems.length > 0) {
-          const seedString = `section-${sectionName}-${attemptCount}`;
-          const randomSeed = this.generateSeed(seedString);
-          this.shuffleArray(sectionItems, randomSeed);
-          this.logger.log(`[selectQuestions] Section "${sectionName}" items randomized`);
-        }
+        // ترتيب عشوائي معطّل - الأسئلة تبقى بترتيبها الأصلي
+        // const shouldRandomize = section.randomize || exam.randomizeQuestions;
+        // if (shouldRandomize && sectionItems.length > 0) {
+        //   const seedString = `section-${sectionName}-${attemptCount}`;
+        //   const randomSeed = this.generateSeed(seedString);
+        //   this.shuffleArray(sectionItems, randomSeed);
+        //   this.logger.log(`[selectQuestions] Section "${sectionName}" items randomized`);
+        // }
 
         items.push(...sectionItems);
         this.logger.log(
