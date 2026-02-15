@@ -3206,7 +3206,7 @@ export class ExamsService {
 
       exercises.push({
         exerciseNumber: `${teilNum}.${exerciseIndex}`,
-        title: group.clipData?.title || group.questions[0]?.prompt || '',
+        title: `Übung ${teilNum}.${exerciseIndex}`,
         listeningClipId: group.type === 'audio' ? groupId : null,
         audioUrl,
         readingPassage: group.type === 'passage' ? group.passageText : null,
@@ -3226,7 +3226,7 @@ export class ExamsService {
     for (const qData of ungroupedQuestions) {
       exercises.push({
         exerciseNumber: `${teilNum}.${exerciseIndex}`,
-        title: qData.prompt,
+        title: `Übung ${teilNum}.${exerciseIndex}`,
         listeningClipId: null,
         audioUrl: null,
         readingPassage: null,
