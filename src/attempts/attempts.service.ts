@@ -651,6 +651,33 @@ export class AttemptsService {
     // 10. إرجاع البيانات (بدون answer keys)
     const attemptObj = attempt.toObject();
 
+    // ✅ FIX: إعادة ترتيب items حسب ترتيب الامتحان
+    if (exam.sections && Array.isArray(exam.sections) && attemptObj.items && attemptObj.items.length > 0) {
+      const orderMap = new Map<string, number>();
+      let globalOrder = 0;
+      const sortedSections = [...exam.sections].sort(
+        (a: any, b: any) => ((a as any).order ?? 0) - ((b as any).order ?? 0) || ((a as any).teilNumber ?? 0) - ((b as any).teilNumber ?? 0)
+      );
+      for (const section of sortedSections) {
+        const sec = section as any;
+        if (sec.items && Array.isArray(sec.items)) {
+          for (const sItem of sec.items) {
+            if (sItem.questionId) {
+              orderMap.set(sItem.questionId.toString(), globalOrder++);
+            }
+          }
+        }
+      }
+      if (orderMap.size > 0) {
+        attemptObj.items.sort((a: any, b: any) => {
+          const orderA = orderMap.get(a.questionId?.toString()) ?? 999999;
+          const orderB = orderMap.get(b.questionId?.toString()) ?? 999999;
+          return orderA - orderB;
+        });
+        this.logger.log(`[startAttempt] Reordered ${attemptObj.items.length} response items based on exam section order`);
+      }
+    }
+
     // بناء set لصوت السكشنات عشان نشيل mediaSnapshot من الأسئلة اللي صوتها من الـ section
     const sectionAudioClipIdsForResponse = new Set<string>();
     if (exam.sections && Array.isArray(exam.sections)) {
@@ -2866,6 +2893,35 @@ export class AttemptsService {
     // تطبيق resultsPolicy
     const policy = exam.resultsPolicy || 'explanations_with_scores';
     const isStudent = user.role === 'student' && isOwner;
+
+    // ✅ FIX: إعادة ترتيب attempt.items حسب ترتيب الأسئلة في الامتحان الحالي
+    // هذا يصلح المحاولات القديمة التي كانت بترتيب عشوائي
+    if (exam.sections && Array.isArray(exam.sections) && attempt.items && attempt.items.length > 0) {
+      const orderMap = new Map<string, number>();
+      let globalOrder = 0;
+      // ترتيب الأقسام حسب order ثم teilNumber
+      const sortedSections = [...exam.sections].sort(
+        (a: any, b: any) => ((a as any).order ?? 0) - ((b as any).order ?? 0) || ((a as any).teilNumber ?? 0) - ((b as any).teilNumber ?? 0)
+      );
+      for (const section of sortedSections) {
+        const sec = section as any;
+        if (sec.items && Array.isArray(sec.items)) {
+          for (const sItem of sec.items) {
+            if (sItem.questionId) {
+              orderMap.set(sItem.questionId.toString(), globalOrder++);
+            }
+          }
+        }
+      }
+      if (orderMap.size > 0) {
+        (attempt as any).items.sort((a: any, b: any) => {
+          const orderA = orderMap.get(a.questionId?.toString()) ?? 999999;
+          const orderB = orderMap.get(b.questionId?.toString()) ?? 999999;
+          return orderA - orderB;
+        });
+        this.logger.log(`[getAttempt] Reordered ${attempt.items.length} items based on exam section order (orderMap size: ${orderMap.size})`);
+      }
+    }
 
     // بناء set لصوت السكشنات عشان نشيل mediaSnapshot من الأسئلة اللي صوتها من الـ section
     const sectionAudioClipIds = new Set<string>();
