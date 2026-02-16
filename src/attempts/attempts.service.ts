@@ -660,7 +660,7 @@ export class AttemptsService {
       const publishedIds = new Set<string>();
       if (allSectionQIds.length > 0) {
         const pubQuestions = await this.questionModel
-          .find({ _id: { $in: allSectionQIds }, status: 'published' })
+          .find({ _id: { $in: allSectionQIds }, status: { $ne: 'archived' } })
           .select('_id')
           .lean();
         for (const q of pubQuestions) {
@@ -2927,7 +2927,7 @@ export class AttemptsService {
       const publishedQuestionIds = new Set<string>();
       if (allSectionQuestionIds.length > 0) {
         const publishedQuestions = await this.questionModel
-          .find({ _id: { $in: allSectionQuestionIds }, status: 'published' })
+          .find({ _id: { $in: allSectionQuestionIds }, status: { $ne: 'archived' } })
           .select('_id')
           .lean();
         for (const q of publishedQuestions) {

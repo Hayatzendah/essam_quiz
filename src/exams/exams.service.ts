@@ -2632,12 +2632,12 @@ export class ExamsService {
         .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
         .filter(Boolean);
 
-      // جلب الأسئلة المنشورة فقط
-      const publishedQuestions = await this.questionModel
-        .find({ _id: { $in: allQuestionIds }, status: 'published' })
+      // جلب الأسئلة غير المؤرشفة (تشمل published وأي status آخر ما عدا archived)
+      const activeQuestions = await this.questionModel
+        .find({ _id: { $in: allQuestionIds }, status: { $ne: 'archived' } })
         .select('_id')
         .lean();
-      const publishedIds = new Set(publishedQuestions.map((q: any) => q._id.toString()));
+      const publishedIds = new Set(activeQuestions.map((q: any) => q._id.toString()));
 
       for (const section of (exam as any).sections || []) {
         if (!section.items || !Array.isArray(section.items)) continue;
@@ -2683,17 +2683,17 @@ export class ExamsService {
     const exam = await this.model.findById(examId).lean();
     if (!exam) throw new NotFoundException('Exam not found');
 
-    // جلب الأسئلة المنشورة فقط لتصفية المحذوفة/المؤرشفة
+    // جلب الأسئلة غير المؤرشفة لتصفية المحذوفة
     const allQuestionIds = (exam.sections || [])
       .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
       .filter(Boolean);
     const publishedIds = new Set<string>();
     if (allQuestionIds.length > 0) {
-      const publishedQuestions = await this.questionModel
-        .find({ _id: { $in: allQuestionIds }, status: 'published' })
+      const activeQuestions = await this.questionModel
+        .find({ _id: { $in: allQuestionIds }, status: { $ne: 'archived' } })
         .select('_id')
         .lean();
-      for (const q of publishedQuestions) {
+      for (const q of activeQuestions) {
         publishedIds.add((q as any)._id.toString());
       }
     }
@@ -3034,7 +3034,7 @@ export class ExamsService {
     const publishedQuestionIds = new Set<string>();
     if (allQuestionIds.length > 0) {
       const allQuestions = await this.questionModel
-        .find({ _id: { $in: allQuestionIds }, status: 'published' })
+        .find({ _id: { $in: allQuestionIds }, status: { $ne: 'archived' } })
         .select('listeningClipId')
         .lean();
       for (const q of allQuestions) {
