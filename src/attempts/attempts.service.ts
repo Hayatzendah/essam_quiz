@@ -669,6 +669,14 @@ export class AttemptsService {
         }
       }
       if (orderMap.size > 0) {
+        // تصفية الأسئلة المحذوفة من الامتحان
+        const beforeFilter = attemptObj.items.length;
+        attemptObj.items = attemptObj.items.filter((a: any) => {
+          return orderMap.has(a.questionId?.toString());
+        });
+        if (attemptObj.items.length < beforeFilter) {
+          this.logger.log(`[startAttempt] Filtered out ${beforeFilter - attemptObj.items.length} removed questions from response items`);
+        }
         attemptObj.items.sort((a: any, b: any) => {
           const orderA = orderMap.get(a.questionId?.toString()) ?? 999999;
           const orderB = orderMap.get(b.questionId?.toString()) ?? 999999;
@@ -2914,6 +2922,14 @@ export class AttemptsService {
         }
       }
       if (orderMap.size > 0) {
+        // تصفية الأسئلة المحذوفة من الامتحان (موجودة في المحاولة بس مش في الأقسام الحالية)
+        const beforeFilter = (attempt as any).items.length;
+        (attempt as any).items = (attempt as any).items.filter((a: any) => {
+          return orderMap.has(a.questionId?.toString());
+        });
+        if ((attempt as any).items.length < beforeFilter) {
+          this.logger.log(`[getAttempt] Filtered out ${beforeFilter - (attempt as any).items.length} removed questions from attempt items`);
+        }
         (attempt as any).items.sort((a: any, b: any) => {
           const orderA = orderMap.get(a.questionId?.toString()) ?? 999999;
           const orderB = orderMap.get(b.questionId?.toString()) ?? 999999;
