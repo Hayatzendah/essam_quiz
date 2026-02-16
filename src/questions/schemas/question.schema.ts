@@ -239,6 +239,10 @@ export class Question {
   @Prop({ type: [{ title: { type: String, required: true, trim: true }, content: { type: String, required: true, trim: true }, color: { type: String, trim: true } }], default: undefined })
   readingCards?: { title: string; content: string; color?: string }[];
 
+  // تخطيط بطاقات القراءة: أفقي (بطاقة بعرض كامل) أو عمودي (بطاقات جنب بعض)
+  @Prop({ type: String, enum: ['horizontal', 'vertical'], trim: true })
+  cardsLayout?: string;
+
   // للحقول الخاصة بـ Leben in Deutschland
   @Prop({ type: String, enum: Object.values(ExamSkillEnum), trim: true })
   mainSkill?: ExamSkillEnum;

@@ -2765,6 +2765,7 @@ export class ExamsService {
             readingPassageId: passageId,
             ...(dto.readingPassage?.trim() && { readingPassage: dto.readingPassage.trim() }),
             ...(dto.readingCards && dto.readingCards.length > 0 && { readingCards: dto.readingCards }),
+            ...(dto.cardsLayout && { cardsLayout: dto.cardsLayout }),
           }),
           status: question.status ?? QuestionStatus.PUBLISHED,
           createdBy: userId,
@@ -3063,7 +3064,7 @@ export class ExamsService {
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds }, status: 'published' })
-      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingCards sampleAnswer minWords maxWords')
+      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingCards cardsLayout sampleAnswer minWords maxWords')
       .populate('listeningClipId', 'title audioUrl audioKey teil')
       .lean();
 
@@ -3106,7 +3107,7 @@ export class ExamsService {
 
     // تجميع الأسئلة في تمارين (Übungen) حسب listeningClipId أو readingPassageId
     // الأسئلة بنفس الـ groupId = تمرين واحد (صوت مشترك أو فقرة مشتركة + أسئلة)
-    const exerciseMap = new Map<string, { type: 'audio' | 'passage'; clipData: any; passageText: string | null; readingCards: any[] | null; questions: any[] }>();
+    const exerciseMap = new Map<string, { type: 'audio' | 'passage'; clipData: any; passageText: string | null; readingCards: any[] | null; cardsLayout: string | null; questions: any[] }>();
     const exerciseOrder: string[] = []; // ترتيب التمارين حسب الظهور الأول
     const ungroupedQuestions: any[] = [];
 
@@ -3177,6 +3178,7 @@ export class ExamsService {
             clipData,
             passageText: q.readingPassage || null,
             readingCards: q.readingCards || null,
+            cardsLayout: q.cardsLayout || null,
             questions: [],
           });
           exerciseOrder.push(groupId);
@@ -3211,6 +3213,7 @@ export class ExamsService {
         audioUrl,
         readingPassage: group.type === 'passage' ? group.passageText : null,
         readingCards: group.type === 'passage' ? group.readingCards : null,
+        cardsLayout: group.type === 'passage' ? group.cardsLayout : null,
         questionCount: total,
         progress: {
           answered,
@@ -3231,6 +3234,7 @@ export class ExamsService {
         audioUrl: null,
         readingPassage: null,
         readingCards: null,
+        cardsLayout: null,
         questionCount: 1,
         progress: {
           answered: qData.status === 'answered' ? 1 : 0,

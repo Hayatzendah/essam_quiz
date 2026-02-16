@@ -50,6 +50,10 @@ export class BulkCreateSectionQuestionsDto {
   @Type(() => ReadingCardDto)
   readingCards?: ReadingCardDto[];
 
+  @IsOptional()
+  @IsString()
+  cardsLayout?: string;
+
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
