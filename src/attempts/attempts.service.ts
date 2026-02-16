@@ -651,8 +651,23 @@ export class AttemptsService {
     // 10. إرجاع البيانات (بدون answer keys)
     const attemptObj = attempt.toObject();
 
-    // ✅ FIX: إعادة ترتيب items حسب ترتيب الامتحان
+    // ✅ FIX: إعادة ترتيب items حسب ترتيب الامتحان + تصفية المحذوفة
     if (exam.sections && Array.isArray(exam.sections) && attemptObj.items && attemptObj.items.length > 0) {
+      // جلب الأسئلة المنشورة فقط
+      const allSectionQIds = exam.sections
+        .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
+        .filter(Boolean);
+      const publishedIds = new Set<string>();
+      if (allSectionQIds.length > 0) {
+        const pubQuestions = await this.questionModel
+          .find({ _id: { $in: allSectionQIds }, status: 'published' })
+          .select('_id')
+          .lean();
+        for (const q of pubQuestions) {
+          publishedIds.add((q as any)._id.toString());
+        }
+      }
+
       const orderMap = new Map<string, number>();
       let globalOrder = 0;
       const sortedSections = [...exam.sections].sort(
@@ -662,28 +677,28 @@ export class AttemptsService {
         const sec = section as any;
         if (sec.items && Array.isArray(sec.items)) {
           for (const sItem of sec.items) {
-            if (sItem.questionId) {
-              orderMap.set(sItem.questionId.toString(), globalOrder++);
+            const qId = sItem.questionId?.toString();
+            if (qId && publishedIds.has(qId)) {
+              orderMap.set(qId, globalOrder++);
             }
           }
         }
       }
+      const beforeFilter = attemptObj.items.length;
+      attemptObj.items = attemptObj.items.filter((a: any) => {
+        return orderMap.has(a.questionId?.toString());
+      });
+      if (attemptObj.items.length < beforeFilter) {
+        this.logger.log(`[startAttempt] Filtered out ${beforeFilter - attemptObj.items.length} deleted/archived questions`);
+      }
       if (orderMap.size > 0) {
-        // تصفية الأسئلة المحذوفة من الامتحان
-        const beforeFilter = attemptObj.items.length;
-        attemptObj.items = attemptObj.items.filter((a: any) => {
-          return orderMap.has(a.questionId?.toString());
-        });
-        if (attemptObj.items.length < beforeFilter) {
-          this.logger.log(`[startAttempt] Filtered out ${beforeFilter - attemptObj.items.length} removed questions from response items`);
-        }
         attemptObj.items.sort((a: any, b: any) => {
           const orderA = orderMap.get(a.questionId?.toString()) ?? 999999;
           const orderB = orderMap.get(b.questionId?.toString()) ?? 999999;
           return orderA - orderB;
         });
-        this.logger.log(`[startAttempt] Reordered ${attemptObj.items.length} response items based on exam section order`);
       }
+      this.logger.log(`[startAttempt] Final items: ${attemptObj.items.length} (published: ${publishedIds.size})`);
     }
 
     // بناء set لصوت السكشنات عشان نشيل mediaSnapshot من الأسئلة اللي صوتها من الـ section
@@ -2903,11 +2918,25 @@ export class AttemptsService {
     const isStudent = user.role === 'student' && isOwner;
 
     // ✅ FIX: إعادة ترتيب attempt.items حسب ترتيب الأسئلة في الامتحان الحالي
-    // هذا يصلح المحاولات القديمة التي كانت بترتيب عشوائي
+    // + تصفية الأسئلة المحذوفة/المؤرشفة
     if (exam.sections && Array.isArray(exam.sections) && attempt.items && attempt.items.length > 0) {
+      // جلب الأسئلة المنشورة فقط من section items
+      const allSectionQuestionIds = exam.sections
+        .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
+        .filter(Boolean);
+      const publishedQuestionIds = new Set<string>();
+      if (allSectionQuestionIds.length > 0) {
+        const publishedQuestions = await this.questionModel
+          .find({ _id: { $in: allSectionQuestionIds }, status: 'published' })
+          .select('_id')
+          .lean();
+        for (const q of publishedQuestions) {
+          publishedQuestionIds.add((q as any)._id.toString());
+        }
+      }
+
       const orderMap = new Map<string, number>();
       let globalOrder = 0;
-      // ترتيب الأقسام حسب order ثم teilNumber
       const sortedSections = [...exam.sections].sort(
         (a: any, b: any) => ((a as any).order ?? 0) - ((b as any).order ?? 0) || ((a as any).teilNumber ?? 0) - ((b as any).teilNumber ?? 0)
       );
@@ -2915,28 +2944,30 @@ export class AttemptsService {
         const sec = section as any;
         if (sec.items && Array.isArray(sec.items)) {
           for (const sItem of sec.items) {
-            if (sItem.questionId) {
-              orderMap.set(sItem.questionId.toString(), globalOrder++);
+            const qId = sItem.questionId?.toString();
+            // فقط الأسئلة المنشورة تدخل الخريطة
+            if (qId && publishedQuestionIds.has(qId)) {
+              orderMap.set(qId, globalOrder++);
             }
           }
         }
       }
+      // تصفية الأسئلة المحذوفة/المؤرشفة + الترتيب
+      const beforeFilter = (attempt as any).items.length;
+      (attempt as any).items = (attempt as any).items.filter((a: any) => {
+        return orderMap.has(a.questionId?.toString());
+      });
+      if ((attempt as any).items.length < beforeFilter) {
+        this.logger.log(`[getAttempt] Filtered out ${beforeFilter - (attempt as any).items.length} deleted/archived questions from attempt items`);
+      }
       if (orderMap.size > 0) {
-        // تصفية الأسئلة المحذوفة من الامتحان (موجودة في المحاولة بس مش في الأقسام الحالية)
-        const beforeFilter = (attempt as any).items.length;
-        (attempt as any).items = (attempt as any).items.filter((a: any) => {
-          return orderMap.has(a.questionId?.toString());
-        });
-        if ((attempt as any).items.length < beforeFilter) {
-          this.logger.log(`[getAttempt] Filtered out ${beforeFilter - (attempt as any).items.length} removed questions from attempt items`);
-        }
         (attempt as any).items.sort((a: any, b: any) => {
           const orderA = orderMap.get(a.questionId?.toString()) ?? 999999;
           const orderB = orderMap.get(b.questionId?.toString()) ?? 999999;
           return orderA - orderB;
         });
-        this.logger.log(`[getAttempt] Reordered ${attempt.items.length} items based on exam section order (orderMap size: ${orderMap.size})`);
       }
+      this.logger.log(`[getAttempt] Final items count: ${attempt.items.length} (published: ${publishedQuestionIds.size}, orderMap: ${orderMap.size})`);
     }
 
     // بناء set لصوت السكشنات عشان نشيل mediaSnapshot من الأسئلة اللي صوتها من الـ section
