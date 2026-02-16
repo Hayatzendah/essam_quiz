@@ -572,10 +572,10 @@ export class QuestionsService {
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException('Question not found');
 
+    // تنظيف السؤال من جميع أقسام الامتحانات
+    await this.cleanupQuestionFromExams(id);
+
     if (!hard) {
-      if (doc.status === QuestionStatus.PUBLISHED) {
-        // ممكن تمنعي الأرشفة من المنشور لو مستخدم في امتحانات—هنا بنسمح بالأرشفة فقط
-      }
       doc.status = QuestionStatus.ARCHIVED;
       await doc.save();
       return { archived: true };
@@ -583,6 +583,37 @@ export class QuestionsService {
 
     await this.model.deleteOne({ _id: id }).exec();
     return { deleted: true };
+  }
+
+  /**
+   * حذف السؤال من جميع أقسام الامتحانات التي يظهر فيها
+   */
+  private async cleanupQuestionFromExams(questionId: string) {
+    try {
+      const exams = await this.examModel.find({
+        'sections.items.questionId': new Types.ObjectId(questionId),
+      }).exec();
+
+      for (const exam of exams) {
+        let modified = false;
+        for (const section of (exam as any).sections || []) {
+          if (section.items && Array.isArray(section.items)) {
+            const before = section.items.length;
+            section.items = section.items.filter(
+              (item: any) => item.questionId?.toString() !== questionId,
+            );
+            if (section.items.length < before) modified = true;
+          }
+        }
+        if (modified) {
+          exam.markModified('sections');
+          await exam.save();
+        }
+      }
+    } catch (err) {
+      // لا نوقف الحذف إذا فشل التنظيف
+      console.error('Failed to cleanup question from exams:', err);
+    }
   }
 
   /**

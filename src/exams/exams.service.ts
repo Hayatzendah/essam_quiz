@@ -2625,8 +2625,24 @@ export class ExamsService {
     const exam = await this.model.findById(examId).lean();
     if (!exam) throw new NotFoundException('Exam not found');
 
+    // جلب الأسئلة المنشورة فقط لتصفية المحذوفة/المؤرشفة
+    const allQuestionIds = (exam.sections || [])
+      .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
+      .filter(Boolean);
+    const publishedIds = new Set<string>();
+    if (allQuestionIds.length > 0) {
+      const publishedQuestions = await this.questionModel
+        .find({ _id: { $in: allQuestionIds }, status: 'published' })
+        .select('_id')
+        .lean();
+      for (const q of publishedQuestions) {
+        publishedIds.add((q as any)._id.toString());
+      }
+    }
+
     const sections = (exam.sections || []).map((s: any, index: number) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+      const publishedItems = (s.items || []).filter((item: any) => publishedIds.has(item.questionId?.toString()));
       return {
         key,
         title: s.title || s.name,
@@ -2640,8 +2656,8 @@ export class ExamsService {
         randomize: s.randomize,
         tags: s.tags,
         order: s.order ?? index,
-        questionCount: s.items?.length || 0,
-        items: (s.items || []).map((item: any) => ({
+        questionCount: publishedItems.length,
+        items: publishedItems.map((item: any) => ({
           questionId: item.questionId,
           points: item.points ?? 1,
         })),
@@ -2957,25 +2973,30 @@ export class ExamsService {
       .filter(Boolean);
 
     let questionClipMap = new Map<string, string | null>();
+    const publishedQuestionIds = new Set<string>();
     if (allQuestionIds.length > 0) {
       const allQuestions = await this.questionModel
-        .find({ _id: { $in: allQuestionIds } })
+        .find({ _id: { $in: allQuestionIds }, status: 'published' })
         .select('listeningClipId')
         .lean();
       for (const q of allQuestions) {
+        const qId = (q as any)._id.toString();
+        publishedQuestionIds.add(qId);
         const clipId = q.listeningClipId ? q.listeningClipId.toString() : null;
-        questionClipMap.set((q as any)._id.toString(), clipId);
+        questionClipMap.set(qId, clipId);
       }
     }
 
     const sections = (exam.sections || []).map((s: any, index: number) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
-      const questionCount = s.items?.length || 0;
+      // عد فقط الأسئلة المنشورة (تجاهل المحذوفة/المؤرشفة)
+      const publishedItems = (s.items || []).filter((item: any) => publishedQuestionIds.has(item.questionId?.toString()));
+      const questionCount = publishedItems.length;
 
       // حساب عدد التمارين (مجموعات listeningClipId الفريدة + أسئلة بدون صوت)
       const clipIds = new Set<string>();
       let noAudioCount = 0;
-      for (const item of s.items || []) {
+      for (const item of publishedItems) {
         const clipId = questionClipMap.get(item.questionId?.toString());
         if (clipId) {
           clipIds.add(clipId);
@@ -2988,7 +3009,7 @@ export class ExamsService {
       // حساب التقدم
       let answered = 0;
       if (attemptItems.length > 0) {
-        const sectionItemIds = (s.items || []).map((item: any) => item.questionId?.toString());
+        const sectionItemIds = publishedItems.map((item: any) => item.questionId?.toString());
         answered = attemptItems.filter((ai: any) => {
           if (ai.sectionKey === key) {
             return ai.studentAnswerText !== undefined ||
