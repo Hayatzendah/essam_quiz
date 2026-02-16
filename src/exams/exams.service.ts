@@ -2840,6 +2840,7 @@ export class ExamsService {
 
         const doc = await this.questionModel.create({
           ...questionData,
+          ...(exam.provider && { provider: exam.provider }),
           ...(clipId && { listeningClipId: clipId }),
           ...(passageId && {
             readingPassageId: passageId,
