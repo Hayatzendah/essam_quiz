@@ -2683,24 +2683,24 @@ export class ExamsService {
     const exam = await this.model.findById(examId).lean();
     if (!exam) throw new NotFoundException('Exam not found');
 
-    // جلب الأسئلة غير المؤرشفة لتصفية المحذوفة
+    // جلب الأسئلة غير المؤرشفة مع بياناتها لعرضها في لوحة التحكم
     const allQuestionIds = (exam.sections || [])
       .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
       .filter(Boolean);
-    const publishedIds = new Set<string>();
+    const questionsMap = new Map<string, any>();
     if (allQuestionIds.length > 0) {
       const activeQuestions = await this.questionModel
         .find({ _id: { $in: allQuestionIds }, status: { $ne: 'archived' } })
-        .select('_id')
+        .select('_id prompt type level')
         .lean();
       for (const q of activeQuestions) {
-        publishedIds.add((q as any)._id.toString());
+        questionsMap.set((q as any)._id.toString(), q);
       }
     }
 
     const sections = (exam.sections || []).map((s: any, index: number) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
-      const publishedItems = (s.items || []).filter((item: any) => publishedIds.has(item.questionId?.toString()));
+      const publishedItems = (s.items || []).filter((item: any) => questionsMap.has(item.questionId?.toString()));
       return {
         key,
         title: s.title || s.name,
@@ -2715,10 +2715,16 @@ export class ExamsService {
         tags: s.tags,
         order: s.order ?? index,
         questionCount: publishedItems.length,
-        items: publishedItems.map((item: any) => ({
-          questionId: item.questionId,
-          points: item.points ?? 1,
-        })),
+        questions: publishedItems.map((item: any) => {
+          const qData = questionsMap.get(item.questionId?.toString());
+          return {
+            questionId: item.questionId,
+            points: item.points ?? 1,
+            prompt: qData?.prompt,
+            type: qData?.type,
+            level: qData?.level,
+          };
+        }),
       };
     });
 
