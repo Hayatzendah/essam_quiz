@@ -2617,6 +2617,64 @@ export class ExamsService {
   }
 
   /**
+   * تنظيف الأسئلة المكررة والمحذوفة من جميع أقسام الامتحانات
+   */
+  async cleanupAllExamSections(user: ReqUser) {
+    this.assertTeacherOrAdmin(user);
+
+    const exams = await this.model.find({ 'sections.0': { $exists: true } }).exec();
+    let totalCleaned = 0;
+    let examsModified = 0;
+
+    for (const exam of exams) {
+      let modified = false;
+      const allQuestionIds = (exam.sections || [])
+        .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
+        .filter(Boolean);
+
+      // جلب الأسئلة المنشورة فقط
+      const publishedQuestions = await this.questionModel
+        .find({ _id: { $in: allQuestionIds }, status: 'published' })
+        .select('_id')
+        .lean();
+      const publishedIds = new Set(publishedQuestions.map((q: any) => q._id.toString()));
+
+      for (const section of (exam as any).sections || []) {
+        if (!section.items || !Array.isArray(section.items)) continue;
+        const before = section.items.length;
+        const seen = new Set<string>();
+        section.items = section.items.filter((item: any) => {
+          const qId = item.questionId?.toString();
+          if (!qId) return false;
+          // إزالة غير المنشورة
+          if (!publishedIds.has(qId)) return false;
+          // إزالة المكررة
+          if (seen.has(qId)) return false;
+          seen.add(qId);
+          return true;
+        });
+        if (section.items.length < before) {
+          modified = true;
+          totalCleaned += before - section.items.length;
+        }
+      }
+
+      if (modified) {
+        exam.markModified('sections');
+        exam.version = (exam.version || 1) + 1;
+        await exam.save();
+        examsModified++;
+      }
+    }
+
+    return {
+      examsScanned: exams.length,
+      examsModified,
+      questionsRemoved: totalCleaned,
+    };
+  }
+
+  /**
    * جلب أقسام الامتحان للأدمن (مع تفاصيل الأسئلة)
    */
   async getAdminSections(examId: string, user: ReqUser) {

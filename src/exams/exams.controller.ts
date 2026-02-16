@@ -307,6 +307,15 @@ export class ExamsController {
     return this.service.fixAllExamsWithEmptySections(req.user);
   }
 
+  // تنظيف الأسئلة المكررة والمحذوفة من جميع أقسام الامتحانات (admin فقط)
+  @Post('cleanup-sections')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Cleanup duplicate and deleted questions from all exam sections' })
+  cleanupAllSections(@Req() req: any) {
+    return this.service.cleanupAllExamSections(req.user);
+  }
+
   // =====================================================
   // ============ Section Management (Admin) =============
   // =====================================================
