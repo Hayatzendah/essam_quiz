@@ -864,11 +864,12 @@ export class AttemptsService {
           continue;
         }
 
-        // Fetch questions for this section (only published)
+        // Fetch questions for this section (only published, exclude contentOnly placeholders)
         const sectionQuestions = await this.questionModel
           .find({
             _id: { $in: sectionQuestionIds },
             status: QuestionStatus.PUBLISHED,
+            contentOnly: { $ne: true },
           })
           .lean()
           .exec();
