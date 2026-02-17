@@ -2840,7 +2840,7 @@ export class ExamsService {
         const doc = await this.questionModel.create({
           prompt: '—',
           qType: QuestionType.MCQ,
-          options: [{ text: '✓', isCorrect: true }],
+          options: [{ text: '✓', isCorrect: true }, { text: '—', isCorrect: false }],
           contentOnly: true,
           ...(exam.provider && { provider: exam.provider }),
           ...(clipId && { listeningClipId: clipId }),

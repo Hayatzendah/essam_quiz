@@ -296,7 +296,7 @@ QuestionSchema.index({ prompt: 'text' }); // بحث نصي
 QuestionSchema.pre('validate', function (next) {
   const q = this as QuestionDocument;
 
-  if (q.qType === QuestionType.MCQ) {
+  if (q.qType === QuestionType.MCQ && !q.contentOnly) {
     if (!Array.isArray(q.options) || q.options.length < 2) {
       return next(new Error('MCQ requires at least 2 options'));
     }
