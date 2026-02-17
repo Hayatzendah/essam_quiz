@@ -243,6 +243,17 @@ export class Question {
   @Prop({ type: String, enum: ['horizontal', 'vertical'], trim: true })
   cardsLayout?: string;
 
+  // بلوكات المحتوى المرنة (Sprechen وغيرها) - فقرات، صور، بطاقات بترتيب مخصص
+  @Prop({ type: [{ type: Object }], default: undefined })
+  contentBlocks?: Array<{
+    type: 'paragraph' | 'image' | 'cards';
+    order: number;
+    text?: string;
+    images?: Array<{ key: string; url: string; mime: string; description?: string }>;
+    cards?: Array<{ title: string; texts: Array<{ label?: string; content: string }>; color?: string }>;
+    cardsLayout?: string;
+  }>;
+
   // للحقول الخاصة بـ Leben in Deutschland
   @Prop({ type: String, enum: Object.values(ExamSkillEnum), trim: true })
   mainSkill?: ExamSkillEnum;

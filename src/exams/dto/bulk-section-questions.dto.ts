@@ -35,6 +35,78 @@ class ReadingCardDto {
   color?: string;
 }
 
+// --- Content Blocks DTOs (Sprechen وغيرها) ---
+
+class ContentBlockImageItemDto {
+  @IsString()
+  key: string;
+
+  @IsString()
+  url: string;
+
+  @IsString()
+  mime: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+
+class CardTextEntryDto {
+  @IsOptional()
+  @IsString()
+  label?: string;
+
+  @IsString()
+  @MinLength(1)
+  content: string;
+}
+
+class EnhancedCardDto {
+  @IsString()
+  @MinLength(1)
+  title: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CardTextEntryDto)
+  texts: CardTextEntryDto[];
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+}
+
+class ContentBlockDto {
+  @IsString()
+  type: 'paragraph' | 'image' | 'cards';
+
+  @IsInt()
+  @Min(0)
+  @Type(() => Number)
+  order: number;
+
+  @IsOptional()
+  @IsString()
+  text?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ContentBlockImageItemDto)
+  images?: ContentBlockImageItemDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EnhancedCardDto)
+  cards?: EnhancedCardDto[];
+
+  @IsOptional()
+  @IsString()
+  cardsLayout?: string;
+}
+
 export class BulkCreateSectionQuestionsDto {
   @IsOptional()
   @IsMongoId()
@@ -53,6 +125,12 @@ export class BulkCreateSectionQuestionsDto {
   @IsOptional()
   @IsString()
   cardsLayout?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ContentBlockDto)
+  contentBlocks?: ContentBlockDto[];
 
   @IsArray()
   @ArrayMinSize(1)

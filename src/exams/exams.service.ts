@@ -2816,9 +2816,9 @@ export class ExamsService {
       section.listeningAudioId = clipId;
     }
 
-    // فقرة القراءة المشتركة (اختياري - لأسئلة Lesen)
+    // فقرة القراءة المشتركة (اختياري - لأسئلة Lesen) أو بلوكات محتوى (Sprechen)
     let passageId: Types.ObjectId | null = null;
-    if (dto.readingPassage?.trim() || (dto.readingCards && dto.readingCards.length > 0)) {
+    if (dto.readingPassage?.trim() || (dto.readingCards && dto.readingCards.length > 0) || (dto.contentBlocks && dto.contentBlocks.length > 0)) {
       passageId = new Types.ObjectId();
     }
 
@@ -2847,6 +2847,9 @@ export class ExamsService {
             ...(dto.readingPassage?.trim() && { readingPassage: dto.readingPassage.trim() }),
             ...(dto.readingCards && dto.readingCards.length > 0 && { readingCards: dto.readingCards }),
             ...(dto.cardsLayout && { cardsLayout: dto.cardsLayout }),
+            ...(dto.contentBlocks && dto.contentBlocks.length > 0 && {
+              contentBlocks: dto.contentBlocks.sort((a, b) => a.order - b.order),
+            }),
           }),
           status: question.status ?? QuestionStatus.PUBLISHED,
           createdBy: userId,
@@ -3150,7 +3153,7 @@ export class ExamsService {
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds }, status: 'published' })
-      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingCards cardsLayout sampleAnswer minWords maxWords')
+      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingCards cardsLayout contentBlocks sampleAnswer minWords maxWords')
       .populate('listeningClipId', 'title audioUrl audioKey teil')
       .lean();
 
@@ -3193,7 +3196,7 @@ export class ExamsService {
 
     // تجميع الأسئلة في تمارين (Übungen) حسب listeningClipId أو readingPassageId
     // الأسئلة بنفس الـ groupId = تمرين واحد (صوت مشترك أو فقرة مشتركة + أسئلة)
-    const exerciseMap = new Map<string, { type: 'audio' | 'passage'; clipData: any; passageText: string | null; readingCards: any[] | null; cardsLayout: string | null; questions: any[] }>();
+    const exerciseMap = new Map<string, { type: 'audio' | 'passage'; clipData: any; passageText: string | null; readingCards: any[] | null; cardsLayout: string | null; contentBlocks: any[] | null; questions: any[] }>();
     const exerciseOrder: string[] = []; // ترتيب التمارين حسب الظهور الأول
     const ungroupedQuestions: any[] = [];
 
@@ -3265,6 +3268,7 @@ export class ExamsService {
             passageText: q.readingPassage || null,
             readingCards: q.readingCards || null,
             cardsLayout: q.cardsLayout || null,
+            contentBlocks: q.contentBlocks || null,
             questions: [],
           });
           exerciseOrder.push(groupId);
@@ -3300,6 +3304,7 @@ export class ExamsService {
         readingPassage: group.type === 'passage' ? group.passageText : null,
         readingCards: group.type === 'passage' ? group.readingCards : null,
         cardsLayout: group.type === 'passage' ? group.cardsLayout : null,
+        contentBlocks: group.contentBlocks || null,
         questionCount: total,
         progress: {
           answered,
@@ -3321,6 +3326,7 @@ export class ExamsService {
         readingPassage: null,
         readingCards: null,
         cardsLayout: null,
+        contentBlocks: null,
         questionCount: 1,
         progress: {
           answered: qData.status === 'answered' ? 1 : 0,
