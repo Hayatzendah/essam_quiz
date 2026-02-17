@@ -4271,7 +4271,7 @@ export class AttemptsService {
   /**
    * حذف أسئلة contentOnly الوهمية من جميع المحاولات القديمة
    */
-  async cleanupContentOnlyFromAttempts(): Promise<{ modifiedAttempts: number; removedItems: number }> {
+  async cleanupContentOnlyFromAttempts(): Promise<{ modifiedAttempts: number; removedItems: number; deletedEmptyAttempts?: number }> {
     // 1. جلب جميع questionIds التي هي contentOnly
     const contentOnlyQuestions = await this.questionModel
       .find({ contentOnly: true })
@@ -4279,7 +4279,12 @@ export class AttemptsService {
       .lean();
 
     if (contentOnlyQuestions.length === 0) {
-      return { modifiedAttempts: 0, removedItems: 0 };
+      // حتى لو مفيش contentOnly، نحذف المحاولات الفاضية
+      const emptyResult = await this.attemptModel.deleteMany({
+        status: 'in_progress',
+        $or: [{ items: { $size: 0 } }, { items: { $exists: false } }],
+      });
+      return { modifiedAttempts: 0, removedItems: 0, deletedEmptyAttempts: emptyResult.deletedCount };
     }
 
     const contentOnlyIds = contentOnlyQuestions.map((q: any) => q._id.toString());
