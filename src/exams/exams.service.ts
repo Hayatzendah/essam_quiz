@@ -936,7 +936,7 @@ export class ExamsService {
 
             // التحقق من أن sections موجودة وليست فارغة
             // استثناء: امتحانات الكتابة تستخدم schreibenTaskId بدل sections
-            const isSchreibenExam = exam.mainSkill === 'schreiben' && exam.schreibenTaskId;
+            const isSchreibenExam = (exam as any).mainSkill === 'schreiben' && exam.schreibenTaskId;
             if (!isSchreibenExam && (!Array.isArray(exam.sections) || exam.sections.length === 0)) {
               this.logger.warn(`[findPublicExams] Exam ${exam._id} has no sections - skipping`);
               return null;
@@ -1016,7 +1016,7 @@ export class ExamsService {
               title: exam.title || '',
               level: exam.level || undefined,
               provider: exam.provider || undefined,
-              mainSkill: exam.mainSkill || undefined,
+              mainSkill: (exam as any).mainSkill || undefined,
               timeLimitMin: exam.timeLimitMin || 0,
               sections,
             };
@@ -3168,7 +3168,7 @@ export class ExamsService {
       title: exam.title,
       level: exam.level,
       provider: exam.provider,
-      mainSkill: exam.mainSkill,
+      mainSkill: (exam as any).mainSkill,
       sections,
     };
   }
