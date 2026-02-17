@@ -3278,6 +3278,7 @@ export class ExamsService {
         points: item.points ?? 1,
         status,
         score,
+        ...(q.contentOnly && { contentOnly: true }),
         // MCQ options
         ...(q.options && { options: q.options }),
         // TRUE_FALSE
@@ -3330,8 +3331,9 @@ export class ExamsService {
     // تمارين مجمّعة (صوت أو فقرة) بترتيب الظهور الأول
     for (const groupId of exerciseOrder) {
       const group = exerciseMap.get(groupId)!;
-      const answered = group.questions.filter((q: any) => q.status === 'answered').length;
-      const total = group.questions.length;
+      const realQuestions = group.questions.filter((q: any) => !q.contentOnly);
+      const answered = realQuestions.filter((q: any) => q.status === 'answered').length;
+      const total = realQuestions.length;
 
       // توليد pre-signed URL للصوت (صالح 24 ساعة)
       let audioUrl: string | null = null;
