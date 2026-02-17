@@ -864,15 +864,15 @@ export class AttemptsService {
           continue;
         }
 
-        // Fetch questions for this section (only published, exclude contentOnly placeholders)
-        const sectionQuestions = await this.questionModel
+        // Fetch questions for this section (only published)
+        const sectionQuestions = (await this.questionModel
           .find({
             _id: { $in: sectionQuestionIds },
             status: QuestionStatus.PUBLISHED,
-            contentOnly: { $ne: true },
           })
           .lean()
-          .exec();
+          .exec()
+        ).filter((q: any) => !q.contentOnly);
 
         this.logger.log(
           `[selectQuestions] Section "${sectionName}": Found ${sectionQuestions.length} published questions out of ${sectionQuestionIds.length} requested`,
