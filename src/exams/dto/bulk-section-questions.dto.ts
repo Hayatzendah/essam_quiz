@@ -91,6 +91,10 @@ class ContentBlockDto {
   text?: string;
 
   @IsOptional()
+  @IsString()
+  bgColor?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ContentBlockImageItemDto)
