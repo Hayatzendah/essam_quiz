@@ -2960,19 +2960,22 @@ export class AttemptsService {
         }
       }
       // تصفية الأسئلة المحذوفة/المؤرشفة + الترتيب
-      const beforeFilter = (attempt as any).items.length;
-      (attempt as any).items = (attempt as any).items.filter((a: any) => {
-        return orderMap.has(a.questionId?.toString());
-      });
-      if ((attempt as any).items.length < beforeFilter) {
-        this.logger.log(`[getAttempt] Filtered out ${beforeFilter - (attempt as any).items.length} deleted/archived questions from attempt items`);
-      }
+      // ⚠️ فقط إذا كانت sections تحتوي فعلاً على أسئلة (ليس لامتحانات Leben العشوائية)
       if (orderMap.size > 0) {
+        const beforeFilter = (attempt as any).items.length;
+        (attempt as any).items = (attempt as any).items.filter((a: any) => {
+          return orderMap.has(a.questionId?.toString());
+        });
+        if ((attempt as any).items.length < beforeFilter) {
+          this.logger.log(`[getAttempt] Filtered out ${beforeFilter - (attempt as any).items.length} deleted/archived questions from attempt items`);
+        }
         (attempt as any).items.sort((a: any, b: any) => {
           const orderA = orderMap.get(a.questionId?.toString()) ?? 999999;
           const orderB = orderMap.get(b.questionId?.toString()) ?? 999999;
           return orderA - orderB;
         });
+      } else {
+        this.logger.log(`[getAttempt] Skipping filter/sort - no section question IDs found (random/Leben exam)`);
       }
       this.logger.log(`[getAttempt] Final items count: ${attempt.items.length} (published: ${publishedQuestionIds.size}, orderMap: ${orderMap.size})`);
     }
