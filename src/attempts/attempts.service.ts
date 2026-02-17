@@ -467,6 +467,12 @@ export class AttemptsService {
           `[startAttempt] Found attempt ${existingInProgressAttempt._id} but status is ${existingInProgressAttempt.status}, not IN_PROGRESS. Creating new attempt.`,
         );
         // Don't return this attempt, continue to create a new one
+      } else if (!existingInProgressAttempt.items || existingInProgressAttempt.items.length === 0) {
+        // محاولة فاضية (بدون أسئلة) - نحذفها ونعمل وحدة جديدة
+        this.logger.warn(
+          `[startAttempt] Found empty in_progress attempt ${existingInProgressAttempt._id}, deleting and creating new one`,
+        );
+        await this.attemptModel.deleteOne({ _id: existingInProgressAttempt._id });
       } else {
         this.logger.log(
           `[startAttempt] Found existing in_progress attempt ${existingInProgressAttempt._id} for examId: ${examId}, userId: ${user.userId}, returning it`,
