@@ -2832,10 +2832,53 @@ export class ExamsService {
     const errors: Array<{ index: number; prompt: string; error: string }> = [];
 
     const userId = user.userId;
+    const questions = dto.questions || [];
 
-    for (let i = 0; i < dto.questions.length; i++) {
+    // محتوى بدون أسئلة: إنشاء سؤال وهمي يحمل المحتوى فقط
+    if (questions.length === 0 && passageId) {
       try {
-        const question = dto.questions[i];
+        const doc = await this.questionModel.create({
+          prompt: '—',
+          qType: QuestionType.MCQ,
+          options: [{ text: '✓', isCorrect: true }],
+          contentOnly: true,
+          ...(exam.provider && { provider: exam.provider }),
+          ...(clipId && { listeningClipId: clipId }),
+          readingPassageId: passageId,
+          ...(dto.readingPassage?.trim() && { readingPassage: dto.readingPassage.trim() }),
+          ...(dto.readingCards && dto.readingCards.length > 0 && { readingCards: dto.readingCards }),
+          ...(dto.cardsLayout && { cardsLayout: dto.cardsLayout }),
+          ...(dto.contentBlocks && dto.contentBlocks.length > 0 && {
+            contentBlocks: dto.contentBlocks.sort((a, b) => a.order - b.order),
+          }),
+          status: QuestionStatus.PUBLISHED,
+          createdBy: userId,
+        });
+        section.items = section.items || [];
+        section.items.push({
+          questionId: new Types.ObjectId(doc._id as any),
+          points: 0,
+        });
+        await this.questionModel.findByIdAndUpdate(doc._id, {
+          examId: new Types.ObjectId(examId),
+          sectionTitle: section.title || section.name,
+        });
+        results.push({
+          index: 0,
+          questionId: doc._id,
+          prompt: '(محتوى فقط)',
+          qType: 'mcq',
+          points: 0,
+        });
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        errors.push({ index: 0, prompt: '(محتوى فقط)', error: errorMessage });
+      }
+    }
+
+    for (let i = 0; i < questions.length; i++) {
+      try {
+        const question = questions[i];
         const { examId: _ignoreExamId, listeningClipId: _ignoreClipId, points, ...questionData } = question as any;
 
         const doc = await this.questionModel.create({
@@ -2905,7 +2948,7 @@ export class ExamsService {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         errors.push({
           index: i,
-          prompt: dto.questions[i]?.prompt || 'Unknown',
+          prompt: questions[i]?.prompt || 'Unknown',
           error: errorMessage,
         });
       }
@@ -2918,13 +2961,13 @@ export class ExamsService {
     }
 
     this.logger.log(
-      `[bulkCreateAndAddToSection] Created ${results.length}/${dto.questions.length} questions in section "${sectionKey}" of exam ${examId}`,
+      `[bulkCreateAndAddToSection] Created ${results.length}/${questions.length || 1} questions in section "${sectionKey}" of exam ${examId}`,
     );
 
     return {
       success: results.length,
       failed: errors.length,
-      total: dto.questions.length,
+      total: questions.length || 1,
       sectionKey,
       ...(dto.listeningClipId && { listeningClipId: dto.listeningClipId }),
       results,
@@ -3153,7 +3196,7 @@ export class ExamsService {
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds }, status: 'published' })
-      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingCards cardsLayout contentBlocks sampleAnswer minWords maxWords')
+      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingCards cardsLayout contentBlocks contentOnly sampleAnswer minWords maxWords')
       .populate('listeningClipId', 'title audioUrl audioKey teil')
       .lean();
 

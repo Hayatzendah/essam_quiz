@@ -138,9 +138,9 @@ export class BulkCreateSectionQuestionsDto {
   @Type(() => ContentBlockDto)
   contentBlocks?: ContentBlockDto[];
 
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => BulkQuestionItemDto)
-  questions: BulkQuestionItemDto[];
+  questions?: BulkQuestionItemDto[];
 }

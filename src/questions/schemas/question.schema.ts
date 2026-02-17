@@ -243,6 +243,10 @@ export class Question {
   @Prop({ type: String, enum: ['horizontal', 'vertical'], trim: true })
   cardsLayout?: string;
 
+  // علامة للأسئلة الوهمية (محتوى فقط بدون سؤال فعلي)
+  @Prop({ type: Boolean, default: false })
+  contentOnly?: boolean;
+
   // بلوكات المحتوى المرنة (Sprechen وغيرها) - فقرات، صور، بطاقات بترتيب مخصص
   @Prop({ type: [{ type: Object }], default: undefined })
   contentBlocks?: Array<{
