@@ -541,4 +541,11 @@ export class AttemptsController {
     );
     return this.service.removeDeletedQuestionFromAttempt(req.user, attemptId, questionId);
   }
+
+  @Post('cleanup-content-only')
+  @Roles('admin', 'teacher')
+  @ApiOperation({ summary: 'حذف أسئلة contentOnly الوهمية من المحاولات القديمة' })
+  async cleanupContentOnly() {
+    return this.service.cleanupContentOnlyFromAttempts();
+  }
 }

@@ -4261,4 +4261,45 @@ export class AttemptsService {
 
     return { results, score, maxScore };
   }
+
+  /**
+   * حذف أسئلة contentOnly الوهمية من جميع المحاولات القديمة
+   */
+  async cleanupContentOnlyFromAttempts(): Promise<{ modifiedAttempts: number; removedItems: number }> {
+    // 1. جلب جميع questionIds التي هي contentOnly
+    const contentOnlyQuestions = await this.questionModel
+      .find({ contentOnly: true })
+      .select('_id')
+      .lean();
+
+    if (contentOnlyQuestions.length === 0) {
+      return { modifiedAttempts: 0, removedItems: 0 };
+    }
+
+    const contentOnlyIds = contentOnlyQuestions.map((q: any) => q._id.toString());
+    this.logger.log(`[cleanup] Found ${contentOnlyIds.length} contentOnly questions to remove from attempts`);
+
+    // 2. البحث عن المحاولات التي تحتوي على هذه الأسئلة
+    const attempts = await this.attemptModel.find({
+      'items.questionId': { $in: contentOnlyIds.map(id => new Types.ObjectId(id)) },
+    });
+
+    let removedItems = 0;
+    for (const attempt of attempts) {
+      const before = attempt.items.length;
+      attempt.items = attempt.items.filter(
+        (item: any) => !contentOnlyIds.includes(item.questionId.toString()),
+      ) as any;
+      const removed = before - attempt.items.length;
+      if (removed > 0) {
+        removedItems += removed;
+        // إعادة حساب totalMaxScore
+        attempt.totalMaxScore = attempt.items.reduce((sum: number, item: any) => sum + (item.points || 0), 0);
+        await attempt.save();
+      }
+    }
+
+    this.logger.log(`[cleanup] Modified ${attempts.length} attempts, removed ${removedItems} contentOnly items`);
+    return { modifiedAttempts: attempts.length, removedItems };
+  }
 }
