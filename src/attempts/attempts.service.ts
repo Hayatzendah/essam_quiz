@@ -4306,6 +4306,17 @@ export class AttemptsService {
     }
 
     this.logger.log(`[cleanup] Modified ${attempts.length} attempts, removed ${removedItems} contentOnly items`);
-    return { modifiedAttempts: attempts.length, removedItems };
+
+    // 3. حذف المحاولات الفاضية (in_progress بدون أسئلة)
+    const emptyResult = await this.attemptModel.deleteMany({
+      status: 'in_progress',
+      $or: [
+        { items: { $size: 0 } },
+        { items: { $exists: false } },
+      ],
+    });
+    this.logger.log(`[cleanup] Deleted ${emptyResult.deletedCount} empty in_progress attempts`);
+
+    return { modifiedAttempts: attempts.length, removedItems, deletedEmptyAttempts: emptyResult.deletedCount };
   }
 }
