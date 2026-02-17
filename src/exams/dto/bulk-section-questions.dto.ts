@@ -79,7 +79,7 @@ class EnhancedCardDto {
 
 class ContentBlockDto {
   @IsString()
-  type: 'paragraph' | 'image' | 'cards';
+  type: 'paragraph' | 'image' | 'cards' | 'questions';
 
   @IsInt()
   @Min(0)
@@ -105,6 +105,12 @@ class ContentBlockDto {
   @IsOptional()
   @IsString()
   cardsLayout?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  questionCount?: number;
 }
 
 export class BulkCreateSectionQuestionsDto {
