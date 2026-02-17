@@ -133,7 +133,6 @@ export class SubmitAttemptAnswerDto {
 
 export class SubmitAttemptDto {
   @IsArray()
-  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => SubmitAttemptAnswerDto)
   answers: SubmitAttemptAnswerDto[];
