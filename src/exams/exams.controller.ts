@@ -474,7 +474,7 @@ export class ExamsController {
   ) {
     this.logger.log(
       `[POST /exams/${examId}/sections/${sectionKey}/questions/bulk-create] ` +
-      `Request received - ${dto.questions.length} questions, clipId: ${dto.listeningClipId}`,
+      `Request received - ${dto.questions?.length ?? 0} questions, clipId: ${dto.listeningClipId}`,
     );
     return this.service.bulkCreateAndAddToSection(examId, sectionKey, dto, req.user);
   }
