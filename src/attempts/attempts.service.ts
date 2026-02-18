@@ -871,14 +871,15 @@ export class AttemptsService {
         }
 
         // Fetch questions for this section (only published)
-        const sectionQuestions = (await this.questionModel
+        // ✅ نبقي contentOnly في الـ attempt عشان sections التحدث اللي فيها فقط فقرات تشتغل
+        // الفلترة تصير على الـ frontend (ما نعرض contentOnly كأسئلة)
+        const sectionQuestions = await this.questionModel
           .find({
             _id: { $in: sectionQuestionIds },
             status: QuestionStatus.PUBLISHED,
           })
           .lean()
-          .exec()
-        ).filter((q: any) => !q.contentOnly);
+          .exec();
 
         this.logger.log(
           `[selectQuestions] Section "${sectionName}": Found ${sectionQuestions.length} published questions out of ${sectionQuestionIds.length} requested`,
@@ -1410,6 +1411,7 @@ export class AttemptsService {
       qType: questionObj.qType,
       points: item.points,
       promptSnapshot: questionObj.prompt,
+      ...(questionObj.contentOnly && { contentOnly: true }),
     };
 
     // حفظ answer keys
@@ -3117,8 +3119,9 @@ export class AttemptsService {
           autoScore: item.autoScore || 0,
           manualScore: item.manualScore || 0,
           isCorrect: totalItemScore >= (item.points || 0),
+          ...(item.contentOnly && { contentOnly: true }),
         };
-        
+
         // إضافة تفاصيل Match pairs للنتائج (يظهر كل زوج وما إذا كان صحيحاً)
         if (item.qType === QuestionType.MATCH) {
           // استرجاع matchPairs من item
@@ -3317,6 +3320,7 @@ export class AttemptsService {
           maxScore: item.points || 0,
           autoScore: item.autoScore || 0,
           manualScore: item.manualScore || 0,
+          ...(item.contentOnly && { contentOnly: true }),
         };
 
         // إضافة answer keys للمعلم/الأدمن أو إذا كان policy يسمح
