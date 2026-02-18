@@ -79,7 +79,7 @@ class EnhancedCardDto {
 
 class ContentBlockDto {
   @IsString()
-  type: 'paragraph' | 'image' | 'cards' | 'questions';
+  type: 'paragraph' | 'image' | 'cards' | 'questions' | 'audio';
 
   @IsInt()
   @Min(0)
@@ -115,6 +115,10 @@ class ContentBlockDto {
   @IsInt()
   @Min(1)
   questionCount?: number;
+
+  @IsOptional()
+  @IsString()
+  audioUrl?: string;
 }
 
 export class BulkCreateSectionQuestionsDto {
