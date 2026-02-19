@@ -358,8 +358,6 @@ export class QuestionsService {
 
   buildQuery(filters: QueryQuestionDto): FilterQuery<QuestionDocument> {
     const q: FilterQuery<QuestionDocument> = {};
-    // إخفاء الأسئلة الوهمية (contentOnly) من القائمة دائماً
-    q.contentOnly = { $ne: true };
     if (filters.provider) {
       // استخدام regex للبحث case-insensitive (لأن provider قد يكون "Goethe" أو "goethe" أو "GOETHE")
       const escapedProvider = filters.provider.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
