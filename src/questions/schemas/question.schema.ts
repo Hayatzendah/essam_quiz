@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, Schema as MongooseSchema, Types } from 'mongoose';
 import { ProviderEnum } from '../../common/enums/provider.enum';
 import { ExamSkillEnum } from '../../common/enums';
 
@@ -248,7 +248,8 @@ export class Question {
   contentOnly?: boolean;
 
   // بلوكات المحتوى المرنة (Sprechen وغيرها) - فقرات، صور، بطاقات بترتيب مخصص
-  @Prop({ type: [{ type: Object }], default: undefined })
+  // استخدام Schema.Types.Mixed بدل { type: Object } لتجنب تعارض حقل "type" مع Mongoose
+  @Prop({ type: [MongooseSchema.Types.Mixed], default: undefined })
   contentBlocks?: Array<{
     type: 'paragraph' | 'image' | 'cards';
     order: number;

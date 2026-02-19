@@ -549,6 +549,27 @@ export class QuestionsService {
     }
 
     // تطبيق التحديث (بدون qType)
+    // استخدام findById + save بدل findByIdAndUpdate لأن Mongoose بيشيل حقل "type"
+    // من contentBlocks لأنه بيفسره كـ schema type definition مش كـ data field
+    if (updateData.contentBlocks) {
+      const doc = await this.model.findById(id).exec();
+      if (!doc) throw new NotFoundException('Question not found');
+      Object.assign(doc, updateData);
+      doc.markModified('contentBlocks');
+      await doc.save();
+      const updated = doc.toObject();
+
+      // Log للتحقق من answerKeyMatch بعد التحديث
+      if (updated.qType === QuestionType.MATCH) {
+        this.logger.warn(`updateQuestion: Match question ${id} - answerKeyMatch after update: ${JSON.stringify(updated.answerKeyMatch)}`);
+        if (!updated.answerKeyMatch) {
+          this.logger.error(`updateQuestion: ERROR - answerKeyMatch is missing after update for question ${id}!`);
+        }
+      }
+
+      return updated;
+    }
+
     const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).lean().exec();
     if (!updated) throw new NotFoundException('Question not found');
     
