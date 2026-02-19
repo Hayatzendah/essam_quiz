@@ -2834,19 +2834,10 @@ export class ExamsService {
     const userId = user.userId;
     const questions = dto.questions || [];
 
-    // محتوى بدون أسئلة: البحث عن سؤال contentOnly موجود وتحديثه، أو إنشاء جديد
+    // محتوى بدون أسئلة: إنشاء سؤال contentOnly جديد دائماً (بدون حذف القديم)
     if (questions.length === 0 && passageId) {
       try {
-        // البحث عن سؤال contentOnly موجود في هذا القسم
         section.items = section.items || [];
-        const existingContentOnlyIds = section.items.map((it: any) => it.questionId);
-        let existingContentOnly: any = null;
-        if (existingContentOnlyIds.length > 0) {
-          existingContentOnly = await this.questionModel.findOne({
-            _id: { $in: existingContentOnlyIds },
-            contentOnly: true,
-          }).lean();
-        }
 
         const contentData = {
           ...(clipId && { listeningClipId: clipId }),
@@ -2858,49 +2849,34 @@ export class ExamsService {
             : { contentBlocks: [] }),
         };
 
-        if (existingContentOnly) {
-          // تحديث السؤال الموجود بدل إنشاء جديد
-          await this.questionModel.findByIdAndUpdate(existingContentOnly._id, {
-            ...contentData,
-            readingPassageId: passageId,
-          });
-          this.logger.log(`[bulkCreateAndAddToSection] Updated existing contentOnly question ${existingContentOnly._id}`);
-          results.push({
-            index: 0,
-            questionId: existingContentOnly._id,
-            prompt: '(محتوى فقط - تم التحديث)',
-            qType: 'mcq',
-            points: 0,
-          });
-        } else {
-          // إنشاء سؤال وهمي جديد
-          const doc = await this.questionModel.create({
-            prompt: '—',
-            qType: QuestionType.MCQ,
-            options: [{ text: '✓', isCorrect: true }, { text: '—', isCorrect: false }],
-            contentOnly: true,
-            ...(exam.provider && { provider: exam.provider }),
-            ...contentData,
-            readingPassageId: passageId,
-            status: QuestionStatus.PUBLISHED,
-            createdBy: userId,
-          });
-          section.items.push({
-            questionId: new Types.ObjectId(doc._id as any),
-            points: 0,
-          });
-          await this.questionModel.findByIdAndUpdate(doc._id, {
-            examId: new Types.ObjectId(examId),
-            sectionTitle: section.title || section.name,
-          });
-          results.push({
-            index: 0,
-            questionId: doc._id,
-            prompt: '(محتوى فقط)',
-            qType: 'mcq',
-            points: 0,
-          });
-        }
+        // إنشاء سؤال contentOnly جديد (بدون استبدال القديم)
+        const doc = await this.questionModel.create({
+          prompt: '—',
+          qType: QuestionType.MCQ,
+          options: [{ text: '✓', isCorrect: true }, { text: '—', isCorrect: false }],
+          contentOnly: true,
+          ...(exam.provider && { provider: exam.provider }),
+          ...contentData,
+          readingPassageId: passageId,
+          status: QuestionStatus.PUBLISHED,
+          createdBy: userId,
+        });
+        section.items.push({
+          questionId: new Types.ObjectId(doc._id as any),
+          points: 0,
+        });
+        await this.questionModel.findByIdAndUpdate(doc._id, {
+          examId: new Types.ObjectId(examId),
+          sectionTitle: section.title || section.name,
+        });
+        this.logger.log(`[bulkCreateAndAddToSection] Created new contentOnly question ${doc._id} in section "${section.title || section.name}"`);
+        results.push({
+          index: 0,
+          questionId: doc._id,
+          prompt: '(محتوى فقط)',
+          qType: 'mcq',
+          points: 0,
+        });
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         errors.push({ index: 0, prompt: '(محتوى فقط)', error: errorMessage });
