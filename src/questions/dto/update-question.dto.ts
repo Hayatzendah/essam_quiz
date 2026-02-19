@@ -31,4 +31,9 @@ export class UpdateQuestionDto extends PartialType(CreateQuestionDto) {
   @IsOptional()
   @IsArray()
   answerKeyReorder?: string[];
+
+  // CONTENT BLOCKS - لتعديل المحتوى التعليمي (contentOnly questions)
+  @IsOptional()
+  @IsArray()
+  contentBlocks?: any[];
 }
