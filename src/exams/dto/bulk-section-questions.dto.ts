@@ -131,6 +131,10 @@ export class BulkCreateSectionQuestionsDto {
   readingPassage?: string;
 
   @IsOptional()
+  @IsString()
+  readingPassageBgColor?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ReadingCardDto)

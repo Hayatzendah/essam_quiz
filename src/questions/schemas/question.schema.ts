@@ -235,6 +235,10 @@ export class Question {
   @Prop({ type: String, trim: true })
   readingPassage?: string;
 
+  /** لون خلفية صندوق نص القراءة (مثل #f5f5f5 للرمادي) */
+  @Prop({ type: String, trim: true })
+  readingPassageBgColor?: string;
+
   // بطاقات معلومات القراءة (لأسئلة Lesen - مثل الإعلانات والكورسات)
   @Prop({ type: [{ title: { type: String, required: true, trim: true }, content: { type: String, required: true, trim: true }, color: { type: String, trim: true } }], default: undefined })
   readingCards?: { title: string; content: string; color?: string }[];
