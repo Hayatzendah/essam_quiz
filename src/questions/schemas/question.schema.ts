@@ -113,7 +113,7 @@ const InteractiveReorderSchema = SchemaFactory.createForClass(InteractiveReorder
 @Schema({ timestamps: true })
 export class Question {
   // معلومات أساسية
-  @Prop({ required: true, trim: true })
+  @Prop({ required: true }) /* بدون trim ل preservation الأسطر الفارغة تحت السؤال */
   prompt: string;
 
   // حقل text كبديل لـ prompt (للتوافق مع التنسيق الجديد)
