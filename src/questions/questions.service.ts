@@ -22,6 +22,7 @@ import {
 import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
 import { LearnGeneralQuestionsDto, LearnStateQuestionsDto } from './dto/learn-questions.dto';
 import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
+import { Attempt, AttemptDocument } from '../attempts/schemas/attempt.schema';
 import { GrammarTopic, GrammarTopicDocument } from '../modules/grammar/schemas/grammar-topic.schema';
 import { GrammarTopicsService } from '../modules/grammar/grammar-topics.service';
 import { Inject, forwardRef } from '@nestjs/common';
@@ -37,6 +38,7 @@ export class QuestionsService {
     @InjectModel(Question.name) private readonly model: Model<QuestionDocument>,
     @InjectModel(Exam.name) private readonly examModel: Model<ExamDocument>,
     @InjectModel(GrammarTopic.name) private readonly grammarTopicModel: Model<GrammarTopicDocument>,
+    @InjectModel(Attempt.name) private readonly attemptModel: Model<AttemptDocument>,
     @Inject(forwardRef(() => GrammarTopicsService))
     private readonly grammarTopicsService: GrammarTopicsService,
   ) {}
@@ -524,6 +526,25 @@ export class QuestionsService {
     return question;
   }
 
+  /**
+   * عند تعديل نص السؤال (prompt)، نحدّث promptSnapshot في كل المحاولات الجارية
+   * حتى يرى الطالب المسافة/الأسطر الفارغة دون الحاجة لبدء محاولة جديدة.
+   */
+  private async refreshPromptSnapshotInProgressAttempts(questionId: string, prompt: string) {
+    if (typeof prompt !== 'string') return;
+    const qId = new Types.ObjectId(questionId);
+    const r = await this.attemptModel
+      .updateMany(
+        { status: 'in_progress', 'items.questionId': qId },
+        { $set: { 'items.$[elem].promptSnapshot': prompt } },
+        { arrayFilters: [ { 'elem.questionId': qId } ] },
+      )
+      .exec();
+    if (r.modifiedCount > 0) {
+      this.logger.log(`refreshPromptSnapshot: updated promptSnapshot for question ${questionId} in ${r.modifiedCount} attempt(s)`);
+    }
+  }
+
   async updateQuestion(id: string, dto: UpdateQuestionDto) {
     // لا نسمح بتغيير qType - نتجاهله إذا كان موجوداً في الـ payload
     const { qType, ...updateData } = dto as any;
@@ -567,6 +588,9 @@ export class QuestionsService {
         }
       }
 
+      if (updated.prompt != null) {
+        await this.refreshPromptSnapshotInProgressAttempts(id, updated.prompt);
+      }
       return updated;
     }
 
@@ -580,7 +604,10 @@ export class QuestionsService {
         this.logger.error(`updateQuestion: ERROR - answerKeyMatch is missing after update for question ${id}!`);
       }
     }
-    
+
+    if (updated.prompt != null) {
+      await this.refreshPromptSnapshotInProgressAttempts(id, updated.prompt);
+    }
     return updated;
   }
 
