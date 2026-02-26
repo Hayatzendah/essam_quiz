@@ -111,10 +111,17 @@ export class VocabularyWordsService {
       filter.isActive = query.isActive === 'true';
     }
 
-    // ترتيب حسب order ASC إذا كان موجوداً، وإلا حسب createdAt DESC
-    // استخدم ترتيب مختلط: order ASC أولاً (الكلمات مع order تأتي أولاً)، ثم createdAt DESC للكلمات بدون order
-    // في MongoDB، null values تأتي في النهاية عند الترتيب ASC
-    return this.wordModel.find(filter).sort({ order: 1, createdAt: -1 }).exec();
+    // ترتيب مثل ترتيب المعلم: order 0,1,2,... أولاً، ثم كلمات بدون order حسب createdAt
+    // في MongoDB ترتيب order: 1 يضع null أولاً، لذلك نرتب في الذاكرة لنجعل null في النهاية
+    const words = await this.wordModel.find(filter).sort({ order: 1, createdAt: -1 }).exec();
+    return words.sort((a, b) => {
+      const aOrder = a.order != null ? a.order : Infinity;
+      const bOrder = b.order != null ? b.order : Infinity;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      const dateA = new Date((a as any).createdAt || 0).getTime();
+      const dateB = new Date((b as any).createdAt || 0).getTime();
+      return dateB - dateA; // createdAt DESC للعناصر بدون order
+    });
   }
 
   /**
