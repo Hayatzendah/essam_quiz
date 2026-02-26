@@ -1401,6 +1401,7 @@ export class AttemptsService {
 
   /**
    * استبعاد الأسئلة الفارغة/الوهمية (نص "-"/"—" فقط، أو خيارات كلها "-"/"—") — لا تُضاف للمحاولة أبداً
+   * يشمل امتحانات التحدث (speaking) والعناصر contentOnly الفارغة.
    */
   private isEmptyAttemptItem(snapshot: any): boolean {
     const prompt = (snapshot.promptSnapshot ?? snapshot.prompt ?? snapshot.text ?? '').toString().trim();
@@ -1410,10 +1411,15 @@ export class AttemptsService {
     const isSpeakingOrFreeText = qType === 'speaking' || qType === 'free_text';
     const opts = snapshot.optionsText || (snapshot.optionsSnapshot || []).map((o: any) => (o && o.text) || '') || [];
     const hasRealOption = Array.isArray(opts) && opts.some((t: any) => t != null && String(t).trim() !== '' && String(t).trim() !== '-' && String(t).trim() !== '—');
+    // contentOnly فارغ أو شرطات فقط → استبعاد (امتحانات التحدث)
+    if (snapshot.contentOnly && isEmptyPrompt) return true;
     if (isEmptyPrompt && isSpeakingOrFreeText) return true;
     if (isEmptyPrompt) return !hasRealOption;
-    const isMcqOrHasOptions = ['mcq', 'multiple-choice', 'true_false', 'true-false'].includes(qType) || (Array.isArray(opts) && opts.length > 0);
+    const isMcqOrHasOptions = ['mcq', 'multiple-choice', 'true_false', 'true-false', 'speaking'].includes(qType) || (Array.isArray(opts) && opts.length > 0);
     if (isMcqOrHasOptions && !hasRealOption) return true;
+    // سؤال بدون نقاط وبدون خيارات حقيقية → وهمي
+    const points = snapshot.points ?? 0;
+    if (points === 0 && !hasRealOption) return true;
     return false;
   }
 
@@ -1434,7 +1440,7 @@ export class AttemptsService {
       questionId: item.questionId,
       qType: questionObj.qType,
       points: item.points,
-      promptSnapshot: questionObj.prompt,
+      promptSnapshot: questionObj.prompt ?? questionObj.text ?? '',
       ...(questionObj.contentOnly && { contentOnly: true }),
     };
 
