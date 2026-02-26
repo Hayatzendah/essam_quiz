@@ -541,10 +541,46 @@ export class AttemptsService {
 
     // 3. اختيار الأسئلة
     this.logger.log(`[startAttempt] Calling selectQuestions for exam ${examId}`);
-    const items = await this.selectQuestions(exam, attemptCount);
+    let items = await this.selectQuestions(exam, attemptCount);
     this.logger.log(`[startAttempt] selectQuestions returned ${items.length} items`);
 
     if (items.length === 0) {
+      // محتوى تعليمي فقط: نسمح بإنشاء محاولة بدون أسئلة لعرض الفقرات/الصوت من الأقسام
+      if ((exam as any).isEducational) {
+        this.logger.log(`[startAttempt] Exam ${examId} is educational with no questions - creating attempt with empty items for content-only display`);
+        const expiresAt = exam.timeLimitMin
+          ? new Date(Date.now() + exam.timeLimitMin * 60 * 1000)
+          : undefined;
+        const attempt = await this.attemptModel.create({
+          examId: new Types.ObjectId(examId),
+          studentId: new Types.ObjectId(user.userId),
+          status: AttemptStatus.IN_PROGRESS,
+          attemptCount,
+          randomSeed: this.generateSeed(`${examId}-${user.userId}-${attemptCount}`),
+          startedAt: new Date(),
+          expiresAt,
+          items: [],
+          totalMaxScore: 0,
+          examVersion: exam.version || 1,
+        });
+        return {
+          attemptId: String(attempt._id),
+          examId: String(attempt.examId),
+          status: attempt.status,
+          attemptCount: attempt.attemptCount,
+          startedAt: attempt.startedAt,
+          expiresAt: attempt.expiresAt,
+          timeLimitMin: exam.timeLimitMin,
+          items: [],
+          totalMaxScore: 0,
+          exam: {
+            id: String(exam._id),
+            title: exam.title,
+            timeLimitMin: exam.timeLimitMin,
+            isEducational: true,
+          },
+        };
+      }
       this.logger.error(`[startAttempt] No questions available for exam ${examId} - sections: ${JSON.stringify(exam.sections.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0, quota: s.quota || 0 })))}`);
       throw new BadRequestException('No questions available for this exam. Please check that questions are published and correctly assigned to exam sections.');
     }
@@ -807,6 +843,12 @@ export class AttemptsService {
       timeLimitMin: exam.timeLimitMin,
       items: responseItems,
       totalMaxScore: attempt.totalMaxScore,
+      exam: {
+        id: String(exam._id),
+        title: exam.title,
+        timeLimitMin: exam.timeLimitMin,
+        isEducational: !!(exam as any).isEducational,
+      },
     };
 
     // إضافة readingText إذا كان موجوداً (لقسم القراءة LESEN)
@@ -1527,36 +1569,45 @@ export class AttemptsService {
       }
     }
 
-    // حفظ options snapshot (مع ترتيب عشوائي محتمل)
+    // حفظ options snapshot (مع ترتيب عشوائي محتمل) — استبعاد الخيارات الوهمية "-"/"—" حتى لا تظهر للطالب
     if (questionObj.options && questionObj.options.length > 0) {
-      const options = [...questionObj.options];
-      // يمكن إضافة ترتيب عشوائي هنا إذا كان مطلوباً
-      snapshot.optionsText = options.map((opt: any) => opt.text);
-      snapshot.optionOrder = options.map((_: any, idx: number) => idx);
-      // حفظ options snapshot كامل مع optionId
-      // مهم: نحافظ على optionId من السؤال الأصلي
-      // عند استخدام toObject()، subdocuments تحتفظ بـ _id
-      snapshot.optionsSnapshot = options.map((opt: any) => {
-        // استخراج _id من subdocument (يجب أن يكون موجوداً بعد toObject())
-        let optionId: string | undefined;
-        if (opt._id) {
-          optionId = typeof opt._id === 'string' ? opt._id : String(opt._id);
-        } else if (opt.id) {
-          optionId = typeof opt.id === 'string' ? opt.id : String(opt.id);
+      const isPlaceholderOption = (t: any) => {
+        const s = (t != null ? String(t).trim() : '') || '';
+        return !s || s === '-' || s === '—' || /^[\s\-–—ـ]+$/.test(s);
+      };
+      const options = questionObj.options.filter((opt: any) => !isPlaceholderOption(opt?.text));
+      if (options.length > 0) {
+        snapshot.optionsText = options.map((opt: any) => opt.text);
+        snapshot.optionOrder = options.map((_: any, idx: number) => idx);
+        snapshot.optionsSnapshot = options.map((opt: any) => {
+          let optionId: string | undefined;
+          if (opt._id) {
+            optionId = typeof opt._id === 'string' ? opt._id : String(opt._id);
+          } else if (opt.id) {
+            optionId = typeof opt.id === 'string' ? opt.id : String(opt.id);
+          }
+          if (!optionId) {
+            this.logger.warn(`Option missing _id for question ${item.questionId}, generating new ID`);
+            optionId = new Types.ObjectId().toString();
+          }
+          return {
+            optionId,
+            text: opt.text,
+            isCorrect: opt.isCorrect || false,
+          };
+        });
+        // إعادة تعيين correctOptionIndexes بعد التصفية (MCQ / LISTEN / TRUE_FALSE)
+        if (snapshot.correctOptionIndexes && Array.isArray(snapshot.correctOptionIndexes) && snapshot.correctOptionIndexes.length > 0) {
+          const newCorrect: number[] = [];
+          for (const origIdx of snapshot.correctOptionIndexes) {
+            const opt = questionObj.options[origIdx];
+            if (!opt || isPlaceholderOption(opt?.text)) continue;
+            const newIdx = options.indexOf(opt);
+            if (newIdx >= 0) newCorrect.push(newIdx);
+          }
+          snapshot.correctOptionIndexes = newCorrect;
         }
-        
-        // إذا لم يكن _id موجوداً، ننشئ واحداً جديداً (للأسئلة القديمة)
-        if (!optionId) {
-          this.logger.warn(`Option missing _id for question ${item.questionId}, generating new ID`);
-          optionId = new Types.ObjectId().toString();
-        }
-        
-        return {
-          optionId,
-          text: opt.text,
-          isCorrect: opt.isCorrect || false,
-        };
-      });
+      }
     }
 
     // حفظ media snapshot
@@ -3063,6 +3114,12 @@ export class AttemptsService {
       totalAutoScore: attempt.totalAutoScore || 0,
       totalManualScore: attempt.totalManualScore || 0,
       percentage: percentage,
+      exam: {
+        id: examIdValue,
+        title: exam.title,
+        timeLimitMin: exam.timeLimitMin,
+        isEducational: !!(exam as any).isEducational,
+      },
     };
 
     // إضافة بيانات Schreiben exam إذا كان الامتحان من نوع Schreiben

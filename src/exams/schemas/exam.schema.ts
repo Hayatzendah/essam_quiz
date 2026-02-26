@@ -171,6 +171,10 @@ export class Exam {
   @Prop({ type: [String], default: [] })
   tags?: string[];
 
+  /** محتوى تعليمي: لا يظهر زر تسليم الامتحان في واجهة الطالب */
+  @Prop({ type: Boolean, default: false })
+  isEducational?: boolean;
+
   // ======  👇 إضافات خاصة بامتحان القواعد  ======
   
   @Prop({ type: String, enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'], required: false })

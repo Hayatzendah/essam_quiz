@@ -172,6 +172,11 @@ export class CreateExamDto {
   @IsEnum(ExamTypeEnum)
   examType?: ExamTypeEnum; // للتوافق مع الفرونت (leben_test)
 
+  /** محتوى تعليمي: لا يظهر زر تسليم الامتحان في واجهة الطالب */
+  @IsOptional()
+  @IsBoolean()
+  isEducational?: boolean;
+
   @IsOptional()
   @IsBoolean()
   randomizeQuestions?: boolean;
