@@ -3,10 +3,10 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
-  NotFoundException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -86,6 +86,16 @@ export class GrammarTopicsController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateGrammarTopicDto) {
     return this.grammarTopicsService.update(id, dto);
+  }
+
+  @ApiOperation({ summary: 'Delete a grammar topic' })
+  @ApiResponse({ status: 200, description: 'Grammar topic deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Grammar topic not found' })
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  remove(@Param('id') id: string) {
+    return this.grammarTopicsService.remove(id);
   }
 
   // ربط Grammar Topic مع Exam

@@ -355,6 +355,19 @@ export class GrammarTopicsService {
   }
 
   /**
+   * Delete a grammar topic by id
+   */
+  async remove(id: string) {
+    const topic = await this.model.findById(id).exec();
+    if (!topic) {
+      throw new NotFoundException(`Grammar topic with id "${id}" not found`);
+    }
+    await this.model.findByIdAndDelete(id).exec();
+    this.logger.log(`Grammar topic deleted: id=${id}, title=${(topic as any).title}`);
+    return { success: true, message: 'Topic deleted successfully' };
+  }
+
+  /**
    * بدء محاولة تمرين على grammar topic
    * - البحث عن grammar topic بالـ slug
    * - البحث عن أسئلة مرتبطة بـ topic tags
