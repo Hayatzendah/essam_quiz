@@ -604,8 +604,14 @@ export class AttemptsService {
       items.map((item) => this.createItemSnapshot(item, sectionListeningAudioIds)),
     );
 
+    // استبعاد الأسئلة الفارغة (نص "-"/"—" فقط وخيارات فارغة) — لا تدخل المحاولة أبداً
+    const filteredItems = itemsWithSnapshots.filter((snapshot: any) => !this.isEmptyAttemptItem(snapshot));
+    if (filteredItems.length < itemsWithSnapshots.length) {
+      this.logger.log(`[startAttempt] Filtered out ${itemsWithSnapshots.length - filteredItems.length} empty/placeholder questions`);
+    }
+
     // Log للتحقق من answerKeyMatch قبل save
-    itemsWithSnapshots.forEach((snapshot: any) => {
+    filteredItems.forEach((snapshot: any) => {
       if (snapshot.qType === QuestionType.MATCH) {
         this.logger.warn(`[startAttempt] [MATCH BEFORE SAVE] qId: ${String(snapshot.questionId)}, len: ${snapshot.answerKeyMatch?.length || 0}, hasAnswerKeyMatch: ${!!snapshot.answerKeyMatch}`);
       }
@@ -629,7 +635,7 @@ export class AttemptsService {
       this.logger.log(`[startAttempt] Found LESEN section with description, teil: ${readingText.teil}`);
     }
 
-    // 9. إنشاء Attempt
+    // 9. إنشاء Attempt (فقط الأسئلة غير الفارغة)
     const attempt = await this.attemptModel.create({
       examId: new Types.ObjectId(examId),
       studentId: new Types.ObjectId(user.userId),
@@ -638,8 +644,8 @@ export class AttemptsService {
       randomSeed,
       startedAt: new Date(),
       expiresAt,
-      items: itemsWithSnapshots,
-      totalMaxScore: itemsWithSnapshots.reduce((sum, item) => sum + item.points, 0),
+      items: filteredItems,
+      totalMaxScore: filteredItems.reduce((sum, item) => sum + item.points, 0),
       readingText, // 👈 نص القراءة
       examVersion: exam.version || 1, // Exam Versioning: حفظ نسخة الامتحان وقت بدء المحاولة
     });
@@ -1391,6 +1397,24 @@ export class AttemptsService {
       }
     }
     return null;
+  }
+
+  /**
+   * استبعاد الأسئلة الفارغة/الوهمية (نص "-"/"—" فقط، أو خيارات كلها "-"/"—") — لا تُضاف للمحاولة أبداً
+   */
+  private isEmptyAttemptItem(snapshot: any): boolean {
+    const prompt = (snapshot.promptSnapshot ?? snapshot.prompt ?? snapshot.text ?? '').toString().trim();
+    const dashOnly = /^[\s\-–—ـ]+$/.test(prompt);
+    const isEmptyPrompt = !prompt || prompt === '-' || prompt === '—' || dashOnly;
+    const qType = (snapshot.qType || snapshot.type || '').toString().toLowerCase();
+    const isSpeakingOrFreeText = qType === 'speaking' || qType === 'free_text';
+    const opts = snapshot.optionsText || (snapshot.optionsSnapshot || []).map((o: any) => (o && o.text) || '') || [];
+    const hasRealOption = Array.isArray(opts) && opts.some((t: any) => t != null && String(t).trim() !== '' && String(t).trim() !== '-' && String(t).trim() !== '—');
+    if (isEmptyPrompt && isSpeakingOrFreeText) return true;
+    if (isEmptyPrompt) return !hasRealOption;
+    const isMcqOrHasOptions = ['mcq', 'multiple-choice', 'true_false', 'true-false'].includes(qType) || (Array.isArray(opts) && opts.length > 0);
+    if (isMcqOrHasOptions && !hasRealOption) return true;
+    return false;
   }
 
   /**
