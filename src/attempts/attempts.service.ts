@@ -204,14 +204,22 @@ export class AttemptsService {
       );
     }
 
-    // 7. إنشاء items array
-    const items: AttemptItem[] = allQuestions.map((q: any) => ({
+    // 7. مفاتيح الأقسام (30 سؤال = القسم الأول، 3 = القسم الثاني) — نفس منطق exams.service
+    const sortedSections = [...(exam.sections || [])].sort(
+      (a: any, b: any) => (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0),
+    );
+    const sectionKey0 = sortedSections[0] ? this.getSectionKeyForLeben(sortedSections[0], 0) : 'teil_1';
+    const sectionKey1 = sortedSections[1] ? this.getSectionKeyForLeben(sortedSections[1], 1) : 'teil_2';
+
+    // 8. إنشاء items array مع sectionKey
+    const items: AttemptItem[] = allQuestions.map((q: any, index: number) => ({
       questionId: q._id,
       qType: q.qType,
       points: 1,
+      sectionKey: index < 30 ? sectionKey0 : sectionKey1,
     } as AttemptItem));
 
-    // 8. ترتيب عشوائي معطّل - الأسئلة تبقى بترتيبها الأصلي
+    // 9. ترتيب عشوائي معطّل - الأسئلة تبقى بترتيبها الأصلي
     // if (exam.randomizeQuestions) {
     //   const seedString = `${dto.examId}-${studentId}-${attemptCount}`;
     //   const randomSeed = this.generateSeed(seedString);
@@ -221,17 +229,17 @@ export class AttemptsService {
     // الصوت أصبح per-question - لا حاجة لربط صوت القسم
     const sectionListeningAudioIds = new Map<string, string>();
 
-    // 9. إنشاء snapshots للأسئلة
+    // 10. إنشاء snapshots للأسئلة
     const itemsWithSnapshots = await Promise.all(
       items.map((item) => this.createItemSnapshot(item, sectionListeningAudioIds)),
     );
 
-    // 10. حساب expiresAt
+    // 11. حساب expiresAt
     const expiresAt = exam.timeLimitMin
       ? new Date(Date.now() + exam.timeLimitMin * 60 * 1000)
       : undefined;
 
-    // 11. إنشاء Attempt
+    // 12. إنشاء Attempt
     const attempt = await this.attemptModel.create({
       examId: new Types.ObjectId(dto.examId),
       studentId: new Types.ObjectId(studentId),
@@ -245,7 +253,7 @@ export class AttemptsService {
       examVersion: exam.version || 1, // Exam Versioning: حفظ نسخة الامتحان وقت بدء المحاولة
     });
 
-    // 12. إرجاع البيانات (بدون answer keys)
+    // 13. إرجاع البيانات (بدون answer keys)
     const attemptObj = attempt.toObject();
     
     // الصوت أصبح per-question فقط - لا نبحث عن صوت على مستوى القسم
@@ -1463,6 +1471,17 @@ export class AttemptsService {
     const points = snapshot.points ?? 0;
     if (points === 0 && !hasRealOption) return true;
     return false;
+  }
+
+  /**
+   * توليد sectionKey للقسم (مطابق لمنطق exams.service.generateSectionKey) — لاستخدامه في محاولات Leben
+   */
+  private getSectionKeyForLeben(section: any, index: number): string {
+    if (section.key) return section.key;
+    if (section.skill && section.teilNumber != null) return `${section.skill}_teil${section.teilNumber}`;
+    const title = section.title || section.name;
+    if (title) return String(title).toLowerCase().replace(/[^a-z0-9äöüß]+/g, '_').replace(/(^_|_$)/g, '');
+    return `section_${index}`;
   }
 
   /**

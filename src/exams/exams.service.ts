@@ -3088,9 +3088,15 @@ export class ExamsService {
     }
 
     // جلب الأسئلة لحساب عدد التمارين (Übungen) حسب listeningClipId
-    const allQuestionIds = (exam.sections || [])
+    let allQuestionIds = (exam.sections || [])
       .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
       .filter(Boolean);
+
+    // امتحان Leben: الأقسام قد تكون فارغة والأسئلة في المحاولة فقط — نستخدم عناصر المحاولة لعدد الأسئلة
+    const isLebenExam = (exam as any).examCategory === 'leben_exam' || (exam as any).examType === 'leben_test';
+    if (isLebenExam && allQuestionIds.length === 0 && attemptItems.length > 0) {
+      allQuestionIds = attemptItems.map((ai: any) => ai.questionId).filter(Boolean);
+    }
 
     let questionClipMap = new Map<string, string | null>();
     const publishedQuestionIds = new Set<string>();
@@ -3110,7 +3116,19 @@ export class ExamsService {
     const sections = (exam.sections || []).map((s: any, index: number) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
       // عد فقط الأسئلة المنشورة (تجاهل المحذوفة/المؤرشفة)
-      const publishedItems = (s.items || []).filter((item: any) => publishedQuestionIds.has(item.questionId?.toString()));
+      let publishedItems = (s.items || []).filter((item: any) => publishedQuestionIds.has(item.questionId?.toString()));
+      // امتحان Leben: إذا القسم فاضي والأسئلة في المحاولة فقط، نستخدم عناصر المحاولة
+      if (isLebenExam && publishedItems.length === 0 && attemptItems.length > 0) {
+        const withKey = attemptItems.filter((ai: any) => ai.sectionKey === key);
+        if (withKey.length > 0) {
+          publishedItems = withKey.map((ai: any) => ({ questionId: ai.questionId }));
+        } else {
+          const sortedSections = [...(exam.sections || [])].sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0));
+          const sectionIndex = sortedSections.findIndex((sec: any) => (sec.key || this.generateSectionKey(sec.title, sec.skill, sec.teilNumber)) === key);
+          if (sectionIndex === 0) publishedItems = attemptItems.slice(0, 30).map((ai: any) => ({ questionId: ai.questionId }));
+          else if (sectionIndex === 1) publishedItems = attemptItems.slice(30, 33).map((ai: any) => ({ questionId: ai.questionId }));
+        }
+      }
       const questionCount = publishedItems.length;
 
       // حساب عدد التمارين (مجموعات listeningClipId الفريدة + أسئلة بدون صوت)
@@ -3190,7 +3208,29 @@ export class ExamsService {
     if (!exam) throw new NotFoundException('Exam not found');
 
     const section = this.findSectionByKey(exam, sectionKey);
-    const items = section.items || [];
+    let items: any[] = section.items || [];
+
+    // امتحان Leben: الأسئلة تكون في المحاولة فقط — نأخذها من آخر محاولة للطالب
+    const isLebenExam = (exam as any).examCategory === 'leben_exam' || (exam as any).examType === 'leben_test';
+    if (items.length === 0 && isLebenExam && userId) {
+      const latestAttempt = await this.attemptModel
+        .findOne({ examId: new Types.ObjectId(examId), studentId: new Types.ObjectId(userId) })
+        .sort({ createdAt: -1 })
+        .lean();
+      const attemptItems = latestAttempt?.items || [];
+      if (attemptItems.length > 0) {
+        const withKey = attemptItems.filter((ai: any) => ai.sectionKey === sectionKey);
+        if (withKey.length > 0) {
+          items = withKey.map((ai: any) => ({ questionId: ai.questionId }));
+        } else {
+          const sortedSections = [...(exam.sections || [])].sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0));
+          const secKey = section.key || this.generateSectionKey(section.title || section.name, section.skill, section.teilNumber);
+          const sectionIndex = sortedSections.findIndex((s: any) => (s.key || this.generateSectionKey(s.title, s.skill, s.teilNumber)) === secKey);
+          if (sectionIndex === 0) items = attemptItems.slice(0, 30).map((ai: any) => ({ questionId: ai.questionId }));
+          else if (sectionIndex === 1) items = attemptItems.slice(30, 33).map((ai: any) => ({ questionId: ai.questionId }));
+        }
+      }
+    }
 
     if (items.length === 0) {
       return {
