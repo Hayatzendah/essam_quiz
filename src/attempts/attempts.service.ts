@@ -3093,7 +3093,9 @@ export class AttemptsService {
       }
     }
     // Fallback: كشف الصوت المشترك من attempt items (للامتحانات القديمة بدون section.listeningAudioId)
-    if (sectionAudioClipIds.size === 0) {
+    // ❌ لا نطبق على امتحانات Leben: كل سؤال فيها له صوته الخاص (per-question audio) وليس صوت قسم مشترك
+    const isLebenExamForAudio = (exam as any).examCategory === 'leben_exam' || (exam as any).examType === 'leben_test';
+    if (sectionAudioClipIds.size === 0 && !isLebenExamForAudio) {
       const sClipCounts = new Map<string, Map<string, number>>();
       for (const item of (attempt.items || [])) {
         const clipId = (item as any).listeningClipId?.toString();
