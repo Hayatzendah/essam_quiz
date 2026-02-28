@@ -3115,8 +3115,14 @@ export class ExamsService {
 
     const sections = (exam.sections || []).map((s: any, index: number) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
-      // عد فقط الأسئلة المنشورة (تجاهل المحذوفة/المؤرشفة)
-      let publishedItems = (s.items || []).filter((item: any) => publishedQuestionIds.has(item.questionId?.toString()));
+      // عد فقط الأسئلة المنشورة (تجاهل المحذوفة/المؤرشفة) مع إزالة التكرارات
+      const seenItemIds = new Set<string>();
+      let publishedItems = (s.items || []).filter((item: any) => {
+        const id = item.questionId?.toString();
+        if (!id || !publishedQuestionIds.has(id) || seenItemIds.has(id)) return false;
+        seenItemIds.add(id);
+        return true;
+      });
       // امتحان Leben: إذا القسم فاضي والأسئلة في المحاولة فقط، نستخدم عناصر المحاولة
       if (isLebenExam && publishedItems.length === 0 && attemptItems.length > 0) {
         const withKey = attemptItems.filter((ai: any) => ai.sectionKey === key);
@@ -3231,6 +3237,15 @@ export class ExamsService {
         }
       }
     }
+
+    // إزالة التكرارات من items قبل المعالجة (نفس questionId مرتين = خطأ في البيانات)
+    const seenQIds = new Set<string>();
+    items = items.filter((item: any) => {
+      const id = item.questionId?.toString();
+      if (!id || seenQIds.has(id)) return false;
+      seenQIds.add(id);
+      return true;
+    });
 
     if (items.length === 0) {
       return {

@@ -890,9 +890,10 @@ export class AttemptsService {
           `[selectQuestions] Section "${sectionName}" is items-based with ${section.items.length} items`,
         );
 
-        // Collect questionIds from this section
+        // Collect questionIds from this section (deduplicate to prevent duplicate attempt items)
         const sectionQuestionIds: Types.ObjectId[] = [];
         const sectionItemMap = new Map<string, { points: number; originalIndex: number }>();
+        const seenSectionQIds = new Set<string>();
 
         for (let i = 0; i < section.items.length; i++) {
           const sectionItem = section.items[i];
@@ -909,8 +910,14 @@ export class AttemptsService {
                 ? sectionItem.questionId
                 : new Types.ObjectId(sectionItem.questionId);
 
+            const qIdStr = String(questionId);
+            if (seenSectionQIds.has(qIdStr)) {
+              this.logger.warn(`[selectQuestions] Duplicate questionId ${qIdStr} in section "${sectionName}" — skipping`);
+              continue;
+            }
+            seenSectionQIds.add(qIdStr);
             sectionQuestionIds.push(questionId);
-            sectionItemMap.set(String(questionId), {
+            sectionItemMap.set(qIdStr, {
               points: sectionItem.points || 1,
               originalIndex: i,
             });
