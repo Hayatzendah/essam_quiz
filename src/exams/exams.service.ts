@@ -3092,10 +3092,10 @@ export class ExamsService {
       .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
       .filter(Boolean);
 
-    // امتحان Leben: الأقسام قد تكون فارغة والأسئلة في المحاولة فقط — نستخدم عناصر المحاولة لعدد الأسئلة
+    // امتحان Leben: لا أقسام — كل الأسئلة تعرض مجتمعة بدون تقسيم
     const isLebenExam = (exam as any).examCategory === 'leben_exam' || (exam as any).examType === 'leben_test';
-    if (isLebenExam && allQuestionIds.length === 0 && attemptItems.length > 0) {
-      allQuestionIds = attemptItems.map((ai: any) => ai.questionId).filter(Boolean);
+    if (isLebenExam) {
+      return { sections: [] };
     }
 
     let questionClipMap = new Map<string, string | null>();
