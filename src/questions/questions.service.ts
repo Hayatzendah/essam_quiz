@@ -614,6 +614,7 @@ export class QuestionsService {
       if (!doc) throw new NotFoundException('Question not found');
       Object.assign(doc, updateData);
       doc.markModified('contentBlocks');
+      if (updateData.readingCards) doc.markModified('readingCards');
       await doc.save();
       const updated = doc.toObject();
 

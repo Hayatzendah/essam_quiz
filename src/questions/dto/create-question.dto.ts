@@ -87,6 +87,24 @@ class InteractiveBlankDto {
   hint?: string;
 }
 
+class ReadingCardDto {
+  @IsOptional()
+  @IsString()
+  _id?: string; // Mongoose auto-generated ID
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  content?: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+}
+
 // DTO لأجزاء الترتيب
 class ReorderPartDto {
   @IsString()
@@ -269,7 +287,7 @@ export class CreateQuestionDto {
   @IsMongoId()
   examId?: string;
 
-  // ====== Reading Passage & Cards (Lesen) ======
+  // ====== Reading Passage + Cards (Lesen exercises) ======
   @IsOptional()
   @IsString()
   readingPassage?: string;
@@ -280,7 +298,9 @@ export class CreateQuestionDto {
 
   @IsOptional()
   @IsArray()
-  readingCards?: { title: string; content: string; color?: string }[];
+  @ValidateNested({ each: true })
+  @Type(() => ReadingCardDto)
+  readingCards?: ReadingCardDto[];
 
   @IsOptional()
   @IsString()
