@@ -1,0 +1,53 @@
+export type UserRole = 'student' | 'teacher' | 'admin';
+
+export type QuestionLevel = string;
+
+export type QuestionProvider = 'General' | 'DTZ' | 'Other';
+
+export type QuestionSection = 'LanguageBlocks' | 'Listening' | 'Reading' | 'Writing' | 'Speaking';
+
+export type QuestionType =
+  | 'mcq'
+  | 'true_false'
+  | 'fill'
+  | 'match'
+  | 'reorder'
+  | 'short_answer'
+  | 'writing'
+  | 'speaking'
+  | 'interactive_text';
+
+export type QuestionDifficulty = 'easy' | 'med' | 'hard';
+
+export type QuestionStatus = 'draft' | 'published' | 'archived';
+
+export type ExamStatus = 'draft' | 'published' | 'archived';
+
+export enum ExamStatusEnum {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived',
+}
+
+export type AttemptStatus = 'in_progress' | 'submitted' | 'graded';
+
+export enum ExamCategoryEnum {
+  GRAMMAR = 'grammar_exam',
+  LID = 'lid_exam',
+  PROVIDER = 'provider_exam',
+  LEBEN = 'leben_exam', // Leben in Deutschland Test
+  VOCAB = 'vocab_exam',
+  OTHER = 'other',
+}
+
+export enum ExamSkillEnum {
+  HOEREN = 'hoeren',
+  LESEN = 'lesen',
+  SCHREIBEN = 'schreiben',
+  SPRECHEN = 'sprechen',
+  SPRACHBAUSTEINE = 'sprachbausteine',
+  MIXED = 'mixed',
+  MISC = 'misc', // مهارة عامة
+  LEBEN_TEST = 'leben_test', // Leben in Deutschland Test
+  GRAMMAR = 'grammar', // 👈 إضافة GRAMMAR
+}

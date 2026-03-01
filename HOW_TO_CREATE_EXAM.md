@@ -1,0 +1,59 @@
+# كيفية إنشاء امتحان جديد
+
+## 📋 الخطوات:
+
+### 1. تأكد من أن لديك JWT Token
+- يجب أن تكون مسجل دخول كـ `admin` أو `teacher`
+- احصل على `accessToken` من `POST /auth/login`
+
+### 2. اختر نوع الامتحان:
+
+#### أ) امتحان مع أسئلة محددة (Items):
+استخدم `example-exam-creation.json`
+- يجب أن تكون لديك أسئلة موجودة في قاعدة البيانات
+- استبدل `YOUR_QUESTION_ID_1_HERE` بـ IDs الأسئلة الحقيقية
+
+#### ب) امتحان مع Quota (اختيار تلقائي):
+استخدم `example-exam-with-quota.json`
+- النظام سيختار الأسئلة تلقائياً حسب الـ tags
+- يجب أن تكون الأسئلة موجودة بنفس الـ tags المحددة
+
+### 3. أرسل الطلب:
+
+**باستخدام curl:**
+```bash
+curl -X POST https://your-api-url/exams \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d @example-exam-creation.json
+```
+
+**باستخدام Postman:**
+1. Method: `POST`
+2. URL: `https://your-api-url/exams`
+3. Headers:
+   - `Content-Type: application/json`
+   - `Authorization: Bearer YOUR_ACCESS_TOKEN`
+4. Body: اختر `raw` و `JSON`، ثم انسخ محتوى الملف
+
+### 4. تأكد من:
+- ✅ `"status": "published"` - حتى يظهر في الفرونت
+- ✅ الأسئلة موجودة ومُنشورة (`status: "published"`)
+- ✅ إذا استخدمت `items`، تأكد من أن `questionId` صحيحة
+- ✅ إذا استخدمت `quota`، تأكد من وجود أسئلة بنفس الـ tags
+
+### 5. اختبر:
+```bash
+# عرض الامتحانات المنشورة
+GET /exams/public?level=A1&provider=goethe
+```
+
+## 📝 ملاحظات مهمة:
+
+- **للطلاب:** لا يمكنهم إنشاء امتحانات، يجب استخدام `POST /attempts/practice`
+- **Items vs Quota:**
+  - `items`: أسئلة ثابتة محددة
+  - `quota`: اختيار عشوائي من الأسئلة المتاحة
+- **لا يمكن الجمع:** القسم لا يمكن أن يحتوي على `items` و `quota` معاً
+
+

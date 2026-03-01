@@ -1,0 +1,41 @@
+{
+  "prompt": "Ordnen Sie die Sätze in der richtigen Reihenfolge.",
+  "qType": "interactive_text",
+  "interactiveReorder": {
+    "parts": [
+      {
+        "id": "1",
+        "text": "Guten Tag!",
+        "order": 1
+      },
+      {
+        "id": "2",
+        "text": "Ich heiße Anna und komme aus Deutschland.",
+        "order": 2
+      },
+      {
+        "id": "3",
+        "text": "Ich bin 25 Jahre alt und studiere Deutsch an der Universität.",
+        "order": 3
+      },
+      {
+        "id": "4",
+        "text": "Meine Hobbys sind Lesen und Musik hören.",
+        "order": 4
+      },
+      {
+        "id": "5",
+        "text": "Vielen Dank für Ihre Aufmerksamkeit!",
+        "order": 5
+      }
+    ]
+  },
+  "provider": "goethe_a1",
+  "mainSkill": "schreiben",
+  "section": "Writing",
+  "usageCategory": "practice",
+  "level": "A1",
+  "status": "published",
+  "tags": ["Textproduktion", "Struktur", "A1"]
+}
+

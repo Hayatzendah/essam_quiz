@@ -1,0 +1,91 @@
+{
+  "title": "Goethe-Zertifikat B1 - Prüfung",
+  "description": "امتحان Goethe-Zertifikat B1 الكامل - يتضمن جميع المهارات (Hören, Lesen, Schreiben, Sprechen)",
+  "level": "B1",
+  "provider": "goethe",
+  "examCategory": "provider_exam",
+  "mainSkill": "mixed",
+  "status": "published",
+  "sections": [
+    {
+      "title": "Hören – Teil 1",
+      "key": "hoeren_teil1",
+      "skill": "hoeren",
+      "teilNumber": 1,
+      "timeLimitMin": 20,
+      "quota": 5,
+      "tags": ["goethe", "b1", "hoeren"],
+      "difficultyDistribution": {
+        "easy": 2,
+        "medium": 2,
+        "hard": 1
+      }
+    },
+    {
+      "title": "Hören – Teil 2",
+      "key": "hoeren_teil2",
+      "skill": "hoeren",
+      "teilNumber": 2,
+      "timeLimitMin": 15,
+      "quota": 5,
+      "tags": ["goethe", "b1", "hoeren"],
+      "difficultyDistribution": {
+        "easy": 1,
+        "medium": 2,
+        "hard": 2
+      }
+    },
+    {
+      "title": "Lesen – Teil 1",
+      "key": "lesen_teil1",
+      "skill": "lesen",
+      "teilNumber": 1,
+      "timeLimitMin": 30,
+      "quota": 10,
+      "tags": ["goethe", "b1", "lesen"],
+      "difficultyDistribution": {
+        "easy": 3,
+        "medium": 4,
+        "hard": 3
+      }
+    },
+    {
+      "title": "Lesen – Teil 2",
+      "key": "lesen_teil2",
+      "skill": "lesen",
+      "teilNumber": 2,
+      "timeLimitMin": 25,
+      "quota": 8,
+      "tags": ["goethe", "b1", "lesen"],
+      "difficultyDistribution": {
+        "easy": 2,
+        "medium": 3,
+        "hard": 3
+      }
+    },
+    {
+      "title": "Schreiben – Teil 1",
+      "key": "schreiben_teil1",
+      "skill": "schreiben",
+      "teilNumber": 1,
+      "timeLimitMin": 20,
+      "quota": 1,
+      "tags": ["goethe", "b1", "schreiben"]
+    },
+    {
+      "title": "Schreiben – Teil 2",
+      "key": "schreiben_teil2",
+      "skill": "schreiben",
+      "teilNumber": 2,
+      "timeLimitMin": 25,
+      "quota": 1,
+      "tags": ["goethe", "b1", "schreiben"]
+    }
+  ],
+  "randomizeQuestions": false,
+  "randomizeOptions": true,
+  "attemptLimit": 3,
+  "timeLimitMin": 135,
+  "resultsPolicy": "explanations_with_scores"
+}
+

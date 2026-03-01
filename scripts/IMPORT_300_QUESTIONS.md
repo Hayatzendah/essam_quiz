@@ -1,0 +1,47 @@
+# استيراد 300 سؤال من Leben in Deutschland
+
+هذا السكريبت يستورد الأسئلة الـ 300 من ملف JSON ويحفظها في MongoDB، مع استبدال الأسئلة القديمة.
+
+## المتطلبات
+
+1. ملف JSON موجود في: `questions/leben-in-deutschland-300-questions.json`
+2. متغير البيئة `MONGO_URI` أو `MONGODB_URI` مضبوط
+
+## الاستخدام
+
+```bash
+# باستخدام npm script
+npm run import-300-questions
+
+# أو مباشرة
+ts-node scripts/import-300-questions.ts
+```
+
+## ما يفعله السكريبت
+
+1. ✅ يتصل بـ MongoDB
+2. 📖 يقرأ ملف JSON من `questions/leben-in-deutschland-300-questions.json`
+3. 🔍 يبحث عن الأسئلة القديمة التي لها:
+   - `provider: 'leben_in_deutschland'`
+   - `tags: ['300-Fragen']`
+4. 🗑️ يحذف الأسئلة القديمة
+5. 💾 يحفظ الأسئلة الجديدة الـ 300
+6. ✅ يتحقق من العدد النهائي
+
+## ملاحظات
+
+- السكريبت يحذف فقط الأسئلة التي تطابق المعايير المذكورة أعلاه
+- الأسئلة الجديدة تحتفظ بجميع البيانات من ملف JSON
+- يتم تعيين `correctAnswer` تلقائياً من الخيار الصحيح
+
+
+
+
+
+
+
+
+
+
+
+

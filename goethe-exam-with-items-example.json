@@ -1,0 +1,69 @@
+{
+  "title": "Goethe-Zertifikat B1 - Lesen (أسئلة محددة)",
+  "description": "امتحان Goethe-Zertifikat B1 للقراءة مع أسئلة محددة (بدون quota)",
+  "level": "B1",
+  "provider": "goethe",
+  "examCategory": "provider_exam",
+  "mainSkill": "lesen",
+  "status": "published",
+  "sections": [
+    {
+      "title": "Lesen – Teil 1",
+      "key": "lesen_teil1",
+      "skill": "lesen",
+      "teilNumber": 1,
+      "timeLimitMin": 30,
+      "items": [
+        {
+          "questionId": "YOUR_QUESTION_ID_1_HERE",
+          "points": 2
+        },
+        {
+          "questionId": "YOUR_QUESTION_ID_2_HERE",
+          "points": 2
+        },
+        {
+          "questionId": "YOUR_QUESTION_ID_3_HERE",
+          "points": 2
+        },
+        {
+          "questionId": "YOUR_QUESTION_ID_4_HERE",
+          "points": 2
+        },
+        {
+          "questionId": "YOUR_QUESTION_ID_5_HERE",
+          "points": 2
+        }
+      ],
+      "tags": ["goethe", "b1", "lesen"]
+    },
+    {
+      "title": "Lesen – Teil 2",
+      "key": "lesen_teil2",
+      "skill": "lesen",
+      "teilNumber": 2,
+      "timeLimitMin": 25,
+      "items": [
+        {
+          "questionId": "YOUR_QUESTION_ID_6_HERE",
+          "points": 2
+        },
+        {
+          "questionId": "YOUR_QUESTION_ID_7_HERE",
+          "points": 2
+        },
+        {
+          "questionId": "YOUR_QUESTION_ID_8_HERE",
+          "points": 2
+        }
+      ],
+      "tags": ["goethe", "b1", "lesen"]
+    }
+  ],
+  "randomizeQuestions": false,
+  "randomizeOptions": true,
+  "attemptLimit": 3,
+  "timeLimitMin": 55,
+  "resultsPolicy": "explanations_with_scores"
+}
+

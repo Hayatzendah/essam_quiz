@@ -1,0 +1,68 @@
+{
+  "prompt": "Ergänzen Sie die Lücken im Text.",
+  "qType": "interactive_text",
+  "text": "Guten Tag! Ich {{a}} Anna. Ich {{b}} aus {{c}} und {{d}} 25 Jahre alt. Ich {{e}} Deutsch {{f}} der Universität. Meine Hobbys {{g}} Lesen und {{h}} Musik hören.",
+  "interactiveBlanks": [
+    {
+      "id": "a",
+      "type": "textInput",
+      "correctAnswers": ["bin", "heiße"],
+      "hint": "Verb: sein oder heißen"
+    },
+    {
+      "id": "b",
+      "type": "dropdown",
+      "correctAnswers": ["komme"],
+      "choices": ["komme", "gehe", "fahre", "laufe"],
+      "hint": "Woher kommst du?"
+    },
+    {
+      "id": "c",
+      "type": "textInput",
+      "correctAnswers": ["Deutschland", "Österreich", "der Schweiz"],
+      "hint": "Ein Land"
+    },
+    {
+      "id": "d",
+      "type": "dropdown",
+      "correctAnswers": ["bin"],
+      "choices": ["bin", "habe", "ist", "sind"],
+      "hint": "Alter mit 'sein'"
+    },
+    {
+      "id": "e",
+      "type": "dropdown",
+      "correctAnswers": ["lerne", "studiere"],
+      "choices": ["lerne", "studiere", "lehre", "unterrichte"],
+      "hint": "Was machst du an der Universität?"
+    },
+    {
+      "id": "f",
+      "type": "dropdown",
+      "correctAnswers": ["an"],
+      "choices": ["an", "in", "auf", "bei"],
+      "hint": "Präposition"
+    },
+    {
+      "id": "g",
+      "type": "dropdown",
+      "correctAnswers": ["sind"],
+      "choices": ["sind", "ist", "habe", "bin"],
+      "hint": "Plural Verb"
+    },
+    {
+      "id": "h",
+      "type": "textInput",
+      "correctAnswers": ["gern", "gerne"],
+      "hint": "Adverb für 'liking'"
+    }
+  ],
+  "provider": "goethe_a1",
+  "mainSkill": "schreiben",
+  "section": "Writing",
+  "usageCategory": "practice",
+  "level": "A1",
+  "status": "published",
+  "tags": ["Grammatik", "Präsentation", "A1"]
+}
+
