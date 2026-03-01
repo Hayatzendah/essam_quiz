@@ -19,4 +19,3 @@ import { Exam, ExamSchema } from '../exams/schemas/exam.schema';
   exports: [AdminService],
 })
 export class AdminModule {}
-

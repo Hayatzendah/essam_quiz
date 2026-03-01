@@ -1,11 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
 import { ExamSkillEnum } from './enums';
 import { ProviderEnum } from './enums/provider.enum';
-import { 
-  QuestionStatus, 
-  QuestionType, 
+import {
+  QuestionStatus,
+  QuestionType,
   QuestionDifficulty,
-  QuestionCategory 
+  QuestionCategory,
 } from '../questions/schemas/question.schema';
 
 @Controller('enums')

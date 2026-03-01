@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsArray, MinLength, IsNotEmpty, IsMongoId, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  MinLength,
+  IsNotEmpty,
+  IsMongoId,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { ContentBlockDto } from './content-block.dto';
@@ -36,7 +44,11 @@ export class CreateGrammarTopicDto {
   @IsString()
   contentHtml?: string;
 
-  @ApiProperty({ required: false, type: [ContentBlockDto], description: 'مصفوفة content blocks (البنية الجديدة)' })
+  @ApiProperty({
+    required: false,
+    type: [ContentBlockDto],
+    description: 'مصفوفة content blocks (البنية الجديدة)',
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
@@ -55,6 +67,3 @@ export class CreateGrammarTopicDto {
   @IsString()
   sectionTitle?: string;
 }
-
-
-

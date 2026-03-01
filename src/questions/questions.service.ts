@@ -23,7 +23,10 @@ import { CreateQuestionWithExamDto } from './dto/create-question-with-exam.dto';
 import { LearnGeneralQuestionsDto, LearnStateQuestionsDto } from './dto/learn-questions.dto';
 import { Exam, ExamDocument } from '../exams/schemas/exam.schema';
 import { Attempt, AttemptDocument } from '../attempts/schemas/attempt.schema';
-import { GrammarTopic, GrammarTopicDocument } from '../modules/grammar/schemas/grammar-topic.schema';
+import {
+  GrammarTopic,
+  GrammarTopicDocument,
+} from '../modules/grammar/schemas/grammar-topic.schema';
 import { GrammarTopicsService } from '../modules/grammar/grammar-topics.service';
 import { Inject, forwardRef } from '@nestjs/common';
 import { ProviderEnum } from '../common/enums/provider.enum';
@@ -60,9 +63,11 @@ export class QuestionsService {
     }
     if (dto.qType === QuestionType.FILL) {
       // fillExact يمكن أن يكون string أو array
-      const hasExact = 
+      const hasExact =
         (typeof dto.fillExact === 'string' && dto.fillExact.trim().length > 0) ||
-        (Array.isArray(dto.fillExact) && dto.fillExact.length > 0 && dto.fillExact.some((item: any) => item && String(item).trim().length > 0));
+        (Array.isArray(dto.fillExact) &&
+          dto.fillExact.length > 0 &&
+          dto.fillExact.some((item: any) => item && String(item).trim().length > 0));
       const hasRegex = Array.isArray(dto.regexList) && dto.regexList.length > 0;
       if (!hasExact && !hasRegex) {
         throw new BadRequestException('FILL requires fillExact or regexList');
@@ -72,26 +77,32 @@ export class QuestionsService {
 
   async createQuestion(dto: CreateQuestionDto, createdBy?: string) {
     this.validateCreatePayload(dto);
-    
+
     // استخراج examId من الـ dto قبل إنشاء السؤال
     const { examId, ...questionData } = dto;
-    
+
     // Log للتحقق من answerKeyMatch
     if (dto.qType === QuestionType.MATCH) {
-      this.logger.debug(`createQuestion: Match question - answerKeyMatch from DTO: ${JSON.stringify(dto.answerKeyMatch)}`);
+      this.logger.debug(
+        `createQuestion: Match question - answerKeyMatch from DTO: ${JSON.stringify(dto.answerKeyMatch)}`,
+      );
     }
-    
+
     // إزالة answerKeyMatch من questionData إذا كان موجودًا لتجنب التعارض
     const { answerKeyMatch: _, answerKeyReorder: __, ...restQuestionData } = questionData;
-    
+
     const doc = await this.model.create({
       ...restQuestionData,
       status: dto.status ?? QuestionStatus.PUBLISHED,
       createdBy,
       // MATCH fields
-      ...(dto.qType === QuestionType.MATCH && dto.answerKeyMatch && Array.isArray(dto.answerKeyMatch) && { answerKeyMatch: dto.answerKeyMatch }),
+      ...(dto.qType === QuestionType.MATCH &&
+        dto.answerKeyMatch &&
+        Array.isArray(dto.answerKeyMatch) && { answerKeyMatch: dto.answerKeyMatch }),
       // REORDER fields
-      ...(dto.qType === QuestionType.REORDER && dto.answerKeyReorder && Array.isArray(dto.answerKeyReorder) && { answerKeyReorder: dto.answerKeyReorder }),
+      ...(dto.qType === QuestionType.REORDER &&
+        dto.answerKeyReorder &&
+        Array.isArray(dto.answerKeyReorder) && { answerKeyReorder: dto.answerKeyReorder }),
       // FREE_TEXT fields (إذا كانت موجودة)
       ...(dto.qType === QuestionType.FREE_TEXT && {
         ...(dto.sampleAnswer && { sampleAnswer: dto.sampleAnswer }),
@@ -109,21 +120,23 @@ export class QuestionsService {
         ...(dto.interactiveText && { interactiveText: dto.interactiveText }),
         // استخدام interactiveText إذا كان موجوداً، وإلا text
         ...((dto.interactiveText || dto.text) && { text: dto.interactiveText || dto.text }),
-        ...(dto.interactiveBlanks && Array.isArray(dto.interactiveBlanks) && dto.interactiveBlanks.length > 0 && {
-          interactiveBlanks: dto.interactiveBlanks.map((blank: any) => {
-            // تحويل select إلى dropdown للتوحيد
-            const type = blank.type === 'select' ? 'dropdown' : blank.type;
-            // استخدام options إذا كان موجوداً، وإلا choices
-            const options = blank.options || blank.choices;
-            const choices = blank.choices || blank.options;
-            return {
-              ...blank,
-              type,
-              options,
-              choices, // للتوافق مع الكود القديم
-            };
+        ...(dto.interactiveBlanks &&
+          Array.isArray(dto.interactiveBlanks) &&
+          dto.interactiveBlanks.length > 0 && {
+            interactiveBlanks: dto.interactiveBlanks.map((blank: any) => {
+              // تحويل select إلى dropdown للتوحيد
+              const type = blank.type === 'select' ? 'dropdown' : blank.type;
+              // استخدام options إذا كان موجوداً، وإلا choices
+              const options = blank.options || blank.choices;
+              const choices = blank.choices || blank.options;
+              return {
+                ...blank,
+                type,
+                options,
+                choices, // للتوافق مع الكود القديم
+              };
+            }),
           }),
-        }),
         ...(dto.interactiveReorder && { interactiveReorder: dto.interactiveReorder }),
       }),
     });
@@ -146,9 +159,11 @@ export class QuestionsService {
       createdAt: (doc as any).createdAt,
       ...(examId && { examId }), // إرجاع examId لو موجود
       // إرجاع answerKeyMatch لأسئلة Match
-      ...(doc.qType === QuestionType.MATCH && doc.answerKeyMatch && { answerKeyMatch: doc.answerKeyMatch }),
+      ...(doc.qType === QuestionType.MATCH &&
+        doc.answerKeyMatch && { answerKeyMatch: doc.answerKeyMatch }),
       // إرجاع answerKeyReorder لأسئلة Reorder
-      ...(doc.qType === QuestionType.REORDER && doc.answerKeyReorder && { answerKeyReorder: doc.answerKeyReorder }),
+      ...(doc.qType === QuestionType.REORDER &&
+        doc.answerKeyReorder && { answerKeyReorder: doc.answerKeyReorder }),
     };
   }
 
@@ -174,10 +189,10 @@ export class QuestionsService {
       try {
         const question = questions[i];
         this.validateCreatePayload(question);
-        
+
         // استخراج examId من الـ dto قبل إنشاء السؤال
         const { examId, ...questionData } = question;
-        
+
         const doc = await this.model.create({
           ...questionData,
           status: question.status ?? QuestionStatus.PUBLISHED,
@@ -197,21 +212,23 @@ export class QuestionsService {
           // INTERACTIVE_TEXT fields (إذا كانت موجودة)
           ...(question.qType === QuestionType.INTERACTIVE_TEXT && {
             ...(question.text && { text: question.text }),
-            ...(question.interactiveBlanks && Array.isArray(question.interactiveBlanks) && question.interactiveBlanks.length > 0 && {
-              interactiveBlanks: question.interactiveBlanks.map((blank: any) => {
-                // تحويل select إلى dropdown للتوحيد
-                const type = blank.type === 'select' ? 'dropdown' : blank.type;
-                // استخدام options إذا كان موجوداً، وإلا choices
-                const options = blank.options || blank.choices;
-                const choices = blank.choices || blank.options;
-                return {
-                  ...blank,
-                  type,
-                  options,
-                  choices, // للتوافق مع الكود القديم
-                };
+            ...(question.interactiveBlanks &&
+              Array.isArray(question.interactiveBlanks) &&
+              question.interactiveBlanks.length > 0 && {
+                interactiveBlanks: question.interactiveBlanks.map((blank: any) => {
+                  // تحويل select إلى dropdown للتوحيد
+                  const type = blank.type === 'select' ? 'dropdown' : blank.type;
+                  // استخدام options إذا كان موجوداً، وإلا choices
+                  const options = blank.options || blank.choices;
+                  const choices = blank.choices || blank.options;
+                  return {
+                    ...blank,
+                    type,
+                    options,
+                    choices, // للتوافق مع الكود القديم
+                  };
+                }),
               }),
-            }),
             ...(question.interactiveReorder && { interactiveReorder: question.interactiveReorder }),
           }),
         });
@@ -223,7 +240,11 @@ export class QuestionsService {
 
         // استخراج correctAnswer من الخيارات إذا لم يكن موجوداً (لأسئلة MCQ)
         let correctAnswer = doc.correctAnswer;
-        if (doc.qType === QuestionType.MCQ && (!correctAnswer || correctAnswer === '') && doc.options) {
+        if (
+          doc.qType === QuestionType.MCQ &&
+          (!correctAnswer || correctAnswer === '') &&
+          doc.options
+        ) {
           const correctOption = doc.options.find((opt: any) => opt.isCorrect === true);
           if (correctOption) {
             correctAnswer = correctOption.text;
@@ -320,9 +341,7 @@ export class QuestionsService {
     } else {
       // لو مفيش sectionName محدد، نضيف لأول section موجود
       if (cleanSections.length > 0) {
-        const items = Array.isArray(cleanSections[0].items)
-          ? cleanSections[0].items
-          : [];
+        const items = Array.isArray(cleanSections[0].items) ? cleanSections[0].items : [];
         items.push({
           questionId: new Types.ObjectId(questionId),
           points: 1,
@@ -347,7 +366,9 @@ export class QuestionsService {
     exam.sections = cleanSections as any;
     // Exam Versioning: زيادة version عند إضافة سؤال
     exam.version = (exam.version || 1) + 1;
-    this.logger.log(`[addQuestionToExam] Version incremented to ${exam.version} after adding question ${questionId}`);
+    this.logger.log(
+      `[addQuestionToExam] Version incremented to ${exam.version} after adding question ${questionId}`,
+    );
     await exam.save();
 
     return {
@@ -405,23 +426,23 @@ export class QuestionsService {
       } else {
         // للأسئلة العامة (usageCategory='common') + أسئلة الولاية المحددة (usageCategory='state_specific' و state=المحدد)
         q.$or = [
-          { 
+          {
             usageCategory: 'common', // أسئلة عامة (300-Fragen)
-            tags: { $nin: allStates } // تأكيد عدم وجود tags للولايات
+            tags: { $nin: allStates }, // تأكيد عدم وجود tags للولايات
           },
-          { 
+          {
             usageCategory: 'state_specific', // أسئلة الولاية المحددة
-            state: filters.state // الولاية المحددة
+            state: filters.state, // الولاية المحددة
           },
           // للتوافق مع الأسئلة القديمة التي قد لا تحتوي على usageCategory
           {
             usageCategory: { $exists: false },
-            tags: { $nin: allStates } // أسئلة عامة قديمة
+            tags: { $nin: allStates }, // أسئلة عامة قديمة
           },
           {
             usageCategory: { $exists: false },
-            tags: filters.state // أسئلة ولاية قديمة
-          }
+            tags: filters.state, // أسئلة ولاية قديمة
+          },
         ];
       }
     } else if (filters.tags) {
@@ -489,40 +510,50 @@ export class QuestionsService {
   async findById(id: string) {
     // تنظيف الـ ID من أي رموز غير صالحة (< > أو مسافات)
     const cleanId = id.trim().replace(/[<>]/g, '');
-    
+
     if (!Types.ObjectId.isValid(cleanId)) {
       throw new BadRequestException(
         `Invalid question ID format: "${id}". Expected a valid MongoDB ObjectId (24 hex characters). Cleaned ID: "${cleanId}"`,
       );
     }
-    
+
     const question = await this.model.findById(cleanId).lean().exec();
     if (!question) {
       throw new NotFoundException('Question not found');
     }
-    
+
     // Log للتحقق من answerKeyMatch
     if (question.qType === QuestionType.MATCH) {
-      this.logger.warn(`findById: Match question ${cleanId} - answerKeyMatch: ${JSON.stringify(question.answerKeyMatch)}`);
-      this.logger.warn(`findById: Match question ${cleanId} - question keys: ${Object.keys(question).join(', ')}`);
+      this.logger.warn(
+        `findById: Match question ${cleanId} - answerKeyMatch: ${JSON.stringify(question.answerKeyMatch)}`,
+      );
+      this.logger.warn(
+        `findById: Match question ${cleanId} - question keys: ${Object.keys(question).join(', ')}`,
+      );
       // إذا كان answerKeyMatch غير موجود، نرجعه كـ undefined صراحة
       if (!question.answerKeyMatch) {
-        this.logger.warn(`findById: Match question ${cleanId} - answerKeyMatch is missing in database!`);
+        this.logger.warn(
+          `findById: Match question ${cleanId} - answerKeyMatch is missing in database!`,
+        );
       }
     }
-    
+
     // Log للتحقق من description في media/images
     if (question.media?.description) {
-      this.logger.debug(`findById: Question ${cleanId} - media.description: ${question.media.description}`);
+      this.logger.debug(
+        `findById: Question ${cleanId} - media.description: ${question.media.description}`,
+      );
     }
     if (question.images && question.images.length > 0) {
       question.images.forEach((img: any, idx: number) => {
         if (img.description) {
-          this.logger.debug(`findById: Question ${cleanId} - images[${idx}].description: ${img.description}`);
+          this.logger.debug(
+            `findById: Question ${cleanId} - images[${idx}].description: ${img.description}`,
+          );
         }
       });
     }
-    
+
     return question;
   }
 
@@ -537,11 +568,13 @@ export class QuestionsService {
       .updateMany(
         { status: 'in_progress', 'items.questionId': qId },
         { $set: { 'items.$[elem].promptSnapshot': prompt } },
-        { arrayFilters: [ { 'elem.questionId': qId } ] },
+        { arrayFilters: [{ 'elem.questionId': qId }] },
       )
       .exec();
     if (r.modifiedCount > 0) {
-      this.logger.log(`refreshPromptSnapshot: updated promptSnapshot for question ${questionId} in ${r.modifiedCount} attempt(s)`);
+      this.logger.log(
+        `refreshPromptSnapshot: updated promptSnapshot for question ${questionId} in ${r.modifiedCount} attempt(s)`,
+      );
     }
   }
 
@@ -563,10 +596,14 @@ export class QuestionsService {
 
     // Log للتحقق من answerKeyMatch في التحديث
     if (updateData.answerKeyMatch && Array.isArray(updateData.answerKeyMatch)) {
-      this.logger.warn(`updateQuestion: Updating answerKeyMatch for question ${id}: ${JSON.stringify(updateData.answerKeyMatch)}`);
+      this.logger.warn(
+        `updateQuestion: Updating answerKeyMatch for question ${id}: ${JSON.stringify(updateData.answerKeyMatch)}`,
+      );
     } else {
       // Log إذا كان answerKeyMatch غير موجود في updateData
-      this.logger.warn(`updateQuestion: answerKeyMatch not found in updateData for question ${id}. Keys: ${Object.keys(updateData).join(', ')}`);
+      this.logger.warn(
+        `updateQuestion: answerKeyMatch not found in updateData for question ${id}. Keys: ${Object.keys(updateData).join(', ')}`,
+      );
     }
 
     // تطبيق التحديث (بدون qType)
@@ -582,9 +619,13 @@ export class QuestionsService {
 
       // Log للتحقق من answerKeyMatch بعد التحديث
       if (updated.qType === QuestionType.MATCH) {
-        this.logger.warn(`updateQuestion: Match question ${id} - answerKeyMatch after update: ${JSON.stringify(updated.answerKeyMatch)}`);
+        this.logger.warn(
+          `updateQuestion: Match question ${id} - answerKeyMatch after update: ${JSON.stringify(updated.answerKeyMatch)}`,
+        );
         if (!updated.answerKeyMatch) {
-          this.logger.error(`updateQuestion: ERROR - answerKeyMatch is missing after update for question ${id}!`);
+          this.logger.error(
+            `updateQuestion: ERROR - answerKeyMatch is missing after update for question ${id}!`,
+          );
         }
       }
 
@@ -596,12 +637,16 @@ export class QuestionsService {
 
     const updated = await this.model.findByIdAndUpdate(id, updateData, { new: true }).lean().exec();
     if (!updated) throw new NotFoundException('Question not found');
-    
+
     // Log للتحقق من answerKeyMatch بعد التحديث
     if (updated.qType === QuestionType.MATCH) {
-      this.logger.warn(`updateQuestion: Match question ${id} - answerKeyMatch after update: ${JSON.stringify(updated.answerKeyMatch)}`);
+      this.logger.warn(
+        `updateQuestion: Match question ${id} - answerKeyMatch after update: ${JSON.stringify(updated.answerKeyMatch)}`,
+      );
       if (!updated.answerKeyMatch) {
-        this.logger.error(`updateQuestion: ERROR - answerKeyMatch is missing after update for question ${id}!`);
+        this.logger.error(
+          `updateQuestion: ERROR - answerKeyMatch is missing after update for question ${id}!`,
+        );
       }
     }
 
@@ -638,9 +683,11 @@ export class QuestionsService {
    */
   private async cleanupQuestionFromExams(questionId: string) {
     try {
-      const exams = await this.examModel.find({
-        'sections.items.questionId': new Types.ObjectId(questionId),
-      }).exec();
+      const exams = await this.examModel
+        .find({
+          'sections.items.questionId': new Types.ObjectId(questionId),
+        })
+        .exec();
 
       for (const exam of exams) {
         let modified = false;
@@ -810,11 +857,36 @@ export class QuestionsService {
    * - يربط السؤال بامتحان في section محدد
    */
   async createQuestionWithExam(dto: CreateQuestionWithExamDto, userId?: string) {
-    const { examId, sectionTitle, section, sectionKey, points, text, interactiveText, prompt, type, qType, provider, skill, teilNumber, usageCategory, listeningClipId, answerKeyBoolean, fillExact, regexList, answerKeyMatch, answerKeyReorder, grammarTopicId, grammarLevel, grammarTopic, ...questionData } = dto;
-    
+    const {
+      examId,
+      sectionTitle,
+      section,
+      sectionKey,
+      points,
+      text,
+      interactiveText,
+      prompt,
+      type,
+      qType,
+      provider,
+      skill,
+      teilNumber,
+      usageCategory,
+      listeningClipId,
+      answerKeyBoolean,
+      fillExact,
+      regexList,
+      answerKeyMatch,
+      answerKeyReorder,
+      grammarTopicId,
+      grammarLevel,
+      grammarTopic,
+      ...questionData
+    } = dto;
+
     // استخدام type إذا كان موجوداً، وإلا استخدام qType
     const questionType = type || qType;
-    
+
     // استخدام interactiveText إذا كان موجوداً (للـ interactive_text)، وإلا text
     const questionText = interactiveText || text;
     const questionPrompt = prompt ?? questionText;
@@ -843,9 +915,7 @@ export class QuestionsService {
     if (questionType === 'mcq' && questionData.options) {
       correctOption = questionData.options.find((opt) => opt.isCorrect);
       if (!correctOption) {
-        throw new BadRequestException(
-          'At least one option must be marked as correct',
-        );
+        throw new BadRequestException('At least one option must be marked as correct');
       }
     }
 
@@ -858,32 +928,41 @@ export class QuestionsService {
 
     // 4) إنشاء السؤال
     const sectionName = section || sectionTitle;
-    
+
     // Log للتحقق من answerKeyMatch
     if (questionType === QuestionType.MATCH) {
-      this.logger.debug(`createQuestionWithExam: Match question - answerKeyMatch: ${JSON.stringify(answerKeyMatch)}`);
+      this.logger.debug(
+        `createQuestionWithExam: Match question - answerKeyMatch: ${JSON.stringify(answerKeyMatch)}`,
+      );
     }
-    
+
     const question = await this.model.create({
       prompt: questionPrompt,
       text: questionText,
       qType: questionType,
-      options: questionData.options ? questionData.options.map((opt) => ({
-        text: opt.text,
-        isCorrect: opt.isCorrect || false,
-      })) : undefined,
+      options: questionData.options
+        ? questionData.options.map((opt) => ({
+            text: opt.text,
+            isCorrect: opt.isCorrect || false,
+          }))
+        : undefined,
       correctAnswer: correctOption ? correctOption.text : undefined,
       // TRUE_FALSE answer
-      ...(questionType === QuestionType.TRUE_FALSE && typeof answerKeyBoolean === 'boolean' && { answerKeyBoolean }),
+      ...(questionType === QuestionType.TRUE_FALSE &&
+        typeof answerKeyBoolean === 'boolean' && { answerKeyBoolean }),
       // FILL fields
       ...(questionType === QuestionType.FILL && {
         ...(fillExact && { fillExact }),
         ...(regexList && Array.isArray(regexList) && regexList.length > 0 && { regexList }),
       }),
       // MATCH fields
-      ...(questionType === QuestionType.MATCH && answerKeyMatch && Array.isArray(answerKeyMatch) && { answerKeyMatch }),
+      ...(questionType === QuestionType.MATCH &&
+        answerKeyMatch &&
+        Array.isArray(answerKeyMatch) && { answerKeyMatch }),
       // REORDER fields
-      ...(questionType === QuestionType.REORDER && answerKeyReorder && Array.isArray(answerKeyReorder) && { answerKeyReorder }),
+      ...(questionType === QuestionType.REORDER &&
+        answerKeyReorder &&
+        Array.isArray(answerKeyReorder) && { answerKeyReorder }),
       // FREE_TEXT fields
       ...(questionType === QuestionType.FREE_TEXT && {
         ...(questionData.sampleAnswer && { sampleAnswer: questionData.sampleAnswer }),
@@ -901,22 +980,26 @@ export class QuestionsService {
         ...(interactiveText && { interactiveText }),
         // استخدام interactiveText إذا كان موجوداً، وإلا text
         ...((interactiveText || questionText) && { text: interactiveText || questionText }),
-        ...(questionData.interactiveBlanks && Array.isArray(questionData.interactiveBlanks) && questionData.interactiveBlanks.length > 0 && {
-          interactiveBlanks: questionData.interactiveBlanks.map((blank: any) => {
-            // تحويل select إلى dropdown للتوحيد
-            const type = blank.type === 'select' ? 'dropdown' : blank.type;
-            // استخدام options إذا كان موجوداً، وإلا choices
-            const options = blank.options || blank.choices;
-            const choices = blank.choices || blank.options;
-            return {
-              ...blank,
-              type,
-              options,
-              choices, // للتوافق مع الكود القديم
-            };
+        ...(questionData.interactiveBlanks &&
+          Array.isArray(questionData.interactiveBlanks) &&
+          questionData.interactiveBlanks.length > 0 && {
+            interactiveBlanks: questionData.interactiveBlanks.map((blank: any) => {
+              // تحويل select إلى dropdown للتوحيد
+              const type = blank.type === 'select' ? 'dropdown' : blank.type;
+              // استخدام options إذا كان موجوداً، وإلا choices
+              const options = blank.options || blank.choices;
+              const choices = blank.choices || blank.options;
+              return {
+                ...blank,
+                type,
+                options,
+                choices, // للتوافق مع الكود القديم
+              };
+            }),
           }),
+        ...(questionData.interactiveReorder && {
+          interactiveReorder: questionData.interactiveReorder,
         }),
-        ...(questionData.interactiveReorder && { interactiveReorder: questionData.interactiveReorder }),
       }),
       ...(questionData.explanation && { explanation: questionData.explanation }),
       ...(questionData.difficulty && { difficulty: questionData.difficulty as QuestionDifficulty }),
@@ -955,7 +1038,8 @@ export class QuestionsService {
 
     // Normalize skill قبل البحث عن القسم
     const normalizedSkill = skill ? normalizeSkill(skill) : undefined;
-    const finalSkill = normalizedSkill && typeof normalizedSkill === 'string' ? normalizedSkill : skill;
+    const finalSkill =
+      normalizedSkill && typeof normalizedSkill === 'string' ? normalizedSkill : skill;
 
     // 6) البحث عن سكشن بـ sectionKey أولاً، ثم بالاسم، ثم بـ skill+teilNumber
     let sectionIndex = -1;
@@ -966,9 +1050,13 @@ export class QuestionsService {
         if (sec.key === sectionKey) return true;
         // مطابقة key المولّد (للأقسام القديمة بدون key)
         if (!sec.key) {
-          const generatedKey = (sec.skill && sec.teilNumber)
-            ? `${sec.skill.toLowerCase()}_teil${sec.teilNumber}`
-            : (sec.title || sec.name || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, '_').replace(/(^_|_$)/g, '');
+          const generatedKey =
+            sec.skill && sec.teilNumber
+              ? `${sec.skill.toLowerCase()}_teil${sec.teilNumber}`
+              : (sec.title || sec.name || '')
+                  .toLowerCase()
+                  .replace(/[^a-z0-9äöüß]+/g, '_')
+                  .replace(/(^_|_$)/g, '');
           return generatedKey === sectionKey;
         }
         return false;
@@ -983,7 +1071,9 @@ export class QuestionsService {
     if (sectionIndex === -1 && finalSkill && teilNumber) {
       // fallback 2: البحث عبر skill + teilNumber (يطابق أقسام موجودة بنفس المهارة والجزء)
       sectionIndex = cleanSections.findIndex(
-        (sec: any) => sec.skill && sec.teilNumber &&
+        (sec: any) =>
+          sec.skill &&
+          sec.teilNumber &&
           sec.skill.toLowerCase() === finalSkill.toLowerCase() &&
           sec.teilNumber === teilNumber,
       );
@@ -991,7 +1081,8 @@ export class QuestionsService {
 
     if (sectionIndex === -1) {
       // 7) لو مش موجود → نضيف سكشن جديد فيه السؤال
-      const newKey = sectionKey || (finalSkill && teilNumber ? `${finalSkill}_teil${teilNumber}` : undefined);
+      const newKey =
+        sectionKey || (finalSkill && teilNumber ? `${finalSkill}_teil${teilNumber}` : undefined);
       cleanSections.push({
         key: newKey,
         name: sectionName || (sectionKey ? sectionKey : undefined),
@@ -1023,7 +1114,7 @@ export class QuestionsService {
 
     // 9) حفظ السكاشن المعدّلة في الامتحان
     exam.sections = cleanSections as any;
-    
+
     // Normalize provider before saving
     if (exam.provider) {
       const normalized = normalizeProvider(exam.provider);
@@ -1031,7 +1122,7 @@ export class QuestionsService {
         exam.provider = normalized;
       }
     }
-    
+
     await exam.save();
 
     // 10) ربط الامتحان بالموضوع (grammarTopic) إذا كان grammarLevel و grammarTopic موجودين
@@ -1043,11 +1134,9 @@ export class QuestionsService {
       );
     } else if (grammarTopicId) {
       // للتوافق مع الكود القديم: استخدام grammarTopicId إذا كان موجوداً
-      await this.grammarTopicModel.findByIdAndUpdate(
-        grammarTopicId,
-        { examId: (exam as any)._id },
-        { new: true },
-      ).exec();
+      await this.grammarTopicModel
+        .findByIdAndUpdate(grammarTopicId, { examId: (exam as any)._id }, { new: true })
+        .exec();
     }
 
     // إرجاع النتيجة
@@ -1086,11 +1175,7 @@ export class QuestionsService {
       // شرط أساسي: بدون state تماماً (يجب يكون null أو غير موجود أو string فارغ)
       $and: [
         {
-          $or: [
-            { state: { $exists: false } },
-            { state: null },
-            { state: '' },
-          ],
+          $or: [{ state: { $exists: false } }, { state: null }, { state: '' }],
         },
       ],
     };
@@ -1129,7 +1214,7 @@ export class QuestionsService {
         correctOptionId,
         explanation: item.explanation || null,
         media: item.media || null,
-        images: Array.isArray(item.images) ? item.images : (item.images ? [item.images] : []), // تأكد من أن images array
+        images: Array.isArray(item.images) ? item.images : item.images ? [item.images] : [], // تأكد من أن images array
         level: item.level,
         tags: item.tags || [],
         usageCategory: item.usageCategory,
@@ -1169,20 +1254,24 @@ export class QuestionsService {
       $or: [
         { category: 'state' },
         { usageCategory: 'state_specific' },
-        { 
+        {
           category: { $exists: false },
           usageCategory: { $exists: false },
         },
       ],
     };
 
-    this.logger.log(`[getLearnStateQuestions] Query for state=${dto.state}: ${JSON.stringify(query)}`);
+    this.logger.log(
+      `[getLearnStateQuestions] Query for state=${dto.state}: ${JSON.stringify(query)}`,
+    );
 
     // جلب جميع أسئلة الولاية (10) بدون pagination للتعلم
     const allQuestions = await this.model.find(query).sort({ createdAt: 1 }).lean().exec();
     const total = allQuestions.length;
 
-    this.logger.log(`[getLearnStateQuestions] Found ${total} questions for state=${dto.state} (expected: 10 per state, total 160)`);
+    this.logger.log(
+      `[getLearnStateQuestions] Found ${total} questions for state=${dto.state} (expected: 10 per state, total 160)`,
+    );
 
     // إذا كان limit محدد وصغير، نستخدم pagination
     const items = usePagination ? allQuestions.slice(skip, skip + limit) : allQuestions;

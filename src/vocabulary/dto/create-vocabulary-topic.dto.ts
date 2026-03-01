@@ -25,4 +25,3 @@ export class CreateVocabularyTopicDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

@@ -5,7 +5,9 @@ import { ExamSkillEnum } from '../enums';
  * @param skill - Skill value (can be any case: "Hoeren", "HOEREN", "hoeren", "Grammar", "GRAMMAR", "grammar")
  * @returns Normalized skill value from ExamSkillEnum, or the original value if not found (for validation to catch)
  */
-export function normalizeSkill(skill: string | undefined | null): ExamSkillEnum | string | undefined {
+export function normalizeSkill(
+  skill: string | undefined | null,
+): ExamSkillEnum | string | undefined {
   if (!skill) return undefined;
 
   const trimmed = String(skill).trim();
@@ -23,15 +25,15 @@ export function normalizeSkill(skill: string | undefined | null): ExamSkillEnum 
 
   // Handle common uppercase variations
   const uppercaseVariations: Record<string, ExamSkillEnum> = {
-    'hoeren': ExamSkillEnum.HOEREN,
-    'lesen': ExamSkillEnum.LESEN,
-    'schreiben': ExamSkillEnum.SCHREIBEN,
-    'sprechen': ExamSkillEnum.SPRECHEN,
-    'sprachbausteine': ExamSkillEnum.SPRACHBAUSTEINE,
-    'grammar': ExamSkillEnum.GRAMMAR,
-    'mixed': ExamSkillEnum.MIXED,
-    'misc': ExamSkillEnum.MISC,
-    'leben_test': ExamSkillEnum.LEBEN_TEST,
+    hoeren: ExamSkillEnum.HOEREN,
+    lesen: ExamSkillEnum.LESEN,
+    schreiben: ExamSkillEnum.SCHREIBEN,
+    sprechen: ExamSkillEnum.SPRECHEN,
+    sprachbausteine: ExamSkillEnum.SPRACHBAUSTEINE,
+    grammar: ExamSkillEnum.GRAMMAR,
+    mixed: ExamSkillEnum.MIXED,
+    misc: ExamSkillEnum.MISC,
+    leben_test: ExamSkillEnum.LEBEN_TEST,
   };
 
   if (uppercaseVariations[normalized]) {
@@ -41,4 +43,3 @@ export function normalizeSkill(skill: string | undefined | null): ExamSkillEnum 
   // If no match found, return original value (validation will catch it)
   return trimmed;
 }
-

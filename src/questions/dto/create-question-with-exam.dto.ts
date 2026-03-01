@@ -123,11 +123,11 @@ export class CreateQuestionWithExamDto {
   @IsOptional()
   @IsString()
   @MinLength(1)
-  text?: string;      // النص الأساسي للسؤال (optional للـ interactive_text reorder، required للباقي)
+  text?: string; // النص الأساسي للسؤال (optional للـ interactive_text reorder، required للباقي)
 
   @IsOptional()
   @IsString()
-  prompt?: string;   // لو حابة تستخدمه لاحقًا
+  prompt?: string; // لو حابة تستخدمه لاحقًا
 
   @IsEnum(QuestionType)
   @Transform(({ obj }) => obj.qType || obj.type)
@@ -183,24 +183,24 @@ export class CreateQuestionWithExamDto {
   @Transform(({ value }) => normalizeProvider(value))
   @IsEnum(ProviderEnum)
   @IsNotEmpty()
-  provider: ProviderEnum;          // "Goethe" / "GOETHE" / "goethe" (case-insensitive)
+  provider: ProviderEnum; // "Goethe" / "GOETHE" / "goethe" (case-insensitive)
 
   @Transform(({ value }) => normalizeSkill(value))
   @IsEnum(ExamSkillEnum)
   @IsNotEmpty()
-  skill: ExamSkillEnum;             // "hoeren" / "HOEREN" / "GRAMMAR" (case-insensitive)
+  skill: ExamSkillEnum; // "hoeren" / "HOEREN" / "GRAMMAR" (case-insensitive)
 
   @IsInt()
   @Min(1)
-  teilNumber: number;        // 1
+  teilNumber: number; // 1
 
   @IsOptional()
   @IsString()
-  section?: string;          // "Hoeren" أو "Hören – Teil 1"
+  section?: string; // "Hoeren" أو "Hören – Teil 1"
 
   @IsOptional()
   @IsString()
-  sectionKey?: string;       // مثل "hoeren_teil1" - ربط السؤال بقسم عبر key
+  sectionKey?: string; // مثل "hoeren_teil1" - ربط السؤال بقسم عبر key
 
   @IsMongoId()
   @IsNotEmpty()
@@ -222,7 +222,7 @@ export class CreateQuestionWithExamDto {
   // ====== حالة السؤال ======
   @IsString()
   @IsNotEmpty()
-  status: string;            // "published" / "draft"
+  status: string; // "published" / "draft"
 
   // ====== وسوم اختيارية ======
   @IsOptional()
@@ -245,7 +245,7 @@ export class CreateQuestionWithExamDto {
   // ====== للحفاظ على التوافق مع الكود القديم ======
   @IsOptional()
   @IsString()
-  sectionTitle?: string;     // للحفاظ على التوافق
+  sectionTitle?: string; // للحفاظ على التوافق
 
   // ====== رابط ملف الصوت (لأسئلة الاستماع) - للتوافق مع الكود القديم ======
   @IsOptional()

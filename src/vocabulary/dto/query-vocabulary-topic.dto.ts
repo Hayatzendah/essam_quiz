@@ -13,4 +13,3 @@ export class QueryVocabularyTopicDto {
   @IsString()
   isActive?: string; // 'true' or 'false' as query param
 }
-

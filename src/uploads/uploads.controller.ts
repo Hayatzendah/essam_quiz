@@ -20,15 +20,29 @@ import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
+  audioFileFilter,
+  getDefaultAudioExtension,
+} from '../common/utils/audio-file-validator.util';
 import * as fs from 'fs';
 import type { Response as ExpressResponse } from 'express';
 import { MediaService } from '../modules/media/media.service';
 import { AudioConverterService } from '../common/services/audio-converter.service';
 
 // Filter للصور فقط
-const imageFileFilter = (req: any, file: Express.Multer.File, callback: (error: Error | null, acceptFile: boolean) => void) => {
+const imageFileFilter = (
+  req: any,
+  file: Express.Multer.File,
+  callback: (error: Error | null, acceptFile: boolean) => void,
+) => {
   if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
     return callback(new Error('Only image files are allowed!'), false);
   }
@@ -105,7 +119,7 @@ export class UploadsController {
     // رفع الملف على S3 للتخزين الدائم (بدل التخزين المحلي اللي بينمحي مع كل deploy)
     const fileBuffer = fs.readFileSync(finalPath);
     const finalExt = extname(finalFilename).replace(/^\./, '').toLowerCase();
-    const mime = finalExt === 'mp3' ? 'audio/mpeg' : (file.mimetype || 'audio/mpeg');
+    const mime = finalExt === 'mp3' ? 'audio/mpeg' : file.mimetype || 'audio/mpeg';
 
     const s3Result = await this.mediaService.uploadBuffer({
       buffer: fileBuffer,
@@ -115,15 +129,17 @@ export class UploadsController {
     });
 
     // حذف الملف المحلي بعد الرفع على S3
-    try { fs.unlinkSync(finalPath); } catch (e) { /* ignore */ }
+    try {
+      fs.unlinkSync(finalPath);
+    } catch (e) {
+      /* ignore */
+    }
 
     const audioUrl = s3Result.url;
 
     return {
       audioUrl,
-      audioSources: [
-        { url: audioUrl, type: mime, format: finalExt },
-      ],
+      audioSources: [{ url: audioUrl, type: mime, format: finalExt }],
     };
   }
 
@@ -136,19 +152,19 @@ export class UploadsController {
         destination: (req: any, file, callback) => {
           // تحديد المجلد بناءً على query parameter
           let folder = req.query.folder || 'questions';
-          
+
           // 🔥 Decode الـ folder إذا كان encoded
           try {
             folder = decodeURIComponent(folder);
           } catch (e) {
             console.warn(`[Upload Image] Failed to decode folder: ${folder}`);
           }
-          
+
           const destination = join(process.cwd(), 'uploads', 'images', folder);
-          
+
           console.log(`[Upload Image] Destination folder: ${folder}`);
           console.log(`[Upload Image] Full destination path: ${destination}`);
-          
+
           // 🔥 التأكد من وجود المجلد قبل حفظ الملف
           if (!fs.existsSync(destination)) {
             try {
@@ -156,14 +172,17 @@ export class UploadsController {
               console.log(`[Upload Image] Created directory: ${destination}`);
             } catch (error: any) {
               console.error(`[Upload Image] Failed to create directory: ${destination}`, error);
-              const err = error instanceof Error ? error : new Error(`Failed to create directory: ${error?.message || 'Unknown error'}`);
+              const err =
+                error instanceof Error
+                  ? error
+                  : new Error(`Failed to create directory: ${error?.message || 'Unknown error'}`);
               // في multer، callback يتوقع argumentين دائماً: (error, destination)
               return callback(err, destination);
             }
           } else {
             console.log(`[Upload Image] Directory already exists: ${destination}`);
           }
-          
+
           // في multer، callback يأخذ (error, destination)
           callback(null, destination);
         },
@@ -221,7 +240,7 @@ export class UploadsController {
 
     // 🔥 محاولة رفع الملف مباشرة إلى S3 أولاً
     const imageFolder = folder || 'questions';
-    
+
     // Decode الـ folder إذا كان encoded
     let decodedFolder = imageFolder;
     try {
@@ -231,7 +250,7 @@ export class UploadsController {
     }
 
     const ext = extname(file.originalname).replace(/^\./, '').toLowerCase();
-    
+
     try {
       // محاولة رفع إلى S3 مباشرة
       const s3Result = await this.mediaService.uploadBuffer({
@@ -256,7 +275,7 @@ export class UploadsController {
     } catch (s3Error: any) {
       // إذا فشل S3 (مثلاً mock mode أو S3 غير متوفر)، نحفظ محلياً كـ fallback
       console.warn(`⚠️ S3 upload failed (${s3Error.message}), saving locally as fallback`);
-      
+
       // التأكد من وجود المجلد
       const destination = join(process.cwd(), 'uploads', 'images', decodedFolder);
       if (!fs.existsSync(destination)) {
@@ -276,7 +295,7 @@ export class UploadsController {
       // استخدام PUBLIC_BASE_URL من environment variables، أو بناء URL من request
       const publicBaseUrl = this.configService.get<string>('PUBLIC_BASE_URL');
       let baseUrl: string;
-      
+
       if (publicBaseUrl) {
         baseUrl = publicBaseUrl;
       } else {
@@ -295,7 +314,8 @@ export class UploadsController {
         mime: file.mimetype,
         key,
         provider: 'local',
-        warning: '⚠️ File saved locally. Files will be lost on redeploy. Please configure S3 environment variables in Railway for persistent storage.',
+        warning:
+          '⚠️ File saved locally. Files will be lost on redeploy. Please configure S3 environment variables in Railway for persistent storage.',
       };
     }
   }
@@ -336,11 +356,11 @@ export class UploadsController {
       }
 
       const buffer = Buffer.from(base64Data, 'base64');
-      
+
       // تحديد المجلد
       const imageFolder = folder || 'questions';
       const destinationDir = join(process.cwd(), 'uploads', 'images', imageFolder);
-      
+
       // التأكد من وجود المجلد
       if (!fs.existsSync(destinationDir)) {
         fs.mkdirSync(destinationDir, { recursive: true });
@@ -372,4 +392,3 @@ export class UploadsController {
   // 🔥 تم إزالة getImage endpoint - ServeStaticModule يتعامل مع /uploads/images/... مباشرة
   // إذا أردت fallback إلى S3، يمكن إضافته لاحقاً
 }
-

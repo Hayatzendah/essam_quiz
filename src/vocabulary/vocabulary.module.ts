@@ -19,23 +19,3 @@ import { VocabularyWord, VocabularyWordSchema } from './schemas/vocabulary-word.
   exports: [VocabularyTopicsService, VocabularyWordsService],
 })
 export class VocabularyModule {}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

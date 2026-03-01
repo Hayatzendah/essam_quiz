@@ -13,7 +13,12 @@ import { QueryExamDto } from './dto/query-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { AssignExamDto } from './dto/assign-exam.dto';
 import { Exam, ExamDocument, ExamSection } from './schemas/exam.schema';
-import { Question, QuestionDocument, QuestionStatus, QuestionType } from '../questions/schemas/question.schema';
+import {
+  Question,
+  QuestionDocument,
+  QuestionStatus,
+  QuestionType,
+} from '../questions/schemas/question.schema';
 import { Attempt, AttemptDocument } from '../attempts/schemas/attempt.schema';
 import { ExamCategoryEnum, ExamStatusEnum } from '../common/enums';
 import { ProviderEnum } from '../common/enums/provider.enum';
@@ -22,7 +27,10 @@ import { AddSectionDto } from './dto/add-section.dto';
 import { UpdateSectionDto } from './dto/update-section.dto';
 import { AddQuestionToSectionDto, ReorderSectionQuestionsDto } from './dto/section-question.dto';
 import { BulkCreateSectionQuestionsDto } from './dto/bulk-section-questions.dto';
-import { ListeningClip, ListeningClipDocument } from '../listening-clips/schemas/listening-clip.schema';
+import {
+  ListeningClip,
+  ListeningClipDocument,
+} from '../listening-clips/schemas/listening-clip.schema';
 import { MediaService } from '../modules/media/media.service';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
@@ -35,7 +43,8 @@ export class ExamsService {
     @InjectModel(Exam.name) private readonly model: Model<ExamDocument>,
     @InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>,
     @InjectModel(Attempt.name) private readonly attemptModel: Model<AttemptDocument>,
-    @InjectModel(ListeningClip.name) private readonly listeningClipModel: Model<ListeningClipDocument>,
+    @InjectModel(ListeningClip.name)
+    private readonly listeningClipModel: Model<ListeningClipDocument>,
     private readonly mediaService: MediaService,
   ) {}
 
@@ -137,19 +146,13 @@ export class ExamsService {
     // ======  👇 ضمان إن الحقول تكون إجبارية فقط لو الامتحان Grammar  ======
     if (dto.examCategory === ExamCategoryEnum.GRAMMAR) {
       if (!dto.grammarLevel) {
-        throw new BadRequestException(
-          'Grammar exams require grammarLevel',
-        );
+        throw new BadRequestException('Grammar exams require grammarLevel');
       }
       if (!dto.grammarTopicId) {
-        throw new BadRequestException(
-          'Grammar exams require grammarTopicId',
-        );
+        throw new BadRequestException('Grammar exams require grammarTopicId');
       }
       if (!dto.totalQuestions) {
-        throw new BadRequestException(
-          'Grammar exams require totalQuestions',
-        );
+        throw new BadRequestException('Grammar exams require totalQuestions');
       }
     }
 
@@ -158,24 +161,24 @@ export class ExamsService {
     if (!dto.sections || !Array.isArray(dto.sections)) {
       dto.sections = [];
     }
-    
+
     // إزالة null/undefined sections
     const cleanedSections = dto.sections.filter((s: any) => s !== null && s !== undefined);
 
     // sections أصبحت اختيارية لجميع أنواع الامتحانات
     // يمكن إضافة الأقسام لاحقاً عبر POST /exams/:examId/sections
-    
+
     // تحققات إضافية على مستوى الخدمة
     for (const s of cleanedSections) {
       if (!s || typeof s !== 'object') {
         throw new BadRequestException('Each section must be a valid object');
       }
-      
+
       // التحقق من وجود name (الحقل الأساسي)
       if (!s.name) {
         throw new BadRequestException('Each section must have a name');
       }
-      
+
       // التحقق حسب examCategory
       if (dto.examCategory === 'provider_exam') {
         // للـ Provider exams: يجب أن يكون هناك quota (بدون items)
@@ -190,7 +193,9 @@ export class ExamsService {
         // لكن Grammar exams يمكن أن تكون بدون sections تماماً
         if (s.items && Array.isArray(s.items) && s.items.length > 0) {
           // تنظيف items من null
-          s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
+          s.items = s.items.filter(
+            (item: any) => item !== null && item !== undefined && item.questionId,
+          );
           if (s.items.length === 0) {
             throw new BadRequestException(
               `Section "${s.name || 'unnamed'}" must have at least one valid item with questionId`,
@@ -208,13 +213,15 @@ export class ExamsService {
           }
         }
       }
-      
+
       // للتوافق مع الكود القديم: تنظيف items إذا كانت موجودة
       if (s.items && Array.isArray(s.items)) {
-        s.items = s.items.filter((item: any) => item !== null && item !== undefined && item.questionId);
+        s.items = s.items.filter(
+          (item: any) => item !== null && item !== undefined && item.questionId,
+        );
       }
     }
-    
+
     // استبدال sections بالنسخة المنظفة
     dto.sections = cleanedSections;
 
@@ -224,14 +231,14 @@ export class ExamsService {
     }
 
     const userId = user.userId || (user as any).sub || (user as any).id;
-    
+
     // تحويل questionId في items إلى ObjectId إذا كان string
     // معالجة attemptsLimit و attemptLimit (دعم كلا الحقلين)
     const processedDto: any = { ...dto };
     if (processedDto.attemptsLimit !== undefined) {
       processedDto.attemptLimit = processedDto.attemptsLimit; // تحويل attemptsLimit إلى attemptLimit للـ schema
     }
-    
+
     // تنظيف sections: تحويل med إلى medium و skill إلى lowercase
     if (processedDto.sections && Array.isArray(processedDto.sections)) {
       // إزالة null/undefined sections
@@ -240,35 +247,44 @@ export class ExamsService {
         .map((section: any) => {
           // إنشاء نسخة جديدة من section لتجنب تعديل الـ original
           const processedSection = { ...section };
-          
+
           // توحيد الحقول: name هو الحقل الموحد (name = name ?? title)
           processedSection.name = processedSection.name ?? processedSection.title;
           // نسخ name إلى title للتوافق
           if (processedSection.name && !processedSection.title) {
             processedSection.title = processedSection.name;
           }
-          
+
           // تحويل skill إلى lowercase
           if (processedSection.skill && typeof processedSection.skill === 'string') {
             processedSection.skill = processedSection.skill.toLowerCase();
           }
-          
+
           // تحويل med إلى medium في difficultyDistribution
-          if (processedSection.difficultyDistribution && processedSection.difficultyDistribution.med !== undefined) {
-            processedSection.difficultyDistribution.medium = processedSection.difficultyDistribution.med;
+          if (
+            processedSection.difficultyDistribution &&
+            processedSection.difficultyDistribution.med !== undefined
+          ) {
+            processedSection.difficultyDistribution.medium =
+              processedSection.difficultyDistribution.med;
             delete processedSection.difficultyDistribution.med;
           }
-          
+
           // معالجة listeningAudioId - تحويل string إلى ObjectId إذا كان موجوداً
           if (processedSection.listeningAudioId) {
-            if (typeof processedSection.listeningAudioId === 'string' && Types.ObjectId.isValid(processedSection.listeningAudioId)) {
-              processedSection.listeningAudioId = new Types.ObjectId(processedSection.listeningAudioId);
+            if (
+              typeof processedSection.listeningAudioId === 'string' &&
+              Types.ObjectId.isValid(processedSection.listeningAudioId)
+            ) {
+              processedSection.listeningAudioId = new Types.ObjectId(
+                processedSection.listeningAudioId,
+              );
             } else if (!(processedSection.listeningAudioId instanceof Types.ObjectId)) {
               // إذا كان غير صالح، نحذفه
               delete processedSection.listeningAudioId;
             }
           }
-          
+
           // معالجة items - يمكن أن تكون فارغة أو undefined
           const sectionItems = processedSection.items ?? [];
           if (Array.isArray(sectionItems) && sectionItems.length > 0) {
@@ -286,13 +302,20 @@ export class ExamsService {
                     return true;
                   }
                   // التحقق من أن questionId string صالح
-                  if (typeof item.questionId === 'string' && Types.ObjectId.isValid(item.questionId)) {
+                  if (
+                    typeof item.questionId === 'string' &&
+                    Types.ObjectId.isValid(item.questionId)
+                  ) {
                     return true;
                   }
-                  this.logger.warn(`[createExam] Invalid questionId: ${item.questionId} - skipping item`);
+                  this.logger.warn(
+                    `[createExam] Invalid questionId: ${item.questionId} - skipping item`,
+                  );
                   return false;
                 } catch (error) {
-                  this.logger.warn(`[createExam] Error validating questionId ${item.questionId}: ${error.message} - skipping item`);
+                  this.logger.warn(
+                    `[createExam] Error validating questionId ${item.questionId}: ${error.message} - skipping item`,
+                  );
                   return false;
                 }
               })
@@ -300,41 +323,42 @@ export class ExamsService {
                 // تحويل questionId إلى ObjectId
                 return {
                   ...item,
-                  questionId: item.questionId instanceof Types.ObjectId 
-                    ? item.questionId 
-                    : new Types.ObjectId(item.questionId),
+                  questionId:
+                    item.questionId instanceof Types.ObjectId
+                      ? item.questionId
+                      : new Types.ObjectId(item.questionId),
                 };
               });
-            
+
             processedSection.items = validItems;
           } else {
             // items فارغة أو undefined - هذا مسموح الآن
             processedSection.items = [];
           }
-          
+
           return processedSection;
         });
-      
+
       // sections اختيارية - يمكن أن تكون فارغة
     }
-    
+
     // Ensure sections is always an array (never null or undefined)
-    const normalizedSections = Array.isArray(processedDto.sections) 
+    const normalizedSections = Array.isArray(processedDto.sections)
       ? processedDto.sections.filter((s: any) => s !== null && s !== undefined)
       : (processedDto.sections ?? []);
-    
+
     // Log sections before creation
     this.logger.log(
       `[createExam] Creating exam - title: ${dto.title}, sections count: ${normalizedSections.length}, sections with items: ${normalizedSections.filter((s: any) => Array.isArray(s.items) && s.items.length > 0).length}`,
     );
-    
+
     // Log detailed section info before saving
     normalizedSections.forEach((s: any, index: number) => {
       this.logger.log(
         `[createExam] Section ${index + 1}: name="${s?.name || s?.title || 'unnamed'}", items count=${s?.items?.length || 0}, items=${JSON.stringify(s?.items?.map((i: any) => ({ questionId: String(i?.questionId), points: i?.points })) || [])}`,
       );
     });
-    
+
     // Normalize provider before saving
     if (processedDto.provider) {
       processedDto.provider = normalizeProvider(processedDto.provider) || processedDto.provider;
@@ -381,28 +405,30 @@ export class ExamsService {
     // تنظيف sections من null/undefined
     const cleanedSections = dto.sections.filter((s: any) => s !== null && s !== undefined);
     if (cleanedSections.length === 0) {
-      throw new BadRequestException('At least one valid section is required (null sections are not allowed)');
+      throw new BadRequestException(
+        'At least one valid section is required (null sections are not allowed)',
+      );
     }
 
     for (const s of cleanedSections) {
       if (!s || typeof s !== 'object') {
         throw new BadRequestException('Each section must be a valid object');
       }
-      
+
       // تنظيف items من null و items بدون questionId
       if (s.items && Array.isArray(s.items)) {
-        s.items = s.items.filter((item: any) => 
-          item !== null && 
-          item !== undefined && 
-          item.questionId && 
-          item.questionId !== null
+        s.items = s.items.filter(
+          (item: any) =>
+            item !== null && item !== undefined && item.questionId && item.questionId !== null,
         );
       }
-      
+
       if (!s.items || !Array.isArray(s.items) || s.items.length === 0) {
-        throw new BadRequestException(`Section "${s.name || 'unnamed'}" must have at least one valid item with questionId`);
+        throw new BadRequestException(
+          `Section "${s.name || 'unnamed'}" must have at least one valid item with questionId`,
+        );
       }
-      
+
       // لا نسمح بـ quota للطلاب (فقط items)
       if (s.quota) {
         throw new BadRequestException(
@@ -410,7 +436,7 @@ export class ExamsService {
         );
       }
     }
-    
+
     // استبدال sections بالنسخة المنظفة
     dto.sections = cleanedSections;
 
@@ -418,7 +444,7 @@ export class ExamsService {
     const title = dto.title || `Practice Exam - ${new Date().toLocaleDateString()}`;
 
     const userId = user.userId || (user as any).sub || (user as any).id;
-    
+
     // تنظيف sections من null/undefined
     const processedDto = { ...dto };
     if (processedDto.sections && Array.isArray(processedDto.sections)) {
@@ -432,9 +458,10 @@ export class ExamsService {
                 if (item.questionId) {
                   return {
                     ...item,
-                    questionId: item.questionId instanceof Types.ObjectId 
-                      ? item.questionId 
-                      : new Types.ObjectId(item.questionId),
+                    questionId:
+                      item.questionId instanceof Types.ObjectId
+                        ? item.questionId
+                        : new Types.ObjectId(item.questionId),
                   };
                 }
                 return item;
@@ -442,14 +469,14 @@ export class ExamsService {
           }
           return section;
         });
-      
+
       if (processedDto.sections.length === 0) {
         throw new BadRequestException('Exam must have at least one valid section');
       }
     }
-    
+
     // Ensure sections is always an array (never null, undefined, or empty objects)
-    const normalizedSections = Array.isArray(processedDto.sections) 
+    const normalizedSections = Array.isArray(processedDto.sections)
       ? processedDto.sections.filter((s: any) => {
           // Remove null or undefined
           if (s === null || s === undefined) {
@@ -472,11 +499,11 @@ export class ExamsService {
           return true;
         })
       : [];
-    
+
     this.logger.log(
       `[createPracticeExam] Creating exam - title: ${title}, sections count: ${normalizedSections.length}, sections: ${JSON.stringify(normalizedSections.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0 })))}`,
     );
-    
+
     const doc = await this.model.create({
       ...processedDto,
       title,
@@ -519,7 +546,7 @@ export class ExamsService {
       throw new BadRequestException('State is required when mode=state');
     }
 
-    let query: any = {
+    const query: any = {
       provider: 'leben_in_deutschland',
       mainSkill: 'leben_test',
       status: QuestionStatus.PUBLISHED,
@@ -530,17 +557,13 @@ export class ExamsService {
       // ✅ فصل واضح: general = بدون state تماماً
       query.$and = [
         {
-          $or: [
-            { state: { $exists: false } },
-            { state: null },
-            { state: '' },
-          ],
+          $or: [{ state: { $exists: false } }, { state: null }, { state: '' }],
         },
         {
           $or: [
             { category: 'general' },
             { usageCategory: 'common' },
-            { 
+            {
               category: { $exists: false },
               usageCategory: { $exists: false },
             },
@@ -554,7 +577,7 @@ export class ExamsService {
       query.$or = [
         { category: 'state' },
         { usageCategory: 'state_specific' },
-        { 
+        {
           category: { $exists: false },
           usageCategory: { $exists: false },
         },
@@ -621,7 +644,7 @@ export class ExamsService {
     // الطالب: يشوف فقط الامتحانات المنشورة
     if (user.role === 'student') {
       filter.status = ExamStatusEnum.PUBLISHED;
-      
+
       // فلترة حسب assignedStudentIds (غير مخصص أو مخصص له)
       const userId = user.userId || (user as any).sub || (user as any).id;
       const studentId = new Types.ObjectId(userId);
@@ -661,34 +684,34 @@ export class ExamsService {
     }
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
-    
+
     // للطلاب: فلترة حسب attemptLimit
     if (user.role === 'student') {
       const userId = user.userId || (user as any).sub || (user as any).id;
       const studentId = new Types.ObjectId(userId);
       const examIds = items.map((e: any) => e._id);
-      
+
       if (examIds.length > 0) {
         const attemptCounts = await this.model.db
           .collection('attempts')
           .aggregate([
-          {
-            $match: {
-              studentId,
-              examId: { $in: examIds },
+            {
+              $match: {
+                studentId,
+                examId: { $in: examIds },
+              },
             },
-          },
-          {
-            $group: {
-              _id: '$examId',
-              count: { $sum: 1 },
+            {
+              $group: {
+                _id: '$examId',
+                count: { $sum: 1 },
+              },
             },
-          },
           ])
           .toArray();
-        
+
         const attemptCountMap = new Map(attemptCounts.map((a: any) => [a._id.toString(), a.count]));
-        
+
         const availableExams: any[] = [];
         for (const exam of items) {
           const attemptCount = attemptCountMap.get(exam._id.toString()) || 0;
@@ -714,7 +737,7 @@ export class ExamsService {
     // الطالب: يشوف فقط الامتحانات المنشورة
     if (user.role === 'student') {
       filter.status = ExamStatusEnum.PUBLISHED;
-      
+
       // فلترة حسب assignedStudentIds (غير مخصص أو مخصص له)
       const userId = user.userId || (user as any).sub || (user as any).id;
       const studentId = new Types.ObjectId(userId);
@@ -799,32 +822,32 @@ export class ExamsService {
     if (q?.mainSkill) filter.mainSkill = q.mainSkill;
 
     const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
-    
+
     // فلترة حسب attemptLimit
     const availableExams: any[] = [];
     const examIds = items.map((e: any) => e._id);
-    
+
     if (examIds.length > 0) {
       const attemptCounts = await this.model.db
         .collection('attempts')
         .aggregate([
-        {
-          $match: {
-            studentId,
-            examId: { $in: examIds },
+          {
+            $match: {
+              studentId,
+              examId: { $in: examIds },
+            },
           },
-        },
-        {
-          $group: {
-            _id: '$examId',
-            count: { $sum: 1 },
+          {
+            $group: {
+              _id: '$examId',
+              count: { $sum: 1 },
+            },
           },
-        },
         ])
         .toArray();
-      
+
       const attemptCountMap = new Map(attemptCounts.map((a: any) => [a._id.toString(), a.count]));
-      
+
       for (const exam of items) {
         const attemptCount = attemptCountMap.get(exam._id.toString()) || 0;
         const attemptLimit = exam.attemptLimit || 0;
@@ -952,11 +975,13 @@ export class ExamsService {
                 timeLimitMin: exam.timeLimitMin || 0,
                 mainSkill: 'schreiben',
                 schreibenTaskId: exam.schreibenTaskId?.toString() || '',
-                sections: [{
-                  skill: 'schreiben',
-                  label: 'Schreiben',
-                  partsCount: 1,
-                }],
+                sections: [
+                  {
+                    skill: 'schreiben',
+                    label: 'Schreiben',
+                    partsCount: 1,
+                  },
+                ],
               };
             }
 
@@ -969,45 +994,48 @@ export class ExamsService {
             });
 
             if (validSections.length === 0) {
-              this.logger.warn(`[findPublicExams] Exam ${exam._id} has no valid sections (all null or empty) - skipping`);
+              this.logger.warn(
+                `[findPublicExams] Exam ${exam._id} has no valid sections (all null or empty) - skipping`,
+              );
               return null;
             }
 
             const sections = validSections
               .map((s: any) => {
-                    // حساب partsCount من items أو quota
-                    let partsCount = 0;
-                    if (Array.isArray(s.items) && s.items.length > 0) {
-                      partsCount = s.items.length;
-                    } else if (typeof s.quota === 'number' && s.quota > 0) {
-                      partsCount = s.quota;
-                    }
+                // حساب partsCount من items أو quota
+                let partsCount = 0;
+                if (Array.isArray(s.items) && s.items.length > 0) {
+                  partsCount = s.items.length;
+                } else if (typeof s.quota === 'number' && s.quota > 0) {
+                  partsCount = s.quota;
+                }
 
-                    // استخدام partsCount من الحقل إذا كان موجوداً، وإلا استخدم المحسوب
-                    const finalPartsCount = typeof s.partsCount === 'number' && s.partsCount > 0
-                      ? s.partsCount
-                      : partsCount;
+                // استخدام partsCount من الحقل إذا كان موجوداً، وإلا استخدم المحسوب
+                const finalPartsCount =
+                  typeof s.partsCount === 'number' && s.partsCount > 0 ? s.partsCount : partsCount;
 
-                    // بناء object مع جميع الحقول المطلوبة
-                    const sectionObj: any = {
-                      skill: s.skill || undefined,
-                      label: s.label || s.name || '', // label مطلوب دائماً
-                    };
+                // بناء object مع جميع الحقول المطلوبة
+                const sectionObj: any = {
+                  skill: s.skill || undefined,
+                  label: s.label || s.name || '', // label مطلوب دائماً
+                };
 
-                    // إضافة durationMin إذا كان موجوداً
-                    if (typeof s.durationMin === 'number' && s.durationMin > 0) {
-                      sectionObj.durationMin = s.durationMin;
-                    }
+                // إضافة durationMin إذا كان موجوداً
+                if (typeof s.durationMin === 'number' && s.durationMin > 0) {
+                  sectionObj.durationMin = s.durationMin;
+                }
 
-                    // إضافة partsCount دائماً (حتى لو كان 0)
-                    sectionObj.partsCount = finalPartsCount;
+                // إضافة partsCount دائماً (حتى لو كان 0)
+                sectionObj.partsCount = finalPartsCount;
 
-                    return sectionObj;
-                  })
+                return sectionObj;
+              })
               .filter((s: any) => s !== null);
 
             if (sections.length === 0) {
-              this.logger.warn(`[findPublicExams] Exam ${exam._id} has no valid sections after mapping - skipping`);
+              this.logger.warn(
+                `[findPublicExams] Exam ${exam._id} has no valid sections after mapping - skipping`,
+              );
               return null;
             }
 
@@ -1046,7 +1074,9 @@ export class ExamsService {
    */
   async findPublicExamById(examId: string) {
     if (!Types.ObjectId.isValid(examId)) {
-      throw new BadRequestException(`Invalid exam ID format: ${examId}. Expected a valid MongoDB ObjectId (24 hex characters)`);
+      throw new BadRequestException(
+        `Invalid exam ID format: ${examId}. Expected a valid MongoDB ObjectId (24 hex characters)`,
+      );
     }
     const doc = await this.model.findById(examId).lean().exec();
     if (!doc) throw new NotFoundException('Exam not found');
@@ -1060,11 +1090,13 @@ export class ExamsService {
     const isSchreibenExam = (doc as any).mainSkill === 'schreiben' && (doc as any).schreibenTaskId;
     if (isSchreibenExam) {
       // بناء sections: Schreiben أولاً + أي أسئلة عادية بعده
-      const resultSections: any[] = [{
-        skill: 'schreiben',
-        label: 'Schreiben',
-        partsCount: 1,
-      }];
+      const resultSections: any[] = [
+        {
+          skill: 'schreiben',
+          label: 'Schreiben',
+          partsCount: 1,
+        },
+      ];
 
       // إضافة الأقسام العادية لو موجودة (أسئلة بعد مهمة الكتابة)
       if (Array.isArray(doc.sections) && doc.sections.length > 0) {
@@ -1137,7 +1169,11 @@ export class ExamsService {
       if (s.listeningAudioId) {
         if (typeof s.listeningAudioId === 'string') {
           listeningAudioIdValue = s.listeningAudioId;
-        } else if (s.listeningAudioId && typeof s.listeningAudioId === 'object' && '_id' in s.listeningAudioId) {
+        } else if (
+          s.listeningAudioId &&
+          typeof s.listeningAudioId === 'object' &&
+          '_id' in s.listeningAudioId
+        ) {
           listeningAudioIdValue = String(s.listeningAudioId._id || s.listeningAudioId);
         } else if (s.listeningAudioId.toString) {
           listeningAudioIdValue = s.listeningAudioId.toString();
@@ -1152,12 +1188,12 @@ export class ExamsService {
         durationMin: s.durationMin,
         partsCount: s.partsCount || partsCount,
       };
-      
+
       // FIX: إضافة listeningAudioId دائماً إذا كان موجوداً
       if (listeningAudioIdValue) {
         result.listeningAudioId = listeningAudioIdValue;
       }
-      
+
       return result;
     });
 
@@ -1183,11 +1219,7 @@ export class ExamsService {
       examCategory: 'provider_exam',
     };
 
-    const exams = await this.model
-      .find(filter)
-      .select('provider level')
-      .lean()
-      .exec();
+    const exams = await this.model.find(filter).select('provider level').lean().exec();
 
     // تجميع providers و levels
     const providerMap = new Map<string, Set<string>>();
@@ -1247,11 +1279,7 @@ export class ExamsService {
       filter.level = level;
     }
 
-    const exams = await this.model
-      .find(filter)
-      .select('mainSkill title')
-      .lean()
-      .exec();
+    const exams = await this.model.find(filter).select('mainSkill title').lean().exec();
 
     // تجميع بحسب المهارة
     const skillMap = new Map<string, number>();
@@ -1261,7 +1289,17 @@ export class ExamsService {
     }
 
     // ترتيب المهارات بترتيب منطقي
-    const skillOrder = ['hoeren', 'lesen', 'schreiben', 'sprechen', 'sprachbausteine', 'grammar', 'mixed', 'misc', 'leben_test'];
+    const skillOrder = [
+      'hoeren',
+      'lesen',
+      'schreiben',
+      'sprechen',
+      'sprachbausteine',
+      'grammar',
+      'mixed',
+      'misc',
+      'leben_test',
+    ];
     const skillLabels: Record<string, string> = {
       hoeren: 'Hören',
       lesen: 'Lesen',
@@ -1294,7 +1332,9 @@ export class ExamsService {
 
   async findById(id: string, user?: ReqUser) {
     if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException(`Invalid exam ID format: ${id}. Expected a valid MongoDB ObjectId (24 hex characters)`);
+      throw new BadRequestException(
+        `Invalid exam ID format: ${id}. Expected a valid MongoDB ObjectId (24 hex characters)`,
+      );
     }
     const doc = await this.model.findById(id).lean().exec();
     if (!doc) throw new NotFoundException('Exam not found');
@@ -1314,7 +1354,7 @@ export class ExamsService {
     if (!user) throw new ForbiddenException();
 
     // Normalize sections: ensure it's an array and filter out null, undefined, and empty objects
-    const normalizedSections = Array.isArray(doc.sections) 
+    const normalizedSections = Array.isArray(doc.sections)
       ? doc.sections.filter((s: any) => {
           // Remove null or undefined
           if (s === null || s === undefined) {
@@ -1337,7 +1377,7 @@ export class ExamsService {
           return true;
         })
       : [];
-    
+
     const docWithNormalizedSections = { ...doc, sections: normalizedSections };
 
     const userId = user.userId || (user as any).sub || (user as any).id;
@@ -1358,7 +1398,11 @@ export class ExamsService {
         if (s.listeningAudioId) {
           if (typeof s.listeningAudioId === 'string') {
             listeningAudioIdValue = s.listeningAudioId;
-          } else if (s.listeningAudioId && typeof s.listeningAudioId === 'object' && '_id' in s.listeningAudioId) {
+          } else if (
+            s.listeningAudioId &&
+            typeof s.listeningAudioId === 'object' &&
+            '_id' in s.listeningAudioId
+          ) {
             // ObjectId
             listeningAudioIdValue = String(s.listeningAudioId._id || s.listeningAudioId);
           } else if (s.listeningAudioId.toString) {
@@ -1367,25 +1411,25 @@ export class ExamsService {
             listeningAudioIdValue = String(s.listeningAudioId);
           }
         }
-        
+
         const result: any = {
           ...s,
           items: s.items || [], // التأكد من أن items موجودة حتى لو كانت فارغة
         };
-        
+
         // FIX: إضافة listeningAudioId بشكل صريح دائماً (حتى لو كان undefined، لكن في JSON undefined لا يظهر)
         // لكن نضيفه فقط إذا كان موجوداً لتجنب إضافة undefined
         if (listeningAudioIdValue) {
           result.listeningAudioId = listeningAudioIdValue;
         }
-        
+
         // Log للتحقق
         if (s.skill && s.skill.toLowerCase() === 'hoeren') {
           this.logger.log(
             `[findById] Section "${s.name || s.title}" (hoeren): listeningAudioId=${listeningAudioIdValue || 'NOT SET'}`,
           );
         }
-        
+
         return result;
       });
       const fullResult: any = { ...docWithNormalizedSections, sections: sectionsWithItems };
@@ -1401,54 +1445,57 @@ export class ExamsService {
         throw new ForbiddenException('Students can view published exams only');
       }
       // إخفاء التفاصيل الحساسة لو كانت عشوائية
-      const safeSections = normalizedSections
-        .map((s: any) => {
-          // تحويل listeningAudioId إلى string بشكل موحد
-          let listeningAudioIdValue: string | undefined = undefined;
-          if (s?.listeningAudioId) {
-            if (typeof s.listeningAudioId === 'string') {
-              listeningAudioIdValue = s.listeningAudioId;
-            } else if (s.listeningAudioId && typeof s.listeningAudioId === 'object' && '_id' in s.listeningAudioId) {
-              listeningAudioIdValue = String(s.listeningAudioId._id || s.listeningAudioId);
-            } else if (s.listeningAudioId.toString) {
-              listeningAudioIdValue = s.listeningAudioId.toString();
-            } else {
-              listeningAudioIdValue = String(s.listeningAudioId);
-            }
+      const safeSections = normalizedSections.map((s: any) => {
+        // تحويل listeningAudioId إلى string بشكل موحد
+        let listeningAudioIdValue: string | undefined = undefined;
+        if (s?.listeningAudioId) {
+          if (typeof s.listeningAudioId === 'string') {
+            listeningAudioIdValue = s.listeningAudioId;
+          } else if (
+            s.listeningAudioId &&
+            typeof s.listeningAudioId === 'object' &&
+            '_id' in s.listeningAudioId
+          ) {
+            listeningAudioIdValue = String(s.listeningAudioId._id || s.listeningAudioId);
+          } else if (s.listeningAudioId.toString) {
+            listeningAudioIdValue = s.listeningAudioId.toString();
+          } else {
+            listeningAudioIdValue = String(s.listeningAudioId);
           }
-          
-          const hasQuota = typeof s?.quota === 'number' && s.quota > 0;
-          if (hasQuota || doc.randomizeQuestions) {
-            const result: any = { 
-              name: s?.name || s?.title || 'Unnamed Section', 
-              quota: s?.quota, 
-              difficultyDistribution: s?.difficultyDistribution,
-            };
-            // FIX: إضافة listeningAudioId دائماً إذا كان موجوداً
-            if (listeningAudioIdValue) {
-              result.listeningAudioId = listeningAudioIdValue;
-            }
-            return result;
-          }
-          // للطلاب: إخفاء questionIds (الأسئلة) لأسباب أمنية
-          const result: any = { 
-            ...s, 
-            items: undefined,
+        }
+
+        const hasQuota = typeof s?.quota === 'number' && s.quota > 0;
+        if (hasQuota || doc.randomizeQuestions) {
+          const result: any = {
+            name: s?.name || s?.title || 'Unnamed Section',
+            quota: s?.quota,
+            difficultyDistribution: s?.difficultyDistribution,
           };
           // FIX: إضافة listeningAudioId دائماً إذا كان موجوداً
           if (listeningAudioIdValue) {
             result.listeningAudioId = listeningAudioIdValue;
           }
-          
-          // Log للتحقق
-          if (s?.skill && s.skill.toLowerCase() === 'hoeren') {
-            this.logger.log(
-              `[findById] Student view - Section "${s.name || s.title}" (hoeren): listeningAudioId=${listeningAudioIdValue || 'NOT SET'}`,
-            );
-          }
-          
           return result;
-        });
+        }
+        // للطلاب: إخفاء questionIds (الأسئلة) لأسباب أمنية
+        const result: any = {
+          ...s,
+          items: undefined,
+        };
+        // FIX: إضافة listeningAudioId دائماً إذا كان موجوداً
+        if (listeningAudioIdValue) {
+          result.listeningAudioId = listeningAudioIdValue;
+        }
+
+        // Log للتحقق
+        if (s?.skill && s.skill.toLowerCase() === 'hoeren') {
+          this.logger.log(
+            `[findById] Student view - Section "${s.name || s.title}" (hoeren): listeningAudioId=${listeningAudioIdValue || 'NOT SET'}`,
+          );
+        }
+
+        return result;
+      });
       const studentResult: any = { ...docWithNormalizedSections, sections: safeSections };
       // لامتحانات الكتابة: إضافة hasQuestions لمعرفة إذا فيه أسئلة بعد المهمة
       if ((doc as any).mainSkill === 'schreiben' && (doc as any).schreibenTaskId) {
@@ -1467,7 +1514,9 @@ export class ExamsService {
   async updateExam(id: string, dto: UpdateExamDto, user: ReqUser) {
     if (!user) throw new ForbiddenException();
     if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException(`Invalid exam ID format: ${id}. Expected a valid MongoDB ObjectId (24 hex characters)`);
+      throw new BadRequestException(
+        `Invalid exam ID format: ${id}. Expected a valid MongoDB ObjectId (24 hex characters)`,
+      );
     }
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException('Exam not found');
@@ -1503,7 +1552,7 @@ export class ExamsService {
       );
       this.logger.log(
         `[updateExam] Changes will apply only to future attempts. Existing attempts preserve their snapshot.`,
-        );
+      );
     }
 
     // تحققات قبل النشر: لكل سكشن بquota لازم quota>0، والتوزيع يساوي الكوتا (فقط لامتحانات القواعد)
@@ -1552,11 +1601,11 @@ export class ExamsService {
           `[updateExam] This ensures existing attempts (with examVersion=${doc.version || 1}) remain unchanged. New attempts will use version ${(doc.version || 1) + 1}`,
         );
       }
-      
+
       this.logger.log(
         `[updateExam] Updating sections - examId: ${id}, old sections: ${JSON.stringify(doc.sections)}, new sections: ${JSON.stringify((dto as any).sections)}`,
       );
-      
+
       // تحويل questionId في items إلى ObjectId إذا كان string
       // وإزالة أي sections null أو undefined
       const processedSections = (dto as any).sections
@@ -1564,21 +1613,24 @@ export class ExamsService {
         .map((section: any) => {
           // معالجة listeningAudioId - تحويل string إلى ObjectId إذا كان موجوداً
           if (section.listeningAudioId) {
-            if (typeof section.listeningAudioId === 'string' && Types.ObjectId.isValid(section.listeningAudioId)) {
+            if (
+              typeof section.listeningAudioId === 'string' &&
+              Types.ObjectId.isValid(section.listeningAudioId)
+            ) {
               section.listeningAudioId = new Types.ObjectId(section.listeningAudioId);
             } else if (!(section.listeningAudioId instanceof Types.ObjectId)) {
               // إذا كان غير صالح، نحذفه
               delete section.listeningAudioId;
             }
           }
-          
+
           // توحيد الحقول: name هو الحقل الموحد (name = name ?? title)
           section.name = section.name ?? section.title;
           // نسخ name إلى title للتوافق
           if (section.name && !section.title) {
             section.title = section.name;
           }
-          
+
           if (section.items && Array.isArray(section.items)) {
             // إزالة null/undefined items
             section.items = section.items
@@ -1587,9 +1639,10 @@ export class ExamsService {
                 if (item.questionId) {
                   return {
                     ...item,
-                    questionId: item.questionId instanceof Types.ObjectId 
-                      ? item.questionId 
-                      : new Types.ObjectId(item.questionId),
+                    questionId:
+                      item.questionId instanceof Types.ObjectId
+                        ? item.questionId
+                        : new Types.ObjectId(item.questionId),
                   };
                 }
                 return item;
@@ -1597,16 +1650,20 @@ export class ExamsService {
           }
           return section;
         });
-      
+
       // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Schreiben)
       const examCategory = (dto as any).examCategory || doc.examCategory;
       const mainSkill = (dto as any).mainSkill || doc.mainSkill;
       const schreibenTaskId = (dto as any).schreibenTaskId || doc.schreibenTaskId;
       const isSchreibenExam = mainSkill === 'schreiben' && schreibenTaskId;
-      if (examCategory !== ExamCategoryEnum.GRAMMAR && !isSchreibenExam && processedSections.length === 0) {
+      if (
+        examCategory !== ExamCategoryEnum.GRAMMAR &&
+        !isSchreibenExam &&
+        processedSections.length === 0
+      ) {
         throw new BadRequestException('Exam must have at least one valid section');
       }
-      
+
       // Final normalization: ensure no null, undefined, or empty objects
       const normalizedSections = processedSections.filter((s: any) => {
         // Remove null or undefined
@@ -1629,21 +1686,27 @@ export class ExamsService {
         }
         return true;
       });
-      
+
       // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Schreiben)
-      if (examCategory !== ExamCategoryEnum.GRAMMAR && !isSchreibenExam && normalizedSections.length === 0) {
-        throw new BadRequestException('Exam must have at least one valid section (after filtering null/empty values)');
+      if (
+        examCategory !== ExamCategoryEnum.GRAMMAR &&
+        !isSchreibenExam &&
+        normalizedSections.length === 0
+      ) {
+        throw new BadRequestException(
+          'Exam must have at least one valid section (after filtering null/empty values)',
+        );
       }
-      
+
       this.logger.log(
         `[updateExam] Processed sections with ObjectId conversion - sections: ${JSON.stringify(normalizedSections.map((s: any) => ({ name: s.name, itemsCount: s.items?.length || 0, items: s.items?.map((i: any) => ({ questionId: String(i.questionId) })) || [] })))}`,
       );
-      
+
       // استخدام set() و markModified لضمان أن Mongoose يحدث الحقل بشكل صحيح
       doc.set('sections', normalizedSections);
       doc.markModified('sections');
     }
-    
+
     // تطبيق باقي التحديثات
     const { sections, attemptsLimit, ...restDto } = dto as any;
     // تنظيف difficultyDistribution: تحويل med إلى medium
@@ -1714,14 +1777,16 @@ export class ExamsService {
     if (!Types.ObjectId.isValid(examId)) {
       throw new BadRequestException(`Invalid exam ID format: ${examId}`);
     }
-    
+
     // التحقق من listeningAudioId قبل التحويل
     this.logger.log(
       `[updateSectionAudio] Received listeningAudioId from request: "${listeningAudioId}" (type: ${typeof listeningAudioId})`,
     );
-    
+
     if (!listeningAudioId || !Types.ObjectId.isValid(listeningAudioId)) {
-      throw new BadRequestException(`Invalid listeningAudioId format: ${listeningAudioId}. Must be a valid MongoDB ObjectId.`);
+      throw new BadRequestException(
+        `Invalid listeningAudioId format: ${listeningAudioId}. Must be a valid MongoDB ObjectId.`,
+      );
     }
 
     // التحقق من وجود الامتحان والصلاحيات
@@ -1758,16 +1823,15 @@ export class ExamsService {
       `[updateSectionAudio] Updating exam ${examId}, query: ${JSON.stringify(query)}, update: ${JSON.stringify(updateQuery)}`,
     );
 
-    const updatedDoc = await this.model.findOneAndUpdate(
-      query,
-      updateQuery,
-      { new: true, runValidators: true },
-    ).exec();
+    const updatedDoc = await this.model
+      .findOneAndUpdate(query, updateQuery, { new: true, runValidators: true })
+      .exec();
 
     if (!updatedDoc) {
-      const errorMsg = teilNumber !== null && teilNumber !== undefined
-        ? `Section not found with skill="${skill}" and teilNumber=${teilNumber}`
-        : `Section not found with skill="${skill}"`;
+      const errorMsg =
+        teilNumber !== null && teilNumber !== undefined
+          ? `Section not found with skill="${skill}" and teilNumber=${teilNumber}`
+          : `Section not found with skill="${skill}"`;
       throw new NotFoundException(errorMsg);
     }
 
@@ -1787,7 +1851,7 @@ export class ExamsService {
     const listeningAudioIdString = updatedSection.listeningAudioId?.toString() || null;
     const updatedAtValue = (updatedDoc as any).updatedAt || new Date();
     const examIdString = (updatedDoc as any)._id?.toString() || examId;
-    
+
     this.logger.log(
       `[updateSectionAudio] Successfully updated listeningAudioId for exam ${examId}, section skill="${skill}"${teilNumber !== null && teilNumber !== undefined ? `, teilNumber=${teilNumber}` : ''}, listeningAudioId: ${listeningAudioIdString}, updatedAt: ${updatedAtValue}`,
     );
@@ -1844,23 +1908,24 @@ export class ExamsService {
       const userId = user.userId || (user as any).sub || (user as any).id;
       const ownerIdStr = doc.ownerId?.toString();
       const userIdStr = String(userId);
-      
+
       this.logger.log(
         `[fixEmptySections] Checking ownership - examId: ${examId}, ownerId: ${ownerIdStr}, userId: ${userIdStr}`,
       );
-      
+
       // مقارنة مرنة: ObjectId vs string
-      const isOwner = ownerIdStr === userIdStr || 
-                      (doc.ownerId && String(doc.ownerId) === userIdStr) ||
-                      (ownerIdStr && ownerIdStr === String(userId));
-      
+      const isOwner =
+        ownerIdStr === userIdStr ||
+        (doc.ownerId && String(doc.ownerId) === userIdStr) ||
+        (ownerIdStr && ownerIdStr === String(userId));
+
       if (!isOwner) {
         this.logger.warn(
           `[fixEmptySections] Access denied - examId: ${examId}, ownerId: ${ownerIdStr}, userId: ${userIdStr}`,
         );
         throw new ForbiddenException('Only the exam owner can fix this exam');
       }
-      
+
       this.logger.log(`[fixEmptySections] Ownership verified - examId: ${examId}`);
     }
 
@@ -1872,7 +1937,9 @@ export class ExamsService {
     const updatedSections = doc.sections.map((s: any, index: number) => {
       if (!s || s === null) {
         // Section is null - create new section with quota
-        this.logger.warn(`[fixEmptySections] Section ${index + 1} is null - creating new section with quota=5`);
+        this.logger.warn(
+          `[fixEmptySections] Section ${index + 1} is null - creating new section with quota=5`,
+        );
         fixed = true;
         return {
           name: `Section ${index + 1}`,
@@ -1886,7 +1953,9 @@ export class ExamsService {
 
       if (!hasItems && !hasQuota) {
         // Section is empty - add quota
-        this.logger.warn(`[fixEmptySections] Section "${s.name || `Section ${index + 1}`}" is empty - adding quota=5`);
+        this.logger.warn(
+          `[fixEmptySections] Section "${s.name || `Section ${index + 1}`}" is empty - adding quota=5`,
+        );
         fixed = true;
         return {
           ...s,
@@ -1946,31 +2015,26 @@ export class ExamsService {
 
     const userId = user.userId || (user as any).sub || (user as any).id;
     const isAdmin = user.role === 'admin';
-    
+
     // Admin: جميع الامتحانات، Teacher: امتحاناته فقط
     // نستخدم $or للبحث في ownerId سواء كان ObjectId أو string
-    const query = isAdmin 
-      ? {} 
+    const query = isAdmin
+      ? {}
       : {
-          $or: [
-            { ownerId: new Types.ObjectId(userId) },
-            { ownerId: userId },
-          ],
+          $or: [{ ownerId: new Types.ObjectId(userId) }, { ownerId: userId }],
         };
     this.logger.log(
       `[findExamsWithEmptySections] userId: ${userId}, role: ${user.role}, isAdmin: ${isAdmin}`,
     );
     const allExams = await this.model.find(query).lean().exec();
-    this.logger.log(
-      `[findExamsWithEmptySections] Found ${allExams.length} exam(s)`,
-    );
-    
+    this.logger.log(`[findExamsWithEmptySections] Found ${allExams.length} exam(s)`);
+
     const examsWithEmptySections = allExams
       .map((exam: any) => {
         this.logger.log(
           `[findExamsWithEmptySections] Checking exam: ${exam._id?.toString() || String(exam._id)}, title: ${exam.title}, sections count: ${exam.sections?.length || 0}`,
         );
-        
+
         // التحقق من وجود sections
         if (!Array.isArray(exam.sections) || exam.sections.length === 0) {
           this.logger.warn(
@@ -2086,38 +2150,40 @@ export class ExamsService {
       const userId = user.userId || (user as any).sub || (user as any).id;
       const ownerIdStr = (exam as any).ownerId?.toString();
       const userIdStr = String(userId);
-      
-      const isOwner = ownerIdStr === userIdStr || 
-                      ((exam as any).ownerId && String((exam as any).ownerId) === userIdStr) ||
-                      (ownerIdStr && ownerIdStr === String(userId));
-      
+
+      const isOwner =
+        ownerIdStr === userIdStr ||
+        ((exam as any).ownerId && String((exam as any).ownerId) === userIdStr) ||
+        (ownerIdStr && ownerIdStr === String(userId));
+
       if (!isOwner) {
         throw new ForbiddenException('Only the exam owner can view this information');
       }
     }
 
-    const sectionsDetails = (exam as any).sections?.map((s: any, index: number) => {
-      const hasItems = Array.isArray(s?.items) && s.items.length > 0;
-      const hasQuota = typeof s?.quota === 'number' && s.quota > 0;
-      const isEmpty = !s || s === null || (!hasItems && !hasQuota);
+    const sectionsDetails =
+      (exam as any).sections?.map((s: any, index: number) => {
+        const hasItems = Array.isArray(s?.items) && s.items.length > 0;
+        const hasQuota = typeof s?.quota === 'number' && s.quota > 0;
+        const isEmpty = !s || s === null || (!hasItems && !hasQuota);
 
-      return {
-        index: index + 1,
-        name: s?.name || `Section ${index + 1}`,
-        isNull: !s || s === null,
-        hasItems,
-        itemsCount: s?.items?.length || 0,
-        hasQuota,
-        quota: s?.quota || null,
-        isEmpty,
-        reason: isEmpty 
-          ? (!s || s === null 
-              ? 'Section is null' 
-              : 'No items and no quota')
-          : 'Valid section',
-        raw: s,
-      };
-    }) || [];
+        return {
+          index: index + 1,
+          name: s?.name || `Section ${index + 1}`,
+          isNull: !s || s === null,
+          hasItems,
+          itemsCount: s?.items?.length || 0,
+          hasQuota,
+          quota: s?.quota || null,
+          isEmpty,
+          reason: isEmpty
+            ? !s || s === null
+              ? 'Section is null'
+              : 'No items and no quota'
+            : 'Valid section',
+          raw: s,
+        };
+      }) || [];
 
     return {
       examId: (exam as any)._id?.toString() || String((exam as any)._id),
@@ -2213,8 +2279,9 @@ export class ExamsService {
     }
 
     if (dto.classId) (doc as any).assignedClassId = new Types.ObjectId(dto.classId);
-    if (dto.studentIds) (doc as any).assignedStudentIds = dto.studentIds.map((id) => new Types.ObjectId(id));
-    
+    if (dto.studentIds)
+      (doc as any).assignedStudentIds = dto.studentIds.map((id) => new Types.ObjectId(id));
+
     // Normalize provider before saving
     if (doc.provider) {
       const normalized = normalizeProvider(doc.provider);
@@ -2222,10 +2289,13 @@ export class ExamsService {
         doc.provider = normalized;
       }
     }
-    
+
     await doc.save();
 
-    return { assignedClassId: (doc as any).assignedClassId, assignedStudentIds: (doc as any).assignedStudentIds };
+    return {
+      assignedClassId: (doc as any).assignedClassId,
+      assignedStudentIds: (doc as any).assignedStudentIds,
+    };
   }
 
   async removeExam(id: string, user: ReqUser, hard: boolean = false) {
@@ -2242,11 +2312,11 @@ export class ExamsService {
     // التحقق من وجود محاولات مرتبطة بالامتحان
     const AttemptModel = this.model.db.collection('attempts');
     const attemptCount = await AttemptModel.countDocuments({ examId: new Types.ObjectId(id) });
-    
+
     this.logger.log(
       `[removeExam] Exam deletion request - examId: ${id}, userId: ${userId}, role: ${user.role}, isOwner: ${isOwner}, hard: ${hard}, attemptCount: ${attemptCount}`,
     );
-    
+
     if (attemptCount > 0 && !hard) {
       // Soft delete: إذا كان هناك attempts، نطلب hard delete
       // ✅ Teacher يمكنه استخدام hard=true لحذف الامتحان وجميع المحاولات المرتبطة به
@@ -2272,7 +2342,9 @@ export class ExamsService {
       // حذف جميع المحاولات المرتبطة بالامتحان أولاً
       let deletedAttemptsCount = 0;
       if (attemptCount > 0) {
-        const deleteAttemptsResult = await AttemptModel.deleteMany({ examId: new Types.ObjectId(id) });
+        const deleteAttemptsResult = await AttemptModel.deleteMany({
+          examId: new Types.ObjectId(id),
+        });
         deletedAttemptsCount = deleteAttemptsResult.deletedCount || 0;
         this.logger.warn(
           `[removeExam] Deleted ${deletedAttemptsCount} attempt(s) related to exam ${id} (permanent deletion)`,
@@ -2295,7 +2367,7 @@ export class ExamsService {
       // ✅ Soft delete يحافظ على الامتحان والمحاولات المرتبطة به
       // المحاولات القديمة تبقى محفوظة مع snapshot للأسئلة والإجابات
       doc.status = ExamStatusEnum.ARCHIVED;
-      
+
       // Normalize provider before saving
       if (doc.provider) {
         const normalized = normalizeProvider(doc.provider);
@@ -2303,12 +2375,17 @@ export class ExamsService {
           doc.provider = normalized;
         }
       }
-      
+
       await doc.save();
       this.logger.log(
         `[removeExam] Exam archived successfully - examId: ${id}, attemptCount: ${attemptCount}`,
       );
-      return { message: 'Exam archived successfully', id: doc._id, status: doc.status, attemptCount };
+      return {
+        message: 'Exam archived successfully',
+        id: doc._id,
+        status: doc.status,
+        attemptCount,
+      };
     }
   }
 
@@ -2327,7 +2404,7 @@ export class ExamsService {
       throw new ForbiddenException('Only owner teacher or admin can archive');
 
     doc.status = ExamStatusEnum.ARCHIVED;
-    
+
     // Normalize provider before saving
     if (doc.provider) {
       const normalized = normalizeProvider(doc.provider);
@@ -2335,7 +2412,7 @@ export class ExamsService {
         doc.provider = normalized;
       }
     }
-    
+
     await doc.save();
 
     return {
@@ -2394,21 +2471,35 @@ export class ExamsService {
 
       // FIX: للأسئلة الخاصة بالولايات (Leben in Deutschland)
       const validStates = [
-        'Baden-Württemberg', 'Bayern', 'Berlin', 'Brandenburg',
-        'Bremen', 'Hamburg', 'Hessen', 'Mecklenburg-Vorpommern',
-        'Niedersachsen', 'Nordrhein-Westfalen', 'Rheinland-Pfalz',
-        'Saarland', 'Sachsen', 'Sachsen-Anhalt', 'Schleswig-Holstein', 'Thüringen'
+        'Baden-Württemberg',
+        'Bayern',
+        'Berlin',
+        'Brandenburg',
+        'Bremen',
+        'Hamburg',
+        'Hessen',
+        'Mecklenburg-Vorpommern',
+        'Niedersachsen',
+        'Nordrhein-Westfalen',
+        'Rheinland-Pfalz',
+        'Saarland',
+        'Sachsen',
+        'Sachsen-Anhalt',
+        'Schleswig-Holstein',
+        'Thüringen',
       ];
-      
+
       const examMainSkill = (exam as any).mainSkill;
       if (
-        (exam.provider === 'leben_in_deutschland' || exam.provider === 'Deutschland-in-Leben' || 
-         exam.provider?.toLowerCase() === 'lid' || exam.provider?.toLowerCase() === 'deutschland-in-leben') &&
+        (exam.provider === 'leben_in_deutschland' ||
+          exam.provider === 'Deutschland-in-Leben' ||
+          exam.provider?.toLowerCase() === 'lid' ||
+          exam.provider?.toLowerCase() === 'deutschland-in-leben') &&
         examMainSkill === 'leben_test'
       ) {
         // البحث عن ولاية في tags
         const stateTag = sectionAny.tags?.find((tag: string) => validStates.includes(tag));
-        
+
         if (stateTag) {
           // هذا قسم خاص بالولاية - نضيف فلتر على usageCategory و state
           baseQuery.usageCategory = 'state_specific';
@@ -2437,7 +2528,11 @@ export class ExamsService {
         // بدون توزيع صعوبة
         const available = await QuestionModel.countDocuments(baseQuery);
         sectionInfo.totalAvailable = available;
-        if (sectionAny?.quota && typeof sectionAny.quota === 'number' && available < sectionAny.quota) {
+        if (
+          sectionAny?.quota &&
+          typeof sectionAny.quota === 'number' &&
+          available < sectionAny.quota
+        ) {
           sectionInfo.issues.push(
             `Need ${sectionAny.quota} questions, but only ${available} available`,
           );
@@ -2448,7 +2543,12 @@ export class ExamsService {
       debugInfo.totalQuestionsAvailable += sectionInfo.totalAvailable;
 
       if (sectionInfo.issues.length > 0) {
-        debugInfo.issues.push(...sectionInfo.issues.map((i: string) => `Section "${sectionInfo.name || sectionAny?.name || sectionAny?.title || 'Unnamed'}": ${i}`));
+        debugInfo.issues.push(
+          ...sectionInfo.issues.map(
+            (i: string) =>
+              `Section "${sectionInfo.name || sectionAny?.name || sectionAny?.title || 'Unnamed'}": ${i}`,
+          ),
+        );
       }
     }
 
@@ -2464,7 +2564,11 @@ export class ExamsService {
    */
   private generateSectionKey(title?: string, skill?: string, teilNumber?: number): string {
     if (skill && teilNumber) return `${skill}_teil${teilNumber}`;
-    if (title) return title.toLowerCase().replace(/[^a-z0-9äöüß]+/g, '_').replace(/(^_|_$)/g, '');
+    if (title)
+      return title
+        .toLowerCase()
+        .replace(/[^a-z0-9äöüß]+/g, '_')
+        .replace(/(^_|_$)/g, '');
     return `section_${Date.now()}`;
   }
 
@@ -2501,8 +2605,8 @@ export class ExamsService {
     const key = dto.key || this.generateSectionKey(dto.title, dto.skill, dto.teilNumber);
 
     // التحقق من عدم تكرار الـ key
-    const existingKeys = (exam.sections || []).map((s: any) =>
-      s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber),
+    const existingKeys = (exam.sections || []).map(
+      (s: any) => s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber),
     );
     if (existingKeys.includes(key)) {
       throw new BadRequestException(`Section key "${key}" already exists in this exam`);
@@ -2557,7 +2661,9 @@ export class ExamsService {
     if (dto.key && dto.key !== sectionKey) {
       const existingKeys = exam.sections
         .filter((_: any, i: number) => i !== sectionIndex)
-        .map((s: any) => s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber));
+        .map(
+          (s: any) => s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber),
+        );
       if (existingKeys.includes(dto.key)) {
         throw new BadRequestException(`Section key "${dto.key}" already exists`);
       }
@@ -2566,7 +2672,10 @@ export class ExamsService {
     const section = exam.sections[sectionIndex] as any;
 
     // دمج التحديثات
-    if (dto.title !== undefined) { section.title = dto.title; section.name = dto.title; }
+    if (dto.title !== undefined) {
+      section.title = dto.title;
+      section.name = dto.title;
+    }
     if (dto.key !== undefined) section.key = dto.key;
     if (dto.description !== undefined) section.description = dto.description;
     if (dto.skill !== undefined) section.skill = dto.skill;
@@ -2700,7 +2809,9 @@ export class ExamsService {
 
     const sections = (exam.sections || []).map((s: any, index: number) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
-      const publishedItems = (s.items || []).filter((item: any) => questionsMap.has(item.questionId?.toString()));
+      const publishedItems = (s.items || []).filter((item: any) =>
+        questionsMap.has(item.questionId?.toString()),
+      );
       return {
         key,
         title: s.title || s.name,
@@ -2729,7 +2840,10 @@ export class ExamsService {
     });
 
     // ترتيب حسب order ثم teilNumber
-    sections.sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0));
+    sections.sort(
+      (a: any, b: any) =>
+        (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0),
+    );
 
     return { examId, title: exam.title, sections };
   }
@@ -2737,7 +2851,12 @@ export class ExamsService {
   /**
    * إضافة سؤال لقسم معين
    */
-  async addQuestionToSection(examId: string, sectionKey: string, dto: AddQuestionToSectionDto, user: ReqUser) {
+  async addQuestionToSection(
+    examId: string,
+    sectionKey: string,
+    dto: AddQuestionToSectionDto,
+    user: ReqUser,
+  ) {
     this.assertTeacherOrAdmin(user);
 
     const exam = await this.model.findById(examId);
@@ -2760,7 +2879,9 @@ export class ExamsService {
       (item: any) => item.questionId?.toString() === dto.questionId,
     );
     if (alreadyExists) {
-      throw new BadRequestException(`Question ${dto.questionId} already exists in section "${sectionKey}"`);
+      throw new BadRequestException(
+        `Question ${dto.questionId} already exists in section "${sectionKey}"`,
+      );
     }
 
     section.items = section.items || [];
@@ -2779,7 +2900,9 @@ export class ExamsService {
       sectionTitle: section.title || section.name,
     });
 
-    this.logger.log(`[addQuestionToSection] Added question ${dto.questionId} to section "${sectionKey}" in exam ${examId}`);
+    this.logger.log(
+      `[addQuestionToSection] Added question ${dto.questionId} to section "${sectionKey}" in exam ${examId}`,
+    );
     return { questionId: dto.questionId, points: dto.points ?? 1, sectionKey };
   }
 
@@ -2818,7 +2941,11 @@ export class ExamsService {
 
     // فقرة القراءة المشتركة (اختياري - لأسئلة Lesen) أو بلوكات محتوى (Sprechen)
     let passageId: Types.ObjectId | null = null;
-    if (dto.readingPassage?.trim() || (dto.readingCards && dto.readingCards.length > 0) || (dto.contentBlocks && dto.contentBlocks.length > 0)) {
+    if (
+      dto.readingPassage?.trim() ||
+      (dto.readingCards && dto.readingCards.length > 0) ||
+      (dto.contentBlocks && dto.contentBlocks.length > 0)
+    ) {
       passageId = new Types.ObjectId();
     }
 
@@ -2841,9 +2968,15 @@ export class ExamsService {
 
         const contentData = {
           ...(clipId && { listeningClipId: clipId }),
-          ...(dto.readingPassage?.trim() ? { readingPassage: dto.readingPassage.trim() } : { readingPassage: null }),
-          ...(dto.readingPassageBgColor?.trim() ? { readingPassageBgColor: dto.readingPassageBgColor.trim() } : {}),
-          ...(dto.readingCards && dto.readingCards.length > 0 ? { readingCards: dto.readingCards } : { readingCards: [] }),
+          ...(dto.readingPassage?.trim()
+            ? { readingPassage: dto.readingPassage.trim() }
+            : { readingPassage: null }),
+          ...(dto.readingPassageBgColor?.trim()
+            ? { readingPassageBgColor: dto.readingPassageBgColor.trim() }
+            : {}),
+          ...(dto.readingCards && dto.readingCards.length > 0
+            ? { readingCards: dto.readingCards }
+            : { readingCards: [] }),
           ...(dto.cardsLayout ? { cardsLayout: dto.cardsLayout } : {}),
           ...(dto.contentBlocks && dto.contentBlocks.length > 0
             ? { contentBlocks: dto.contentBlocks.sort((a, b) => a.order - b.order) }
@@ -2854,7 +2987,10 @@ export class ExamsService {
         const doc = await this.questionModel.create({
           prompt: '—',
           qType: QuestionType.MCQ,
-          options: [{ text: '✓', isCorrect: true }, { text: '—', isCorrect: false }],
+          options: [
+            { text: '✓', isCorrect: true },
+            { text: '—', isCorrect: false },
+          ],
           contentOnly: true,
           ...(exam.provider && { provider: exam.provider }),
           ...contentData,
@@ -2870,7 +3006,9 @@ export class ExamsService {
           examId: new Types.ObjectId(examId),
           sectionTitle: section.title || section.name,
         });
-        this.logger.log(`[bulkCreateAndAddToSection] Created new contentOnly question ${doc._id} in section "${section.title || section.name}"`);
+        this.logger.log(
+          `[bulkCreateAndAddToSection] Created new contentOnly question ${doc._id} in section "${section.title || section.name}"`,
+        );
         results.push({
           index: 0,
           questionId: doc._id,
@@ -2887,7 +3025,12 @@ export class ExamsService {
     for (let i = 0; i < questions.length; i++) {
       try {
         const question = questions[i];
-        const { examId: _ignoreExamId, listeningClipId: _ignoreClipId, points, ...questionData } = question as any;
+        const {
+          examId: _ignoreExamId,
+          listeningClipId: _ignoreClipId,
+          points,
+          ...questionData
+        } = question as any;
 
         const doc = await this.questionModel.create({
           ...questionData,
@@ -2896,12 +3039,16 @@ export class ExamsService {
           ...(passageId && {
             readingPassageId: passageId,
             ...(dto.readingPassage?.trim() && { readingPassage: dto.readingPassage.trim() }),
-            ...(dto.readingPassageBgColor?.trim() && { readingPassageBgColor: dto.readingPassageBgColor.trim() }),
-            ...(dto.readingCards && dto.readingCards.length > 0 && { readingCards: dto.readingCards }),
-            ...(dto.cardsLayout && { cardsLayout: dto.cardsLayout }),
-            ...(dto.contentBlocks && dto.contentBlocks.length > 0 && {
-              contentBlocks: dto.contentBlocks.sort((a, b) => a.order - b.order),
+            ...(dto.readingPassageBgColor?.trim() && {
+              readingPassageBgColor: dto.readingPassageBgColor.trim(),
             }),
+            ...(dto.readingCards &&
+              dto.readingCards.length > 0 && { readingCards: dto.readingCards }),
+            ...(dto.cardsLayout && { cardsLayout: dto.cardsLayout }),
+            ...(dto.contentBlocks &&
+              dto.contentBlocks.length > 0 && {
+                contentBlocks: dto.contentBlocks.sort((a, b) => a.order - b.order),
+              }),
           }),
           status: question.status ?? QuestionStatus.PUBLISHED,
           createdBy: userId,
@@ -2920,14 +3067,16 @@ export class ExamsService {
           // INTERACTIVE_TEXT fields
           ...(question.qType === QuestionType.INTERACTIVE_TEXT && {
             ...(question.text && { text: question.text }),
-            ...(question.interactiveBlanks && Array.isArray(question.interactiveBlanks) && question.interactiveBlanks.length > 0 && {
-              interactiveBlanks: question.interactiveBlanks.map((blank: any) => {
-                const type = blank.type === 'select' ? 'dropdown' : blank.type;
-                const options = blank.options || blank.choices;
-                const choices = blank.choices || blank.options;
-                return { ...blank, type, options, choices };
+            ...(question.interactiveBlanks &&
+              Array.isArray(question.interactiveBlanks) &&
+              question.interactiveBlanks.length > 0 && {
+                interactiveBlanks: question.interactiveBlanks.map((blank: any) => {
+                  const type = blank.type === 'select' ? 'dropdown' : blank.type;
+                  const options = blank.options || blank.choices;
+                  const choices = blank.choices || blank.options;
+                  return { ...blank, type, options, choices };
+                }),
               }),
-            }),
             ...(question.interactiveReorder && { interactiveReorder: question.interactiveReorder }),
           }),
         });
@@ -2987,7 +3136,12 @@ export class ExamsService {
   /**
    * حذف سؤال من قسم
    */
-  async removeQuestionFromSection(examId: string, sectionKey: string, questionId: string, user: ReqUser) {
+  async removeQuestionFromSection(
+    examId: string,
+    sectionKey: string,
+    questionId: string,
+    user: ReqUser,
+  ) {
     this.assertTeacherOrAdmin(user);
 
     const exam = await this.model.findById(examId);
@@ -3013,14 +3167,22 @@ export class ExamsService {
     exam.version = (exam.version || 1) + 1;
     await exam.save();
 
-    this.logger.log(`[removeQuestionFromSection] Removed question ${questionId} from section "${sectionKey}" in exam ${examId}`);
+    this.logger.log(
+      `[removeQuestionFromSection] Removed question ${questionId} from section "${sectionKey}" in exam ${examId}`,
+    );
     return { removed: true, questionId, sectionKey };
   }
 
   /**
    * تحديث نقاط سؤال في قسم
    */
-  async updateQuestionPoints(examId: string, sectionKey: string, questionId: string, points: number, user: ReqUser) {
+  async updateQuestionPoints(
+    examId: string,
+    sectionKey: string,
+    questionId: string,
+    points: number,
+    user: ReqUser,
+  ) {
     this.assertTeacherOrAdmin(user);
 
     const exam = await this.model.findById(examId);
@@ -3046,14 +3208,21 @@ export class ExamsService {
     exam.version = (exam.version || 1) + 1;
     await exam.save();
 
-    this.logger.log(`[updateQuestionPoints] Updated points to ${points} for question ${questionId} in section "${sectionKey}" of exam ${examId}`);
+    this.logger.log(
+      `[updateQuestionPoints] Updated points to ${points} for question ${questionId} in section "${sectionKey}" of exam ${examId}`,
+    );
     return { questionId, points, sectionKey };
   }
 
   /**
    * إعادة ترتيب الأسئلة في قسم
    */
-  async reorderSectionQuestions(examId: string, sectionKey: string, dto: ReorderSectionQuestionsDto, user: ReqUser) {
+  async reorderSectionQuestions(
+    examId: string,
+    sectionKey: string,
+    dto: ReorderSectionQuestionsDto,
+    user: ReqUser,
+  ) {
     this.assertTeacherOrAdmin(user);
 
     const exam = await this.model.findById(examId);
@@ -3072,7 +3241,9 @@ export class ExamsService {
     const newIds = dto.questionIds;
 
     if (currentIds.length !== newIds.length) {
-      throw new BadRequestException('questionIds count must match current questions count in section');
+      throw new BadRequestException(
+        'questionIds count must match current questions count in section',
+      );
     }
 
     for (const id of newIds) {
@@ -3089,7 +3260,9 @@ export class ExamsService {
     exam.version = (exam.version || 1) + 1;
     await exam.save();
 
-    this.logger.log(`[reorderSectionQuestions] Reordered questions in section "${sectionKey}" in exam ${examId}`);
+    this.logger.log(
+      `[reorderSectionQuestions] Reordered questions in section "${sectionKey}" in exam ${examId}`,
+    );
     return section.items;
   }
 
@@ -3121,17 +3294,18 @@ export class ExamsService {
     }
 
     // جلب الأسئلة لحساب عدد التمارين (Übungen) حسب listeningClipId
-    let allQuestionIds = (exam.sections || [])
+    const allQuestionIds = (exam.sections || [])
       .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
       .filter(Boolean);
 
     // امتحان Leben: لا أقسام — كل الأسئلة تعرض مجتمعة بدون تقسيم
-    const isLebenExam = (exam as any).examCategory === 'leben_exam' || (exam as any).examType === 'leben_test';
+    const isLebenExam =
+      (exam as any).examCategory === 'leben_exam' || (exam as any).examType === 'leben_test';
     if (isLebenExam) {
       return { sections: [] };
     }
 
-    let questionClipMap = new Map<string, string | null>();
+    const questionClipMap = new Map<string, string | null>();
     const publishedQuestionIds = new Set<string>();
     if (allQuestionIds.length > 0) {
       const allQuestions = await this.questionModel
@@ -3162,10 +3336,22 @@ export class ExamsService {
         if (withKey.length > 0) {
           publishedItems = withKey.map((ai: any) => ({ questionId: ai.questionId }));
         } else {
-          const sortedSections = [...(exam.sections || [])].sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0));
-          const sectionIndex = sortedSections.findIndex((sec: any) => (sec.key || this.generateSectionKey(sec.title, sec.skill, sec.teilNumber)) === key);
-          if (sectionIndex === 0) publishedItems = attemptItems.slice(0, 30).map((ai: any) => ({ questionId: ai.questionId }));
-          else if (sectionIndex === 1) publishedItems = attemptItems.slice(30, 33).map((ai: any) => ({ questionId: ai.questionId }));
+          const sortedSections = [...(exam.sections || [])].sort(
+            (a: any, b: any) =>
+              (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0),
+          );
+          const sectionIndex = sortedSections.findIndex(
+            (sec: any) =>
+              (sec.key || this.generateSectionKey(sec.title, sec.skill, sec.teilNumber)) === key,
+          );
+          if (sectionIndex === 0)
+            publishedItems = attemptItems
+              .slice(0, 30)
+              .map((ai: any) => ({ questionId: ai.questionId }));
+          else if (sectionIndex === 1)
+            publishedItems = attemptItems
+              .slice(30, 33)
+              .map((ai: any) => ({ questionId: ai.questionId }));
         }
       }
       const questionCount = publishedItems.length;
@@ -3189,21 +3375,25 @@ export class ExamsService {
         const sectionItemIds = publishedItems.map((item: any) => item.questionId?.toString());
         answered = attemptItems.filter((ai: any) => {
           if (ai.sectionKey === key) {
-            return ai.studentAnswerText !== undefined ||
+            return (
+              ai.studentAnswerText !== undefined ||
               ai.studentAnswerIndexes !== undefined ||
               ai.studentAnswerBoolean !== undefined ||
               ai.studentAnswerMatch !== undefined ||
               ai.studentReorderAnswer !== undefined ||
-              ai.studentInteractiveAnswers !== undefined;
+              ai.studentInteractiveAnswers !== undefined
+            );
           }
           // fallback: تطابق بواسطة questionId
           if (!ai.sectionKey && sectionItemIds.includes(ai.questionId?.toString())) {
-            return ai.studentAnswerText !== undefined ||
+            return (
+              ai.studentAnswerText !== undefined ||
               ai.studentAnswerIndexes !== undefined ||
               ai.studentAnswerBoolean !== undefined ||
               ai.studentAnswerMatch !== undefined ||
               ai.studentReorderAnswer !== undefined ||
-              ai.studentInteractiveAnswers !== undefined;
+              ai.studentInteractiveAnswers !== undefined
+            );
           }
           return false;
         }).length;
@@ -3227,7 +3417,10 @@ export class ExamsService {
     });
 
     // ترتيب حسب order ثم teilNumber
-    sections.sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0));
+    sections.sort(
+      (a: any, b: any) =>
+        (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0),
+    );
 
     return {
       examId: (exam as any)._id,
@@ -3250,7 +3443,8 @@ export class ExamsService {
     let items: any[] = section.items || [];
 
     // امتحان Leben: الأسئلة تكون في المحاولة فقط — نأخذها من آخر محاولة للطالب
-    const isLebenExam = (exam as any).examCategory === 'leben_exam' || (exam as any).examType === 'leben_test';
+    const isLebenExam =
+      (exam as any).examCategory === 'leben_exam' || (exam as any).examType === 'leben_test';
     if (items.length === 0 && isLebenExam && userId) {
       const latestAttempt = await this.attemptModel
         .findOne({ examId: new Types.ObjectId(examId), studentId: new Types.ObjectId(userId) })
@@ -3262,11 +3456,25 @@ export class ExamsService {
         if (withKey.length > 0) {
           items = withKey.map((ai: any) => ({ questionId: ai.questionId }));
         } else {
-          const sortedSections = [...(exam.sections || [])].sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0));
-          const secKey = section.key || this.generateSectionKey(section.title || section.name, section.skill, section.teilNumber);
-          const sectionIndex = sortedSections.findIndex((s: any) => (s.key || this.generateSectionKey(s.title, s.skill, s.teilNumber)) === secKey);
-          if (sectionIndex === 0) items = attemptItems.slice(0, 30).map((ai: any) => ({ questionId: ai.questionId }));
-          else if (sectionIndex === 1) items = attemptItems.slice(30, 33).map((ai: any) => ({ questionId: ai.questionId }));
+          const sortedSections = [...(exam.sections || [])].sort(
+            (a: any, b: any) =>
+              (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0),
+          );
+          const secKey =
+            section.key ||
+            this.generateSectionKey(
+              section.title || section.name,
+              section.skill,
+              section.teilNumber,
+            );
+          const sectionIndex = sortedSections.findIndex(
+            (s: any) =>
+              (s.key || this.generateSectionKey(s.title, s.skill, s.teilNumber)) === secKey,
+          );
+          if (sectionIndex === 0)
+            items = attemptItems.slice(0, 30).map((ai: any) => ({ questionId: ai.questionId }));
+          else if (sectionIndex === 1)
+            items = attemptItems.slice(30, 33).map((ai: any) => ({ questionId: ai.questionId }));
         }
       }
     }
@@ -3293,14 +3501,16 @@ export class ExamsService {
     const questionIds = items.map((item: any) => item.questionId);
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds }, status: 'published' })
-      .select('prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingPassageBgColor readingCards cardsLayout contentBlocks contentOnly sampleAnswer minWords maxWords')
+      .select(
+        'prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingPassageBgColor readingCards cardsLayout contentBlocks contentOnly sampleAnswer minWords maxWords',
+      )
       .populate('listeningClipId', 'title audioUrl audioKey teil')
       .lean();
 
     const questionMap = new Map(questions.map((q: any) => [q._id.toString(), q]));
 
     // جلب بيانات التقدم من آخر محاولة
-    let attemptItemMap = new Map<string, any>();
+    const attemptItemMap = new Map<string, any>();
     if (userId) {
       const latestAttempt = await this.attemptModel
         .findOne({
@@ -3336,7 +3546,19 @@ export class ExamsService {
 
     // تجميع الأسئلة في تمارين (Übungen) حسب listeningClipId أو readingPassageId
     // الأسئلة بنفس الـ groupId = تمرين واحد (صوت مشترك أو فقرة مشتركة + أسئلة)
-    const exerciseMap = new Map<string, { type: 'audio' | 'passage'; clipData: any; passageText: string | null; passageBgColor: string | null; readingCards: any[] | null; cardsLayout: string | null; contentBlocks: any[] | null; questions: any[] }>();
+    const exerciseMap = new Map<
+      string,
+      {
+        type: 'audio' | 'passage';
+        clipData: any;
+        passageText: string | null;
+        passageBgColor: string | null;
+        readingCards: any[] | null;
+        cardsLayout: string | null;
+        contentBlocks: any[] | null;
+        questions: any[];
+      }
+    >();
     const exerciseOrder: string[] = []; // ترتيب التمارين حسب الظهور الأول
     const ungroupedQuestions: any[] = [];
 

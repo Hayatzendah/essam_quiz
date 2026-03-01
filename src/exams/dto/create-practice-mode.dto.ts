@@ -22,4 +22,3 @@ export class CreatePracticeModeDto {
   @IsString()
   state?: string;
 }
-

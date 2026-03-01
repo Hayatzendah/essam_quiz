@@ -104,7 +104,8 @@ export class GrammarTopicsController {
   @Roles('admin', 'teacher')
   @ApiOperation({
     summary: 'Link grammar topic with an exam',
-    description: 'ربط موضوع قواعد نحوية مع امتحان - للمدرسين والأدمن فقط. يدعم كلاً من slug و topicId',
+    description:
+      'ربط موضوع قواعد نحوية مع امتحان - للمدرسين والأدمن فقط. يدعم كلاً من slug و topicId',
   })
   @ApiResponse({
     status: 200,

@@ -33,8 +33,3 @@ describe('AttemptsService - Partial Credit', () => {
     expect(normalizedStudent).toBe(normalizedCorrect);
   });
 });
-
-
-
-
-

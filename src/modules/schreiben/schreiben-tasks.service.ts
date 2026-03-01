@@ -1,19 +1,8 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import {
-  SchreibenTask,
-  SchreibenTaskDocument,
-} from './schemas/schreiben-task.schema';
-import {
-  SchreibenBlockType,
-  FormFieldType,
-} from './schemas/schreiben-content-block.schema';
+import { SchreibenTask, SchreibenTaskDocument } from './schemas/schreiben-task.schema';
+import { SchreibenBlockType, FormFieldType } from './schemas/schreiben-content-block.schema';
 import { CreateSchreibenTaskDto } from './dto/create-schreiben-task.dto';
 import { UpdateSchreibenTaskDto } from './dto/update-schreiben-task.dto';
 import { normalizeAnswer } from '../../common/utils/normalize.util';
@@ -61,10 +50,7 @@ export class SchreibenTasksService {
     if (query?.provider) filter.provider = query.provider;
     if (query?.status) filter.status = query.status;
 
-    return this.model
-      .find(filter)
-      .sort({ level: 1, position: 1, title: 1 })
-      .lean();
+    return this.model.find(filter).sort({ level: 1, position: 1, title: 1 }).lean();
   }
 
   // الحصول على مهمة واحدة
@@ -95,9 +81,7 @@ export class SchreibenTasksService {
       this.validateContentBlocks(updateData.contentBlocks);
     }
 
-    const task = await this.model
-      .findByIdAndUpdate(id, updateData, { new: true })
-      .lean();
+    const task = await this.model.findByIdAndUpdate(id, updateData, { new: true }).lean();
 
     if (!task) {
       throw new NotFoundException('المهمة غير موجودة');
@@ -178,18 +162,12 @@ export class SchreibenTasksService {
   }
 
   // إلغاء ربط مهمة الكتابة بامتحان
-  async unlinkExam(
-    id: string,
-  ): Promise<{ success: boolean; message: string }> {
+  async unlinkExam(id: string): Promise<{ success: boolean; message: string }> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('معرف المهمة غير صالح');
     }
 
-    const task = await this.model.findByIdAndUpdate(
-      id,
-      { $unset: { examId: 1 } },
-      { new: true },
-    );
+    const task = await this.model.findByIdAndUpdate(id, { $unset: { examId: 1 } }, { new: true });
 
     if (!task) {
       throw new NotFoundException('المهمة غير موجودة');
@@ -228,7 +206,10 @@ export class SchreibenTasksService {
             isStudentField: field.isStudentField,
             value: field.value || null,
             correctAnswers: field.correctAnswers || null,
-            hasCorrectAnswer: !!(field.value || (field.correctAnswers && field.correctAnswers.length > 0)),
+            hasCorrectAnswer: !!(
+              field.value ||
+              (field.correctAnswers && field.correctAnswers.length > 0)
+            ),
             frontendId: `field_${formBlockCounter}_${fi}`, // الـ ID اللي بيستخدمه الفرونت
           });
         }
@@ -271,8 +252,7 @@ export class SchreibenTasksService {
             const posMatch = String(ans.fieldId).match(/^field_(\d+)_(\d+)$/);
             if (posMatch) {
               matchesByPosition =
-                formBlockCounter === parseInt(posMatch[1], 10) &&
-                fi === parseInt(posMatch[2], 10);
+                formBlockCounter === parseInt(posMatch[1], 10) && fi === parseInt(posMatch[2], 10);
             }
 
             if (matchesById || matchesByPosition) {
@@ -330,8 +310,7 @@ export class SchreibenTasksService {
           const posMatch = String(fieldId).match(/^field_(\d+)_(\d+)$/);
           if (posMatch) {
             matchesByPosition =
-              formBlockCounter === parseInt(posMatch[1], 10) &&
-              fi === parseInt(posMatch[2], 10);
+              formBlockCounter === parseInt(posMatch[1], 10) && fi === parseInt(posMatch[2], 10);
           }
 
           if (matchesById || matchesByPosition) {
@@ -364,10 +343,7 @@ export class SchreibenTasksService {
   }
 
   // تحديث بلوكات المحتوى فقط
-  async updateContentBlocks(
-    id: string,
-    contentBlocks: any[],
-  ): Promise<SchreibenTask> {
+  async updateContentBlocks(id: string, contentBlocks: any[]): Promise<SchreibenTask> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('معرف غير صالح');
     }
@@ -455,11 +431,7 @@ export class SchreibenTasksService {
   }
 
   // فحص إجابة حقل واحد مباشرة (بدون attempt)
-  async checkField(
-    taskId: string,
-    fieldId: string,
-    answer: string | string[],
-  ) {
+  async checkField(taskId: string, fieldId: string, answer: string | string[]) {
     if (!Types.ObjectId.isValid(taskId)) {
       throw new BadRequestException('معرف المهمة غير صالح');
     }
@@ -470,7 +442,8 @@ export class SchreibenTasksService {
     }
 
     // جمع الحقول مع معلومات الموقع
-    const allFieldsWithPosition: Array<{ field: any; formBlockIndex: number; fieldIndex: number }> = [];
+    const allFieldsWithPosition: Array<{ field: any; formBlockIndex: number; fieldIndex: number }> =
+      [];
     let formBlockCounter = 0;
     for (const block of task.contentBlocks || []) {
       if (block.type === 'form' && (block.data as any)?.fields) {
@@ -508,7 +481,7 @@ export class SchreibenTasksService {
         const blockIdx = parseInt(match[1], 10);
         const fieldIdx = parseInt(match[2], 10);
         const found = allFieldsWithPosition.find(
-          e => e.formBlockIndex === blockIdx && e.fieldIndex === fieldIdx,
+          (e) => e.formBlockIndex === blockIdx && e.fieldIndex === fieldIdx,
         );
         if (found) targetField = found.field;
       }
@@ -526,7 +499,9 @@ export class SchreibenTasksService {
 
     // تحويل الإجابة لصيغة موحدة
     const studentStr: string = Array.isArray(answer) ? answer[0] || '' : String(answer || '');
-    const studentArr: string[] = Array.isArray(answer) ? answer.map(String) : [String(answer || '')];
+    const studentArr: string[] = Array.isArray(answer)
+      ? answer.map(String)
+      : [String(answer || '')];
 
     let isCorrect = false;
     let correctAnswer: string | string[] = '';
@@ -567,10 +542,18 @@ export class SchreibenTasksService {
       case 'multiselect':
       case FormFieldType.MULTISELECT: {
         const correctArr = getCorrectArray(targetField);
-        correctAnswer = correctArr.length > 0 ? correctArr : (getCorrectValue(targetField) ? [getCorrectValue(targetField)] : []);
+        correctAnswer =
+          correctArr.length > 0
+            ? correctArr
+            : getCorrectValue(targetField)
+              ? [getCorrectValue(targetField)]
+              : [];
         if (Array.isArray(correctAnswer) && correctAnswer.length > 0) {
-          const normStudent = studentArr.filter(a => a.trim()).map(a => normalizeAnswer(a)).sort();
-          const normCorrect = (correctAnswer as string[]).map(a => normalizeAnswer(a)).sort();
+          const normStudent = studentArr
+            .filter((a) => a.trim())
+            .map((a) => normalizeAnswer(a))
+            .sort();
+          const normCorrect = (correctAnswer as string[]).map((a) => normalizeAnswer(a)).sort();
           isCorrect =
             normStudent.length === normCorrect.length &&
             normStudent.every((a, i) => a === normCorrect[i]);
@@ -628,9 +611,7 @@ export class SchreibenTasksService {
 
       // التحقق من تكرار معرفات الحقول
       if (fieldIds.has(field.id)) {
-        throw new BadRequestException(
-          `معرف الحقل مكرر في الاستمارة ${block.id}: ${field.id}`,
-        );
+        throw new BadRequestException(`معرف الحقل مكرر في الاستمارة ${block.id}: ${field.id}`);
       }
       fieldIds.add(field.id);
 

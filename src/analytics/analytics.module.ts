@@ -21,8 +21,3 @@ import { User, UserSchema } from '../users/schemas/user.schema';
   exports: [AnalyticsService],
 })
 export class AnalyticsModule {}
-
-
-
-
-

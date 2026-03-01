@@ -5,7 +5,10 @@ import { ExamsController } from './exams.controller';
 import { Exam, ExamSchema } from './schemas/exam.schema';
 import { Question, QuestionSchema } from '../questions/schemas/question.schema';
 import { Attempt, AttemptSchema } from '../attempts/schemas/attempt.schema';
-import { ListeningClip, ListeningClipSchema } from '../listening-clips/schemas/listening-clip.schema';
+import {
+  ListeningClip,
+  ListeningClipSchema,
+} from '../listening-clips/schemas/listening-clip.schema';
 import { AuthModule } from '../auth/auth.module';
 import { AttemptsModule } from '../attempts/attempts.module';
 import { MediaModule } from '../modules/media/media.module';

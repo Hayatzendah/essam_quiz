@@ -25,4 +25,3 @@ export class UpdateVocabularyTopicDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

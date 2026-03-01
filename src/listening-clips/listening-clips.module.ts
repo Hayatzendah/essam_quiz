@@ -8,9 +8,7 @@ import { MediaModule } from '../modules/media/media.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: ListeningClip.name, schema: ListeningClipSchema },
-    ]),
+    MongooseModule.forFeature([{ name: ListeningClip.name, schema: ListeningClipSchema }]),
     MediaModule,
   ],
   controllers: [ListeningClipsController],
@@ -18,4 +16,3 @@ import { MediaModule } from '../modules/media/media.module';
   exports: [ListeningClipsService],
 })
 export class ListeningClipsModule {}
-

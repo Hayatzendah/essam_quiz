@@ -87,4 +87,3 @@ export class VocabularyTopicsController {
     return this.topicsService.remove(id);
   }
 }
-

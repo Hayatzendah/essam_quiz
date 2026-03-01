@@ -21,7 +21,11 @@ import { diskStorage } from 'multer';
 import { extname, join, basename, resolve } from 'path';
 import * as fs from 'fs';
 import type { Response } from 'express';
-import { audioFileFilter, getDefaultAudioExtension, isAllowedAudioFile } from '../../common/utils/audio-file-validator.util';
+import {
+  audioFileFilter,
+  getDefaultAudioExtension,
+  isAllowedAudioFile,
+} from '../../common/utils/audio-file-validator.util';
 
 const storage = multer.memoryStorage();
 
@@ -34,21 +38,19 @@ function fileFilter(_req: any, file: Express.Multer.File, cb: multer.FileFilterC
 
 @Controller('media')
 export class MediaController {
-  constructor(
-    private readonly media: MediaService,
-  ) {}
+  constructor(private readonly media: MediaService) {}
 
   @Get('mock/*path')
   async getMockFile(@Param('path') path: string, @Req() req: any, @Res() res: Response) {
     // 🔥 استخراج الـ path من الـ URL مباشرة لتجنب مشاكل parsing
     // NestJS @Param('path') قد لا يعمل بشكل صحيح مع slashes متعددة وأحرف خاصة
     let cleanPath = '';
-    
+
     // محاولة استخراج الـ path من req.originalUrl أو req.url
     const originalUrl = req.originalUrl || req.url || '';
     console.log(`[Mock Endpoint] Original URL: ${originalUrl}`);
     console.log(`[Mock Endpoint] Param path: ${JSON.stringify(path)}`);
-    
+
     // استخراج الـ path من الـ URL بعد /media/mock/ - استخدام non-greedy match
     const match = originalUrl.match(/\/media\/mock\/(.+?)(?:\?|$)/);
     if (match && match[1]) {
@@ -60,11 +62,11 @@ export class MediaController {
       cleanPath = (path || '').replace(/,/g, '/');
       console.log(`[Mock Endpoint] Using param path: ${cleanPath}`);
     }
-    
+
     // إزالة query parameters إذا كانت موجودة
     cleanPath = cleanPath.split('?')[0];
     console.log(`[Mock Endpoint] Path before decode: ${JSON.stringify(cleanPath)}`);
-    
+
     try {
       // محاولة decode URI component - مهم جداً للأحرف الخاصة
       // قد يكون الـ path encoded مرتين، لذا نحاول decode مرتين
@@ -85,29 +87,29 @@ export class MediaController {
       // إذا فشل decode، نستخدم الـ path الأصلي
       console.warn(`[Mock Endpoint] Failed to decode path: ${cleanPath}, error: ${e.message}`);
     }
-    
+
     // إصلاح أي فاصلة بدل slash (مشكلة شائعة في parsing)
     cleanPath = cleanPath.replace(/,/g, '/');
-    
+
     // إزالة أي مسافات زائدة في البداية والنهاية
     cleanPath = cleanPath.trim();
-    
+
     // إصلاح أي double slashes
     cleanPath = cleanPath.replace(/\/+/g, '/');
-    
+
     // إزالة leading slash إذا كان موجوداً
     cleanPath = cleanPath.replace(/^\/+/, '');
-    
+
     // Logging للتحقق من المسار
     console.log(`[Mock Endpoint] Cleaned path: ${JSON.stringify(cleanPath)}`);
-    
+
     // 🔥 محاولة جلب الصورة الحقيقية من uploads folder أولاً
     // الـ path يأتي كـ "images/ولايات/..." أو "images/questions/..."
     const filePath = resolve(process.cwd(), 'uploads', cleanPath);
-    
+
     console.log(`[Mock Endpoint] Resolved file path: ${filePath}`);
     console.log(`[Mock Endpoint] File exists: ${fs.existsSync(filePath)}`);
-    
+
     // التحقق من وجود الملف محلياً
     if (fs.existsSync(filePath)) {
       try {
@@ -126,12 +128,12 @@ export class MediaController {
           '.mp4': 'video/mp4',
           '.webm': 'video/webm',
         };
-        
+
         const contentType = mimeTypes[ext] || 'application/octet-stream';
         res.setHeader('Content-Type', contentType);
-        
+
         console.log(`[Mock Endpoint] Serving file: ${filePath} with content-type: ${contentType}`);
-        
+
         // إرجاع الملف الحقيقي
         return res.sendFile(filePath);
       } catch (error) {
@@ -146,23 +148,23 @@ export class MediaController {
         });
       }
     }
-    
+
     // إذا لم يكن الملف موجوداً محلياً، نحاول استخدام الـ uploads endpoint
     // الـ path قد يكون "images/ولايات/..." نحتاج لاستخراج folder و filename
-    const pathParts = cleanPath.split('/').filter(p => p && p.trim().length > 0);
+    const pathParts = cleanPath.split('/').filter((p) => p && p.trim().length > 0);
     console.log(`[Mock Endpoint] Path parts: ${JSON.stringify(pathParts)}`);
-    
+
     if (pathParts.length >= 2 && pathParts[0] === 'images') {
       const folder = pathParts.slice(1, -1).join('/'); // كل شيء بين images و filename
       const filename = pathParts[pathParts.length - 1];
-      
+
       console.log(`[Mock Endpoint] Extracted folder: ${JSON.stringify(folder)}`);
       console.log(`[Mock Endpoint] Extracted filename: ${JSON.stringify(filename)}`);
-      
+
       // محاولة استخدام uploads controller endpoint
       const uploadsPath = resolve(process.cwd(), 'uploads', 'images', folder, filename);
       console.log(`[Mock Endpoint] Trying uploads path: ${uploadsPath}`);
-      
+
       if (fs.existsSync(uploadsPath)) {
         try {
           const ext = extname(filename).toLowerCase();
@@ -179,7 +181,7 @@ export class MediaController {
             '.mp4': 'video/mp4',
             '.webm': 'video/webm',
           };
-          
+
           const contentType = mimeTypes[ext] || 'application/octet-stream';
           res.setHeader('Content-Type', contentType);
           console.log(`[Mock Endpoint] Serving file from uploads: ${uploadsPath}`);
@@ -188,7 +190,7 @@ export class MediaController {
           console.error('[Mock Endpoint] Error serving file from uploads:', error);
         }
       }
-      
+
       // 🔥 إذا لم يكن الملف موجوداً، نحاول البحث في جميع المجلدات الممكنة
       // لكن لا نعمل redirect لتجنب redirect loop
       const possiblePaths = [
@@ -196,7 +198,7 @@ export class MediaController {
         resolve(process.cwd(), 'uploads', cleanPath),
         resolve(process.cwd(), 'uploads', 'images', cleanPath.replace(/^images\//, '')),
       ];
-      
+
       for (const possiblePath of possiblePaths) {
         if (fs.existsSync(possiblePath)) {
           try {
@@ -217,12 +219,12 @@ export class MediaController {
           }
         }
       }
-      
+
       // 🔥 لا نعمل redirect هنا لتجنب redirect loop
       // بدلاً من ذلك، نرجع 404 أو رسالة Mock
       console.log(`[Mock Endpoint] File not found after checking all paths`);
     }
-    
+
     // إذا لم يكن الملف موجوداً محلياً، نرجع رسالة Mock
     console.log(`[Mock Endpoint] File not found: ${filePath}`);
     console.log(`[Mock Endpoint] Attempted paths checked:`);
@@ -232,7 +234,7 @@ export class MediaController {
       const filename = pathParts[pathParts.length - 1];
       console.log(`  - ${resolve(process.cwd(), 'uploads', 'images', folder, filename)}`);
     }
-    
+
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({
       message: 'Mock mode: File not actually stored',

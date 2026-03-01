@@ -31,7 +31,6 @@ export class SubmitAttemptAnswerDto {
   @IsNotEmpty()
   questionId: string;
 
-
   // لأسئلة الكتابة (FREE_TEXT)
   @IsOptional()
   @IsString()

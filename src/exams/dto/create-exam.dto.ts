@@ -73,25 +73,25 @@ export class ExamSectionDto {
   @ValidateIf((o) => !o.name) // مطلوب إذا لم يكن name موجود
   @IsString()
   @IsNotEmpty()
-  title?: string;            // "Leben in Deutschland – Teil 1" - الحقل الذي يرسله الفرونت
+  title?: string; // "Leben in Deutschland – Teil 1" - الحقل الذي يرسله الفرونت
 
   @ValidateIf((o) => !o.title) // مطلوب إذا لم يكن title موجود
   @IsString()
   @IsNotEmpty()
-  name?: string;             // "Hören – Teil 1" - للتوافق مع الكود القديم (يتم توحيده في Service)
+  name?: string; // "Hören – Teil 1" - للتوافق مع الكود القديم (يتم توحيده في Service)
 
   @IsOptional()
   @IsString()
-  description?: string;      // وصف السكشن أو نص القراءة (اختياري)
+  description?: string; // وصف السكشن أو نص القراءة (اختياري)
 
   @IsOptional()
   @IsString()
-  section?: string;          // نص إضافي لو حابة (عندك نفس القيمة)
+  section?: string; // نص إضافي لو حابة (عندك نفس القيمة)
 
   @IsOptional()
   @Transform(({ value }) => normalizeSkill(value))
   @IsEnum(ExamSkillEnum)
-  skill?: ExamSkillEnum;     // hoeren / lesen / schreiben / sprechen / grammar / misc
+  skill?: ExamSkillEnum; // hoeren / lesen / schreiben / sprechen / grammar / misc
 
   // teil مطلوب إذا لم يكن هناك items (يدعم teil أو teilNumber)
   @Transform(({ value, obj }) => value ?? obj.teilNumber)
@@ -99,18 +99,18 @@ export class ExamSectionDto {
   @ValidateIf((o) => !o.items || o.items.length === 0)
   @IsInt()
   @Min(1)
-  teil?: number;             // 1, 2, 3... - مطلوب إذا لم يكن items (يقبل teilNumber كـ alias)
+  teil?: number; // 1, 2, 3... - مطلوب إذا لم يكن items (يقبل teilNumber كـ alias)
 
   @IsOptional()
   @IsInt()
   @Min(1)
-  teilNumber?: number;       // 1, 2, 3... - للتوافق مع الكود القديم (يتم تحويله إلى teil تلقائياً)
+  teilNumber?: number; // 1, 2, 3... - للتوافق مع الكود القديم (يتم تحويله إلى teil تلقائياً)
 
   // quota مطلوب إذا لم يكن هناك items
   @ValidateIf((o) => !o.items || o.items.length === 0)
   @IsInt()
-  @Min(1)  // يجب أن يكون >= 1
-  quota?: number;            // عدد الأسئلة في هذا القسم - مطلوب إذا لم يكن items (>= 1)
+  @Min(1) // يجب أن يكون >= 1
+  quota?: number; // عدد الأسئلة في هذا القسم - مطلوب إذا لم يكن items (>= 1)
 
   @IsOptional()
   @ValidateNested()
@@ -131,7 +131,7 @@ export class ExamSectionDto {
   // حقول إضافية للتوافق مع الكود القديم
   @IsOptional()
   @IsMongoId()
-  topicId?: string;          // للتوافق مع الكود القديم (اختياري)
+  topicId?: string; // للتوافق مع الكود القديم (اختياري)
 
   // للأسئلة السمعية (Hören) - معرف ملف الصوت
   @IsOptional()
@@ -153,7 +153,7 @@ export class CreateExamDto {
 
   @IsString()
   @IsNotEmpty()
-  level: string;             // A1 / A2 / ...
+  level: string; // A1 / A2 / ...
 
   @IsOptional()
   @Type(() => Number)
@@ -184,7 +184,7 @@ export class CreateExamDto {
   @IsInt()
   @Min(0)
   attemptsLimit?: number; // 0 = غير محدود (اسم الحقل: attemptsLimit)
-  
+
   // للتوافق مع الكود القديم
   @IsOptional()
   @IsInt()
@@ -219,17 +219,17 @@ export class CreateExamDto {
 
   // ========= حقول خاصة بـ Prüfungen =========
 
-  @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @ValidateIf((o) => o.examCategory === ExamCategoryEnum.PROVIDER)
   @Transform(({ value }) => normalizeProvider(value))
   @IsEnum(ProviderEnum)
   @IsNotEmpty()
-  provider?: ProviderEnum;         // "goethe" / "telc" ... (case-insensitive)
+  provider?: ProviderEnum; // "goethe" / "telc" ... (case-insensitive)
 
-  @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @ValidateIf((o) => o.examCategory === ExamCategoryEnum.PROVIDER)
   @Transform(({ value }) => normalizeSkill(value))
   @IsEnum(ExamSkillEnum)
   @IsNotEmpty()
-  mainSkill?: ExamSkillEnum;       // "hoeren" / "lesen" / "grammar" / "leben_test" ...
+  mainSkill?: ExamSkillEnum; // "hoeren" / "lesen" / "grammar" / "leben_test" ...
 
   // ========= مشتركة =========
 

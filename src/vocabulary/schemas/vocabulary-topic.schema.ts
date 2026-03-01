@@ -32,4 +32,3 @@ export class VocabularyTopic {
 export const VocabularyTopicSchema = SchemaFactory.createForClass(VocabularyTopic);
 
 VocabularyTopicSchema.index({ level: 1, position: 1 });
-

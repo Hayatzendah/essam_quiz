@@ -23,7 +23,7 @@ export enum SkillEnum {
 
 @Schema({ timestamps: true })
 export class ListeningClip {
-  @Prop({ required: true, enum: Object.values(ProviderEnum), index: true })
+  @Prop({ type: String, required: true, enum: Object.values(ProviderEnum), index: true })
   provider: ProviderEnum;
 
   @Prop({ required: true, type: String, index: true })
@@ -72,4 +72,3 @@ ListeningClipSchema.pre('save', function (next) {
 
 // Indexes for better query performance
 ListeningClipSchema.index({ provider: 1, level: 1, skill: 1, teil: 1 });
-

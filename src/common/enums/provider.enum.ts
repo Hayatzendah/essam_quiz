@@ -10,4 +10,3 @@ export enum ProviderEnum {
   GRAMMATIK = 'Grammatik',
   WORTSCHATZ = 'Wortschatz',
 }
-

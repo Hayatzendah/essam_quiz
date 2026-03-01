@@ -5,17 +5,17 @@ export type SchreibenContentBlockDocument = SchreibenContentBlock & Document;
 
 // أنواع البلوكات في الكتابة
 export enum SchreibenBlockType {
-  TEXT = 'text',           // فقرة نصية (تعليمات، وصف السيناريو)
-  FORM = 'form',           // استمارة مع حقول
-  IMAGE = 'image',         // صورة
+  TEXT = 'text', // فقرة نصية (تعليمات، وصف السيناريو)
+  FORM = 'form', // استمارة مع حقول
+  IMAGE = 'image', // صورة
 }
 
 // أنواع حقول الاستمارة
 export enum FormFieldType {
-  TEXT_INPUT = 'text_input',     // حقل فارغ - الطالب يعبيه
-  PREFILLED = 'prefilled',       // نص معبأ مسبقاً (readonly)
-  SELECT = 'select',             // اختيار واحد (radio buttons)
-  MULTISELECT = 'multiselect',   // اختيار متعدد (checkboxes)
+  TEXT_INPUT = 'text_input', // حقل فارغ - الطالب يعبيه
+  PREFILLED = 'prefilled', // نص معبأ مسبقاً (readonly)
+  SELECT = 'select', // اختيار واحد (radio buttons)
+  MULTISELECT = 'multiselect', // اختيار متعدد (checkboxes)
 }
 
 // حقل في الاستمارة

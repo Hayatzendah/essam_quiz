@@ -13,16 +13,16 @@ export enum ContentBlockType {
 
 // أنواع أسئلة التمارين المضمّنة
 export enum ExerciseQuestionType {
-  MULTIPLE_CHOICE = 'multiple_choice',  // اختيار من متعدد
-  FILL_BLANK = 'fill_blank',            // ملء الفراغ
-  TRUE_FALSE = 'true_false',            // صح أو خطأ
-  WORD_ORDER = 'word_order',            // ترتيب الكلمات
+  MULTIPLE_CHOICE = 'multiple_choice', // اختيار من متعدد
+  FILL_BLANK = 'fill_blank', // ملء الفراغ
+  TRUE_FALSE = 'true_false', // صح أو خطأ
+  WORD_ORDER = 'word_order', // ترتيب الكلمات
 }
 
 // طريقة إدخال الإجابة لأسئلة ترتيب الكلمات
 export enum WordOrderInputMode {
-  DRAG = 'drag',   // سحب وإفلات
-  TYPE = 'type',   // كتابة
+  DRAG = 'drag', // سحب وإفلات
+  TYPE = 'type', // كتابة
 }
 
 @Schema({ _id: false })

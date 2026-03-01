@@ -1,11 +1,4 @@
-import {
-  IsArray,
-  IsInt,
-  IsMongoId,
-  IsNotEmpty,
-  IsOptional,
-  Min,
-} from 'class-validator';
+import { IsArray, IsInt, IsMongoId, IsNotEmpty, IsOptional, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AddQuestionToSectionDto {

@@ -31,7 +31,6 @@ import { HealthController } from './health/health.controller';
 import { AppController } from './app.controller';
 import { EnumsController } from './common/enums.controller';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -170,12 +169,11 @@ import { EnumsController } from './common/enums.controller';
   ],
 
   controllers: [AppController, HealthController, EnumsController],
-
 })
 export class AppModule implements OnModuleInit {
   private readonly logger = new Logger('MongoDB');
 
-  constructor(@InjectConnection() private connection: Connection) { }
+  constructor(@InjectConnection() private connection: Connection) {}
 
   onModuleInit() {
     // إنشاء مجلدات uploads إذا لم تكن موجودة
@@ -276,7 +274,9 @@ export class AppModule implements OnModuleInit {
       this.logger.log(`✅ Uploads directories ready: ${uploadsDir}`);
     } catch (error) {
       this.logger.error(`❌ Failed to create uploads directories: ${error}`);
-      this.logger.error('Please ensure the application has write permissions to create directories');
+      this.logger.error(
+        'Please ensure the application has write permissions to create directories',
+      );
     }
   }
 }

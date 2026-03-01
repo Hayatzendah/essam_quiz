@@ -71,9 +71,10 @@ export class AnalyticsService {
       },
     ]).exec();
 
-    const averageScore = avgScoreResult.length > 0 && avgScoreResult[0].avgScore
-      ? Math.round(avgScoreResult[0].avgScore * 100) / 100
-      : 0;
+    const averageScore =
+      avgScoreResult.length > 0 && avgScoreResult[0].avgScore
+        ? Math.round(avgScoreResult[0].avgScore * 100) / 100
+        : 0;
 
     return {
       totalExams, // إجمالي الامتحانات
@@ -387,9 +388,7 @@ export class AnalyticsService {
 
     // حساب معدل النجاح لكل امتحان
     const perExam = attempts.map((a) => {
-      const passRate = a.attemptsCount
-        ? (a.passedCount / a.attemptsCount) * 100
-        : 0;
+      const passRate = a.attemptsCount ? (a.passedCount / a.attemptsCount) * 100 : 0;
 
       return {
         examId: String(a._id),
@@ -404,9 +403,7 @@ export class AnalyticsService {
     const totalAttempts = attempts.reduce((s, a) => s + a.attemptsCount, 0);
     const totalPassed = attempts.reduce((s, a) => s + a.passedCount, 0);
     const totalFailed = totalAttempts - totalPassed;
-    const overallPassRate = totalAttempts
-      ? Math.round((totalPassed / totalAttempts) * 100)
-      : 0;
+    const overallPassRate = totalAttempts ? Math.round((totalPassed / totalAttempts) * 100) : 0;
 
     return {
       overallPassRate,
@@ -589,7 +586,7 @@ export class AnalyticsService {
 
     // دمج البيانات
     const skillMap = new Map<string, { questionsCount: number; avgScore: number }>();
-    
+
     // إضافة عدد الأسئلة
     questionsBySkill.forEach((item) => {
       const skill = String(item._id).toLowerCase();
@@ -603,7 +600,7 @@ export class AnalyticsService {
     attemptsBySkill.forEach((stat) => {
       const skill = String(stat._id).toLowerCase();
       const avgScore = stat.attemptsCount > 0 ? stat.totalScore / stat.attemptsCount : 0;
-      
+
       if (skillMap.has(skill)) {
         skillMap.get(skill)!.avgScore = avgScore;
       } else {
@@ -664,10 +661,7 @@ export class AnalyticsService {
             $sum: {
               $cond: [
                 {
-                  $gte: [
-                    { $add: ['$items.autoScore', '$items.manualScore'] },
-                    '$items.points',
-                  ],
+                  $gte: [{ $add: ['$items.autoScore', '$items.manualScore'] }, '$items.points'],
                 },
                 1,
                 0,
@@ -678,10 +672,7 @@ export class AnalyticsService {
             $sum: {
               $cond: [
                 {
-                  $lt: [
-                    { $add: ['$items.autoScore', '$items.manualScore'] },
-                    '$items.points',
-                  ],
+                  $lt: [{ $add: ['$items.autoScore', '$items.manualScore'] }, '$items.points'],
                 },
                 1,
                 0,
@@ -728,9 +719,7 @@ export class AnalyticsService {
       .lean()
       .exec();
 
-    const questionsMap = new Map(
-      questions.map((q) => [String(q._id), q.prompt]),
-    );
+    const questionsMap = new Map(questions.map((q) => [String(q._id), q.prompt]));
 
     // بناء قائمة الأسئلة التي تحتاج تطوير (successRate < 40%)
     const questionsToImprove = questionStats
@@ -787,10 +776,7 @@ export class AnalyticsService {
             $sum: {
               $cond: [
                 {
-                  $lt: [
-                    { $add: ['$items.autoScore', '$items.manualScore'] },
-                    '$items.points',
-                  ],
+                  $lt: [{ $add: ['$items.autoScore', '$items.manualScore'] }, '$items.points'],
                 },
                 1,
                 0,
@@ -813,10 +799,7 @@ export class AnalyticsService {
           successRate: {
             $multiply: [
               {
-                $divide: [
-                  { $subtract: ['$totalAnswers', '$wrongAnswers'] },
-                  '$totalAnswers',
-                ],
+                $divide: [{ $subtract: ['$totalAnswers', '$wrongAnswers'] }, '$totalAnswers'],
               },
               100,
             ],
@@ -882,10 +865,7 @@ export class AnalyticsService {
             $sum: {
               $cond: [
                 {
-                  $lt: [
-                    { $add: ['$items.autoScore', '$items.manualScore'] },
-                    '$items.points',
-                  ],
+                  $lt: [{ $add: ['$items.autoScore', '$items.manualScore'] }, '$items.points'],
                 },
                 1,
                 0,
@@ -908,10 +888,7 @@ export class AnalyticsService {
           successRate: {
             $multiply: [
               {
-                $divide: [
-                  { $subtract: ['$totalAnswers', '$wrongAnswers'] },
-                  '$totalAnswers',
-                ],
+                $divide: [{ $subtract: ['$totalAnswers', '$wrongAnswers'] }, '$totalAnswers'],
               },
               100,
             ],
@@ -1129,9 +1106,7 @@ export class AnalyticsService {
         .lean()
         .exec();
 
-      const questionsMap = new Map(
-        questions.map((q) => [String(q._id), q.prompt]),
-      );
+      const questionsMap = new Map(questions.map((q) => [String(q._id), q.prompt]));
 
       return result.map((r) => ({
         questionId: r.questionId,
@@ -1143,8 +1118,3 @@ export class AnalyticsService {
     return result;
   }
 }
-
-
-
-
-

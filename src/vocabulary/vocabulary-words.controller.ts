@@ -50,7 +50,16 @@ export class VocabularyWordsController {
   @Post('bulk')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create multiple vocabulary words at once (bulk insert)' })
-  @ApiResponse({ status: 201, description: 'Words created successfully', schema: { properties: { insertedCount: { type: 'number' }, ids: { type: 'array', items: { type: 'string' } } } } })
+  @ApiResponse({
+    status: 201,
+    description: 'Words created successfully',
+    schema: {
+      properties: {
+        insertedCount: { type: 'number' },
+        ids: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  })
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
   @ApiResponse({ status: 404, description: 'Topic not found' })
   createBulk(@Body() createBulkDto: CreateBulkVocabularyWordsDto) {
@@ -100,4 +109,3 @@ export class VocabularyWordsController {
     return this.wordsService.remove(id);
   }
 }
-

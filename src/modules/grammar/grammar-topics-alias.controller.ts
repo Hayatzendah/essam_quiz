@@ -25,4 +25,3 @@ export class GrammarTopicsAliasController {
     return this.grammarTopicsService.findBySlug(slug, level);
   }
 }
-

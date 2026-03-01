@@ -96,7 +96,10 @@ export class ExamsController {
     description:
       'إنشاء امتحان تمرين ديناميكي - admin/teacher: يمكنهم إنشاء practice exam عادي. students: يمكنهم استخدام mode=general أو mode=state للتعلم مع الإجابات الصحيحة',
   })
-  @ApiResponse({ status: 201, description: 'Practice exam created successfully or practice questions returned' })
+  @ApiResponse({
+    status: 201,
+    description: 'Practice exam created successfully or practice questions returned',
+  })
   @ApiResponse({ status: 400, description: 'Bad request - validation failed' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'No questions found (for learn mode)' })
@@ -154,7 +157,8 @@ export class ExamsController {
   @Get('providers')
   @ApiOperation({
     summary: 'Get exam providers and their available levels',
-    description: 'إرجاع قائمة بالـ providers الموجود لهم امتحانات منشورة من نوع provider_exam مع المستويات المتاحة لكل provider',
+    description:
+      'إرجاع قائمة بالـ providers الموجود لهم امتحانات منشورة من نوع provider_exam مع المستويات المتاحة لكل provider',
   })
   @ApiResponse({ status: 200, description: 'List of providers with their levels' })
   getProviders() {
@@ -165,13 +169,11 @@ export class ExamsController {
   @Get('provider-skills')
   @ApiOperation({
     summary: 'Get available skills for a provider (with exam counts)',
-    description: 'إرجاع المهارات المتاحة مع عدد الامتحانات لكل مهارة - لعرض أقسام مثل Hören, Lesen, Schreiben...',
+    description:
+      'إرجاع المهارات المتاحة مع عدد الامتحانات لكل مهارة - لعرض أقسام مثل Hören, Lesen, Schreiben...',
   })
   @ApiResponse({ status: 200, description: 'List of skills with exam counts' })
-  getProviderSkills(
-    @Query('provider') provider: string,
-    @Query('level') level?: string,
-  ) {
+  getProviderSkills(@Query('provider') provider: string, @Query('level') level?: string) {
     this.logger.log(`[GET /exams/provider-skills] provider=${provider}, level=${level}`);
     return this.service.getProviderSkills(provider, level);
   }
@@ -188,12 +190,12 @@ export class ExamsController {
     this.logger.log(
       `[GET /exams] Request received - userId: ${req.user?.userId}, role: ${req.user?.role}, simple: ${q?.simple}`,
     );
-    
+
     // إذا كان simple=true، أرجع قائمة مبسطة
     if (q?.simple === 'true') {
       return this.service.findAllSimple(req.user, q);
     }
-    
+
     return this.service.findAll(req.user, q);
   }
 
@@ -209,7 +211,8 @@ export class ExamsController {
   @Get('debug/:id')
   @ApiOperation({
     summary: 'Debug exam structure',
-    description: 'فحص بنية الامتحان وتشخيص مشكلة "No questions available" - Public endpoint للتشخيص'
+    description:
+      'فحص بنية الامتحان وتشخيص مشكلة "No questions available" - Public endpoint للتشخيص',
   })
   @ApiResponse({ status: 200, description: 'Debug info returned' })
   async debugExam(@Param('id') id: string) {
@@ -246,7 +249,8 @@ export class ExamsController {
   @Roles('admin', 'teacher')
   @ApiOperation({
     summary: 'Find all exams with empty sections (admin/teacher)',
-    description: 'إيجاد جميع الامتحانات التي تحتوي على sections فارغة - admin: جميع الامتحانات، teacher: امتحاناته فقط',
+    description:
+      'إيجاد جميع الامتحانات التي تحتوي على sections فارغة - admin: جميع الامتحانات، teacher: امتحاناته فقط',
   })
   @ApiResponse({ status: 200, description: 'List of exams with empty sections' })
   @ApiResponse({ status: 403, description: 'Forbidden - admin or teacher only' })
@@ -376,10 +380,7 @@ export class ExamsController {
     description: 'جلب التسجيلات الصوتية المستخدمة في قسم معين - لإعادة ربطها بأسئلة جديدة',
   })
   @ApiResponse({ status: 200, description: 'Listening clips in the section' })
-  getSectionClips(
-    @Param('examId') examId: string,
-    @Param('sectionKey') sectionKey: string,
-  ) {
+  getSectionClips(@Param('examId') examId: string, @Param('sectionKey') sectionKey: string) {
     this.logger.log(`[GET /exams/${examId}/sections/${sectionKey}/clips] Request received`);
     return this.service.getSectionClips(examId, sectionKey);
   }
@@ -393,11 +394,7 @@ export class ExamsController {
     description: 'إضافة قسم (Teil) جديد للامتحان - يتم توليد key تلقائياً إذا لم يُحدد',
   })
   @ApiResponse({ status: 201, description: 'Section added successfully' })
-  addSection(
-    @Param('examId') examId: string,
-    @Body() dto: AddSectionDto,
-    @Req() req: any,
-  ) {
+  addSection(@Param('examId') examId: string, @Body() dto: AddSectionDto, @Req() req: any) {
     this.logger.log(`[POST /exams/${examId}/sections] Request received - title: ${dto.title}`);
     return this.service.addSection(examId, dto, req.user);
   }
@@ -454,7 +451,9 @@ export class ExamsController {
     @Body() dto: AddQuestionToSectionDto,
     @Req() req: any,
   ) {
-    this.logger.log(`[POST /exams/${examId}/sections/${sectionKey}/questions] Request received - questionId: ${dto.questionId}`);
+    this.logger.log(
+      `[POST /exams/${examId}/sections/${sectionKey}/questions] Request received - questionId: ${dto.questionId}`,
+    );
     return this.service.addQuestionToSection(examId, sectionKey, dto, req.user);
   }
 
@@ -475,7 +474,7 @@ export class ExamsController {
   ) {
     this.logger.log(
       `[POST /exams/${examId}/sections/${sectionKey}/questions/bulk-create] ` +
-      `Request received - ${dto.questions?.length ?? 0} questions, clipId: ${dto.listeningClipId}`,
+        `Request received - ${dto.questions?.length ?? 0} questions, clipId: ${dto.listeningClipId}`,
     );
     return this.service.bulkCreateAndAddToSection(examId, sectionKey, dto, req.user);
   }
@@ -495,7 +494,9 @@ export class ExamsController {
     @Body() dto: ReorderSectionQuestionsDto,
     @Req() req: any,
   ) {
-    this.logger.log(`[PATCH /exams/${examId}/sections/${sectionKey}/questions/reorder] Request received`);
+    this.logger.log(
+      `[PATCH /exams/${examId}/sections/${sectionKey}/questions/reorder] Request received`,
+    );
     return this.service.reorderSectionQuestions(examId, sectionKey, dto, req.user);
   }
 
@@ -515,7 +516,9 @@ export class ExamsController {
     @Body() dto: UpdateQuestionPointsDto,
     @Req() req: any,
   ) {
-    this.logger.log(`[PATCH /exams/${examId}/sections/${sectionKey}/questions/${questionId}/points] Request received - points: ${dto.points}`);
+    this.logger.log(
+      `[PATCH /exams/${examId}/sections/${sectionKey}/questions/${questionId}/points] Request received - points: ${dto.points}`,
+    );
     return this.service.updateQuestionPoints(examId, sectionKey, questionId, dto.points, req.user);
   }
 
@@ -534,7 +537,9 @@ export class ExamsController {
     @Param('questionId') questionId: string,
     @Req() req: any,
   ) {
-    this.logger.log(`[DELETE /exams/${examId}/sections/${sectionKey}/questions/${questionId}] Request received`);
+    this.logger.log(
+      `[DELETE /exams/${examId}/sections/${sectionKey}/questions/${questionId}] Request received`,
+    );
     return this.service.removeQuestionFromSection(examId, sectionKey, questionId, req.user);
   }
 
@@ -544,7 +549,8 @@ export class ExamsController {
   @Roles('admin', 'teacher')
   @ApiOperation({
     summary: 'Update listening audio for a specific exam section (with teilNumber)',
-    description: 'تحديث listeningAudioId في section معين (skill + teilNumber) - teacher: فقط امتحاناته',
+    description:
+      'تحديث listeningAudioId في section معين (skill + teilNumber) - teacher: فقط امتحاناته',
   })
   @ApiResponse({ status: 200, description: 'Section audio updated successfully' })
   @ApiResponse({ status: 403, description: 'Forbidden - admin or teacher (owner only)' })
@@ -561,9 +567,17 @@ export class ExamsController {
     );
     const teilNumberInt = parseInt(teilNumber, 10);
     if (isNaN(teilNumberInt) || teilNumberInt < 1) {
-      throw new BadRequestException(`Invalid teilNumber: ${teilNumber}. Must be a positive integer.`);
+      throw new BadRequestException(
+        `Invalid teilNumber: ${teilNumber}. Must be a positive integer.`,
+      );
     }
-    return this.service.updateSectionAudio(examId, skill, teilNumberInt, dto.listeningAudioId, req.user);
+    return this.service.updateSectionAudio(
+      examId,
+      skill,
+      teilNumberInt,
+      dto.listeningAudioId,
+      req.user,
+    );
   }
 
   // تحديث listeningAudioId في section معين (بدون teilNumber) - يجب أن يكون قبل @Patch(':id')
@@ -611,7 +625,8 @@ export class ExamsController {
   @Roles('admin', 'teacher')
   @ApiOperation({
     summary: 'Fix empty sections in exam (admin/teacher)',
-    description: 'إصلاح الامتحان تلقائياً: إضافة quota=5 للأقسام الفارغة (لا items ولا quota) - teacher: فقط امتحاناته',
+    description:
+      'إصلاح الامتحان تلقائياً: إضافة quota=5 للأقسام الفارغة (لا items ولا quota) - teacher: فقط امتحاناته',
   })
   @ApiResponse({ status: 200, description: 'Exam sections fixed successfully' })
   @ApiResponse({ status: 403, description: 'Forbidden - admin or teacher (owner only)' })
@@ -702,7 +717,8 @@ export class ExamsController {
   @ApiResponse({ status: 201, description: 'Leben exam attempt started successfully' })
   @ApiResponse({
     status: 400,
-    description: 'Bad request - exam not found, not a Leben exam, not published, or attempt limit reached',
+    description:
+      'Bad request - exam not found, not a Leben exam, not published, or attempt limit reached',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })

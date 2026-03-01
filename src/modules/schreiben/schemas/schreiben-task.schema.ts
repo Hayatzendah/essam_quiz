@@ -38,7 +38,12 @@ export class SchreibenTask {
   @Prop({ type: [SchreibenContentBlockSchema], default: [] })
   contentBlocks: SchreibenContentBlock[];
 
-  @Prop({ type: String, enum: Object.values(SchreibenTaskStatus), default: SchreibenTaskStatus.DRAFT, index: true })
+  @Prop({
+    type: String,
+    enum: Object.values(SchreibenTaskStatus),
+    default: SchreibenTaskStatus.DRAFT,
+    index: true,
+  })
   status: SchreibenTaskStatus;
 
   @Prop({ type: Number, min: 0 })

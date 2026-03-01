@@ -1,4 +1,14 @@
-import { IsMongoId, IsNotEmpty, IsArray, IsString, ValidateNested, IsOptional, ValidateIf, IsNumber, Min } from 'class-validator';
+import {
+  IsMongoId,
+  IsNotEmpty,
+  IsArray,
+  IsString,
+  ValidateNested,
+  IsOptional,
+  ValidateIf,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { VocabularyWordMeaningDto } from './vocabulary-word-meaning.dto';
@@ -9,9 +19,9 @@ export class VocabularyWordItemDto {
   @IsString()
   word: string;
 
-  @ApiProperty({ 
-    required: false, 
-    description: 'المعنى كـ string مفصولة بـ / (للتوافق مع البيانات القديمة)' 
+  @ApiProperty({
+    required: false,
+    description: 'المعنى كـ string مفصولة بـ / (للتوافق مع البيانات القديمة)',
   })
   @IsOptional()
   @IsString()
@@ -19,10 +29,10 @@ export class VocabularyWordItemDto {
   @IsNotEmpty({ message: 'Either meaning or meanings must be provided' })
   meaning?: string;
 
-  @ApiProperty({ 
-    required: false, 
+  @ApiProperty({
+    required: false,
     type: [VocabularyWordMeaningDto],
-    description: 'مصفوفة المعاني (الصيغة الجديدة)' 
+    description: 'مصفوفة المعاني (الصيغة الجديدة)',
   })
   @IsOptional()
   @IsArray()
@@ -56,23 +66,3 @@ export class CreateBulkVocabularyWordsDto {
   @Type(() => VocabularyWordItemDto)
   words: VocabularyWordItemDto[];
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

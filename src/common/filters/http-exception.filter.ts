@@ -43,7 +43,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const errorDetails = typeof error === 'object' ? error : { message: error };
     const errorCode = (errorDetails as any)?.code || status;
     const errorMessage = Array.isArray(message) ? message.join(', ') : message;
-    const validationErrors = (errorDetails as any)?.errors || (errorDetails as any)?.details || null;
+    const validationErrors =
+      (errorDetails as any)?.errors || (errorDetails as any)?.details || null;
 
     const errorResponse = {
       status: 'error',
@@ -56,9 +57,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
     };
 
-    this.logger.error(
-      `${request.method} ${request.url} - ${status} - ${errorMessage}`,
-    );
+    this.logger.error(`${request.method} ${request.url} - ${status} - ${errorMessage}`);
     if (validationErrors) {
       this.logger.error(`Validation errors: ${JSON.stringify(validationErrors)}`);
     }

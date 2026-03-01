@@ -48,7 +48,9 @@ export class MediaService {
     else {
       this.storageMode = 'mock';
       if (process.env.NODE_ENV !== 'production') {
-        this.logger.warn('MediaService running in MOCK MODE. Files saved locally (will be lost on redeploy).');
+        this.logger.warn(
+          'MediaService running in MOCK MODE. Files saved locally (will be lost on redeploy).',
+        );
       }
     }
 
@@ -108,7 +110,11 @@ export class MediaService {
       fs.writeFileSync(filePath, opts.buffer);
 
       const baseUrl =
-        process.env.PUBLIC_BASE_URL || process.env.APP_URL || process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
+        process.env.PUBLIC_BASE_URL ||
+        process.env.APP_URL ||
+        process.env.API_BASE_URL ||
+        process.env.CORS_ORIGIN ||
+        'https://api.deutsch-tests.com';
       const uploadsUrl = `${baseUrl}/uploads/${key}`;
       return { key, url: uploadsUrl, mime: opts.mime };
     }
@@ -152,7 +158,11 @@ export class MediaService {
     // Mock mode
     if (this.storageMode === 'mock') {
       const baseUrl =
-        process.env.PUBLIC_BASE_URL || process.env.APP_URL || process.env.API_BASE_URL || process.env.CORS_ORIGIN || 'https://api.deutsch-tests.com';
+        process.env.PUBLIC_BASE_URL ||
+        process.env.APP_URL ||
+        process.env.API_BASE_URL ||
+        process.env.CORS_ORIGIN ||
+        'https://api.deutsch-tests.com';
       return `${baseUrl}/uploads/${key}`;
     }
 

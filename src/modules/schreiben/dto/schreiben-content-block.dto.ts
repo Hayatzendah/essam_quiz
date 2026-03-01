@@ -13,10 +13,7 @@ import {
   IsObject,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
-import {
-  SchreibenBlockType,
-  FormFieldType,
-} from '../schemas/schreiben-content-block.schema';
+import { SchreibenBlockType, FormFieldType } from '../schemas/schreiben-content-block.schema';
 
 // DTO لحقل الاستمارة
 export class FormFieldDto {

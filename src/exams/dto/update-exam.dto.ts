@@ -1,24 +1,24 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { Transform, Type } from 'class-transformer';
-import { 
-  CreateExamDto, 
-  ExamTypeEnum, 
+import {
+  CreateExamDto,
+  ExamTypeEnum,
   ExamSectionDto,
   DifficultyDistributionDto,
-  SectionItemDto
+  SectionItemDto,
 } from './create-exam.dto';
-import { 
-  IsEnum, 
-  IsMongoId, 
-  IsOptional, 
-  IsArray, 
-  IsString, 
-  IsInt, 
+import {
+  IsEnum,
+  IsMongoId,
+  IsOptional,
+  IsArray,
+  IsString,
+  IsInt,
   IsBoolean,
   IsNotEmpty,
   Min,
   ValidateNested,
-  ValidateIf
+  ValidateIf,
 } from 'class-validator';
 import { ExamStatusEnum, ExamCategoryEnum, ExamSkillEnum } from '../../common/enums';
 import { ProviderEnum } from '../../common/enums/provider.enum';
@@ -111,7 +111,7 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
   @IsInt()
   @Min(0)
   attemptsLimit?: number; // 0 = غير محدود (اسم الحقل: attemptsLimit)
-  
+
   // للتوافق مع الكود القديم
   @IsOptional()
   @IsInt()
@@ -120,7 +120,7 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
 
   // حقول خاصة بالقواعد
   @IsOptional()
-  @ValidateIf(o => o.examCategory === ExamCategoryEnum.GRAMMAR)
+  @ValidateIf((o) => o.examCategory === ExamCategoryEnum.GRAMMAR)
   @IsMongoId()
   grammarTopicId?: string;
 
@@ -131,14 +131,14 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
 
   // حقول خاصة بـ Prüfungen
   @IsOptional()
-  @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @ValidateIf((o) => o.examCategory === ExamCategoryEnum.PROVIDER)
   @Transform(({ value }) => normalizeProvider(value))
   @IsEnum(ProviderEnum)
   @IsNotEmpty()
   provider?: ProviderEnum;
 
   @IsOptional()
-  @ValidateIf(o => o.examCategory === ExamCategoryEnum.PROVIDER)
+  @ValidateIf((o) => o.examCategory === ExamCategoryEnum.PROVIDER)
   @Transform(({ value }) => normalizeSkill(value))
   @IsEnum(ExamSkillEnum)
   @IsNotEmpty()
@@ -150,4 +150,3 @@ export class UpdateExamDto extends PartialType(CreateExamDto) {
   @IsString({ each: true })
   tags?: string[];
 }
-

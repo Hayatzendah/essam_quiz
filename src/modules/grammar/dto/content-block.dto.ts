@@ -1,7 +1,11 @@
 import { IsString, IsEnum, IsObject, ValidateIf } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { ContentBlockType, ExerciseQuestionType, WordOrderInputMode } from '../schemas/content-block.schema';
+import {
+  ContentBlockType,
+  ExerciseQuestionType,
+  WordOrderInputMode,
+} from '../schemas/content-block.schema';
 
 // DTOs للبيانات حسب type (للتوثيق فقط)
 export class IntroBlockData {
@@ -27,8 +31,8 @@ export class TableBlockData {
   @ApiProperty({ description: 'رؤوس الأعمدة', type: [String] })
   headers: string[];
 
-  @ApiProperty({ 
-    description: 'صفوف الجدول', 
+  @ApiProperty({
+    description: 'صفوف الجدول',
     type: 'array',
     items: {
       type: 'array',

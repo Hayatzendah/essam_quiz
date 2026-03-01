@@ -113,8 +113,7 @@ const InteractiveReorderSchema = SchemaFactory.createForClass(InteractiveReorder
 @Schema({ timestamps: true })
 export class Question {
   // معلومات أساسية
-  @Prop({ required: true }) /* بدون trim ل preservation الأسطر الفارغة تحت السؤال */
-  prompt: string;
+  @Prop({ required: true }) /* بدون trim ل preservation الأسطر الفارغة تحت السؤال */ prompt: string;
 
   // حقل text كبديل لـ prompt (للتوافق مع التنسيق الجديد)
   @Prop({ trim: true })
@@ -189,7 +188,8 @@ export class Question {
   interactiveReorder?: InteractiveReorder; // لترتيب الأجزاء (drag & drop)
 
   // ميتاداتا وفلاتر
-  @Prop({ 
+  @Prop({
+    type: String,
     trim: true,
     enum: Object.values(ProviderEnum),
   })
@@ -240,7 +240,16 @@ export class Question {
   readingPassageBgColor?: string;
 
   // بطاقات معلومات القراءة (لأسئلة Lesen - مثل الإعلانات والكورسات)
-  @Prop({ type: [{ title: { type: String, required: true, trim: true }, content: { type: String, required: true, trim: true }, color: { type: String, trim: true } }], default: undefined })
+  @Prop({
+    type: [
+      {
+        title: { type: String, required: true, trim: true },
+        content: { type: String, required: true, trim: true },
+        color: { type: String, trim: true },
+      },
+    ],
+    default: undefined,
+  })
   readingCards?: { title: string; content: string; color?: string }[];
 
   // تخطيط بطاقات القراءة: أفقي (بطاقة بعرض كامل) أو عمودي (بطاقات جنب بعض)
@@ -259,7 +268,11 @@ export class Question {
     order: number;
     text?: string;
     images?: Array<{ key: string; url: string; mime: string; description?: string }>;
-    cards?: Array<{ title: string; texts: Array<{ label?: string; content: string }>; color?: string }>;
+    cards?: Array<{
+      title: string;
+      texts: Array<{ label?: string; content: string }>;
+      color?: string;
+    }>;
     cardsLayout?: string;
   }>;
 
@@ -267,8 +280,8 @@ export class Question {
   @Prop({ type: String, enum: Object.values(ExamSkillEnum), trim: true })
   mainSkill?: ExamSkillEnum;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: Object.values(QuestionCategory),
     trim: true,
     index: true,
@@ -320,9 +333,11 @@ QuestionSchema.pre('validate', function (next) {
 
   if (q.qType === QuestionType.FILL) {
     // fillExact يمكن أن يكون string أو array
-    const hasExact = 
+    const hasExact =
       (typeof q.fillExact === 'string' && q.fillExact.trim().length > 0) ||
-      (Array.isArray(q.fillExact) && q.fillExact.length > 0 && q.fillExact.some((item: any) => item && String(item).trim().length > 0));
+      (Array.isArray(q.fillExact) &&
+        q.fillExact.length > 0 &&
+        q.fillExact.some((item: any) => item && String(item).trim().length > 0));
     const hasRegex = Array.isArray(q.regexList) && q.regexList.length > 0;
     if (!hasExact && !hasRegex) {
       return next(new Error('FILL requires fillExact or regexList'));
@@ -348,43 +363,68 @@ QuestionSchema.pre('validate', function (next) {
 
   if (q.qType === QuestionType.INTERACTIVE_TEXT) {
     // INTERACTIVE_TEXT: يجب أن يكون إما interactiveBlanks أو interactiveReorder (وليس كلاهما)
-    const hasBlanks = q.interactiveBlanks && Array.isArray(q.interactiveBlanks) && q.interactiveBlanks.length > 0;
-    const hasReorder = q.interactiveReorder && q.interactiveReorder.parts && Array.isArray(q.interactiveReorder.parts) && q.interactiveReorder.parts.length > 0;
+    const hasBlanks =
+      q.interactiveBlanks && Array.isArray(q.interactiveBlanks) && q.interactiveBlanks.length > 0;
+    const hasReorder =
+      q.interactiveReorder &&
+      q.interactiveReorder.parts &&
+      Array.isArray(q.interactiveReorder.parts) &&
+      q.interactiveReorder.parts.length > 0;
 
     if (!hasBlanks && !hasReorder) {
-      return next(new Error('INTERACTIVE_TEXT requires either interactiveBlanks or interactiveReorder'));
+      return next(
+        new Error('INTERACTIVE_TEXT requires either interactiveBlanks or interactiveReorder'),
+      );
     }
 
     if (hasBlanks && hasReorder) {
-      return next(new Error('INTERACTIVE_TEXT cannot have both interactiveBlanks and interactiveReorder'));
+      return next(
+        new Error('INTERACTIVE_TEXT cannot have both interactiveBlanks and interactiveReorder'),
+      );
     }
 
     // التحقق من interactiveBlanks
     if (hasBlanks && q.interactiveBlanks) {
       if (!q.text || !q.text.includes('{{')) {
-        return next(new Error('INTERACTIVE_TEXT with blanks requires text field with {{id}} placeholders'));
+        return next(
+          new Error('INTERACTIVE_TEXT with blanks requires text field with {{id}} placeholders'),
+        );
       }
       if (q.interactiveBlanks.length < 3 || q.interactiveBlanks.length > 10) {
         return next(new Error('INTERACTIVE_TEXT blanks must be between 3 and 10'));
       }
-      
+
       // التحقق من كل blank
       const blankIds = new Set<string>();
       for (const blank of q.interactiveBlanks) {
         if (!blank.id || blank.id.length !== 1 || !/[a-z]/.test(blank.id)) {
-          return next(new Error(`INTERACTIVE_TEXT blank id must be a single lowercase letter (a-z), found: ${blank.id}`));
+          return next(
+            new Error(
+              `INTERACTIVE_TEXT blank id must be a single lowercase letter (a-z), found: ${blank.id}`,
+            ),
+          );
         }
         if (blankIds.has(blank.id)) {
           return next(new Error(`INTERACTIVE_TEXT duplicate blank id: ${blank.id}`));
         }
         blankIds.add(blank.id);
 
-        if ((blank.type === 'dropdown' || blank.type === 'select') && (!blank.options || blank.options.length === 0) && (!blank.choices || blank.choices.length === 0)) {
-          return next(new Error(`INTERACTIVE_TEXT blank ${blank.id} of type ${blank.type} requires options or choices array`));
+        if (
+          (blank.type === 'dropdown' || blank.type === 'select') &&
+          (!blank.options || blank.options.length === 0) &&
+          (!blank.choices || blank.choices.length === 0)
+        ) {
+          return next(
+            new Error(
+              `INTERACTIVE_TEXT blank ${blank.id} of type ${blank.type} requires options or choices array`,
+            ),
+          );
         }
 
         if (!blank.correctAnswers || blank.correctAnswers.length === 0) {
-          return next(new Error(`INTERACTIVE_TEXT blank ${blank.id} requires at least one correctAnswer`));
+          return next(
+            new Error(`INTERACTIVE_TEXT blank ${blank.id} requires at least one correctAnswer`),
+          );
         }
 
         // التحقق من أن placeholder موجود في النص
@@ -402,7 +442,7 @@ QuestionSchema.pre('validate', function (next) {
 
       const partIds = new Set<string>();
       const orders = new Set<number>();
-      
+
       for (const part of q.interactiveReorder.parts) {
         if (!part.id || part.id.trim().length === 0) {
           return next(new Error('INTERACTIVE_TEXT reorder part must have an id'));
@@ -429,7 +469,9 @@ QuestionSchema.pre('validate', function (next) {
       const sortedOrders = Array.from(orders).sort((a, b) => a - b);
       for (let i = 0; i < sortedOrders.length; i++) {
         if (sortedOrders[i] !== i + 1) {
-          return next(new Error('INTERACTIVE_TEXT reorder orders must be sequential starting from 1'));
+          return next(
+            new Error('INTERACTIVE_TEXT reorder orders must be sequential starting from 1'),
+          );
         }
       }
     }
@@ -454,7 +496,12 @@ QuestionSchema.pre('save', function (next) {
   const q = this as QuestionDocument;
 
   // لأسئلة MCQ: استخراج correctAnswer من أول option مع isCorrect = true
-  if (q.qType === QuestionType.MCQ && q.options && Array.isArray(q.options) && q.options.length > 0) {
+  if (
+    q.qType === QuestionType.MCQ &&
+    q.options &&
+    Array.isArray(q.options) &&
+    q.options.length > 0
+  ) {
     const correctOption = q.options.find((opt) => opt.isCorrect === true);
     if (correctOption) {
       // تحديث correctAnswer دائماً من الخيارات لضمان التوافق

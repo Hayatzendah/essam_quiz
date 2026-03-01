@@ -13,14 +13,24 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join, basename } from 'path';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { ListeningClipsService } from './listening-clips.service';
 import { CreateListeningClipDto } from './dto/create-listening-clip.dto';
 import { SkillEnum } from './schemas/listening-clip.schema';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { audioFileFilter, getDefaultAudioExtension } from '../common/utils/audio-file-validator.util';
+import {
+  audioFileFilter,
+  getDefaultAudioExtension,
+} from '../common/utils/audio-file-validator.util';
 import { AudioConverterService } from '../common/services/audio-converter.service';
 import { MediaService } from '../modules/media/media.service';
 import * as fs from 'fs';
@@ -88,10 +98,7 @@ export class ListeningClipsController {
   })
   @ApiResponse({ status: 201, description: 'Listening clip created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid file or data' })
-  async create(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() dto: CreateListeningClipDto,
-  ) {
+  async create(@UploadedFile() file: Express.Multer.File, @Body() dto: CreateListeningClipDto) {
     if (!file) {
       throw new BadRequestException('No audio file uploaded');
     }
@@ -117,7 +124,7 @@ export class ListeningClipsController {
     // رفع الملف على S3 للتخزين الدائم (بدل التخزين المحلي اللي بينمحي مع كل deploy)
     const fileBuffer = fs.readFileSync(finalPath);
     const finalExt = extname(finalFilename).replace(/^\./, '').toLowerCase();
-    const mime = finalExt === 'mp3' ? 'audio/mpeg' : (file.mimetype || 'audio/mpeg');
+    const mime = finalExt === 'mp3' ? 'audio/mpeg' : file.mimetype || 'audio/mpeg';
 
     const s3Result = await this.mediaService.uploadBuffer({
       buffer: fileBuffer,
@@ -127,7 +134,11 @@ export class ListeningClipsController {
     });
 
     // حذف الملف المحلي بعد الرفع على S3
-    try { fs.unlinkSync(finalPath); } catch (e) { /* ignore */ }
+    try {
+      fs.unlinkSync(finalPath);
+    } catch (e) {
+      /* ignore */
+    }
 
     const audioUrl = s3Result.url;
     dto.audioUrl = audioUrl;
@@ -142,9 +153,7 @@ export class ListeningClipsController {
       provider: clip.provider,
       skill: clip.skill,
       title: clip.title,
-      audioSources: [
-        { url: audioUrl, type: mime, format: finalExt },
-      ],
+      audioSources: [{ url: audioUrl, type: mime, format: finalExt }],
     };
 
     return response;
@@ -199,8 +208,8 @@ export class ListeningClipsController {
       required: ['file'],
     },
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Audio file uploaded and ListeningClip created successfully',
     schema: {
       type: 'object',
@@ -240,7 +249,7 @@ export class ListeningClipsController {
     // رفع الملف على S3 للتخزين الدائم
     const fileBuffer = fs.readFileSync(finalPath);
     const finalExt = extname(finalFilename).replace(/^\./, '').toLowerCase();
-    const mime = finalExt === 'mp3' ? 'audio/mpeg' : (file.mimetype || 'audio/mpeg');
+    const mime = finalExt === 'mp3' ? 'audio/mpeg' : file.mimetype || 'audio/mpeg';
 
     const s3Result = await this.mediaService.uploadBuffer({
       buffer: fileBuffer,
@@ -250,7 +259,11 @@ export class ListeningClipsController {
     });
 
     // حذف الملف المحلي بعد الرفع على S3
-    try { fs.unlinkSync(finalPath); } catch (e) { /* ignore */ }
+    try {
+      fs.unlinkSync(finalPath);
+    } catch (e) {
+      /* ignore */
+    }
 
     const audioUrl = s3Result.url;
 
@@ -268,9 +281,7 @@ export class ListeningClipsController {
     return {
       listeningClipId: String(clip._id),
       audioUrl,
-      audioSources: [
-        { url: audioUrl, type: mime, format: finalExt },
-      ],
+      audioSources: [{ url: audioUrl, type: mime, format: finalExt }],
     };
   }
 
@@ -302,4 +313,3 @@ export class ListeningClipsController {
     return this.service.findOneOrFail(id);
   }
 }
-

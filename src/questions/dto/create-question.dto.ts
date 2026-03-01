@@ -268,4 +268,21 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsMongoId()
   examId?: string;
+
+  // ====== Reading Passage & Cards (Lesen) ======
+  @IsOptional()
+  @IsString()
+  readingPassage?: string;
+
+  @IsOptional()
+  @IsString()
+  readingPassageBgColor?: string;
+
+  @IsOptional()
+  @IsArray()
+  readingCards?: { title: string; content: string; color?: string }[];
+
+  @IsOptional()
+  @IsString()
+  cardsLayout?: string;
 }

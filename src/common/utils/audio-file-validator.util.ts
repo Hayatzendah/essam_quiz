@@ -6,18 +6,18 @@ import { extname } from 'path';
  */
 export const ALLOWED_AUDIO_EXTENSIONS = ['.mp3', '.m4a', '.wav', '.aac', '.opus', '.ogg'] as const;
 export const ALLOWED_AUDIO_MIMETYPES = [
-  'audio/mpeg',       // mp3
+  'audio/mpeg', // mp3
   'audio/mp3',
-  'audio/mp4',        // m4a
+  'audio/mp4', // m4a
   'audio/x-m4a',
   'audio/wav',
   'audio/wave',
   'audio/x-wav',
   'audio/aac',
   'audio/aacp',
-  'audio/opus',       // opus
-  'audio/ogg',        // ogg container
-  'application/ogg',  // ogg container (alternative mime type)
+  'audio/opus', // opus
+  'audio/ogg', // ogg container
+  'application/ogg', // ogg container (alternative mime type)
 ] as const;
 
 /**
@@ -37,8 +37,8 @@ export function isAllowedAudioFile(file: { originalname: string; mimetype: strin
 
   // التحقق من الصيغة
   const hasAllowedExtension = ALLOWED_AUDIO_EXTENSIONS.some((allowed) => ext === allowed);
-  const hasAllowedMimetype = ALLOWED_AUDIO_MIMETYPES.some((allowed) =>
-    mimetype === allowed || mimetype.includes(allowed),
+  const hasAllowedMimetype = ALLOWED_AUDIO_MIMETYPES.some(
+    (allowed) => mimetype === allowed || mimetype.includes(allowed),
   );
 
   return hasAllowedExtension || hasAllowedMimetype;
@@ -54,11 +54,12 @@ export function audioFileFilter(
   callback: (error: Error | null, acceptFile: boolean) => void,
 ): void {
   // التحقق من أن الملف صوتي
-  if (!/^audio\//.test(file.mimetype) && !file.mimetype.includes('ogg') && file.mimetype !== 'application/ogg') {
-    return callback(
-      new BadRequestException('Only audio files are allowed') as any,
-      false,
-    );
+  if (
+    !/^audio\//.test(file.mimetype) &&
+    !file.mimetype.includes('ogg') &&
+    file.mimetype !== 'application/ogg'
+  ) {
+    return callback(new BadRequestException('Only audio files are allowed') as any, false);
   }
 
   const ext = extname(file.originalname).toLowerCase();
@@ -89,4 +90,3 @@ export function audioFileFilter(
 export function getDefaultAudioExtension(): string {
   return '.mp3';
 }
-

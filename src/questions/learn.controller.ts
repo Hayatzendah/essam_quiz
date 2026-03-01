@@ -21,7 +21,12 @@ export class LearnController {
     description: 'Returns general questions with correct answers and explanations',
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'رقم الصفحة' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'عدد النتائج في الصفحة (max 100)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'عدد النتائج في الصفحة (max 100)',
+  })
   getGeneralQuestions(@Query() dto: LearnGeneralQuestionsDto) {
     console.log('[LearnController] GET /learn/general/questions - dto:', dto);
     return this.questionsService.getLearnGeneralQuestions(dto);
@@ -36,12 +41,21 @@ export class LearnController {
     status: 200,
     description: 'Returns state-specific questions with correct answers and explanations',
   })
-  @ApiQuery({ name: 'state', required: true, type: String, description: 'اسم الولاية (مثل: Berlin, Bayern, Hamburg)' })
+  @ApiQuery({
+    name: 'state',
+    required: true,
+    type: String,
+    description: 'اسم الولاية (مثل: Berlin, Bayern, Hamburg)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'رقم الصفحة' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'عدد النتائج في الصفحة (max 100)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'عدد النتائج في الصفحة (max 100)',
+  })
   getStateQuestions(@Query() dto: LearnStateQuestionsDto) {
     console.log('[LearnController] GET /learn/state/questions - dto:', dto);
     return this.questionsService.getLearnStateQuestions(dto);
   }
 }
-

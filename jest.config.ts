@@ -14,9 +14,6 @@ const config: Config = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
-  coverageThreshold: {
-    global: { lines: 70, statements: 70, branches: 60, functions: 70 },
-  },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },

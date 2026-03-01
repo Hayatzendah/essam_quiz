@@ -28,11 +28,20 @@ export class GrammarTopicResponseDto {
   @Expose()
   tags?: string[];
 
-  @ApiProperty({ type: String, required: false, nullable: true, description: 'HTML content (legacy)' })
+  @ApiProperty({
+    type: String,
+    required: false,
+    nullable: true,
+    description: 'HTML content (legacy)',
+  })
   @Expose()
   contentHtml?: string | null;
 
-  @ApiProperty({ type: [ContentBlockDto], required: false, description: 'Content blocks array (new flexible structure)' })
+  @ApiProperty({
+    type: [ContentBlockDto],
+    required: false,
+    description: 'Content blocks array (new flexible structure)',
+  })
   @Expose()
   contentBlocks?: ContentBlockDto[];
 
@@ -48,7 +57,12 @@ export class GrammarTopicResponseDto {
   })
   examId?: string | null;
 
-  @ApiProperty({ type: String, required: false, nullable: true, description: 'Section title in the exam' })
+  @ApiProperty({
+    type: String,
+    required: false,
+    nullable: true,
+    description: 'Section title in the exam',
+  })
   @Expose()
   sectionTitle?: string | null;
 
@@ -60,6 +74,3 @@ export class GrammarTopicResponseDto {
   @Expose()
   updatedAt?: Date | null;
 }
-
-
-

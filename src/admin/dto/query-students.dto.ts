@@ -49,4 +49,3 @@ export class QueryStudentsDto {
   @Min(1)
   limit?: number = 10; // عدد النتائج في الصفحة
 }
-

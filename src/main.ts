@@ -198,10 +198,14 @@ async function bootstrap() {
           res.setHeader('Access-Control-Allow-Origin', origin);
         }
       }
-      
+
       // 🔥 منع express.static من البحث عن index.html
       // إذا كان الطلب ينتهي بـ / أو يطلب index.html، نرجع 404 مباشرة
-      if (req.path.endsWith('/') || req.path.endsWith('/index.html') || req.path.includes('/index.html')) {
+      if (
+        req.path.endsWith('/') ||
+        req.path.endsWith('/index.html') ||
+        req.path.includes('/index.html')
+      ) {
         return res.status(404).json({
           status: 'error',
           code: 404,
@@ -215,7 +219,7 @@ async function bootstrap() {
           method: req.method,
         });
       }
-      
+
       // 🔥 Fallback: خدمة الملفات مباشرة للمسارات العربية
       // إذا كان الطلب لملف صورة أو صوت، نحاول خدمته مباشرة
       if (req.path.match(/\.(jpeg|jpg|png|gif|webp|mp3|wav|m4a|aac|ogg)$/i)) {
@@ -230,11 +234,11 @@ async function bootstrap() {
           } catch (e) {
             // إذا فشل decode، نستخدم القيمة الأصلية
           }
-          
+
           // إزالة /uploads من البداية
           const relativePath = decodedPath.replace(/^\/uploads\//, '').replace(/^\//, '');
           const filePath = join(process.cwd(), 'uploads', relativePath);
-          
+
           // التحقق من وجود الملف
           if (existsSync(filePath)) {
             const stats = statSync(filePath);
@@ -242,23 +246,23 @@ async function bootstrap() {
               // تحديد Content-Type
               const ext = relativePath.toLowerCase().split('.').pop();
               const mimeTypes: { [key: string]: string } = {
-                'jpg': 'image/jpeg',
-                'jpeg': 'image/jpeg',
-                'png': 'image/png',
-                'gif': 'image/gif',
-                'webp': 'image/webp',
-                'mp3': 'audio/mpeg',
-                'wav': 'audio/wav',
-                'm4a': 'audio/mp4',
-                'aac': 'audio/aac',
-                'ogg': 'audio/ogg',
+                jpg: 'image/jpeg',
+                jpeg: 'image/jpeg',
+                png: 'image/png',
+                gif: 'image/gif',
+                webp: 'image/webp',
+                mp3: 'audio/mpeg',
+                wav: 'audio/wav',
+                m4a: 'audio/mp4',
+                aac: 'audio/aac',
+                ogg: 'audio/ogg',
               };
-              
+
               const contentType = mimeTypes[ext || ''] || 'application/octet-stream';
               res.setHeader('Content-Type', contentType);
               res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
               res.setHeader('Access-Control-Allow-Origin', '*');
-              
+
               // إرسال الملف
               const fileBuffer = readFileSync(filePath);
               return res.send(fileBuffer); // لا نمرر للـ next()
@@ -266,10 +270,12 @@ async function bootstrap() {
           }
         } catch (error) {
           // في حالة خطأ، نمرر للـ ServeStaticModule
-          logger.debug(`[Static Files Fallback] Error: ${error instanceof Error ? error.message : String(error)}`);
+          logger.debug(
+            `[Static Files Fallback] Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
         }
       }
-      
+
       next();
     });
 
@@ -327,12 +333,10 @@ async function bootstrap() {
           // دالة مساعدة لجمع جميع الأخطاء (بما في ذلك children)
           const collectErrors = (errorList: any[], parentPath = ''): any[] => {
             const allErrors: any[] = [];
-            
+
             errorList.forEach((error) => {
-              const currentPath = parentPath 
-                ? `${parentPath}.${error.property}` 
-                : error.property;
-              
+              const currentPath = parentPath ? `${parentPath}.${error.property}` : error.property;
+
               // إضافة أخطاء الحقل الحالي
               if (error.constraints) {
                 allErrors.push({
@@ -341,21 +345,21 @@ async function bootstrap() {
                   constraints: Object.values(error.constraints),
                 });
               }
-              
+
               // إضافة أخطاء children (مثل sections.0.quota)
               if (error.children && error.children.length > 0) {
                 const childErrors = collectErrors(error.children, currentPath);
                 allErrors.push(...childErrors);
               }
             });
-            
+
             return allErrors;
           };
-          
+
           const messages = collectErrors(errors);
           const logger = new Logger('ValidationPipe');
           logger.error(`Validation failed: ${JSON.stringify(messages, null, 2)}`);
-          
+
           return new HttpException(
             {
               status: 'error',
@@ -431,10 +435,12 @@ async function bootstrap() {
     logger.log(`✅ Health check available at: http://0.0.0.0:${port}/health`);
     logger.log(`✅ Static files (uploads) served with CORS headers at: /uploads/`);
     if (webAppOrigin || allowAllOrigins) {
-      logger.log(`✅ CORS enabled for: ${allowAllOrigins ? 'all origins' : allowedOrigins.join(', ')}`);
+      logger.log(
+        `✅ CORS enabled for: ${allowAllOrigins ? 'all origins' : allowedOrigins.join(', ')}`,
+      );
     }
     logger.log(`✅ All routes mapped successfully`);
-    
+
     // 🔥 Important: If adding SPA fallback routes (app.get('*', ...)) in the future,
     // make sure to exclude /uploads paths to prevent ENOENT errors:
     // app.get('*', (req, res, next) => {

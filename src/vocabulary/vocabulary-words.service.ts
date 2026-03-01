@@ -28,8 +28,11 @@ export class VocabularyWordsService {
       return [];
     }
 
-    const parts = meaning.split('/').map((part) => part.trim()).filter((part) => part.length > 0);
-    
+    const parts = meaning
+      .split('/')
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+
     // محاولة تخمين اللغة بناءً على النص (يمكن تحسينها لاحقاً)
     const languageMap: Record<string, string> = {
       ar: 'ar', // العربية
@@ -41,7 +44,7 @@ export class VocabularyWordsService {
     return parts.map((text, index) => {
       // محاولة تخمين اللغة من النص (يمكن تحسينها)
       let language = 'unknown';
-      
+
       // إذا كان النص يحتوي على أحرف عربية
       if (/[\u0600-\u06FF]/.test(text)) {
         language = 'ar';
@@ -224,7 +227,9 @@ export class VocabularyWordsService {
   /**
    * إضافة عدة كلمات دفعة واحدة
    */
-  async createBulk(dto: CreateBulkVocabularyWordsDto): Promise<{ insertedCount: number; ids: string[] }> {
+  async createBulk(
+    dto: CreateBulkVocabularyWordsDto,
+  ): Promise<{ insertedCount: number; ids: string[] }> {
     // التحقق من وجود الموضوع
     if (!Types.ObjectId.isValid(dto.topicId)) {
       throw new BadRequestException(`Invalid topicId: ${dto.topicId}`);
@@ -250,7 +255,9 @@ export class VocabularyWordsService {
 
       // التحقق من وجود meanings على الأقل
       if (meanings.length === 0) {
-        throw new BadRequestException(`Word "${wordItem.word}" must have either meaning or meanings`);
+        throw new BadRequestException(
+          `Word "${wordItem.word}" must have either meaning or meanings`,
+        );
       }
 
       return {
@@ -273,4 +280,3 @@ export class VocabularyWordsService {
     };
   }
 }
-

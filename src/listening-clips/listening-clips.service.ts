@@ -25,12 +25,7 @@ export class ListeningClipsService {
     return this.model.findById(id).exec();
   }
 
-  async findAll(filters?: {
-    provider?: string;
-    level?: string;
-    skill?: string;
-    teil?: number;
-  }) {
+  async findAll(filters?: { provider?: string; level?: string; skill?: string; teil?: number }) {
     const query: any = {};
     if (filters?.provider) {
       // استخدام regex للبحث case-insensitive (لأن provider قد يكون "Goethe" أو "goethe" أو "GOETHE")
@@ -56,11 +51,7 @@ export class ListeningClipsService {
    * تحديث audioUrl في الدوكومنت بعد تحويل الملف
    */
   async updateAudioUrl(id: string, audioUrl: string): Promise<ListeningClipDocument> {
-    const clip = await this.model.findByIdAndUpdate(
-      id,
-      { audioUrl },
-      { new: true },
-    ).exec();
+    const clip = await this.model.findByIdAndUpdate(id, { audioUrl }, { new: true }).exec();
 
     if (!clip) {
       throw new NotFoundException(`ListeningClip with ID ${id} not found`);
@@ -69,4 +60,3 @@ export class ListeningClipsService {
     return clip;
   }
 }
-

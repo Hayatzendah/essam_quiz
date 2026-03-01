@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards, Req, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Param, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { QueryStudentsDto } from './dto/query-students.dto';
@@ -88,4 +88,3 @@ export class AdminController {
     return this.adminService.getStudentSkills(studentId);
   }
 }
-

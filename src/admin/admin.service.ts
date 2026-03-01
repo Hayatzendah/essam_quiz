@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -15,7 +16,7 @@ export class AdminService {
   ) {}
 
   async getStudents(query: QueryStudentsDto) {
-    const { search, level, status, activity, page = 1, limit = 10 } = query;
+    const { search, activity, page = 1, limit = 10 } = query;
 
     // بناء الفلتر الأساسي - فقط الطلاب
     const filter: any = {
@@ -98,30 +99,32 @@ export class AdminService {
     );
 
     // دمج البيانات
-    const items = students.map((student: any) => {
-      const stats = statsMap.get(student._id.toString()) || {
-        attemptsCount: 0,
-        lastActivity: null,
-      };
+    const items = students
+      .map((student: any) => {
+        const stats = statsMap.get(student._id.toString()) || {
+          attemptsCount: 0,
+          lastActivity: null,
+        };
 
-      // فلتر activity (hasAttempts / noAttempts)
-      if (activity === 'hasAttempts' && stats.attemptsCount === 0) {
-        return null;
-      }
-      if (activity === 'noAttempts' && stats.attemptsCount > 0) {
-        return null;
-      }
+        // فلتر activity (hasAttempts / noAttempts)
+        if (activity === 'hasAttempts' && stats.attemptsCount === 0) {
+          return null;
+        }
+        if (activity === 'noAttempts' && stats.attemptsCount > 0) {
+          return null;
+        }
 
-      return {
-        id: student._id.toString(),
-        name: student.name || 'غير محدد',
-        email: student.email,
-        level: student.level || null, // إذا كان موجوداً في المستقبل
-        status: student.status || 'active', // افتراضي active
-        lastActivity: stats.lastActivity,
-        attemptsCount: stats.attemptsCount,
-      };
-    }).filter((item) => item !== null); // إزالة null items من activity filter
+        return {
+          id: student._id.toString(),
+          name: student.name || 'غير محدد',
+          email: student.email,
+          level: student.level || null, // إذا كان موجوداً في المستقبل
+          status: student.status || 'active', // افتراضي active
+          lastActivity: stats.lastActivity,
+          attemptsCount: stats.attemptsCount,
+        };
+      })
+      .filter((item) => item !== null); // إزالة null items من activity filter
 
     // حساب العدد الإجمالي (قبل activity filter)
     const total = await this.userModel.countDocuments(filter).exec();
@@ -167,11 +170,7 @@ export class AdminService {
           $project: {
             studentId: 1,
             activityDate: {
-              $cond: [
-                { $ifNull: ['$submittedAt', false] },
-                '$submittedAt',
-                '$createdAt',
-              ],
+              $cond: [{ $ifNull: ['$submittedAt', false] }, '$submittedAt', '$createdAt'],
             },
           },
         },
@@ -185,15 +184,16 @@ export class AdminService {
       ])
       .exec();
 
-    const stats = attemptsStats.length > 0
-      ? {
-          attemptsCount: attemptsStats[0].attemptsCount,
-          lastActivity: attemptsStats[0].lastActivity,
-        }
-      : {
-          attemptsCount: 0,
-          lastActivity: null,
-        };
+    const stats =
+      attemptsStats.length > 0
+        ? {
+            attemptsCount: attemptsStats[0].attemptsCount,
+            lastActivity: attemptsStats[0].lastActivity,
+          }
+        : {
+            attemptsCount: 0,
+            lastActivity: null,
+          };
 
     // إرجاع نفس الشكل المستخدم في getStudents
     const studentObj = student as any;
@@ -282,18 +282,23 @@ export class AdminService {
       examTitle: attempt.examId?.title || 'Unknown Exam',
       score: attempt.finalScore || 0,
       maxScore: attempt.totalMaxScore || 0,
-      percentage: attempt.totalMaxScore > 0
-        ? Math.round(((attempt.finalScore || 0) / attempt.totalMaxScore) * 100)
-        : 0,
+      percentage:
+        attempt.totalMaxScore > 0
+          ? Math.round(((attempt.finalScore || 0) / attempt.totalMaxScore) * 100)
+          : 0,
       status: attempt.status,
       submittedAt: attempt.submittedAt || attempt.createdAt,
-      passed: attempt.totalMaxScore > 0
-        ? ((attempt.finalScore || 0) / attempt.totalMaxScore) * 100 >= passingThreshold
-        : false,
+      passed:
+        attempt.totalMaxScore > 0
+          ? ((attempt.finalScore || 0) / attempt.totalMaxScore) * 100 >= passingThreshold
+          : false,
     }));
 
     // الأداء حسب المهارة
-    const skillMap = new Map<string, { total: number; totalScore: number; totalMaxScore: number }>();
+    const skillMap = new Map<
+      string,
+      { total: number; totalScore: number; totalMaxScore: number }
+    >();
     attempts.forEach((attempt: any) => {
       const skill = attempt.examId?.mainSkill || 'unknown';
       if (!skillMap.has(skill)) {
@@ -311,12 +316,15 @@ export class AdminService {
       averageScore: stat.total > 0 ? Math.round((stat.totalScore / stat.total) * 100) / 100 : 0,
       averagePercentage:
         stat.totalMaxScore > 0
-          ? Math.round(((stat.totalScore / stat.totalMaxScore) * 100) * 100) / 100
+          ? Math.round((stat.totalScore / stat.totalMaxScore) * 100 * 100) / 100
           : 0,
     }));
 
     // الأداء حسب المستوى
-    const levelMap = new Map<string, { total: number; totalScore: number; totalMaxScore: number }>();
+    const levelMap = new Map<
+      string,
+      { total: number; totalScore: number; totalMaxScore: number }
+    >();
     attempts.forEach((attempt: any) => {
       const level = attempt.examId?.level || 'unknown';
       if (!levelMap.has(level)) {
@@ -334,7 +342,7 @@ export class AdminService {
       averageScore: stat.total > 0 ? Math.round((stat.totalScore / stat.total) * 100) / 100 : 0,
       averagePercentage:
         stat.totalMaxScore > 0
-          ? Math.round(((stat.totalScore / stat.totalMaxScore) * 100) * 100) / 100
+          ? Math.round((stat.totalScore / stat.totalMaxScore) * 100 * 100) / 100
           : 0,
     }));
 
@@ -366,30 +374,41 @@ export class AdminService {
 
       const examStat = examMap.get(examId)!;
       examStat.attempts.push(attempt);
-      
+
       // حساب الوقت المستغرق
       if (attempt.timeUsedSec) {
         examStat.totalTime += attempt.timeUsedSec;
       } else if (attempt.startedAt && attempt.submittedAt) {
-        const timeDiff = new Date(attempt.submittedAt).getTime() - new Date(attempt.startedAt).getTime();
+        const timeDiff =
+          new Date(attempt.submittedAt).getTime() - new Date(attempt.startedAt).getTime();
         examStat.totalTime += Math.floor(timeDiff / 1000); // تحويل إلى ثواني
       }
 
       // آخر تاريخ إرسال
       const submittedAt = attempt.submittedAt || attempt.createdAt;
-      if (submittedAt && (!examStat.lastSubmittedAt || new Date(submittedAt) > examStat.lastSubmittedAt)) {
+      if (
+        submittedAt &&
+        (!examStat.lastSubmittedAt || new Date(submittedAt) > examStat.lastSubmittedAt)
+      ) {
         examStat.lastSubmittedAt = new Date(submittedAt);
       }
     });
 
-    const performanceByExam = Array.from(examMap.entries()).map(([examId, stat]) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const performanceByExam = Array.from(examMap.entries()).map(([_examId, stat]) => {
       // حساب أفضل درجة
       const scores = stat.attempts.map((a: any) => {
         // حساب finalScore من items إذا لم يكن موجوداً
         let finalScore = a.finalScore || 0;
         if (finalScore === 0 && a.items && Array.isArray(a.items)) {
-          const totalAutoScore = a.items.reduce((sum: number, item: any) => sum + (item.autoScore || 0), 0);
-          const totalManualScore = a.items.reduce((sum: number, item: any) => sum + (item.manualScore || 0), 0);
+          const totalAutoScore = a.items.reduce(
+            (sum: number, item: any) => sum + (item.autoScore || 0),
+            0,
+          );
+          const totalManualScore = a.items.reduce(
+            (sum: number, item: any) => sum + (item.manualScore || 0),
+            0,
+          );
           finalScore = totalAutoScore + totalManualScore;
         }
         return finalScore;
@@ -398,12 +417,15 @@ export class AdminService {
       // حساب maxScore (نأخذ أول محاولة لأنها عادة نفس الامتحان)
       let maxScore = stat.attempts[0]?.totalMaxScore || 0;
       if (maxScore === 0 && stat.attempts[0]?.items && Array.isArray(stat.attempts[0].items)) {
-        maxScore = stat.attempts[0].items.reduce((sum: number, item: any) => sum + (item.points || 0), 0);
+        maxScore = stat.attempts[0].items.reduce(
+          (sum: number, item: any) => sum + (item.points || 0),
+          0,
+        );
       }
 
       const bestScore = scores.length > 0 ? Math.max(...scores) : 0;
-      const hasCompleted = stat.attempts.some((a: any) => 
-        a.status === AttemptStatus.GRADED || a.status === AttemptStatus.SUBMITTED
+      const hasCompleted = stat.attempts.some(
+        (a: any) => a.status === AttemptStatus.GRADED || a.status === AttemptStatus.SUBMITTED,
       );
 
       return {
@@ -511,7 +533,7 @@ export class AdminService {
     // تحويل المحاولات إلى الشكل المطلوب مع حساب الدرجات بشكل صحيح
     return attempts.map((attempt: any) => {
       const exam = attempt.examId || {};
-      
+
       // حساب totalMaxScore من items إذا لم يكن محسوباً
       let totalMaxScore = attempt.totalMaxScore || 0;
       if (totalMaxScore === 0 && attempt.items && Array.isArray(attempt.items)) {
@@ -533,9 +555,8 @@ export class AdminService {
       }
 
       // حساب النسبة المئوية
-      const percentage = totalMaxScore > 0
-        ? Math.round(((finalScore / totalMaxScore) * 100) * 100) / 100
-        : 0;
+      const percentage =
+        totalMaxScore > 0 ? Math.round((finalScore / totalMaxScore) * 100 * 100) / 100 : 0;
 
       return {
         id: attempt._id.toString(),
@@ -547,11 +568,12 @@ export class AdminService {
         maxScore: totalMaxScore,
         totalMaxScore: totalMaxScore, // للتوافق
         percentage: percentage,
-        status: attempt.status === AttemptStatus.GRADED
-          ? 'completed'
-          : attempt.status === AttemptStatus.SUBMITTED
-          ? 'submitted'
-          : 'in_progress',
+        status:
+          attempt.status === AttemptStatus.GRADED
+            ? 'completed'
+            : attempt.status === AttemptStatus.SUBMITTED
+              ? 'submitted'
+              : 'in_progress',
         startedAt: attempt.startedAt || attempt.createdAt,
         submittedAt: attempt.submittedAt || null,
         // إضافة حقول إضافية للتوافق
@@ -626,7 +648,7 @@ export class AdminService {
       const skillLabel = skillLabels[skill.toLowerCase()] || skill;
       const averageScore =
         stat.attemptsCount > 0 && stat.totalMaxScore > 0
-          ? Math.round(((stat.totalScore / stat.totalMaxScore) * 100) * 100) / 100
+          ? Math.round((stat.totalScore / stat.totalMaxScore) * 100 * 100) / 100
           : 0;
 
       return {
@@ -653,4 +675,3 @@ export class AdminService {
     return skills;
   }
 }
-

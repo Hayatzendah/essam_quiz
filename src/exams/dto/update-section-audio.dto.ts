@@ -5,4 +5,3 @@ export class UpdateSectionAudioDto {
   @IsNotEmpty()
   listeningAudioId: string;
 }
-

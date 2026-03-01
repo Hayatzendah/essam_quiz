@@ -1,10 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import type {
-  QuestionLevel,
-  QuestionProvider,
-  QuestionSection,
-} from '../../common/enums';
+import type { QuestionLevel, QuestionProvider, QuestionSection } from '../../common/enums';
 import {
   ExamStatusEnum,
   QuestionLevel as QuestionLevelEnum,
@@ -113,31 +109,31 @@ export class Exam {
   @Prop({ type: String, index: true })
   level?: string;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: Object.values(ProviderEnum),
-    index: true 
+    index: true,
   })
   provider?: ProviderEnum | string;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: Object.values(ExamCategoryEnum),
-    index: true 
+    index: true,
   })
   examCategory?: ExamCategoryEnum;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['grammar_exam', 'provider_exam', 'leben_test'],
-    index: false 
+    index: false,
   })
   examType?: string; // للتوافق مع الفرونت (leben_test)
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: Object.values(ExamSkillEnum),
-    index: true 
+    index: true,
   })
   mainSkill?: ExamSkillEnum;
 
@@ -176,7 +172,7 @@ export class Exam {
   isEducational?: boolean;
 
   // ======  👇 إضافات خاصة بامتحان القواعد  ======
-  
+
   @Prop({ type: String, required: false })
   grammarLevel?: string;
 

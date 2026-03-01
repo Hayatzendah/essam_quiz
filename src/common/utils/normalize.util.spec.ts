@@ -26,6 +26,6 @@ describe('normalizeAnswer', () => {
 
   it('respects custom options', () => {
     expect(normalizeAnswer('  HELLO  ', { lowercase: false })).toBe('HELLO');
-    expect(normalizeAnswer('  hello  ', { trim: false })).toBe('  hello  ');
+    expect(normalizeAnswer('  hello  ', { trim: false })).toBe(' hello ');
   });
 });

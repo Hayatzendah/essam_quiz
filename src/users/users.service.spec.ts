@@ -4,17 +4,20 @@ import { UsersService } from './users.service';
 import { User, UserSchema } from './schemas/user.schema';
 import { disconnect } from 'mongoose';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 
 describe('UsersService', () => {
   let service: UsersService;
   let createdUserId: string;
+  let mongod: MongoMemoryServer;
 
   beforeAll(async () => {
+    mongod = await MongoMemoryServer.create();
+    const mongoUri = mongod.getUri();
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        MongooseModule.forRoot('mongodb://127.0.0.1:27017/test_users', {
-          dbName: 'test_users',
-        }),
+        MongooseModule.forRoot(mongoUri),
         MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
       ],
       providers: [UsersService],
@@ -25,6 +28,7 @@ describe('UsersService', () => {
 
   afterAll(async () => {
     await disconnect();
+    await mongod.stop();
   });
 
   // Test 1: إنشاء مستخدم (create) - التأكد من حفظ المستخدم بشكل صحيح وتشفير كلمة مروره

@@ -5,7 +5,9 @@ import { ProviderEnum } from '../enums/provider.enum';
  * @param provider - Provider value (can be any case: "Goethe", "GOETHE", "goethe")
  * @returns Normalized provider value from ProviderEnum, or the original value if not found (for validation to catch)
  */
-export function normalizeProvider(provider: string | undefined | null): ProviderEnum | string | undefined {
+export function normalizeProvider(
+  provider: string | undefined | null,
+): ProviderEnum | string | undefined {
   if (!provider) return undefined;
 
   const trimmed = String(provider).trim();
@@ -33,11 +35,7 @@ export function normalizeProvider(provider: string | undefined | null): Provider
   }
 
   // Handle "Leben in Deutschland" variations
-  const lebenVariations = [
-    'leben_in_deutschland',
-    'leben-in-deutschland',
-    'leben in deutschland',
-  ];
+  const lebenVariations = ['leben_in_deutschland', 'leben-in-deutschland', 'leben in deutschland'];
   if (lebenVariations.includes(normalized)) {
     return ProviderEnum.LEBEN_IN_DEUTSCHLAND;
   }
@@ -60,4 +58,3 @@ export function normalizeProvider(provider: string | undefined | null): Provider
   // If no match found, return original value (validation will catch it)
   return trimmed;
 }
-

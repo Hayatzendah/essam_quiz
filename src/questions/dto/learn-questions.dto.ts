@@ -10,7 +10,13 @@ export class LearnGeneralQuestionsDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiProperty({ required: false, default: 20, minimum: 1, maximum: 100, description: 'عدد النتائج في الصفحة' })
+  @ApiProperty({
+    required: false,
+    default: 20,
+    minimum: 1,
+    maximum: 100,
+    description: 'عدد النتائج في الصفحة',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -20,7 +26,10 @@ export class LearnGeneralQuestionsDto {
 }
 
 export class LearnStateQuestionsDto {
-  @ApiProperty({ required: true, description: 'اسم الولاية الألمانية (مثل: Berlin, Bayern, Hamburg)' })
+  @ApiProperty({
+    required: true,
+    description: 'اسم الولاية الألمانية (مثل: Berlin, Bayern, Hamburg)',
+  })
   @IsString()
   state: string;
 
@@ -31,7 +40,13 @@ export class LearnStateQuestionsDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiProperty({ required: false, default: 20, minimum: 1, maximum: 100, description: 'عدد النتائج في الصفحة' })
+  @ApiProperty({
+    required: false,
+    default: 20,
+    minimum: 1,
+    maximum: 100,
+    description: 'عدد النتائج في الصفحة',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -39,4 +54,3 @@ export class LearnStateQuestionsDto {
   @Max(100)
   limit?: number = 20;
 }
-

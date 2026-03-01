@@ -71,7 +71,9 @@ export class GrammarTopicsService {
 
         case ContentBlockType.TABLE:
           if (!Array.isArray(block.data.headers) || !Array.isArray(block.data.rows)) {
-            throw new BadRequestException('Table block must have data.headers (array) and data.rows (array)');
+            throw new BadRequestException(
+              'Table block must have data.headers (array) and data.rows (array)',
+            );
           }
           break;
 
@@ -84,7 +86,9 @@ export class GrammarTopicsService {
         case ContentBlockType.EXERCISE:
           // التحقق من وجود أسئلة
           if (!Array.isArray(block.data.questions) || block.data.questions.length === 0) {
-            throw new BadRequestException('Exercise block must have data.questions (non-empty array)');
+            throw new BadRequestException(
+              'Exercise block must have data.questions (non-empty array)',
+            );
           }
           // التحقق من صحة كل سؤال
           for (const q of block.data.questions) {
@@ -97,12 +101,16 @@ export class GrammarTopicsService {
               );
             }
             if (!q.correctAnswer || typeof q.correctAnswer !== 'string') {
-              throw new BadRequestException('Each exercise question must have a correctAnswer (string)');
+              throw new BadRequestException(
+                'Each exercise question must have a correctAnswer (string)',
+              );
             }
             // أسئلة الاختيار من متعدد تحتاج خيارات
             if (q.type === ExerciseQuestionType.MULTIPLE_CHOICE) {
               if (!Array.isArray(q.options) || q.options.length < 2) {
-                throw new BadRequestException('Multiple choice questions must have at least 2 options');
+                throw new BadRequestException(
+                  'Multiple choice questions must have at least 2 options',
+                );
               }
             }
             // أسئلة ترتيب الكلمات تحتاج كلمات
@@ -111,7 +119,9 @@ export class GrammarTopicsService {
                 throw new BadRequestException('Word order questions must have at least 2 words');
               }
               if (!q.words.every((w: any) => typeof w === 'string' && w.trim().length > 0)) {
-                throw new BadRequestException('Word order questions words must be non-empty strings');
+                throw new BadRequestException(
+                  'Word order questions words must be non-empty strings',
+                );
               }
             }
           }
@@ -143,7 +153,7 @@ export class GrammarTopicsService {
   private mapToResponse(topic: any): any {
     // Convert Mongoose document to plain object if needed
     const plainTopic = topic.toObject ? topic.toObject() : topic;
-    
+
     return {
       ...plainTopic,
       _id: plainTopic._id?.toString() || plainTopic.id?.toString() || plainTopic._id,
@@ -167,7 +177,11 @@ export class GrammarTopicsService {
       query.level = filter.level;
     }
 
-    const items = await this.model.find(query).sort({ level: 1, position: 1, title: 1 }).lean().exec();
+    const items = await this.model
+      .find(query)
+      .sort({ level: 1, position: 1, title: 1 })
+      .lean()
+      .exec();
 
     return {
       items: items.map((item) => this.mapToResponse(item)),
@@ -233,7 +247,7 @@ export class GrammarTopicsService {
     if (exam) {
       // ربط الموضوع بالامتحان تلقائياً
       topic.examId = (exam as any)._id;
-      
+
       // البحث عن section title
       let sectionTitle: string | null = null;
       if (exam.sections && Array.isArray(exam.sections) && exam.sections.length > 0) {
@@ -242,11 +256,11 @@ export class GrammarTopicsService {
           sectionTitle = firstSection.title || firstSection.name || null;
         }
       }
-      
+
       if (sectionTitle) {
         topic.sectionTitle = sectionTitle;
       }
-      
+
       await topic.save();
       this.logger.log(`Auto-linked topic ${slug} (${level}) to exam ${exam._id}`);
     } else {
@@ -438,12 +452,12 @@ export class GrammarTopicsService {
   async linkExam(identifier: string, dto: LinkExamDto, level?: string) {
     // 1. البحث عن grammar topic (يدعم كلاً من slug و topicId)
     let topic: GrammarTopicDocument | null = null;
-    
+
     // محاولة البحث بالـ ID أولاً (إذا كان ObjectId صحيح)
     if (Types.ObjectId.isValid(identifier)) {
       topic = await this.model.findById(identifier).exec();
     }
-    
+
     // إذا لم يُعثر عليه بالـ ID، البحث بالـ slug
     if (!topic) {
       const query: any = { slug: identifier.toLowerCase().trim() };
@@ -499,10 +513,12 @@ export class GrammarTopicsService {
    */
   async attachExamToTopic(level: string, slug: string, examId: string) {
     // 1. البحث عن الموضوع
-    const topic = await this.model.findOne({
-      level,
-      slug: slug.toLowerCase().trim(),
-    }).exec();
+    const topic = await this.model
+      .findOne({
+        level,
+        slug: slug.toLowerCase().trim(),
+      })
+      .exec();
 
     if (!topic) {
       this.logger.warn(

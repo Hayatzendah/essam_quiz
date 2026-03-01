@@ -7,7 +7,10 @@ import { Attempt, AttemptSchema } from './schemas/attempt.schema';
 import { Exam, ExamSchema } from '../exams/schemas/exam.schema';
 import { Question, QuestionSchema } from '../questions/schemas/question.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
-import { SchreibenTask, SchreibenTaskSchema } from '../modules/schreiben/schemas/schreiben-task.schema';
+import {
+  SchreibenTask,
+  SchreibenTaskSchema,
+} from '../modules/schreiben/schemas/schreiben-task.schema';
 import { AuthModule } from '../auth/auth.module';
 import { MediaModule } from '../modules/media/media.module';
 import { ExamsModule } from '../exams/exams.module';

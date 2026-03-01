@@ -11,13 +11,7 @@ import {
   ValidationPipe,
   Req,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -68,7 +62,10 @@ export class SchreibenTasksController {
   @ApiResponse({ status: 400, description: 'بيانات غير صالحة' })
   @ApiResponse({ status: 401, description: 'غير مصرح' })
   @ApiResponse({ status: 403, description: 'ممنوع - للمعلم والأدمن فقط' })
-  create(@Body(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true })) dto: CreateSchreibenTaskDto) {
+  create(
+    @Body(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true }))
+    dto: CreateSchreibenTaskDto,
+  ) {
     return this.service.create(dto);
   }
 
@@ -81,7 +78,11 @@ export class SchreibenTasksController {
   @ApiResponse({ status: 404, description: 'المهمة غير موجودة' })
   @ApiResponse({ status: 401, description: 'غير مصرح' })
   @ApiResponse({ status: 403, description: 'ممنوع - للمعلم والأدمن فقط' })
-  update(@Param('id') id: string, @Body(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true })) dto: UpdateSchreibenTaskDto) {
+  update(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false, transform: true }))
+    dto: UpdateSchreibenTaskDto,
+  ) {
     return this.service.update(id, dto);
   }
 
@@ -121,10 +122,7 @@ export class SchreibenTasksController {
   @ApiResponse({ status: 404, description: 'المهمة غير موجودة' })
   @ApiResponse({ status: 401, description: 'غير مصرح' })
   @ApiResponse({ status: 403, description: 'ممنوع - للمعلم والأدمن فقط' })
-  updateContentBlocks(
-    @Param('id') id: string,
-    @Req() req: any,
-  ) {
+  updateContentBlocks(@Param('id') id: string, @Req() req: any) {
     // نستقبل الـ body مباشرة بدون ValidationPipe لضمان عدم حذف أي بيانات
     const body = req.body;
     const contentBlocks = Array.isArray(body) ? body : body.contentBlocks || [];
@@ -155,7 +153,8 @@ export class SchreibenTasksController {
   @ApiOperation({ summary: 'تحديث الإجابات الصحيحة لكل الحقول دفعة واحدة' })
   updateAllCorrectAnswers(
     @Param('id') id: string,
-    @Body() body: { answers: Array<{ fieldId: string; value?: string; correctAnswers?: string[] }> },
+    @Body()
+    body: { answers: Array<{ fieldId: string; value?: string; correctAnswers?: string[] }> },
   ) {
     return this.service.updateAllCorrectAnswers(id, body.answers);
   }

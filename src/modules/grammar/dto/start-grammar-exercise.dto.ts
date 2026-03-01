@@ -18,6 +18,3 @@ export class StartGrammarExerciseDto {
   @Min(1)
   questionsCount: number;
 }
-
-
-

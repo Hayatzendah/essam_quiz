@@ -68,17 +68,19 @@ export class AttemptItem {
   @Prop({ type: [String], default: undefined }) fillExact?: string | string[]; // fill - يمكن أن يكون string أو array
   @Prop({ type: [String], default: undefined }) regexList?: string[]; // fill
   @Prop({ type: [Number], default: undefined }) correctOptionIndexes?: number[]; // mcq
-  @Prop({ 
-    type: [[String, String]], 
-    default: undefined,
-    required: false 
-  }) answerKeyMatch?: [string, string][]; // match: أزواج [left, right]
-  @Prop({ 
-    type: [Object], 
+  @Prop({
+    type: [[String, String]],
     default: undefined,
     required: false,
-    _id: false
-  }) matchPairs?: Array<{ left: string; right: string }>; // match: pairs للعرض في response
+  })
+  answerKeyMatch?: [string, string][]; // match: أزواج [left, right]
+  @Prop({
+    type: [Object],
+    default: undefined,
+    required: false,
+    _id: false,
+  })
+  matchPairs?: Array<{ left: string; right: string }>; // match: pairs للعرض في response
   @Prop({ type: [String], default: undefined }) answerKeyReorder?: string[]; // reorder: ترتيب صحيح
 
   // INTERACTIVE_TEXT snapshots (للتصحيح)
@@ -186,12 +188,15 @@ export class Attempt {
 
   // نتائج تصحيح حقول نموذج Schreiben
   @Prop({ type: Object, default: undefined, _id: false })
-  schreibenFormResults?: Record<string, {
-    studentAnswer: string | string[];
-    correctAnswer: string | string[];
-    isCorrect: boolean;
-    points: number;
-  }>;
+  schreibenFormResults?: Record<
+    string,
+    {
+      studentAnswer: string | string[];
+      correctAnswer: string | string[];
+      isCorrect: boolean;
+      points: number;
+    }
+  >;
 
   // درجات نموذج Schreiben
   @Prop({ type: Number, default: 0 }) schreibenFormScore?: number;

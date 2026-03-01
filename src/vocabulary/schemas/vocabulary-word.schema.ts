@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { VocabularyWordMeaning, VocabularyWordMeaningSchema } from './vocabulary-word-meaning.schema';
+import {
+  VocabularyWordMeaning,
+  VocabularyWordMeaningSchema,
+} from './vocabulary-word-meaning.schema';
 
 export type VocabularyWordDocument = VocabularyWord & Document;
 
@@ -29,23 +32,3 @@ export class VocabularyWord {
 }
 
 export const VocabularyWordSchema = SchemaFactory.createForClass(VocabularyWord);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

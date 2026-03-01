@@ -9,4 +9,3 @@ export class StartLebenExamDto {
   @IsNotEmpty()
   state: string; // Bundesland name, e.g. "Berlin", "Bayern"
 }
-

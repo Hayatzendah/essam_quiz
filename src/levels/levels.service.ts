@@ -20,10 +20,34 @@ import { Question } from '../questions/schemas/question.schema';
 
 const DEFAULT_LEVELS = [
   { name: 'A1', label: 'A1 - Anfänger', position: 0, isDefault: true, isActive: true },
-  { name: 'A2', label: 'A2 - Grundlegende Kenntnisse', position: 1, isDefault: true, isActive: true },
-  { name: 'B1', label: 'B1 - Fortgeschrittene Sprachverwendung', position: 2, isDefault: true, isActive: true },
-  { name: 'B2', label: 'B2 - Selbständige Sprachverwendung', position: 3, isDefault: true, isActive: true },
-  { name: 'C1', label: 'C1 - Fachkundige Sprachkenntnisse', position: 4, isDefault: true, isActive: true },
+  {
+    name: 'A2',
+    label: 'A2 - Grundlegende Kenntnisse',
+    position: 1,
+    isDefault: true,
+    isActive: true,
+  },
+  {
+    name: 'B1',
+    label: 'B1 - Fortgeschrittene Sprachverwendung',
+    position: 2,
+    isDefault: true,
+    isActive: true,
+  },
+  {
+    name: 'B2',
+    label: 'B2 - Selbständige Sprachverwendung',
+    position: 3,
+    isDefault: true,
+    isActive: true,
+  },
+  {
+    name: 'C1',
+    label: 'C1 - Fachkundige Sprachkenntnisse',
+    position: 4,
+    isDefault: true,
+    isActive: true,
+  },
 ];
 
 @Injectable()
