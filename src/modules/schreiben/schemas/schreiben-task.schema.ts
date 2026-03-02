@@ -62,6 +62,12 @@ export class SchreibenTask {
   instructions?: string; // تعليمات عامة للطالب
 
   @Prop({ type: String, trim: true })
+  instructionsBgColor?: string; // لون خلفية فقرة التعليمات
+
+  @Prop({ type: String, trim: true })
+  instructionsTextColor?: string; // لون نص التعليمات
+
+  @Prop({ type: String, trim: true })
   successRate?: string; // نسبة النجاح (مثل: "28% (24 von 85)")
 
   @Prop({ type: Types.ObjectId, ref: 'Exam', index: true })

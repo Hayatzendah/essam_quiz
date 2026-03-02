@@ -86,4 +86,14 @@ export class CreateSchreibenTaskDto {
   @IsOptional()
   @IsString()
   instructions?: string;
+
+  @ApiProperty({ required: false, description: 'لون خلفية فقرة التعليمات' })
+  @IsOptional()
+  @IsString()
+  instructionsBgColor?: string;
+
+  @ApiProperty({ required: false, description: 'لون نص التعليمات' })
+  @IsOptional()
+  @IsString()
+  instructionsTextColor?: string;
 }

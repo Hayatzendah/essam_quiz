@@ -423,6 +423,12 @@ export class SchreibenTasksService {
           }
           break;
 
+        case SchreibenBlockType.CARDS:
+          if (!block.data || !Array.isArray((block.data as any).cards)) {
+            (block as any).data = { cards: [], cardsLayout: 'horizontal' };
+          }
+          break;
+
         default:
           // تجاهل الأنواع غير المعروفة بدل رمي خطأ
           break;

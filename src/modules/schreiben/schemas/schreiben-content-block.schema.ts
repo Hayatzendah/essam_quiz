@@ -8,6 +8,7 @@ export enum SchreibenBlockType {
   TEXT = 'text', // فقرة نصية (تعليمات، وصف السيناريو)
   FORM = 'form', // استمارة مع حقول
   IMAGE = 'image', // صورة
+  CARDS = 'cards', // بطاقات (عنوان + محتوى، أفقي/عمودي)
 }
 
 // أنواع حقول الاستمارة
@@ -93,7 +94,7 @@ export class SchreibenContentBlock {
   type: SchreibenBlockType;
 
   @Prop({ type: Object, required: true })
-  data: TextBlockData | FormBlockData | ImageBlockData;
+  data: TextBlockData | FormBlockData | ImageBlockData | Record<string, any>; // cards: { cards: [], cardsLayout }
 }
 
 export const SchreibenContentBlockSchema = SchemaFactory.createForClass(SchreibenContentBlock);
