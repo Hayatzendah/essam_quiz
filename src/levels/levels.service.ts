@@ -78,9 +78,10 @@ export class LevelsService implements OnModuleInit {
       this.logger.log(`Seeded ${DEFAULT_LEVELS.length} default levels`);
     }
 
-    // Migration: add sections to existing levels that don't have it
+    // Migration: fix levels with missing, null, or empty sections
+    // (previous buggy Object.assign could wipe sections to null/undefined)
     const migrated = await this.levelModel.updateMany(
-      { sections: { $exists: false } },
+      { $or: [{ sections: { $exists: false } }, { sections: null }, { sections: { $size: 0 } }] },
       { $set: { sections: ALL_SECTIONS } },
     );
     if (migrated.modifiedCount > 0) {
@@ -143,7 +144,10 @@ export class LevelsService implements OnModuleInit {
       }
     }
 
-    Object.assign(level, dto);
+    const cleanDto = Object.fromEntries(
+      Object.entries(dto).filter(([_, v]) => v !== undefined),
+    );
+    Object.assign(level, cleanDto);
     return level.save();
   }
 
