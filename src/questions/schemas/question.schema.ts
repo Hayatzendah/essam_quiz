@@ -272,6 +272,7 @@ export class Question {
       title: string;
       texts: Array<{ label?: string; content: string }>;
       color?: string;
+      image?: { key: string; url: string; mime: string };
     }>;
     cardsLayout?: string;
   }>;
