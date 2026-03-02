@@ -305,4 +305,14 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsString()
   cardsLayout?: string;
+
+  // بلوكات المحتوى المرنة (Sprechen وغيرها)
+  @IsOptional()
+  @IsArray()
+  contentBlocks?: any[];
+
+  // علامة للأسئلة الوهمية (محتوى فقط بدون سؤال فعلي)
+  @IsOptional()
+  @IsBoolean()
+  contentOnly?: boolean;
 }
