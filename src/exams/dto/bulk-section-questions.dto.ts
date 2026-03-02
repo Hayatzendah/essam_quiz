@@ -62,6 +62,17 @@ class CardTextEntryDto {
   content: string;
 }
 
+class CardImageDto {
+  @IsString()
+  key: string;
+
+  @IsString()
+  url: string;
+
+  @IsString()
+  mime: string;
+}
+
 class EnhancedCardDto {
   @IsString()
   @MinLength(1)
@@ -75,6 +86,11 @@ class EnhancedCardDto {
   @IsOptional()
   @IsString()
   color?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CardImageDto)
+  image?: CardImageDto;
 }
 
 class ContentBlockDto {
