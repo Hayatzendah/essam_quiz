@@ -3641,7 +3641,15 @@ export class ExamsService {
           });
           exerciseOrder.push(groupId);
         }
-        exerciseMap.get(groupId)!.questions.push(questionData);
+        // ✅ تحديث بيانات التمرين من أي سؤال يحملها (ليس فقط الأول)
+        const group = exerciseMap.get(groupId)!;
+        if (!group.contentBlocks && q.contentBlocks) group.contentBlocks = q.contentBlocks;
+        if (!group.readingCards && q.readingCards) group.readingCards = q.readingCards;
+        if (!group.cardsLayout && q.cardsLayout) group.cardsLayout = q.cardsLayout;
+        if (!group.passageText && q.readingPassage) group.passageText = q.readingPassage;
+        if (!group.passageBgColor && q.readingPassageBgColor) group.passageBgColor = q.readingPassageBgColor;
+        if (!group.clipData && clipData) group.clipData = clipData;
+        group.questions.push(questionData);
       } else {
         ungroupedQuestions.push(questionData);
       }
