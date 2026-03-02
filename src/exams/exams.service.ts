@@ -3617,6 +3617,10 @@ export class ExamsService {
         ...(q.sampleAnswer && { sampleAnswer: q.sampleAnswer }),
         ...(q.minWords !== undefined && { minWords: q.minWords }),
         ...(q.maxWords !== undefined && { maxWords: q.maxWords }),
+        // محتوى التمرين (بطاقات / بلوكات) — للأسئلة غير المجمعة (مثل Sprechen Teil 3)
+        ...(q.readingCards && q.readingCards.length > 0 && { readingCards: q.readingCards }),
+        ...(q.cardsLayout && { cardsLayout: q.cardsLayout }),
+        ...(q.contentBlocks && q.contentBlocks.length > 0 && { contentBlocks: q.contentBlocks }),
       };
 
       // تحديد groupId: إما clipId (صوت) أو passageId (فقرة)
@@ -3682,7 +3686,7 @@ export class ExamsService {
       exerciseIndex++;
     }
 
-    // أسئلة غير مجمّعة → كل سؤال تمرين لحاله
+    // أسئلة غير مجمّعة → كل سؤال تمرين لحاله (نستخدم readingCards/contentBlocks من السؤال)
     for (const qData of ungroupedQuestions) {
       exercises.push({
         exerciseNumber: `${teilNum}.${exerciseIndex}`,
@@ -3690,9 +3694,9 @@ export class ExamsService {
         listeningClipId: null,
         audioUrl: null,
         readingPassage: null,
-        readingCards: null,
-        cardsLayout: null,
-        contentBlocks: null,
+        readingCards: (qData as any).readingCards ?? null,
+        cardsLayout: (qData as any).cardsLayout ?? null,
+        contentBlocks: (qData as any).contentBlocks ?? null,
         questionCount: 1,
         progress: {
           answered: qData.status === 'answered' ? 1 : 0,
