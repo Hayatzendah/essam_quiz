@@ -18,14 +18,17 @@ import { SchreibenTask } from '../modules/schreiben/schemas/schreiben-task.schem
 import { ListeningClip } from '../listening-clips/schemas/listening-clip.schema';
 import { Question } from '../questions/schemas/question.schema';
 
+const ALL_SECTIONS = ['grammatik', 'wortschatz', 'pruefungen', 'leben_in_deutschland'];
+
 const DEFAULT_LEVELS = [
-  { name: 'A1', label: 'A1 - Anfänger', position: 0, isDefault: true, isActive: true },
+  { name: 'A1', label: 'A1 - Anfänger', position: 0, isDefault: true, isActive: true, sections: ALL_SECTIONS },
   {
     name: 'A2',
     label: 'A2 - Grundlegende Kenntnisse',
     position: 1,
     isDefault: true,
     isActive: true,
+    sections: ALL_SECTIONS,
   },
   {
     name: 'B1',
@@ -33,6 +36,7 @@ const DEFAULT_LEVELS = [
     position: 2,
     isDefault: true,
     isActive: true,
+    sections: ALL_SECTIONS,
   },
   {
     name: 'B2',
@@ -40,6 +44,7 @@ const DEFAULT_LEVELS = [
     position: 3,
     isDefault: true,
     isActive: true,
+    sections: ALL_SECTIONS,
   },
   {
     name: 'C1',
@@ -47,6 +52,7 @@ const DEFAULT_LEVELS = [
     position: 4,
     isDefault: true,
     isActive: true,
+    sections: ALL_SECTIONS,
   },
 ];
 
@@ -70,6 +76,15 @@ export class LevelsService implements OnModuleInit {
       this.logger.log('Seeding default levels...');
       await this.levelModel.insertMany(DEFAULT_LEVELS);
       this.logger.log(`Seeded ${DEFAULT_LEVELS.length} default levels`);
+    }
+
+    // Migration: add sections to existing levels that don't have it
+    const migrated = await this.levelModel.updateMany(
+      { sections: { $exists: false } },
+      { $set: { sections: ALL_SECTIONS } },
+    );
+    if (migrated.modifiedCount > 0) {
+      this.logger.log(`Migrated ${migrated.modifiedCount} levels with default sections`);
     }
   }
 

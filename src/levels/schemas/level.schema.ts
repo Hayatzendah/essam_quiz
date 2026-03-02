@@ -19,6 +19,9 @@ export class Level {
 
   @Prop({ type: Boolean, default: true })
   isActive: boolean;
+
+  @Prop({ type: [String], default: ['grammatik', 'wortschatz', 'pruefungen', 'leben_in_deutschland'] })
+  sections: string[];
 }
 
 export const LevelSchema = SchemaFactory.createForClass(Level);
