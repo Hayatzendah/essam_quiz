@@ -3507,7 +3507,15 @@ export class ExamsService {
       .populate('listeningClipId', 'title audioUrl audioKey teil')
       .lean();
 
-    const questionMap = new Map(questions.map((q: any) => [q._id.toString(), q]));
+    // تطبيع contentBlocks: استعادة type من blockType (لو Mongoose حذف type عند الحفظ)
+    const questionsWithNormalizedBlocks = (questions as any[]).map((q: any) => {
+      if (!Array.isArray(q.contentBlocks) || q.contentBlocks.length === 0) return q;
+      return {
+        ...q,
+        contentBlocks: q.contentBlocks.map((b: any) => ({ ...b, type: b.type ?? b.blockType })),
+      };
+    });
+    const questionMap = new Map(questionsWithNormalizedBlocks.map((q: any) => [q._id.toString(), q]));
 
     // جلب بيانات التقدم من آخر محاولة
     const attemptItemMap = new Map<string, any>();

@@ -554,6 +554,14 @@ export class QuestionsService {
       });
     }
 
+    // تطبيع contentBlocks: استعادة type من blockType (لو Mongoose حذف type عند الحفظ)
+    if (Array.isArray(question.contentBlocks) && question.contentBlocks.length > 0) {
+      (question as any).contentBlocks = question.contentBlocks.map((b: any) => ({
+        ...b,
+        type: b.type ?? b.blockType,
+      }));
+    }
+
     return question;
   }
 
@@ -612,11 +620,24 @@ export class QuestionsService {
     if (updateData.contentBlocks) {
       const doc = await this.model.findById(id).exec();
       if (!doc) throw new NotFoundException('Question not found');
+      // تخزين نوع البلوك تحت مفتاح blockType حتى لو حُذف "type" عند الحفظ
+      const blocksWithBlockType = (updateData.contentBlocks as any[]).map((b: any) => ({
+        ...b,
+        blockType: b.type ?? b.blockType,
+      }));
+      (updateData as any).contentBlocks = blocksWithBlockType;
       Object.assign(doc, updateData);
       doc.markModified('contentBlocks');
       if (updateData.readingCards) doc.markModified('readingCards');
       await doc.save();
       const updated = doc.toObject();
+      // إرجاع type من blockType للفرونت (لو Mongoose حذف type)
+      if (Array.isArray(updated.contentBlocks)) {
+        updated.contentBlocks = updated.contentBlocks.map((b: any) => ({
+          ...b,
+          type: b.type ?? b.blockType,
+        }));
+      }
 
       // Log للتحقق من answerKeyMatch بعد التحديث
       if (updated.qType === QuestionType.MATCH) {
