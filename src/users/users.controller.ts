@@ -11,20 +11,30 @@ import {
   HttpStatus,
   Delete,
   Post,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { readFileSync } from 'fs';
 import { UsersService } from './users.service';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { MediaService } from '../modules/media/media.service';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   private readonly logger = new Logger(UsersController.name);
 
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   // GET /users/me  => المريض/المعلم/الطالب يشوف ملفه
   @Get('me')
@@ -42,6 +52,72 @@ export class UsersController {
         throw error;
       }
       throw new HttpException('Failed to get user data', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // PATCH /users/me/profile-picture  => رفع صورة بروفايل
+  @Patch('me/profile-picture')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/images/profile-pictures',
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      fileFilter: (_req, file, cb) => {
+        const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (allowedMimes.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new HttpException('يُسمح فقط بملفات الصور (jpg, png, gif, webp)', HttpStatus.BAD_REQUEST), false);
+        }
+      },
+    }),
+  )
+  async uploadProfilePicture(@Req() req: any, @UploadedFile() file: any) {
+    try {
+      const userId = req.user?.userId || req.user?.sub;
+      if (!userId) {
+        throw new HttpException('User ID not found in token', HttpStatus.UNAUTHORIZED);
+      }
+      if (!file) {
+        throw new HttpException('لم يتم رفع أي ملف', HttpStatus.BAD_REQUEST);
+      }
+
+      let profilePictureUrl: string;
+
+      // محاولة رفع إلى S3/Cloudinary أولاً، وإلا استخدام المسار المحلي
+      try {
+        const buffer = readFileSync(file.path);
+        const ext = extname(file.originalname).replace('.', '');
+        const uploaded = await this.mediaService.uploadBuffer({
+          buffer,
+          mime: file.mimetype,
+          ext,
+          prefix: 'images/profile-pictures',
+        });
+        profilePictureUrl = uploaded.url;
+      } catch {
+        // fallback: استخدام المسار المحلي
+        const baseUrl = process.env.APP_URL || process.env.PUBLIC_BASE_URL || '';
+        profilePictureUrl = `${baseUrl}/uploads/images/profile-pictures/${file.filename}`;
+      }
+
+      await this.usersService.updateById(userId, { profilePicture: profilePictureUrl } as any);
+
+      return { profilePicture: profilePictureUrl };
+    } catch (error) {
+      this.logger.error(`Error in PATCH /users/me/profile-picture: ${error.message}`, error.stack);
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        `فشل رفع صورة البروفايل: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

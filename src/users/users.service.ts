@@ -29,6 +29,10 @@ export class UsersService {
     return this.userModel.findById(id).select('+refreshTokenHash').exec();
   }
 
+  async findByIdWithPassword(id: string) {
+    return this.userModel.findById(id).select('+password').exec();
+  }
+
   async updateById(id: string, update: Partial<User>) {
     return this.userModel.findByIdAndUpdate(id, update, { new: true }).exec();
   }

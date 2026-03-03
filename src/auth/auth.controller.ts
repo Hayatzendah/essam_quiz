@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Res,
   UseGuards,
@@ -15,6 +16,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { UserRole } from '../common/enums';
@@ -271,6 +273,21 @@ export class AuthController {
   @Post('logout')
   async logout(@CurrentUser('userId') userId: string) {
     return this.auth.logout(userId);
+  }
+
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid old password' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Patch('change-password')
+  async changePassword(
+    @CurrentUser('userId') userId: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.auth.changePassword(userId, dto.oldPassword, dto.newPassword);
   }
 
   @ApiOperation({ summary: 'Get current user information' })

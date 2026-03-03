@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -177,6 +177,7 @@ export class AuthService {
           name: user.name || '',
           email: user.email,
           role: user.role || 'student',
+          profilePicture: user.profilePicture || null,
         },
       };
     } catch (error) {
@@ -285,6 +286,25 @@ export class AuthService {
       name: user.name || '',
       email: user.email,
       role: user.role || 'student',
+      profilePicture: (user as any).profilePicture || null,
     };
+  }
+
+  async changePassword(userId: string, oldPassword: string, newPassword: string) {
+    const user = await this.users.findByIdWithPassword(userId);
+    if (!user || !user.password) {
+      throw new UnauthorizedException('المستخدم غير موجود');
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new BadRequestException('كلمة المرور الحالية غير صحيحة');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    await this.users.updateById(userId, { password: hashedPassword } as any);
+
+    return { message: 'تم تغيير كلمة المرور بنجاح' };
   }
 }

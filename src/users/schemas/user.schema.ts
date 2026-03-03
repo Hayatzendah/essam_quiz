@@ -23,6 +23,9 @@ export class User {
   @Prop({ trim: true })
   state?: string; // الولاية الألمانية (Bundesland): Bayern, Berlin, NRW, etc.
 
+  @Prop({ trim: true })
+  profilePicture?: string;
+
   @Prop({ type: String, select: false, default: null })
   refreshTokenHash?: string | null;
 }
