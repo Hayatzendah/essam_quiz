@@ -1153,24 +1153,16 @@ export class ExamsService {
       };
     }
 
-    // التحقق من أن sections موجودة وليست فارغة
-    if (!Array.isArray(doc.sections) || doc.sections.length === 0) {
-      throw new NotFoundException('Exam not found or has no sections');
-    }
-
-    // التحقق من أن sections تحتوي على sections صحيحة (ليست null)
-    const validSections = doc.sections.filter((s: any) => {
+    // Sections optional: إذا لا يوجد أقسام نرجع امتحاناً مع sections فارغة (امتحان بسيط بدون أقسام)
+    const rawSections = Array.isArray(doc.sections) ? doc.sections : [];
+    const validSections = rawSections.filter((s: any) => {
       if (!s || s === null) return false;
       const hasItems = Array.isArray(s.items) && s.items.length > 0;
       const hasQuota = typeof s.quota === 'number' && s.quota > 0;
       return hasItems || hasQuota;
     });
 
-    if (validSections.length === 0) {
-      throw new NotFoundException('Exam not found or has no valid sections');
-    }
-
-    // تحويل الأقسام إلى الصيغة المطلوبة
+    // تحويل الأقسام إلى الصيغة المطلوبة (أو مصفوفة فارغة)
     const sections = validSections.map((s: any) => {
       // حساب partsCount من items أو quota
       let partsCount = 0;

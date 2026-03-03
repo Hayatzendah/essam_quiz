@@ -503,17 +503,51 @@ export class AttemptsService {
       throw new ForbiddenException('Exam is not published');
     }
 
-    // التحقق من وجود sections (Schreiben exams don't need sections, sectionless exams use _default)
+    // التحقق من وجود sections (Schreiben وامتحانات بدون أقسام: نسمح ببدء المحاولة)
     const isSchreibenExam =
       (exam as any).mainSkill === 'schreiben' && (exam as any).schreibenTaskId;
-    if (
-      !isSchreibenExam &&
-      (!exam.sections || !Array.isArray(exam.sections) || exam.sections.length === 0)
-    ) {
-      this.logger.error(
-        `[startAttempt] Exam ${examId} has no sections or questions - exam: ${JSON.stringify({ _id: exam._id, title: exam.title, sections: exam.sections })}`,
+    const hasNoSections =
+      !exam.sections || !Array.isArray(exam.sections) || exam.sections.length === 0;
+    // امتحان بدون أقسام: نسمح ببدء المحاولة (محتوى تعليمي أو إضافة أسئلة لاحقاً عبر قسم افتراضي)
+    if (!isSchreibenExam && hasNoSections) {
+      this.logger.log(
+        `[startAttempt] Exam ${examId} has no sections - creating attempt with empty items (simple/sectionless exam)`,
       );
-      throw new BadRequestException('Exam has no questions yet');
+      const seedString = `${examId}-${user.userId}-1`;
+      const randomSeed = this.generateSeed(seedString);
+      const expiresAt = exam.timeLimitMin
+        ? new Date(Date.now() + exam.timeLimitMin * 60 * 1000)
+        : undefined;
+      const attempt = await this.attemptModel.create({
+        examId: new Types.ObjectId(examId),
+        studentId: new Types.ObjectId(user.userId),
+        status: AttemptStatus.IN_PROGRESS,
+        attemptCount: 1,
+        randomSeed,
+        startedAt: new Date(),
+        expiresAt,
+        items: [],
+        totalMaxScore: 0,
+        examVersion: exam.version || 1,
+      });
+      const attemptObj = attempt.toObject() as any;
+      return {
+        attemptId: attemptObj._id.toString(),
+        examId: String(attemptObj.examId),
+        status: attemptObj.status,
+        attemptCount: attemptObj.attemptCount,
+        startedAt: attemptObj.startedAt,
+        expiresAt: attemptObj.expiresAt,
+        timeLimitMin: exam.timeLimitMin,
+        items: [],
+        totalMaxScore: 0,
+        exam: {
+          id: String(exam._id),
+          title: exam.title,
+          timeLimitMin: exam.timeLimitMin,
+          sections: [],
+        },
+      };
     }
 
     // Log تفصيلي عن sections (skip for Schreiben exams)
