@@ -37,6 +37,8 @@ export enum ExamCategoryEnum {
   PROVIDER = 'provider_exam',
   LEBEN = 'leben_exam', // Leben in Deutschland Test
   VOCAB = 'vocab_exam',
+  LESEN_HOEREN = 'lesen_hoeren_exam', // Lesen & Hören
+  DIALOGE = 'dialoge_exam', // Dialoge
   OTHER = 'other',
 }
 
