@@ -503,7 +503,7 @@ export class AttemptsService {
       throw new ForbiddenException('Exam is not published');
     }
 
-    // التحقق من وجود sections (Schreiben exams don't need sections)
+    // التحقق من وجود sections (Schreiben exams don't need sections, sectionless exams use _default)
     const isSchreibenExam =
       (exam as any).mainSkill === 'schreiben' && (exam as any).schreibenTaskId;
     if (
@@ -511,9 +511,9 @@ export class AttemptsService {
       (!exam.sections || !Array.isArray(exam.sections) || exam.sections.length === 0)
     ) {
       this.logger.error(
-        `[startAttempt] Exam ${examId} has no sections - exam: ${JSON.stringify({ _id: exam._id, title: exam.title, sections: exam.sections })}`,
+        `[startAttempt] Exam ${examId} has no sections or questions - exam: ${JSON.stringify({ _id: exam._id, title: exam.title, sections: exam.sections })}`,
       );
-      throw new BadRequestException('Exam has no sections');
+      throw new BadRequestException('Exam has no questions yet');
     }
 
     // Log تفصيلي عن sections (skip for Schreiben exams)

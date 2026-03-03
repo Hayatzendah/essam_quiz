@@ -2581,6 +2581,14 @@ export class ExamsService {
       return k === sectionKey;
     });
     if (!section) {
+      // Auto-create _default section for sectionless exams
+      if (sectionKey === '_default') {
+        if (!exam.sections) exam.sections = [];
+        const defaultSection = { key: '_default', title: '_default', name: '_default', items: [] };
+        exam.sections.push(defaultSection);
+        exam.markModified('sections');
+        return exam.sections[exam.sections.length - 1];
+      }
       throw new NotFoundException(`Section with key "${sectionKey}" not found in exam`);
     }
     return section;
@@ -2807,7 +2815,13 @@ export class ExamsService {
       }
     }
 
-    const sections = (exam.sections || []).map((s: any, index: number) => {
+    // إخفاء قسم _default من واجهة الأدمن
+    const visibleSections = (exam.sections || []).filter((s: any) => {
+      const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+      return key !== '_default';
+    });
+
+    const sections = visibleSections.map((s: any, index: number) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
       const publishedItems = (s.items || []).filter((item: any) =>
         questionsMap.has(item.questionId?.toString()),
@@ -2845,7 +2859,7 @@ export class ExamsService {
         (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0),
     );
 
-    return { examId, title: exam.title, sections };
+    return { examId, title: exam.title, sections, hasSections: sections.length > 0 };
   }
 
   /**
@@ -2904,6 +2918,21 @@ export class ExamsService {
       `[addQuestionToSection] Added question ${dto.questionId} to section "${sectionKey}" in exam ${examId}`,
     );
     return { questionId: dto.questionId, points: dto.points ?? 1, sectionKey };
+  }
+
+  /**
+   * إنشاء أسئلة بدون تحديد قسم (للامتحانات بدون أقسام)
+   * يتم إنشاء قسم _default تلقائياً إذا لم يكن موجوداً
+   */
+  async bulkCreateWithoutSection(
+    examId: string,
+    dto: BulkCreateSectionQuestionsDto,
+    user: ReqUser,
+  ) {
+    this.logger.log(
+      `[bulkCreateWithoutSection] Creating questions without section for exam ${examId}`,
+    );
+    return this.bulkCreateAndAddToSection(examId, '_default', dto, user);
   }
 
   /**
@@ -3422,12 +3451,19 @@ export class ExamsService {
         (a.order ?? 0) - (b.order ?? 0) || (a.teilNumber ?? 0) - (b.teilNumber ?? 0),
     );
 
+    // هل الامتحان يحتوي على أقسام حقيقية (غير _default)؟
+    const realSections = (exam.sections || []).filter(
+      (s: any) => (s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber)) !== '_default',
+    );
+    const hasSections = realSections.length > 0;
+
     return {
       examId: (exam as any)._id,
       title: exam.title,
       level: exam.level,
       provider: exam.provider,
       mainSkill: (exam as any).mainSkill,
+      hasSections,
       sections,
     };
   }
@@ -3659,7 +3695,14 @@ export class ExamsService {
         if (!group.clipData && clipData) group.clipData = clipData;
         group.questions.push(questionData);
       } else {
-        ungroupedQuestions.push(questionData);
+        ungroupedQuestions.push({
+          ...questionData,
+          _contentBlocks: q.contentBlocks || null,
+          _readingCards: q.readingCards || null,
+          _cardsLayout: q.cardsLayout || null,
+          _readingPassage: q.readingPassage || null,
+          _readingPassageBgColor: q.readingPassageBgColor || null,
+        });
       }
     }
 
@@ -3704,22 +3747,25 @@ export class ExamsService {
 
     // أسئلة غير مجمّعة → كل سؤال تمرين لحاله (نستخدم readingCards/contentBlocks من السؤال)
     for (const qData of ungroupedQuestions) {
+      // ✅ استخدام بيانات المحتوى من السؤال نفسه (contentBlocks, readingCards, etc.)
+      const { _contentBlocks, _readingCards, _cardsLayout, _readingPassage, _readingPassageBgColor, ...cleanQData } = qData;
       exercises.push({
         exerciseNumber: `${teilNum}.${exerciseIndex}`,
         title: `Übung ${teilNum}.${exerciseIndex}`,
         listeningClipId: null,
         audioUrl: null,
-        readingPassage: null,
-        readingCards: (qData as any).readingCards ?? null,
-        cardsLayout: (qData as any).cardsLayout ?? null,
-        contentBlocks: (qData as any).contentBlocks ?? null,
+        readingPassage: _readingPassage || null,
+        readingCards: _readingCards || null,
+        cardsLayout: _cardsLayout || null,
+        contentBlocks: _contentBlocks || null,
+        readingPassageBgColor: _readingPassageBgColor || null,
         questionCount: 1,
         progress: {
-          answered: qData.status === 'answered' ? 1 : 0,
+          answered: cleanQData.status === 'answered' ? 1 : 0,
           total: 1,
-          percent: qData.status === 'answered' ? 100 : 0,
+          percent: cleanQData.status === 'answered' ? 100 : 0,
         },
-        questions: [qData],
+        questions: [cleanQData],
       });
       exerciseIndex++;
     }

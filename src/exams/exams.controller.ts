@@ -479,6 +479,27 @@ export class ExamsController {
     return this.service.bulkCreateAndAddToSection(examId, sectionKey, dto, req.user);
   }
 
+  // إنشاء أسئلة بدون تحديد قسم (للامتحانات بدون أقسام — يتم إنشاء قسم _default تلقائياً)
+  @Post(':examId/questions/bulk-create')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'teacher')
+  @ApiOperation({
+    summary: 'Bulk create questions without a section (sectionless exams)',
+    description: 'إنشاء أسئلة وإضافتها لامتحان بدون أقسام — يتم إنشاء قسم _default تلقائياً',
+  })
+  @ApiResponse({ status: 201, description: 'Questions created and added to exam' })
+  bulkCreateQuestionsNoSection(
+    @Param('examId') examId: string,
+    @Body() dto: BulkCreateSectionQuestionsDto,
+    @Req() req: any,
+  ) {
+    this.logger.log(
+      `[POST /exams/${examId}/questions/bulk-create] ` +
+        `Request received - ${dto.questions?.length ?? 0} questions, clipId: ${dto.listeningClipId}`,
+    );
+    return this.service.bulkCreateWithoutSection(examId, dto, req.user);
+  }
+
   // إعادة ترتيب الأسئلة في قسم
   @Patch(':examId/sections/:sectionKey/questions/reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
