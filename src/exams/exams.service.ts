@@ -2834,20 +2834,30 @@ export class ExamsService {
       }
     }
 
-    // إخفاء قسم _default من واجهة الأدمن
-    const visibleSections = (exam.sections || []).filter((s: any) => {
+    // إخفاء قسم _default من واجهة الأدمن ما لم يكن الامتحان بدون أقسام (فقط _default) — حينها نعرضه لتعديل المحتوى والأسئلة
+    const allSections = exam.sections || [];
+    const defaultSectionRaw = allSections.find(
+      (s: any) => this.getStableSectionKey(s) === '_default',
+    );
+    const visibleSections = allSections.filter((s: any) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
       return key !== '_default';
     });
+    const sectionsToMap =
+      visibleSections.length > 0
+        ? visibleSections
+        : defaultSectionRaw
+          ? [defaultSectionRaw]
+          : [];
 
-    const sections = visibleSections.map((s: any, index: number) => {
+    const sections = sectionsToMap.map((s: any, index: number) => {
       const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
       const publishedItems = (s.items || []).filter((item: any) =>
         questionsMap.has(item.questionId?.toString()),
       );
       return {
         key,
-        title: s.title || s.name,
+        title: key === '_default' ? 'المحتوى' : (s.title || s.name),
         description: s.description,
         skill: s.skill,
         teilNumber: s.teilNumber,
