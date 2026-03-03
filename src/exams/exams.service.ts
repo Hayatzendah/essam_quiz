@@ -960,7 +960,10 @@ export class ExamsService {
             // التحقق من أن sections موجودة وليست فارغة
             // استثناء: امتحانات الكتابة تستخدم schreibenTaskId بدل sections
             const isSchreibenExam = (exam as any).mainSkill === 'schreiben' && exam.schreibenTaskId;
-            if (!isSchreibenExam && (!Array.isArray(exam.sections) || exam.sections.length === 0)) {
+            // استثناء: Lesen & Hören و Dialoge يسمح لهما بدون أقسام
+            const isLesenHoerenOrDialoge = (exam as any).examCategory === 'lesen_hoeren_exam' || (exam as any).examCategory === 'dialoge_exam';
+            const hasNoSections = !Array.isArray(exam.sections) || exam.sections.length === 0;
+            if (!isSchreibenExam && !isLesenHoerenOrDialoge && hasNoSections) {
               this.logger.warn(`[findPublicExams] Exam ${exam._id} has no sections - skipping`);
               return null;
             }
@@ -982,6 +985,19 @@ export class ExamsService {
                     partsCount: 1,
                   },
                 ],
+              };
+            }
+
+            // Lesen & Hören / Dialoge بدون أقسام: إرجاعها مع sections فارغة أو placeholder
+            if (isLesenHoerenOrDialoge && hasNoSections) {
+              return {
+                id: exam._id?.toString() || '',
+                title: exam.title || '',
+                level: exam.level || undefined,
+                provider: exam.provider || undefined,
+                mainSkill: (exam as any).mainSkill || undefined,
+                timeLimitMin: exam.timeLimitMin || 0,
+                sections: [],
               };
             }
 
