@@ -2581,11 +2581,22 @@ export class ExamsService {
   }
 
   /**
+   * مفتاح مستقر للقسم: إذا القسم بدون key وبدون title/skill/teil نستخدم _default
+   * (امتحانات أُنشئت من غير قسم → قسم تلقائي واحد)
+   */
+  private getStableSectionKey(s: any): string {
+    if (s.key && String(s.key).trim()) return String(s.key).trim();
+    const hasIdentity = (s.title || s.name || s.skill || s.teilNumber);
+    if (hasIdentity) return this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+    return '_default';
+  }
+
+  /**
    * البحث عن قسم بواسطة key
    */
   private findSectionByKey(exam: any, sectionKey: string): any {
     const section = exam.sections?.find((s: any) => {
-      const k = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+      const k = this.getStableSectionKey(s);
       return k === sectionKey;
     });
     if (!section) {
@@ -3358,7 +3369,7 @@ export class ExamsService {
     }
 
     const sections = (exam.sections || []).map((s: any, index: number) => {
-      const key = s.key || this.generateSectionKey(s.title || s.name, s.skill, s.teilNumber);
+      const key = this.getStableSectionKey(s);
       // عد فقط الأسئلة المنشورة (تجاهل المحذوفة/المؤرشفة) مع إزالة التكرارات
       const seenItemIds = new Set<string>();
       let publishedItems = (s.items || []).filter((item: any) => {

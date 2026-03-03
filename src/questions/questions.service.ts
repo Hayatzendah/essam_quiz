@@ -1102,13 +1102,13 @@ export class QuestionsService {
     }
 
     if (sectionIndex === -1) {
-      // 7) لو مش موجود → نضيف سكشن جديد فيه السؤال
+      // 7) لو مش موجود → نضيف سكشن جديد فيه السؤال (امتحان بدون أقسام → نستخدم _default)
       const newKey =
-        sectionKey || (finalSkill && teilNumber ? `${finalSkill}_teil${teilNumber}` : undefined);
+        sectionKey || (finalSkill && teilNumber ? `${finalSkill}_teil${teilNumber}` : undefined) || '_default';
       cleanSections.push({
         key: newKey,
-        name: sectionName || (sectionKey ? sectionKey : undefined),
-        title: sectionName || (sectionKey ? sectionKey : undefined),
+        name: sectionName || (sectionKey ? sectionKey : undefined) || '_default',
+        title: sectionName || (sectionKey ? sectionKey : undefined) || '_default',
         skill: finalSkill,
         teilNumber: teilNumber,
         items: [
