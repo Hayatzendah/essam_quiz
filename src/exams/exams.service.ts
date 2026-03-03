@@ -143,16 +143,16 @@ export class ExamsService {
       throw new BadRequestException('examCategory is required');
     }
 
-    // ======  👇 ضمان إن الحقول تكون إجبارية فقط لو الامتحان Grammar  ======
-    if (dto.examCategory === ExamCategoryEnum.GRAMMAR) {
+    // ======  👇 ضمان إن الحقول تكون إجبارية فقط لو الامتحان Grammar أو Grammatik-Training  ======
+    if (dto.examCategory === ExamCategoryEnum.GRAMMAR || dto.examCategory === ExamCategoryEnum.GRAMMATIK_TRAINING) {
       if (!dto.grammarLevel) {
-        throw new BadRequestException('Grammar exams require grammarLevel');
+        throw new BadRequestException('Grammar / Grammatik-Training exams require grammarLevel');
       }
       if (!dto.grammarTopicId) {
-        throw new BadRequestException('Grammar exams require grammarTopicId');
+        throw new BadRequestException('Grammar / Grammatik-Training exams require grammarTopicId');
       }
       if (!dto.totalQuestions) {
-        throw new BadRequestException('Grammar exams require totalQuestions');
+        throw new BadRequestException('Grammar / Grammatik-Training exams require totalQuestions');
       }
     }
 
@@ -188,8 +188,8 @@ export class ExamsService {
           );
         }
         // لا نتحقق من difficultyDistribution لامتحانات Provider (اختياري)
-      } else if (dto.examCategory === 'grammar_exam') {
-        // للـ Grammar exams: إذا كان هناك section، يجب أن يكون هناك items (بدون quota)
+      } else if (dto.examCategory === 'grammar_exam' || dto.examCategory === 'grammatik_training_exam') {
+        // للـ Grammar / Grammatik-Training: إذا كان هناك section، يجب أن يكون هناك items (بدون quota)
         // لكن Grammar exams يمكن أن تكون بدون sections تماماً
         if (s.items && Array.isArray(s.items) && s.items.length > 0) {
           // تنظيف items من null
@@ -1567,9 +1567,9 @@ export class ExamsService {
     if (goingToPublish && (dto as any).sections) {
       const examCategory = (dto as any).examCategory || doc.examCategory;
       for (const s of (dto as any).sections) {
-        // التحقق من difficultyDistribution فقط لامتحانات القواعد
+        // التحقق من difficultyDistribution فقط لامتحانات القواعد و Grammatik-Training
         if (
-          examCategory === ExamCategoryEnum.GRAMMAR &&
+          (examCategory === ExamCategoryEnum.GRAMMAR || examCategory === ExamCategoryEnum.GRAMMATIK_TRAINING) &&
           typeof s.quota === 'number' &&
           s.quota > 0 &&
           s.difficultyDistribution
@@ -1659,13 +1659,14 @@ export class ExamsService {
           return section;
         });
 
-      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Schreiben)
+      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Grammatik-Training وغير Schreiben)
       const examCategory = (dto as any).examCategory || doc.examCategory;
       const mainSkill = (dto as any).mainSkill || doc.mainSkill;
       const schreibenTaskId = (dto as any).schreibenTaskId || doc.schreibenTaskId;
       const isSchreibenExam = mainSkill === 'schreiben' && schreibenTaskId;
+      const isGrammarOrTraining = examCategory === ExamCategoryEnum.GRAMMAR || examCategory === ExamCategoryEnum.GRAMMATIK_TRAINING;
       if (
-        examCategory !== ExamCategoryEnum.GRAMMAR &&
+        !isGrammarOrTraining &&
         !isSchreibenExam &&
         processedSections.length === 0
       ) {
@@ -1695,9 +1696,9 @@ export class ExamsService {
         return true;
       });
 
-      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Schreiben)
+      // التحقق من أن هناك sections صحيحة بعد التنظيف (فقط للامتحانات غير Grammar وغير Grammatik-Training وغير Schreiben)
       if (
-        examCategory !== ExamCategoryEnum.GRAMMAR &&
+        !isGrammarOrTraining &&
         !isSchreibenExam &&
         normalizedSections.length === 0
       ) {

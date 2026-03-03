@@ -33,6 +33,7 @@ export type AttemptStatus = 'in_progress' | 'submitted' | 'graded';
 
 export enum ExamCategoryEnum {
   GRAMMAR = 'grammar_exam',
+  GRAMMATIK_TRAINING = 'grammatik_training_exam', // Grammatik-Training (نفس فورم القواعد + مواضيع)
   LID = 'lid_exam',
   PROVIDER = 'provider_exam',
   LEBEN = 'leben_exam', // Leben in Deutschland Test
