@@ -18,6 +18,7 @@ import {
   ListeningClipSchema,
 } from '../listening-clips/schemas/listening-clip.schema';
 import { Question, QuestionSchema } from '../questions/schemas/question.schema';
+import { Noun, NounSchema } from '../nouns/schemas/noun.schema';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { Question, QuestionSchema } from '../questions/schemas/question.schema';
       { name: SchreibenTask.name, schema: SchreibenTaskSchema },
       { name: ListeningClip.name, schema: ListeningClipSchema },
       { name: Question.name, schema: QuestionSchema },
+      { name: Noun.name, schema: NounSchema },
     ]),
   ],
   controllers: [LevelsController],

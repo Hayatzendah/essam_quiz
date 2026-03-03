@@ -24,6 +24,7 @@ import { ListeningClipsModule } from './listening-clips/listening-clips.module';
 import { AdminModule } from './admin/admin.module';
 import { VocabularyModule } from './vocabulary/vocabulary.module';
 import { LevelsModule } from './levels/levels.module';
+import { NounsModule } from './nouns/nouns.module';
 
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -166,6 +167,7 @@ import { EnumsController } from './common/enums.controller';
     AdminModule,
     VocabularyModule,
     LevelsModule,
+    NounsModule,
   ],
 
   controllers: [AppController, HealthController, EnumsController],

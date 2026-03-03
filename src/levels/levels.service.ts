@@ -17,8 +17,9 @@ import { GrammarTopic } from '../modules/grammar/schemas/grammar-topic.schema';
 import { SchreibenTask } from '../modules/schreiben/schemas/schreiben-task.schema';
 import { ListeningClip } from '../listening-clips/schemas/listening-clip.schema';
 import { Question } from '../questions/schemas/question.schema';
+import { Noun } from '../nouns/schemas/noun.schema';
 
-const ALL_SECTIONS = ['grammatik', 'wortschatz', 'pruefungen', 'leben_in_deutschland'];
+const ALL_SECTIONS = ['grammatik', 'wortschatz', 'pruefungen', 'leben_in_deutschland', 'derdiedas'];
 
 const DEFAULT_LEVELS = [
   { name: 'A1', label: 'A1 - Anfänger', position: 0, isDefault: true, isActive: true, sections: ALL_SECTIONS },
@@ -54,6 +55,14 @@ const DEFAULT_LEVELS = [
     isActive: true,
     sections: ALL_SECTIONS,
   },
+  {
+    name: 'C2',
+    label: 'C2 - Annähernd muttersprachliche Kenntnisse',
+    position: 5,
+    isDefault: true,
+    isActive: true,
+    sections: ALL_SECTIONS,
+  },
 ];
 
 @Injectable()
@@ -68,6 +77,7 @@ export class LevelsService implements OnModuleInit {
     @InjectModel(SchreibenTask.name) private readonly schreibenTaskModel: Model<any>,
     @InjectModel(ListeningClip.name) private readonly listeningClipModel: Model<any>,
     @InjectModel(Question.name) private readonly questionModel: Model<any>,
+    @InjectModel(Noun.name) private readonly nounModel: Model<any>,
   ) {}
 
   async onModuleInit() {
@@ -86,6 +96,29 @@ export class LevelsService implements OnModuleInit {
     );
     if (migrated.modifiedCount > 0) {
       this.logger.log(`Migrated ${migrated.modifiedCount} levels with default sections`);
+    }
+
+    // Seed C2 level if missing
+    const c2Exists = await this.levelModel.findOne({ name: 'C2' });
+    if (!c2Exists) {
+      await this.levelModel.create({
+        name: 'C2',
+        label: 'C2 - Annähernd muttersprachliche Kenntnisse',
+        position: 5,
+        isDefault: true,
+        isActive: true,
+        sections: ALL_SECTIONS,
+      });
+      this.logger.log('Seeded C2 level');
+    }
+
+    // Add 'derdiedas' section to existing levels that don't have it
+    const addedSection = await this.levelModel.updateMany(
+      { sections: { $exists: true, $not: { $elemMatch: { $eq: 'derdiedas' } } } },
+      { $push: { sections: 'derdiedas' } },
+    );
+    if (addedSection.modifiedCount > 0) {
+      this.logger.log(`Added 'derdiedas' section to ${addedSection.modifiedCount} levels`);
     }
   }
 
@@ -192,6 +225,7 @@ export class LevelsService implements OnModuleInit {
       this.schreibenTaskModel.updateMany({ level: oldName }, { $set: { level: newName } }),
       this.listeningClipModel.updateMany({ level: oldName }, { $set: { level: newName } }),
       this.questionModel.updateMany({ level: oldName }, { $set: { level: newName } }),
+      this.nounModel.updateMany({ level: oldName }, { $set: { level: newName } }),
     ]);
 
     await this.levelModel.findByIdAndDelete(id);
@@ -207,6 +241,7 @@ export class LevelsService implements OnModuleInit {
       this.schreibenTaskModel.countDocuments({ level: levelName }),
       this.listeningClipModel.countDocuments({ level: levelName }),
       this.questionModel.countDocuments({ level: levelName }),
+      this.nounModel.countDocuments({ level: levelName }),
     ]);
     return counts.reduce((sum, c) => sum + c, 0);
   }
