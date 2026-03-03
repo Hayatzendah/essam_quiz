@@ -42,6 +42,13 @@ export class LevelsController {
     return this.levelsService.findAll();
   }
 
+  @Get('sections')
+  @ApiOperation({ summary: 'الحصول على قائمة الأقسام المتاحة' })
+  @ApiResponse({ status: 200, description: 'قائمة الأقسام' })
+  getSections() {
+    return this.levelsService.getSections();
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'teacher')

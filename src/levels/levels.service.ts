@@ -18,8 +18,7 @@ import { SchreibenTask } from '../modules/schreiben/schemas/schreiben-task.schem
 import { ListeningClip } from '../listening-clips/schemas/listening-clip.schema';
 import { Question } from '../questions/schemas/question.schema';
 import { Noun } from '../nouns/schemas/noun.schema';
-
-const ALL_SECTIONS = ['grammatik', 'wortschatz', 'pruefungen', 'leben_in_deutschland', 'derdiedas'];
+import { ALL_SECTIONS, SECTION_LABELS, SectionKey } from './sections.constants';
 
 const DEFAULT_LEVELS = [
   { name: 'A1', label: 'A1 - Anfänger', position: 0, isDefault: true, isActive: true, sections: ALL_SECTIONS },
@@ -249,5 +248,12 @@ export class LevelsService implements OnModuleInit {
   async getAllLevelNames(): Promise<string[]> {
     const levels = await this.findActive();
     return levels.map((l) => l.name);
+  }
+
+  getSections(): { key: string; label: string }[] {
+    return ALL_SECTIONS.map((key) => ({
+      key,
+      label: SECTION_LABELS[key],
+    }));
   }
 }

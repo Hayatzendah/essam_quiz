@@ -1,5 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsNumber, IsArray, ArrayMinSize, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { ALL_SECTIONS } from '../sections.constants';
 
 export class CreateLevelDto {
   @ApiProperty({ description: 'اسم المستوى', example: 'C2' })
@@ -26,6 +27,6 @@ export class CreateLevelDto {
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })
-  @IsIn(['grammatik', 'wortschatz', 'pruefungen', 'leben_in_deutschland'], { each: true })
+  @IsIn([...ALL_SECTIONS], { each: true })
   sections: string[];
 }

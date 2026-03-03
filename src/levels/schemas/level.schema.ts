@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { ALL_SECTIONS } from '../sections.constants';
 
 export type LevelDocument = Level & Document;
 
@@ -20,7 +21,7 @@ export class Level {
   @Prop({ type: Boolean, default: true })
   isActive: boolean;
 
-  @Prop({ type: [String], default: ['grammatik', 'wortschatz', 'pruefungen', 'leben_in_deutschland'] })
+  @Prop({ type: [String], default: [...ALL_SECTIONS] })
   sections: string[];
 }
 
