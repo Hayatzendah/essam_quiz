@@ -8,5 +8,6 @@ export enum ProviderEnum {
   DEUTSCHLAND_IN_LEBEN = 'Deutschland-in-Leben', // للتوافق مع الكود القديم
   LEBEN_IN_DEUTSCHLAND = 'leben_in_deutschland', // جديد - Leben in Deutschland Test
   GRAMMATIK = 'Grammatik',
+  GRAMMATIK_TRAINING = 'Grammatik-Training',
   WORTSCHATZ = 'Wortschatz',
 }

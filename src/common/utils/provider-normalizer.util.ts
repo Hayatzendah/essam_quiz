@@ -45,6 +45,11 @@ export function normalizeProvider(
     return ProviderEnum.GRAMMATIK;
   }
 
+  // Handle "Grammatik-Training" variations
+  if (normalized === 'grammatik-training' || normalized === 'grammatik_training') {
+    return ProviderEnum.GRAMMATIK_TRAINING;
+  }
+
   // Handle "Wortschatz" variations
   if (normalized === 'wortschatz' || normalized === 'vocabulary') {
     return ProviderEnum.WORTSCHATZ;
