@@ -1084,12 +1084,68 @@ export class ExamsService {
   }
 
   /**
-   * أسئلة تدريب قواعد للطالب (وضع اختبار مثل Der/Die/Das): مستوى + عدد → مصفوفة أسئلة عشوائية
+   * أسئلة تدريب قواعد للطالب: إما حسب مستوى (كل المواضيع) أو حسب امتحان واحد (موضوع واحد).
    * Public endpoint - لا يحتاج JWT
    */
-  async getGrammatikTrainingQuizQuestions(level: string, count: number) {
-    if (!level || count < 1 || count > 50) {
-      throw new BadRequestException('level مطلوب و count بين 1 و 50');
+  async getGrammatikTrainingQuizQuestions(
+    count: number,
+    options: { level?: string; examId?: string },
+  ) {
+    if (count < 1 || count > 50) {
+      throw new BadRequestException('count بين 1 و 50');
+    }
+    const { level, examId } = options;
+    if (examId) {
+      if (!Types.ObjectId.isValid(examId)) {
+        throw new BadRequestException('معرف الامتحان غير صالح');
+      }
+      const exam = await this.model
+        .findOne({
+          _id: new Types.ObjectId(examId),
+          status: ExamStatusEnum.PUBLISHED,
+          examCategory: 'grammatik_training_exam',
+        })
+        .select('sections')
+        .lean()
+        .exec();
+      if (!exam) return [];
+      const questionIds: Types.ObjectId[] = [];
+      const sections = (exam as any).sections || [];
+      for (const sec of sections) {
+        const items = sec?.items || [];
+        for (const item of items) {
+          const qid = item?.questionId;
+          if (qid) questionIds.push(qid instanceof Types.ObjectId ? qid : new Types.ObjectId(qid));
+        }
+      }
+      const uniqueIds = [...new Set(questionIds.map((id) => id.toString()))].map((id) => new Types.ObjectId(id));
+      if (uniqueIds.length === 0) return [];
+      const shuffled = uniqueIds.slice().sort(() => Math.random() - 0.5);
+      const take = Math.min(count, shuffled.length);
+      const selectedIds = shuffled.slice(0, take);
+      const questions = await this.questionModel
+        .find({ _id: { $in: selectedIds }, status: QuestionStatus.PUBLISHED })
+        .select('prompt qType options answerKeyBoolean fillExact answerKeyMatch answerKeyReorder points')
+        .lean()
+        .exec();
+      const idOrder = new Map(selectedIds.map((id, i) => [id.toString(), i]));
+      const sorted = questions
+        .filter((q: any) => q != null)
+        .sort((a: any, b: any) => (idOrder.get(a._id.toString()) ?? 0) - (idOrder.get(b._id.toString()) ?? 0));
+      return sorted.map((q: any) => ({
+        _id: q._id?.toString(),
+        prompt: q.prompt,
+        qType: q.qType,
+        options: q.options,
+        answerKeyBoolean: q.answerKeyBoolean,
+        fillExact: q.fillExact,
+        answerKeyMatch: q.answerKeyMatch,
+        answerKeyReorder: q.answerKeyReorder,
+        points: q.points ?? 1,
+      }));
+    }
+    if (!level) {
+      throw new BadRequestException('level أو examId مطلوب');
     }
     const exams = await this.model
       .find({

@@ -220,19 +220,23 @@ export class ExamsController {
     return this.service.debugExamStructure(id);
   }
 
-  // أسئلة تدريب قواعد للطالب (وضع اختبار: مستوى + عدد) — Public
+  // أسئلة تدريب قواعد للطالب: إما مستوى + عدد أو examId + عدد (موضوع واحد) — Public
   @Get('public/grammatik-training/quiz')
   @ApiOperation({
-    summary: 'Get random Grammatik-Training quiz questions by level and count',
-    description: 'للطالب: إرجاع أسئلة عشوائية من امتحانات Grammatik-Training للمستوى المحدد (لا يحتاج JWT)',
+    summary: 'Get random Grammatik-Training quiz questions',
+    description: 'للطالب: level+count = كل المواضيع، examId+count = موضوع واحد (لا يحتاج JWT)',
   })
   @ApiResponse({ status: 200, description: 'Array of questions for quiz' })
   async getGrammatikTrainingQuiz(
     @Query('level') level: string,
+    @Query('examId') examId: string,
     @Query('count') count: string,
   ) {
     const num = Math.min(50, Math.max(1, parseInt(count || '10', 10) || 10));
-    return this.service.getGrammatikTrainingQuizQuestions(level || 'A1', num);
+    return this.service.getGrammatikTrainingQuizQuestions(num, {
+      level: examId ? undefined : (level || 'A1'),
+      examId: examId || undefined,
+    });
   }
 
   // قائمة الامتحانات المنشورة للطلاب (Public endpoint)
