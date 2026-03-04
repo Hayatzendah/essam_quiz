@@ -1003,7 +1003,8 @@ export class ExamsService {
             }
 
             // التحقق من أن sections تحتوي على sections صحيحة (ليست null)
-            const validSections = exam.sections.filter((s: any) => {
+            const sectionsList = Array.isArray(exam.sections) ? exam.sections : [];
+            const validSections = sectionsList.filter((s: any) => {
               if (!s || s === null) return false;
               const hasItems = Array.isArray(s.items) && s.items.length > 0;
               const hasQuota = typeof s.quota === 'number' && s.quota > 0;
@@ -1079,7 +1080,8 @@ export class ExamsService {
       return { items: publicExams, count: publicExams.length };
     } catch (error: any) {
       this.logger.error(`[findPublicExams] Error: ${error.message}`, error.stack);
-      throw error;
+      // إرجاع قائمة فارغة بدل رمي 500 حتى لا تظهر الصفحة بيضاء للطالب
+      return { items: [], count: 0 };
     }
   }
 
