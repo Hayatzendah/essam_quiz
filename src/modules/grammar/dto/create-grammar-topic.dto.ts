@@ -66,4 +66,9 @@ export class CreateGrammarTopicDto {
   @IsOptional()
   @IsString()
   sectionTitle?: string;
+
+  @ApiProperty({ required: false, description: 'Grammatik = قواعد قديمة، Grammatik-Training = تدريب منفصل' })
+  @IsOptional()
+  @IsString()
+  provider?: string;
 }

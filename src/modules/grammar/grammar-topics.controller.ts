@@ -35,8 +35,8 @@ export class GrammarTopicsController {
     type: [GrammarTopicResponseDto],
   })
   @Get()
-  findAll(@Query('level') level?: string) {
-    return this.grammarTopicsService.findAll({ level });
+  findAll(@Query('level') level?: string, @Query('provider') provider?: string) {
+    return this.grammarTopicsService.findAll({ level, provider });
   }
 
   @ApiOperation({ summary: 'Reorder grammar topics' })

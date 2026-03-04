@@ -35,6 +35,10 @@ export class GrammarTopic {
 
   @Prop({ type: Number, default: 0 })
   position: number; // ترتيب البطاقة داخل المستوى
+
+  /** Grammatik = القواعد القديمة، Grammatik-Training = قسم التدريب المنفصل */
+  @Prop({ type: String, trim: true, default: 'Grammatik' })
+  provider?: string;
 }
 
 export const GrammarTopicSchema = SchemaFactory.createForClass(GrammarTopic);

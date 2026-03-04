@@ -169,12 +169,48 @@ export class GrammarTopicsService {
   }
 
   /**
-   * Find all grammar topics, optionally filtered by level
+   * Find all grammar topics, optionally filtered by level and provider.
+   * provider: 'Grammatik' = القواعد القديمة فقط، 'Grammatik-Training' = مواضيع التدريب فقط.
+   * عدم إرسال provider = نفس 'Grammatik' (مواضيع قديمة + مواضيع بدون provider).
    */
-  async findAll(filter: { level?: string }) {
+  async findAll(filter: { level?: string; provider?: string }) {
+    // ترحيل: أي موضوع مرتبط بامتحان grammatik_training_exam نضبط له provider = Grammatik-Training
+    if (filter.provider === 'Grammatik-Training') {
+      const grammatikTrainingExams = await this.examModel
+        .find({
+          examCategory: 'grammatik_training_exam',
+          grammarTopicId: { $exists: true, $ne: null },
+        })
+        .select('grammarTopicId')
+        .lean()
+        .exec();
+      const topicIds = grammatikTrainingExams
+        .map((e: any) => e.grammarTopicId)
+        .filter(Boolean)
+        .map((id: any) => (typeof id === 'string' ? id : id?.toString?.() || id));
+      if (topicIds.length > 0) {
+        await this.model
+          .updateMany(
+            { _id: { $in: topicIds }, $or: [{ provider: { $ne: 'Grammatik-Training' } }, { provider: { $exists: false } }] },
+            { $set: { provider: 'Grammatik-Training' } },
+          )
+          .exec();
+      }
+    }
+
     const query: any = {};
     if (filter.level) {
       query.level = filter.level;
+    }
+    if (filter.provider === 'Grammatik-Training') {
+      query.provider = 'Grammatik-Training';
+    } else {
+      // Grammatik أو غير مرسل: عرض مواضيع القواعد القديمة فقط (وليس Grammatik-Training)
+      query.$or = [
+        { provider: 'Grammatik' },
+        { provider: { $exists: false } },
+        { provider: null },
+      ];
     }
 
     const items = await this.model
@@ -303,6 +339,7 @@ export class GrammarTopicsService {
     const topic = await this.model.create({
       ...dto,
       slug,
+      provider: dto.provider || 'Grammatik',
       ...(dto.examId && { examId: new Types.ObjectId(dto.examId) }),
       // Ensure contentBlocks are saved in the same order
       contentBlocks: dto.contentBlocks || [],
