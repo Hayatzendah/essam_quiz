@@ -685,7 +685,8 @@ export class ExamsService {
       this.logger.debug(`Filtering exams by state: ${q.state}`);
     }
 
-    const items = await this.model.find(filter).sort({ createdAt: -1 }).lean().exec();
+    // ترتيب حسب تاريخ الإنشاء: الأول المُضاف يبقى أولاً (Lesen & Hören، Dialoge، Grammatik-Training)
+    const items = await this.model.find(filter).sort({ createdAt: 1 }).lean().exec();
 
     // للطلاب: فلترة حسب attemptLimit
     if (user.role === 'student') {
@@ -776,7 +777,7 @@ export class ExamsService {
     const items = await this.model
       .find(filter)
       .select('_id title level')
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .lean()
       .exec();
 
@@ -933,7 +934,8 @@ export class ExamsService {
       this.logger.debug(
         `[findPublicExams] Querying database with filter: ${JSON.stringify(filter)}`,
       );
-      const query = this.model.find(filter).sort({ createdAt: -1 });
+      // ترتيب حسب تاريخ الإنشاء تصاعدياً: الأول المُضاف يبقى أولاً (مطلوب لـ Lesen & Hören، Dialoge، Grammatik-Training)
+      const query = this.model.find(filter).sort({ createdAt: 1 });
 
       if (limit) {
         query.skip(skip).limit(limit);
