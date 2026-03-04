@@ -31,6 +31,7 @@ import {
   ListeningClip,
   ListeningClipDocument,
 } from '../listening-clips/schemas/listening-clip.schema';
+import { GrammarTopic } from '../modules/grammar/schemas/grammar-topic.schema';
 import { MediaService } from '../modules/media/media.service';
 
 type ReqUser = { userId: string; role: 'student' | 'teacher' | 'admin' };
@@ -45,6 +46,7 @@ export class ExamsService {
     @InjectModel(Attempt.name) private readonly attemptModel: Model<AttemptDocument>,
     @InjectModel(ListeningClip.name)
     private readonly listeningClipModel: Model<ListeningClipDocument>,
+    @InjectModel(GrammarTopic.name) private readonly grammarTopicModel: Model<any>,
     private readonly mediaService: MediaService,
   ) {}
 
@@ -947,6 +949,22 @@ export class ExamsService {
         return { items: [], count: 0 };
       }
 
+      // جلب أسماء مواضيع القواعد لامتحانات Grammatik-Training (لإظهار اسم الموضوع بدل اسم الامتحان)
+      const grammatikTopicIds = items
+        .filter((e: any) => e.examCategory === 'grammatik_training_exam' && e.grammarTopicId)
+        .map((e: any) => e.grammarTopicId);
+      let topicTitleMap = new Map<string, string>();
+      if (grammatikTopicIds.length > 0) {
+        const topics = await this.grammarTopicModel
+          .find({ _id: { $in: grammatikTopicIds } })
+          .select('_id title')
+          .lean()
+          .exec();
+        topics.forEach((t: any) => {
+          if (t._id && t.title) topicTitleMap.set(t._id.toString(), t.title);
+        });
+      }
+
       // تحويل البيانات إلى الصيغة المطلوبة
       const publicExams = items
         .map((exam: any) => {
@@ -991,9 +1009,12 @@ export class ExamsService {
 
             // Lesen & Hören / Dialoge / Grammatik-Training بدون أقسام: إرجاعها مع sections فارغة أو placeholder
             if ((isLesenHoerenOrDialoge || isGrammatikTraining) && hasNoSections) {
+              const displayTitle = isGrammatikTraining && exam.grammarTopicId
+                ? (topicTitleMap.get(exam.grammarTopicId.toString()) || exam.title || '')
+                : (exam.title || '');
               return {
                 id: exam._id?.toString() || '',
-                title: exam.title || '',
+                title: displayTitle,
                 level: exam.level || undefined,
                 provider: exam.provider || undefined,
                 mainSkill: (exam as any).mainSkill || undefined,
@@ -1057,9 +1078,12 @@ export class ExamsService {
               return null;
             }
 
+            const displayTitle = isGrammatikTraining && exam.grammarTopicId
+              ? (topicTitleMap.get(exam.grammarTopicId.toString()) || exam.title || '')
+              : (exam.title || '');
             return {
               id: exam._id?.toString() || '',
-              title: exam.title || '',
+              title: displayTitle,
               level: exam.level || undefined,
               provider: exam.provider || undefined,
               mainSkill: (exam as any).mainSkill || undefined,

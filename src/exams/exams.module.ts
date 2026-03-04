@@ -9,6 +9,7 @@ import {
   ListeningClip,
   ListeningClipSchema,
 } from '../listening-clips/schemas/listening-clip.schema';
+import { GrammarTopic, GrammarTopicSchema } from '../modules/grammar/schemas/grammar-topic.schema';
 import { AuthModule } from '../auth/auth.module';
 import { AttemptsModule } from '../attempts/attempts.module';
 import { MediaModule } from '../modules/media/media.module';
@@ -20,6 +21,7 @@ import { MediaModule } from '../modules/media/media.module';
       { name: Question.name, schema: QuestionSchema },
       { name: Attempt.name, schema: AttemptSchema },
       { name: ListeningClip.name, schema: ListeningClipSchema },
+      { name: GrammarTopic.name, schema: GrammarTopicSchema },
     ]),
     AuthModule,
     forwardRef(() => AttemptsModule),
