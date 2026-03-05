@@ -1819,11 +1819,10 @@ export class AttemptsService {
       }
 
       // عرض كل عناصر اليمين (صحيح + مضللة) للطالب بترتيب عشوائي حتى لا يعرف الإجابة من الترتيب
+      const allRightFromSchema = (questionObj as { matchRightOptions?: string[] }).matchRightOptions;
       const matchRightOptions =
-        questionObj.matchRightOptions &&
-        Array.isArray(questionObj.matchRightOptions) &&
-        questionObj.matchRightOptions.length > 0
-          ? questionObj.matchRightOptions.filter((t: string) => t != null && String(t).trim() !== '')
+        Array.isArray(allRightFromSchema) && allRightFromSchema.length > 0
+          ? allRightFromSchema.filter((t: string) => t != null && String(t).trim() !== '')
           : (questionObj.answerKeyMatch || [])
               .map(([, right]: [string, string]) => right)
               .filter((r: string) => r != null && String(r).trim() !== '');
