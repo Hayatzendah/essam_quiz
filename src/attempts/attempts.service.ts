@@ -1817,6 +1817,30 @@ export class AttemptsService {
         snapshot.answerKeyMatch = undefined;
         snapshot.matchPairs = undefined;
       }
+
+      // عرض كل عناصر اليمين (صحيح + مضللة) للطالب بترتيب عشوائي حتى لا يعرف الإجابة من الترتيب
+      const matchRightOptions =
+        questionObj.matchRightOptions &&
+        Array.isArray(questionObj.matchRightOptions) &&
+        questionObj.matchRightOptions.length > 0
+          ? questionObj.matchRightOptions.filter((t: string) => t != null && String(t).trim() !== '')
+          : (questionObj.answerKeyMatch || [])
+              .map(([, right]: [string, string]) => right)
+              .filter((r: string) => r != null && String(r).trim() !== '');
+      const uniqueRight = [...new Set(matchRightOptions)];
+      if (uniqueRight.length > 0) {
+        const shuffled = [...uniqueRight];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        snapshot.optionsText = shuffled;
+        snapshot.optionsSnapshot = shuffled.map((text: string, idx: number) => ({
+          optionId: `match_right_${idx}`,
+          text,
+          isCorrect: false,
+        }));
+      }
     } else if (questionObj.qType === QuestionType.REORDER) {
       snapshot.answerKeyReorder = questionObj.answerKeyReorder;
     } else if (questionObj.qType === QuestionType.LISTEN) {
