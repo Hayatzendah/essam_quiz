@@ -3653,7 +3653,7 @@ export class AttemptsService {
           questionId: String(item.questionId),
           qType: item.qType,
           promptSnapshot: item.promptSnapshot,
-          textDirection: this.detectTextDirection(item.promptSnapshot),
+          textDirection: 'ltr' as const, /* عرض نص السؤال شمالاً (يسار) عند الطالب */
           options,
           points: item.points || 0,
           score: totalItemScore,
@@ -3885,7 +3885,7 @@ export class AttemptsService {
           questionId: String(item.questionId),
           qType: item.qType,
           promptSnapshot: item.promptSnapshot,
-          textDirection: this.detectTextDirection(item.promptSnapshot),
+          textDirection: 'ltr' as const, /* عرض نص السؤال شمالاً (يسار) عند الطالب */
           options,
           points: item.points || 0,
           score: totalItemScore,
