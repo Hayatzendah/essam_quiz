@@ -159,6 +159,11 @@ export class CreateQuestionWithExamDto {
   @IsArray()
   @ArrayMinSize(1)
   answerKeyMatch?: [string, string][]; // أزواج [left, right]
+  @ValidateIf((o) => o.qType === QuestionType.MATCH)
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  matchRightOptions?: string[];
 
   // ====== REORDER ======
   @ValidateIf((o) => o.qType === QuestionType.REORDER)

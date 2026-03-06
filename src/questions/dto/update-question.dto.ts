@@ -26,6 +26,10 @@ export class UpdateQuestionDto extends PartialType(CreateQuestionDto) {
   @IsOptional()
   @IsArray()
   answerKeyMatch?: [string, string][];
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  matchRightOptions?: string[];
 
   // REORDER fields - إضافة صريحة لضمان عدم حذفها بواسطة ValidationPipe
   @IsOptional()

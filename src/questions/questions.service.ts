@@ -95,10 +95,13 @@ export class QuestionsService {
       ...restQuestionData,
       status: dto.status ?? QuestionStatus.PUBLISHED,
       createdBy,
-      // MATCH fields
+      // MATCH fields (answerKeyMatch + كل عناصر اليمين للعرض عشوائياً للطالب)
       ...(dto.qType === QuestionType.MATCH &&
         dto.answerKeyMatch &&
         Array.isArray(dto.answerKeyMatch) && { answerKeyMatch: dto.answerKeyMatch }),
+      ...(dto.qType === QuestionType.MATCH &&
+        dto.matchRightOptions &&
+        Array.isArray(dto.matchRightOptions) && { matchRightOptions: dto.matchRightOptions }),
       // REORDER fields
       ...(dto.qType === QuestionType.REORDER &&
         dto.answerKeyReorder &&

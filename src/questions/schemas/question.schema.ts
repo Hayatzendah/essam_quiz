@@ -152,6 +152,8 @@ export class Question {
   // MATCH
   @Prop({ type: [[String, String]], default: undefined })
   answerKeyMatch?: [string, string][]; // أزواج [left, right]
+  @Prop({ type: [String], default: undefined })
+  matchRightOptions?: string[]; // كل عناصر اليمين (صحيح + مضللة) للعرض للطالب بترتيب عشوائي
 
   // REORDER
   @Prop({ type: [String], default: undefined })

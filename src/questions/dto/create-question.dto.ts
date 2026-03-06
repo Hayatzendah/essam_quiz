@@ -168,6 +168,10 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsArray()
   answerKeyMatch?: [string, string][];
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  matchRightOptions?: string[];
 
   // REORDER
   @IsOptional()
