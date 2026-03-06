@@ -2121,7 +2121,7 @@ export class AttemptsService {
       studentAnswerIndexes?: number[];
       studentAnswerText?: string;
       studentAnswerBoolean?: boolean;
-      studentAnswerMatch?: [string, string][];
+      studentAnswerMatch?: [string, string][] | Record<string, unknown>;
       studentAnswerReorder?: string[];
       studentAnswerAudioKey?: string;
     },
@@ -2213,7 +2213,7 @@ export class AttemptsService {
       studentAnswerIndexes?: number[];
       studentAnswerText?: string;
       studentAnswerBoolean?: boolean;
-      studentAnswerMatch?: [string, string][];
+      studentAnswerMatch?: [string, string][] | Record<string, unknown>;
       studentAnswerReorder?: string[];
       studentAnswerAudioKey?: string;
       answerText?: string;
