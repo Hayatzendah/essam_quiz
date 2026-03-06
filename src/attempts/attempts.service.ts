@@ -2328,7 +2328,26 @@ export class AttemptsService {
     } else if (item.qType === QuestionType.FREE_TEXT) {
       if (textAns) item.studentAnswerText = textAns;
     } else if (item.qType === QuestionType.MATCH) {
-      if (answerData.studentAnswerMatch) item.studentAnswerMatch = answerData.studentAnswerMatch;
+      if (answerData.studentAnswerMatch) {
+        const raw = answerData.studentAnswerMatch;
+        const leftItems: string[] = [];
+        if (item.answerKeyMatch && Array.isArray(item.answerKeyMatch)) {
+          leftItems.push(...item.answerKeyMatch.map(([left]: [string, string]) => left));
+        } else if (item.matchPairs && Array.isArray(item.matchPairs)) {
+          leftItems.push(...item.matchPairs.map((p: { left: string }) => p.left));
+        }
+        if (leftItems.length > 0 && typeof raw === 'object' && !Array.isArray(raw)) {
+          const matchPairs: [string, string][] = [];
+          const obj = raw as Record<string, unknown>;
+          for (let i = 0; i < leftItems.length; i++) {
+            const rightVal = obj[i] ?? obj[String(i)];
+            if (typeof rightVal === 'string') matchPairs.push([leftItems[i], rightVal]);
+          }
+          item.studentAnswerMatch = matchPairs.length > 0 ? matchPairs : raw;
+        } else {
+          item.studentAnswerMatch = raw;
+        }
+      }
     } else if (item.qType === QuestionType.REORDER) {
       if (answerData.studentAnswerReorder)
         item.studentAnswerReorder = answerData.studentAnswerReorder;
