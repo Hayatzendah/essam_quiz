@@ -3718,7 +3718,7 @@ export class ExamsService {
     const questions = await this.questionModel
       .find({ _id: { $in: questionIds }, status: { $ne: 'archived' } })
       .select(
-        'prompt text qType options answerKeyBoolean answerKeyMatch matchPairs answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingPassageBgColor readingCards cardsLayout contentBlocks contentOnly sampleAnswer minWords maxWords',
+        'prompt text qType options answerKeyBoolean answerKeyMatch matchPairs matchRightOptions answerKeyReorder interactiveText interactiveBlanks interactiveReorder fillExact media images difficulty tags status listeningClipId audioUrl readingPassageId readingPassage readingPassageBgColor readingCards cardsLayout contentBlocks contentOnly sampleAnswer minWords maxWords',
       )
       .populate('listeningClipId', 'title audioUrl audioKey teil')
       .lean();
@@ -3826,9 +3826,10 @@ export class ExamsService {
         ...(q.options && { options: q.options }),
         // TRUE_FALSE
         ...(q.answerKeyBoolean !== undefined && { answerKeyBoolean: q.answerKeyBoolean }),
-        // MATCH
+        // MATCH (كل عناصر اليمين للعرض في القائمة المنسدلة عند الطالب)
         ...(q.answerKeyMatch && { answerKeyMatch: q.answerKeyMatch }),
         ...(q.matchPairs && { matchPairs: q.matchPairs }),
+        ...(q.matchRightOptions && { matchRightOptions: q.matchRightOptions, optionsText: q.matchRightOptions }),
         // REORDER
         ...(q.answerKeyReorder && { answerKeyReorder: q.answerKeyReorder }),
         // FILL

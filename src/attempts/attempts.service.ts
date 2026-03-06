@@ -4049,6 +4049,31 @@ export class AttemptsService {
               `[getAttempt] [STUDENT MATCH] ❌❌❌ qId: ${questionIdStr}: FINAL RESULT HAS NO PAIRS - THIS QUESTION WILL SHOW ERROR ON FRONTEND!`,
             );
           }
+
+          // ✅ عرض كل عناصر اليمين (7 وليس 4) بترتيب عشوائي: إثراء من السؤال إذا الـ snapshot فيه أقل
+          const originalQuestion = questionsMap.get(questionIdStr);
+          const allRightFromQuestion =
+            originalQuestion &&
+            (originalQuestion as { matchRightOptions?: string[] }).matchRightOptions &&
+            Array.isArray((originalQuestion as { matchRightOptions?: string[] }).matchRightOptions) &&
+            (originalQuestion as { matchRightOptions?: string[] }).matchRightOptions!.length > 0
+              ? (originalQuestion as { matchRightOptions: string[] }).matchRightOptions.filter(
+                  (t: string) => t != null && String(t).trim() !== '',
+                )
+              : [...new Set((itemResult.answerKeyMatch || []).map(([, r]: [string, string]) => r))];
+          const currentOptsLen = Array.isArray(item.optionsText) ? item.optionsText.length : 0;
+          const needFullShuffled =
+            allRightFromQuestion.length > 0 &&
+            (currentOptsLen < allRightFromQuestion.length || currentOptsLen === 0);
+          if (needFullShuffled) {
+            const shuffled = [...allRightFromQuestion];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            itemResult.optionsText = shuffled;
+            itemResult.options = shuffled.map((text: string) => ({ text }));
+          }
         }
 
         // إضافة إجابات الطالب
