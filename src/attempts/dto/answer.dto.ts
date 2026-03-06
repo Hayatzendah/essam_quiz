@@ -55,10 +55,9 @@ export class AnswerOneDto {
   @IsBoolean()
   studentAnswerBoolean?: boolean;
 
-  // Match: أزواج [left, right]
+  // Match: إما مصفوفة أزواج [[left, right], ...] أو object { 0: rightVal, 1: rightVal, ... } من الفرونت
   @IsOptional()
-  @IsArray()
-  studentAnswerMatch?: [string, string][];
+  studentAnswerMatch?: [string, string][] | Record<string, unknown>;
 
   // Reorder: ترتيب الطالب
   @IsOptional()

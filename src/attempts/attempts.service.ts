@@ -2341,9 +2341,10 @@ export class AttemptsService {
           const obj = raw as Record<string, unknown>;
           for (let i = 0; i < leftItems.length; i++) {
             const rightVal = obj[i] ?? obj[String(i)];
-            if (typeof rightVal === 'string') matchPairs.push([leftItems[i], rightVal]);
+            const rightStr = rightVal != null && rightVal !== '' ? String(rightVal) : '';
+            matchPairs.push([leftItems[i], rightStr]);
           }
-          item.studentAnswerMatch = matchPairs.length > 0 ? matchPairs : raw;
+          item.studentAnswerMatch = matchPairs;
         } else {
           item.studentAnswerMatch = raw;
         }
