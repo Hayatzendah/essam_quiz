@@ -3134,78 +3134,39 @@ export class AttemptsService {
       return 0;
     }
 
-    // بناء correctMap: left → right (مع normalization)
-    const correctMap = new Map<string, string>();
-    for (const [left, right] of correctPairs) {
-      const normalizedLeft = normalizeAnswer(left);
-      const normalizedRight = normalizeAnswer(right);
-      correctMap.set(normalizedLeft, normalizedRight);
-    }
-
-    // بناء studentMap من studentAnswerMatch
-    const studentMap = new Map<string, string>();
-
-    if (Array.isArray(item.studentAnswerMatch)) {
-      // التحقق من الشكل: array of tuples أو array of strings
-      if (item.studentAnswerMatch.length > 0) {
-        const firstElement = item.studentAnswerMatch[0];
-
-        if (Array.isArray(firstElement) && firstElement.length === 2) {
-          // الشكل 1: Array of tuples [["left", "right"], ...]
-          for (const pair of item.studentAnswerMatch) {
-            if (Array.isArray(pair) && pair.length === 2) {
-              const normalizedLeft = normalizeAnswer(pair[0]);
-              const normalizedRight = normalizeAnswer(pair[1]);
-              studentMap.set(normalizedLeft, normalizedRight);
-            }
+    // استخراج قيم اليمين للطالب بالترتيب (حسب فهرس اليسار 0,1,2,...) (حسب فهرس اليسار 0,1,2,...) لضمان مقارنة صحيحة
+    const studentRightByIndex: string[] = [];
+    if (Array.isArray(item.studentAnswerMatch) && item.studentAnswerMatch.length >= correctPairs.length) {
+      const first = item.studentAnswerMatch[0];
+      if (Array.isArray(first) && first.length === 2) {
+        for (let i = 0; i < correctPairs.length; i++) {
+          const pair = item.studentAnswerMatch[i];
+          if (Array.isArray(pair) && pair.length === 2) {
+            studentRightByIndex.push(String(pair[1] ?? ''));
           }
-        } else if (typeof firstElement === 'string') {
-          // الشكل 2: Array of strings (right values only) - يتم مطابقتها مع left items بالترتيب
-          const leftItems = correctPairs.map(([left]: [string, string]) => left);
-          if (item.studentAnswerMatch.length === leftItems.length) {
-            for (let i = 0; i < leftItems.length; i++) {
-              const normalizedLeft = normalizeAnswer(leftItems[i]);
-              const normalizedRight = normalizeAnswer(item.studentAnswerMatch[i]);
-              studentMap.set(normalizedLeft, normalizedRight);
-            }
-          } else {
-            this.logger.warn(
-              `[gradeMatch] Mismatch: studentAnswerMatch length (${item.studentAnswerMatch.length}) != correctPairs length (${leftItems.length})`,
-            );
-          }
+        }
+      } else if (typeof first === 'string') {
+        for (let i = 0; i < correctPairs.length; i++) {
+          studentRightByIndex.push(String(item.studentAnswerMatch[i] ?? ''));
         }
       }
     } else if (
       typeof item.studentAnswerMatch === 'object' &&
       !Array.isArray(item.studentAnswerMatch)
     ) {
-      // الشكل 3: Object mapping {leftIndex: rightValue} أو {leftValue: rightValue}
-      const leftItems = correctPairs.map(([left]: [string, string]) => left);
-
-      for (const [key, value] of Object.entries(item.studentAnswerMatch)) {
-        if (typeof value === 'string') {
-          // محاولة تحديد إذا كان key هو index أو left value
-          const keyAsIndex = parseInt(key, 10);
-          if (!isNaN(keyAsIndex) && keyAsIndex >= 0 && keyAsIndex < leftItems.length) {
-            // key هو index
-            const normalizedLeft = normalizeAnswer(leftItems[keyAsIndex]);
-            const normalizedRight = normalizeAnswer(value);
-            studentMap.set(normalizedLeft, normalizedRight);
-          } else {
-            // key هو left value
-            const normalizedLeft = normalizeAnswer(key);
-            const normalizedRight = normalizeAnswer(value);
-            studentMap.set(normalizedLeft, normalizedRight);
-          }
-        }
+      const obj = item.studentAnswerMatch as Record<string, unknown>;
+      for (let i = 0; i < correctPairs.length; i++) {
+        const v = obj[i] ?? obj[String(i)];
+        studentRightByIndex.push(typeof v === 'string' ? v : String(v ?? ''));
       }
     }
 
-    // المقارنة: عدد الإجابات الصحيحة
+    // المقارنة حسب الفهرس فقط: لكل موضع i، الإجابة الصحيحة = correctPairs[i][1] وإجابة الطالب = studentRightByIndex[i]
     let correctCount = 0;
-    for (const [left, right] of correctMap.entries()) {
-      const studentRight = studentMap.get(left);
-      if (studentRight && normalizeAnswer(studentRight) === normalizeAnswer(right)) {
+    for (let i = 0; i < correctPairs.length; i++) {
+      const correctRight = correctPairs[i][1];
+      const studentRight = studentRightByIndex[i];
+      if (studentRight != null && String(studentRight).trim() !== '' && normalizeAnswer(studentRight) === normalizeAnswer(correctRight)) {
         correctCount++;
       }
     }
