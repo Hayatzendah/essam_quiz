@@ -2837,31 +2837,19 @@ export class AttemptsService {
                 typeof answer.studentAnswerMatch === 'object' &&
                 !Array.isArray(answer.studentAnswerMatch)
               ) {
-                // الشكل 3: Object mapping {0: "value1", 1: "value2"} أو {leftValue: rightValue}
+                // الشكل 3: Object {0: "right1", 1: "right2", ...} — نرتب حسب فهرس اليسار فقط (نفس عدد الأزواج الصحيحة)
                 const matchPairs: [string, string][] = [];
-                const rightValues = Object.values(answer.studentAnswerMatch) as string[];
-
-                if (leftItems.length === rightValues.length) {
-                  // Object مع indexes: {0: "value1", 1: "value2"}
-                  for (let i = 0; i < leftItems.length; i++) {
-                    matchPairs.push([leftItems[i], rightValues[i]]);
+                const obj = answer.studentAnswerMatch as Record<string, unknown>;
+                for (let i = 0; i < leftItems.length; i++) {
+                  const rightVal = obj[i] ?? obj[String(i)];
+                  if (typeof rightVal === 'string') {
+                    matchPairs.push([leftItems[i], rightVal]);
                   }
-                  item.studentAnswerMatch = matchPairs;
-                  this.logger.log(
-                    `[submitAttempt] Match question ${answer.questionId}: Converted object format to array of tuples`,
-                  );
-                } else {
-                  // Object مع left values: {leftValue: rightValue}
-                  for (const [key, value] of Object.entries(answer.studentAnswerMatch)) {
-                    if (typeof value === 'string') {
-                      matchPairs.push([key, value]);
-                    }
-                  }
-                  item.studentAnswerMatch = matchPairs;
-                  this.logger.log(
-                    `[submitAttempt] Match question ${answer.questionId}: Converted object mapping to array of tuples`,
-                  );
                 }
+                item.studentAnswerMatch = matchPairs.length > 0 ? matchPairs : [];
+                this.logger.log(
+                  `[submitAttempt] Match question ${answer.questionId}: Converted object to ${matchPairs.length} pairs (by left index)`,
+                );
               }
             } else if (
               question.qType === QuestionType.REORDER &&
