@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateQuestionDto } from './create-question.dto';
-import { IsEnum, IsOptional, IsArray } from 'class-validator';
+import { IsEnum, IsOptional, IsArray, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { QuestionStatus, QuestionType } from '../schemas/question.schema';
 
