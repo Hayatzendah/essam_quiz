@@ -1,0 +1,437 @@
+.analytics-dashboard {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 20px;
+  font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #FFC107;
+}
+
+.back-btn {
+  background: white;
+  border: 1px solid #DEE2E6;
+  padding: 10px;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background: #f8f9fa;
+  border-color: #212529;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #000;
+}
+
+.loading-container {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 1px solid #fcc;
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 2px solid #FFC107;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.stat-info h3 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: bold;
+  color: #000;
+}
+
+.stat-info p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.chart-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  border: 2px solid #FFC107;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: #000;
+}
+
+.time-range-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.time-range-selector button {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.time-range-selector button.active {
+  background: #FFC107;
+  color: #000;
+  border-color: #FFC107;
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 300px;
+}
+
+.exams-performance {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.performance-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  border: 2px solid #FFC107;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.performance-section h2 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #000;
+}
+
+.exams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.exam-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border-left: 4px solid #FFC107;
+}
+
+.exam-item.worst {
+  border-left-color: #ED0D0B;
+}
+
+.exam-rank {
+  font-size: 20px;
+  font-weight: bold;
+  color: #000;
+  min-width: 40px;
+}
+
+.exam-details h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: #000;
+}
+
+.exam-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.question-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.stats-column {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  border: 2px solid #FFC107;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stats-column h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #000;
+}
+
+.questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.question-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.question-item.needs-improvement {
+  border-left: 4px solid #ED0D0B;
+}
+
+.question-text {
+  flex: 1;
+  font-size: 14px;
+  color: #000;
+}
+
+.question-rate {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ED0D0B;
+}
+
+.overall-pass-rate {
+  margin-bottom: 24px;
+}
+
+.pass-rate-card {
+  background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pass-rate-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  flex-shrink: 0;
+}
+
+.pass-rate-info h3 {
+  margin: 0;
+  font-size: 36px;
+  font-weight: bold;
+  color: #000;
+}
+
+.pass-rate-info p {
+  margin: 4px 0 0 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}
+
+.pass-rate-table-container {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.pass-rate-table-container h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #000;
+}
+
+.pass-rate-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pass-rate-table thead {
+  background: #f9f9f9;
+}
+
+.pass-rate-table th {
+  padding: 12px;
+  text-align: right;
+  font-weight: bold;
+  color: #000;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.pass-rate-table td {
+  padding: 12px;
+  text-align: right;
+  border-bottom: 1px solid #e0e0e0;
+  color: #333;
+}
+
+.pass-rate-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.pass-rate-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pass-rate-percentage {
+  font-weight: bold;
+  color: #000;
+  min-width: 50px;
+  text-align: left;
+}
+
+.pass-rate-bar {
+  flex: 1;
+  height: 24px;
+  background: #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.pass-rate-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFC107 0%, #FF9800 100%);
+  border-radius: 12px;
+  transition: width 0.3s ease;
+}
+
+/* Pie Chart Labels */
+.recharts-pie-label-text {
+  fill: #000 !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.recharts-pie-label-line {
+  stroke: #000 !important;
+  stroke-width: 2 !important;
+}
+
+/* Tooltip */
+.recharts-tooltip-wrapper {
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.recharts-default-tooltip {
+  background-color: white !important;
+  border: 2px solid #FFC107 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.recharts-tooltip-label {
+  color: #000 !important;
+  font-weight: bold !important;
+  font-size: 14px !important;
+}
+
+.recharts-tooltip-item {
+  color: #000 !important;
+  font-size: 14px !important;
+}
+
+@media (max-width: 768px) {
+  .charts-row,
+  .exams-performance,
+  .question-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pass-rate-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .pass-rate-bar-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .pass-rate-percentage {
+    text-align: right;
+  }
+}
+
