@@ -4034,17 +4034,17 @@ export class AttemptsService {
                 `[getAttempt] [STUDENT MATCH] ❌ Snapshot - matchPairs: ${JSON.stringify(item.matchPairs)}, answerKeyMatch: ${JSON.stringify(item.answerKeyMatch)}`,
               );
               this.logger.error(
-                `[getAttempt] [STUDENT MATCH] ❌ Original question - found: ${!!originalQuestion}, hasAnswerKeyMatch: ${!!originalQuestion?.answerKeyMatch}, answerKeyMatchLen: ${originalQuestion?.answerKeyMatch?.length || 0}`,
+                `[getAttempt] [STUDENT MATCH] ❌ Original question - found: ${!!originalQuestionFallback}, hasAnswerKeyMatch: ${!!originalQuestionFallback?.answerKeyMatch}, answerKeyMatchLen: ${originalQuestionFallback?.answerKeyMatch?.length || 0}`,
               );
-              if (originalQuestion) {
+              if (originalQuestionFallback) {
                 this.logger.error(
-                  `[getAttempt] [STUDENT MATCH] ❌ Original question keys: ${Object.keys(originalQuestion).join(', ')}`,
+                  `[getAttempt] [STUDENT MATCH] ❌ Original question keys: ${Object.keys(originalQuestionFallback).join(', ')}`,
                 );
                 this.logger.error(
-                  `[getAttempt] [STUDENT MATCH] ❌ Original question qType: ${originalQuestion.qType}`,
+                  `[getAttempt] [STUDENT MATCH] ❌ Original question qType: ${originalQuestionFallback.qType}`,
                 );
                 this.logger.error(
-                  `[getAttempt] [STUDENT MATCH] ❌ Original question _id: ${originalQuestion._id}`,
+                  `[getAttempt] [STUDENT MATCH] ❌ Original question _id: ${originalQuestionFallback._id}`,
                 );
               } else {
                 // التحقق من أن السؤال محذوف
