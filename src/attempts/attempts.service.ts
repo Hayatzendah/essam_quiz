@@ -2378,8 +2378,19 @@ export class AttemptsService {
       score = this.gradeFill(item);
       correctAnswer = { fillExact: item.fillExact };
     } else if (item.qType === QuestionType.MATCH) {
-      score = this.gradeMatch(item);
-      correctAnswer = { answerKeyMatch: item.answerKeyMatch || item.matchPairs };
+      let matchCorrectOverride: [string, string][] | undefined;
+      const questionDoc = await this.questionModel.findById(item.questionId).lean().exec();
+      if (
+        questionDoc?.answerKeyMatch &&
+        Array.isArray(questionDoc.answerKeyMatch) &&
+        questionDoc.answerKeyMatch.length > (item.answerKeyMatch || []).length
+      ) {
+        matchCorrectOverride = questionDoc.answerKeyMatch;
+      }
+      score = this.gradeMatch(item, matchCorrectOverride);
+      correctAnswer = {
+        answerKeyMatch: matchCorrectOverride || item.answerKeyMatch || item.matchPairs,
+      };
     } else if (item.qType === QuestionType.REORDER) {
       score = this.gradeReorder(item);
       correctAnswer = { answerKeyReorder: item.answerKeyReorder };
@@ -2888,8 +2899,11 @@ export class AttemptsService {
       }
     }
 
+    // للأسئلة Match: إذا السؤال الحالي فيه أزواج أكثر من الـ snapshot (المعلم أضاف أزواجاً)، نصحح حسب السؤال الحالي
+    const matchCorrectPairsOverride = await this.getMatchCorrectPairsOverride(attempt);
+
     // التصحيح الآلي
-    this.autoGrade(attempt);
+    this.autoGrade(attempt, matchCorrectPairsOverride);
 
     // تحديث الحالة
     attempt.status = AttemptStatus.SUBMITTED;
@@ -2945,9 +2959,43 @@ export class AttemptsService {
   }
 
   /**
+   * للأسئلة Match: جلب أزواج التصحيح من السؤال الحالي إذا كان فيه أزواج أكثر من الـ snapshot
+   */
+  private async getMatchCorrectPairsOverride(
+    attempt: AttemptDocument,
+  ): Promise<Map<string, [string, string][]>> {
+    const matchIds = (attempt.items || [])
+      .filter((item: any) => item.qType === QuestionType.MATCH && item.questionId)
+      .map((item: any) => item.questionId);
+    if (matchIds.length === 0) return new Map();
+    const questions = await this.questionModel
+      .find({ _id: { $in: matchIds.map((id: any) => new Types.ObjectId(id)) } })
+      .lean()
+      .exec();
+    const map = new Map<string, [string, string][]>();
+    for (const q of questions) {
+      const qId = String(q._id);
+      const item = attempt.items.find((i: any) => String(i.questionId) === qId);
+      if (!item) continue;
+      const itemPairsLen =
+        (Array.isArray(item.answerKeyMatch) ? item.answerKeyMatch.length : 0) ||
+        (Array.isArray(item.matchPairs) ? item.matchPairs.length : 0);
+      const questionPairs =
+        q.answerKeyMatch && Array.isArray(q.answerKeyMatch) ? q.answerKeyMatch : [];
+      if (questionPairs.length > itemPairsLen) {
+        map.set(qId, questionPairs);
+      }
+    }
+    return map;
+  }
+
+  /**
    * التصحيح الآلي
    */
-  private autoGrade(attempt: AttemptDocument) {
+  private autoGrade(
+    attempt: AttemptDocument,
+    matchCorrectPairsOverride?: Map<string, [string, string][]>,
+  ) {
     let totalAutoScore = 0;
 
     for (const item of attempt.items) {
@@ -2967,7 +3015,10 @@ export class AttemptsService {
       } else if (item.qType === QuestionType.FILL) {
         score = this.gradeFill(item);
       } else if (item.qType === QuestionType.MATCH) {
-        score = this.gradeMatch(item);
+        score = this.gradeMatch(
+          item,
+          matchCorrectPairsOverride?.get(String(item.questionId)),
+        );
       } else if (item.qType === QuestionType.REORDER) {
         score = this.gradeReorder(item);
       } else if (item.qType === QuestionType.LISTEN) {
@@ -3129,11 +3180,18 @@ export class AttemptsService {
    * 1. Array of tuples: [["left", "right"], ...]
    * 2. Array of strings (right values only): ["value1", "value2", ...] - يتم مطابقتها مع left items بالترتيب
    * 3. Object mapping: {leftIndex: rightValue} أو {leftValue: rightValue}
+   * @param correctPairsOverride عند وجوده (مثلاً السؤال حُدّث بأزواج أكثر من الـ snapshot) يُستخدم للتصحيح
    */
-  private gradeMatch(item: any): number {
-    // الحصول على الإجابات الصحيحة من answerKeyMatch أو matchPairs
+  private gradeMatch(item: any, correctPairsOverride?: [string, string][]): number {
+    // الحصول على الإجابات الصحيحة: من الـ override إن وُجد، وإلا من answerKeyMatch أو matchPairs
     let correctPairs: [string, string][] = [];
     if (
+      correctPairsOverride &&
+      Array.isArray(correctPairsOverride) &&
+      correctPairsOverride.length > 0
+    ) {
+      correctPairs = correctPairsOverride;
+    } else if (
       item.answerKeyMatch &&
       Array.isArray(item.answerKeyMatch) &&
       item.answerKeyMatch.length > 0
@@ -3954,19 +4012,19 @@ export class AttemptsService {
             );
           } else {
             // fallback: استرجاع answerKeyMatch من السؤال الأصلي
-            const originalQuestion = questionsMap.get(questionIdStr);
+            const originalQuestionFallback = questionsMap.get(questionIdStr);
             if (
-              originalQuestion &&
-              originalQuestion.answerKeyMatch &&
-              Array.isArray(originalQuestion.answerKeyMatch) &&
-              originalQuestion.answerKeyMatch.length > 0
+              originalQuestionFallback &&
+              originalQuestionFallback.answerKeyMatch &&
+              Array.isArray(originalQuestionFallback.answerKeyMatch) &&
+              originalQuestionFallback.answerKeyMatch.length > 0
             ) {
-              itemResult.answerKeyMatch = originalQuestion.answerKeyMatch;
-              itemResult.matchPairs = originalQuestion.answerKeyMatch.map(
+              itemResult.answerKeyMatch = originalQuestionFallback.answerKeyMatch;
+              itemResult.matchPairs = originalQuestionFallback.answerKeyMatch.map(
                 ([left, right]: [string, string]) => ({ left, right }),
               );
               this.logger.warn(
-                `[getAttempt] [STUDENT MATCH] ✅ qId: ${questionIdStr}: Retrieved answerKeyMatch from original question (fallback) - ${originalQuestion.answerKeyMatch.length} pairs`,
+                `[getAttempt] [STUDENT MATCH] ✅ qId: ${questionIdStr}: Retrieved answerKeyMatch from original question (fallback) - ${originalQuestionFallback.answerKeyMatch.length} pairs`,
               );
             } else {
               this.logger.error(
@@ -4009,6 +4067,24 @@ export class AttemptsService {
             }
           }
 
+          // ✅ إذا المعلم أضاف أزواجاً بعد بدء المحاولة: نعرض كل الأزواج من السؤال الحالي
+          const originalQuestion = questionsMap.get(questionIdStr);
+          const snapshotPairsLen = (itemResult.answerKeyMatch || []).length;
+          if (
+            originalQuestion &&
+            originalQuestion.answerKeyMatch &&
+            Array.isArray(originalQuestion.answerKeyMatch) &&
+            originalQuestion.answerKeyMatch.length > snapshotPairsLen
+          ) {
+            itemResult.answerKeyMatch = originalQuestion.answerKeyMatch;
+            itemResult.matchPairs = originalQuestion.answerKeyMatch.map(
+              ([left, right]: [string, string]) => ({ left, right }),
+            );
+            this.logger.warn(
+              `[getAttempt] [STUDENT MATCH] ✅ qId: ${questionIdStr}: Using original question (${originalQuestion.answerKeyMatch.length} pairs) - snapshot had ${snapshotPairsLen}`,
+            );
+          }
+
           // Log النتيجة النهائية
           this.logger.warn(
             `[getAttempt] [STUDENT MATCH] qId: ${questionIdStr}: FINAL RESULT - hasMatchPairs: ${!!itemResult.matchPairs}, hasAnswerKeyMatch: ${!!itemResult.answerKeyMatch}, matchPairsLen: ${itemResult.matchPairs?.length || 0}, answerKeyMatchLen: ${itemResult.answerKeyMatch?.length || 0}`,
@@ -4019,8 +4095,7 @@ export class AttemptsService {
             );
           }
 
-          // ✅ عرض كل عناصر اليمين (7 وليس 4) بترتيب عشوائي: إثراء من السؤال إذا الـ snapshot فيه أقل
-          const originalQuestion = questionsMap.get(questionIdStr);
+          // ✅ عرض كل عناصر اليمين (صحيح + مضللة) بترتيب عشوائي: إثراء من السؤال إذا الـ snapshot فيه أقل
           const allRightFromQuestion =
             originalQuestion &&
             (originalQuestion as { matchRightOptions?: string[] }).matchRightOptions &&
