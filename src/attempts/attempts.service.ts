@@ -4067,22 +4067,24 @@ export class AttemptsService {
             }
           }
 
-          // ✅ إذا المعلم أضاف أزواجاً بعد بدء المحاولة: نعرض كل الأزواج من السؤال الحالي
+          // ✅ للطالب: نعرض دائماً الأزواج الكاملة من السؤال الحالي إن وُجدت (حتى تظهر كل الأزواج حتى لو الـ snapshot أقدم)
           const originalQuestion = questionsMap.get(questionIdStr);
           const snapshotPairsLen = (itemResult.answerKeyMatch || []).length;
           if (
             originalQuestion &&
             originalQuestion.answerKeyMatch &&
             Array.isArray(originalQuestion.answerKeyMatch) &&
-            originalQuestion.answerKeyMatch.length > snapshotPairsLen
+            originalQuestion.answerKeyMatch.length > 0
           ) {
             itemResult.answerKeyMatch = originalQuestion.answerKeyMatch;
             itemResult.matchPairs = originalQuestion.answerKeyMatch.map(
               ([left, right]: [string, string]) => ({ left, right }),
             );
-            this.logger.warn(
-              `[getAttempt] [STUDENT MATCH] ✅ qId: ${questionIdStr}: Using original question (${originalQuestion.answerKeyMatch.length} pairs) - snapshot had ${snapshotPairsLen}`,
-            );
+            if (originalQuestion.answerKeyMatch.length > snapshotPairsLen) {
+              this.logger.warn(
+                `[getAttempt] [STUDENT MATCH] ✅ qId: ${questionIdStr}: Using original question (${originalQuestion.answerKeyMatch.length} pairs) - snapshot had ${snapshotPairsLen}`,
+              );
+            }
           }
 
           // Log النتيجة النهائية
