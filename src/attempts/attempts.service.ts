@@ -1818,7 +1818,7 @@ export class AttemptsService {
         snapshot.matchPairs = undefined;
       }
 
-      // عرض كل عناصر اليمين (صحيح + مضللة) للطالب بترتيب عشوائي حتى لا يعرف الإجابة من الترتيب
+      // عرض عناصر اليمين بنفس ترتيب المعلم (بدون خلط) في كل المحاولات
       const allRightFromSchema = (questionObj as { matchRightOptions?: string[] }).matchRightOptions;
       const matchRightOptions =
         Array.isArray(allRightFromSchema) && allRightFromSchema.length > 0
@@ -1826,15 +1826,10 @@ export class AttemptsService {
           : (questionObj.answerKeyMatch || [])
               .map(([, right]: [string, string]) => right)
               .filter((r: string) => r != null && String(r).trim() !== '');
-      const uniqueRight = [...new Set(matchRightOptions)];
-      if (uniqueRight.length > 0) {
-        const shuffled = [...uniqueRight];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        snapshot.optionsText = shuffled;
-        snapshot.optionsSnapshot = shuffled.map((text: string, idx: number) => ({
+      const orderedRight = [...new Set(matchRightOptions)];
+      if (orderedRight.length > 0) {
+        snapshot.optionsText = orderedRight;
+        snapshot.optionsSnapshot = orderedRight.map((text: string, idx: number) => ({
           optionId: `match_right_${idx}`,
           text,
           isCorrect: false,
@@ -3737,12 +3732,7 @@ export class AttemptsService {
             itemResult.matchPairs = orig.answerKeyMatch.map(([left, right]: [string, string]) => ({ left, right }));
             const allRight = (orig as { matchRightOptions?: string[] }).matchRightOptions;
             if (allRight && Array.isArray(allRight) && allRight.length > 0) {
-              const shuffled = [...allRight.filter((t: string) => t != null && String(t).trim() !== '')];
-              for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-              }
-              itemResult.optionsText = shuffled;
+              itemResult.optionsText = allRight.filter((t: string) => t != null && String(t).trim() !== '');
             }
           } else {
             if (item.matchPairs?.length) {
@@ -4142,7 +4132,7 @@ export class AttemptsService {
             );
           }
 
-          // ✅ عرض كل عناصر اليمين (صحيح + مضللة) بترتيب عشوائي: أولاً من السؤال (matchRightOptions) ثم من الـ snapshot
+          // ✅ عرض عناصر اليمين بنفس ترتيب المعلم (بدون خلط) في كل المحاولات
           const fromOriginal =
             originalQuestion &&
             (originalQuestion as { matchRightOptions?: string[] }).matchRightOptions &&
@@ -4164,17 +4154,12 @@ export class AttemptsService {
                 ? fromSnapshot
                 : fromPairs;
           const currentOptsLen = Array.isArray(itemResult.optionsText) ? itemResult.optionsText.length : 0;
-          const needFullShuffled =
+          const needFullOptions =
             allRightFromQuestion.length > 0 &&
             (currentOptsLen < allRightFromQuestion.length || currentOptsLen === 0);
-          if (needFullShuffled) {
-            const shuffled = [...allRightFromQuestion];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            itemResult.optionsText = shuffled;
-            itemResult.options = shuffled.map((text: string) => ({ text }));
+          if (needFullOptions) {
+            itemResult.optionsText = [...allRightFromQuestion];
+            itemResult.options = allRightFromQuestion.map((text: string) => ({ text }));
           }
         }
 
