@@ -3682,14 +3682,29 @@ export class AttemptsService {
       result.readingText = (attempt as any).readingText;
     }
 
+    // للطالب: جلب أسئلة التوصيل من DB مسبقاً لاستخدامها في كلا المسارين (correct_with_scores و explanations_with_scores)
+    let studentMatchQuestionsMap = new Map<string, any>();
+    if (isStudent && attempt.items && attempt.items.length > 0) {
+      const allMatchIds: string[] = [];
+      attempt.items.forEach((it: any) => {
+        if (it.qType === QuestionType.MATCH) allMatchIds.push(String(it.questionId));
+      });
+      if (allMatchIds.length > 0) {
+        const matchQuestions = await this.questionModel
+          .find({ _id: { $in: allMatchIds.map((id) => new Types.ObjectId(id)) } })
+          .lean()
+          .exec();
+        matchQuestions.forEach((q: any) => studentMatchQuestionsMap.set(String(q._id), q));
+      }
+    }
+
     // إضافة items حسب policy
     if (policy === 'only_scores' && isStudent) {
       // لا items للطالب
     } else if (policy === 'correct_with_scores' && isStudent) {
-      // items مع scores فقط
+      // items مع scores فقط — مع إثراء Match من السؤال الأصلي حتى تظهر كل الأزواج
       result.items = attempt.items.map((item: any) => {
         const totalItemScore = (item.autoScore || 0) + (item.manualScore || 0);
-        // استخدام optionsSnapshot إذا كان موجوداً (يحتوي على optionId)، وإلا استخدام optionsText
         const options =
           item.optionsSnapshot && item.optionsSnapshot.length > 0
             ? item.optionsSnapshot.map((opt: any) => ({
@@ -3703,7 +3718,7 @@ export class AttemptsService {
           questionId: String(item.questionId),
           qType: item.qType,
           promptSnapshot: item.promptSnapshot,
-          textDirection: 'ltr' as const, /* عرض نص السؤال شمالاً (يسار) عند الطالب */
+          textDirection: 'ltr' as const,
           options,
           points: item.points || 0,
           score: totalItemScore,
@@ -3714,17 +3729,45 @@ export class AttemptsService {
           ...(item.contentOnly && { contentOnly: true }),
         };
 
+        // أسئلة Match: استخدام السؤال الأصلي من DB لضمان ظهور كل الأزواج للطالب
+        if (item.qType === QuestionType.MATCH) {
+          const orig = studentMatchQuestionsMap.get(String(item.questionId));
+          if (orig?.answerKeyMatch && Array.isArray(orig.answerKeyMatch) && orig.answerKeyMatch.length > 0) {
+            itemResult.answerKeyMatch = orig.answerKeyMatch;
+            itemResult.matchPairs = orig.answerKeyMatch.map(([left, right]: [string, string]) => ({ left, right }));
+            const allRight = (orig as { matchRightOptions?: string[] }).matchRightOptions;
+            if (allRight && Array.isArray(allRight) && allRight.length > 0) {
+              const shuffled = [...allRight.filter((t: string) => t != null && String(t).trim() !== '')];
+              for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+              }
+              itemResult.optionsText = shuffled;
+            }
+          } else {
+            if (item.matchPairs?.length) {
+              itemResult.matchPairs = item.matchPairs;
+              itemResult.answerKeyMatch = item.matchPairs.map((p: { left: string; right: string }) => [p.left, p.right]);
+            } else if (item.answerKeyMatch?.length) {
+              itemResult.answerKeyMatch = item.answerKeyMatch;
+              itemResult.matchPairs = item.answerKeyMatch.map(([left, right]: [string, string]) => ({ left, right }));
+            }
+            if (item.optionsText?.length) itemResult.optionsText = item.optionsText;
+          }
+        }
+
         // إضافة تفاصيل Match pairs للنتائج (يظهر كل زوج وما إذا كان صحيحاً)
         if (item.qType === QuestionType.MATCH) {
-          // استرجاع matchPairs من item
+          // استرجاع matchPairs من itemResult أولاً (قد تكون من السؤال الأصلي)، وإلا من item
           let matchPairs: Array<{ left: string; right: string }> = [];
-          if (item.matchPairs && Array.isArray(item.matchPairs)) {
+          if (itemResult.matchPairs && Array.isArray(itemResult.matchPairs)) {
+            matchPairs = itemResult.matchPairs;
+          } else if (itemResult.answerKeyMatch && Array.isArray(itemResult.answerKeyMatch)) {
+            matchPairs = itemResult.answerKeyMatch.map(([left, right]: [string, string]) => ({ left, right }));
+          } else if (item.matchPairs && Array.isArray(item.matchPairs)) {
             matchPairs = item.matchPairs;
           } else if (item.answerKeyMatch && Array.isArray(item.answerKeyMatch)) {
-            matchPairs = item.answerKeyMatch.map(([left, right]: [string, string]) => ({
-              left,
-              right,
-            }));
+            matchPairs = item.answerKeyMatch.map(([left, right]: [string, string]) => ({ left, right }));
           }
 
           if (matchPairs.length > 0) {
@@ -3732,7 +3775,9 @@ export class AttemptsService {
 
             // بناء correctMap و studentMap
             let correctPairs: [string, string][] = [];
-            if (item.answerKeyMatch && Array.isArray(item.answerKeyMatch)) {
+            if (itemResult.answerKeyMatch && Array.isArray(itemResult.answerKeyMatch)) {
+              correctPairs = itemResult.answerKeyMatch;
+            } else if (item.answerKeyMatch && Array.isArray(item.answerKeyMatch)) {
               correctPairs = item.answerKeyMatch;
             } else {
               correctPairs = matchPairs.map(
@@ -4097,8 +4142,8 @@ export class AttemptsService {
             );
           }
 
-          // ✅ عرض كل عناصر اليمين (صحيح + مضللة) بترتيب عشوائي: إثراء من السؤال إذا الـ snapshot فيه أقل
-          const allRightFromQuestion =
+          // ✅ عرض كل عناصر اليمين (صحيح + مضللة) بترتيب عشوائي: أولاً من السؤال (matchRightOptions) ثم من الـ snapshot
+          const fromOriginal =
             originalQuestion &&
             (originalQuestion as { matchRightOptions?: string[] }).matchRightOptions &&
             Array.isArray((originalQuestion as { matchRightOptions?: string[] }).matchRightOptions) &&
@@ -4106,8 +4151,19 @@ export class AttemptsService {
               ? (originalQuestion as { matchRightOptions: string[] }).matchRightOptions.filter(
                   (t: string) => t != null && String(t).trim() !== '',
                 )
-              : [...new Set((itemResult.answerKeyMatch || []).map(([, r]: [string, string]) => r))];
-          const currentOptsLen = Array.isArray(item.optionsText) ? item.optionsText.length : 0;
+              : [];
+          const fromSnapshot =
+            Array.isArray(item.optionsText) && item.optionsText.length > 0
+              ? item.optionsText.map((o: any) => (typeof o === 'string' ? o : (o?.text ?? o ?? '')).trim()).filter(Boolean)
+              : [];
+          const fromPairs = [...new Set((itemResult.answerKeyMatch || []).map(([, r]: [string, string]) => r).filter(Boolean))];
+          const allRightFromQuestion =
+            fromOriginal.length > 0
+              ? fromOriginal
+              : fromSnapshot.length >= fromPairs.length
+                ? fromSnapshot
+                : fromPairs;
+          const currentOptsLen = Array.isArray(itemResult.optionsText) ? itemResult.optionsText.length : 0;
           const needFullShuffled =
             allRightFromQuestion.length > 0 &&
             (currentOptsLen < allRightFromQuestion.length || currentOptsLen === 0);
