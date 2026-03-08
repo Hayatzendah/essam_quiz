@@ -1797,6 +1797,8 @@ export class AttemptsService {
           left: String(left),
           right: String(right),
         }));
+        // نقاط سؤال التوصيل = عدد الأزواج (كل وصل = نقطة)
+        snapshot.points = snapshot.answerKeyMatch.length;
         this.logger.warn(
           `[createItemSnapshot] ✅ Match question ${questionObj._id}: Created ${snapshot.matchPairs.length} match pairs`,
         );
