@@ -12,7 +12,6 @@
   "scripts": {
     "prebuild": "echo 'Starting build...'",
     "build": "nest build",
-    "dev:frontend": "cd frontend && npm run dev",
     "postbuild": "echo 'Build completed!'",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

@@ -57,5 +57,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 nul
 eslint_b64.tmp
 
-# Frontend files (live in essam-front repo)
+# Frontend (مستقل عن هذا الريبو — باكند فقط)
+essam-front/
+frontend/
 front/
