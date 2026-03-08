@@ -22,5 +22,5 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
   },
-  "exclude": ["back", "quiz-backend", "node_modules", "dist"]
+  "exclude": ["back", "quiz-backend", "node_modules", "dist", "essam-front", "frontend"]
 }
