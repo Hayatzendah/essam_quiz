@@ -1,0 +1,15 @@
+# Windows reserved name
+nul
+NUL
+
+# Local/IDE
+.claude/
+.vscode/
+.idea/
+*.log
+node_modules/
+
+# Env
+.env
+.env.*
+!.env.example

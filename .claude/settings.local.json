@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(git push:*)",
+      "Bash(npx vite build)",
+      "Bash(npm i:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add Cloudinary support for permanent audio file storage\n\nMediaService now checks for CLOUDINARY_URL first, falling back to S3,\nthen mock mode. Cloudinary URLs never expire, solving the audio files\ndisappearing after Railway redeploys.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git status:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add manual ordering for vocabulary topics\n\nAdd position field, reorder endpoint, and drag-and-drop support\nfor vocabulary topics \\(same pattern as grammar topics\\).\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add vocabulary topic reordering + sidebar bulk-create link\n\n- Drag-and-drop reorder UI for vocabulary topics\n- Added \"أسئلة متعددة\" to admin sidebar\n- Removed exam summary card from LiDen page\n- Updated dashboard bulk-create card description\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(dir:*)",
+      "Bash(find:*)",
+      "Bash(findstr:*)",
+      "Bash(npx:*)",
+      "Bash(node -c:*)",
+      "Bash(railway status:*)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(while read file)",
+      "Bash(do grep -l \"deleteMany\\\\|deleteOld\\\\|cleanupOld\\\\|deleteMany.*exam\\\\|deleteMany.*practice\" \"$file\")",
+      "Bash(done)",
+      "Bash(git init:*)",
+      "Bash(git diff --text HEAD -- src/exams/dto/create-exam.dto.ts)",
+      "Bash(git pull origin master --rebase)",
+      "Bash(git stash)",
+      "Bash(git stash pop)",
+      "Bash(git pull origin master)",
+      "Bash(xargs grep -l \"question.*disappear\\\\|edit.*question\\\\|update.*question\")",
+      "Bash(git pull --rebase)",
+      "Bash(git pull --rebase origin main)",
+      "Bash(xargs grep -l \"speaking\\\\|Speaking\")",
+      "Bash(xargs grep -l \"SpeakingAnswerComponent\\\\|Recording\\\\|Microphone\")"
+    ]
+  }
+}

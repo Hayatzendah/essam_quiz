@@ -3535,26 +3535,18 @@ export class AttemptsService {
           }
         }
       }
-      // تصفية الأسئلة المحذوفة/المؤرشفة + الترتيب
-      // ⚠️ فقط إذا كانت sections تحتوي فعلاً على أسئلة (ليس لامتحانات Leben العشوائية)
+      // ترتيب الأسئلة حسب orderMap فقط — بدون حذف أي عنصر من المحاولة
+      // (حذف العناصر كان يخفي أسئلة جاءت من quota أو من أقسام غير ثابتة فيصل فقط 5 بدل 15)
       if (orderMap.size > 0) {
-        const beforeFilter = (attempt as any).items.length;
-        (attempt as any).items = (attempt as any).items.filter((a: any) => {
-          return orderMap.has(a.questionId?.toString());
-        });
-        if ((attempt as any).items.length < beforeFilter) {
-          this.logger.log(
-            `[getAttempt] Filtered out ${beforeFilter - (attempt as any).items.length} deleted/archived questions from attempt items`,
-          );
-        }
-        (attempt as any).items.sort((a: any, b: any) => {
+        const items = (attempt as any).items as any[];
+        items.sort((a: any, b: any) => {
           const orderA = orderMap.get(a.questionId?.toString()) ?? 999999;
           const orderB = orderMap.get(b.questionId?.toString()) ?? 999999;
           return orderA - orderB;
         });
       } else {
         this.logger.log(
-          `[getAttempt] Skipping filter/sort - no section question IDs found (random/Leben exam)`,
+          `[getAttempt] Skipping sort - no section question IDs found (random/Leben exam)`,
         );
       }
       this.logger.log(

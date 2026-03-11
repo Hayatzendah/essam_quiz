@@ -29,5 +29,12 @@ quiz-backend
 .eslintrc*
 .prettierrc*
 jest.config.*
-nest-cli.json
+# لا تستبعد nest-cli.json - البناء يحتاجه
+# مجلدات ثقيلة لا حاجة لها في بناء الباكند (تسريع الـ context)
+essam-front
+frontend
+docs
+.claude
+.cursor
+mcps
 
