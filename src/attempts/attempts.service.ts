@@ -847,14 +847,13 @@ export class AttemptsService {
     // 10. إرجاع البيانات (بدون answer keys)
     const attemptObj = attempt.toObject();
 
-    // ✅ FIX: إعادة ترتيب items حسب ترتيب الامتحان + تصفية المحذوفة
+    // ✅ إعادة ترتيب items فقط حسب ترتيب الامتحان — بدون حذف أي عنصر (كي تظهر كل الأسئلة في الفرونتند والنتائج)
     if (
       exam.sections &&
       Array.isArray(exam.sections) &&
       attemptObj.items &&
       attemptObj.items.length > 0
     ) {
-      // جلب الأسئلة المنشورة فقط
       const allSectionQIds = exam.sections
         .flatMap((s: any) => (s.items || []).map((item: any) => item.questionId))
         .filter(Boolean);
@@ -887,15 +886,6 @@ export class AttemptsService {
           }
         }
       }
-      const beforeFilter = attemptObj.items.length;
-      attemptObj.items = attemptObj.items.filter((a: any) => {
-        return orderMap.has(a.questionId?.toString());
-      });
-      if (attemptObj.items.length < beforeFilter) {
-        this.logger.log(
-          `[startAttempt] Filtered out ${beforeFilter - attemptObj.items.length} deleted/archived questions`,
-        );
-      }
       if (orderMap.size > 0) {
         attemptObj.items.sort((a: any, b: any) => {
           const orderA = orderMap.get(a.questionId?.toString()) ?? 999999;
@@ -904,7 +894,7 @@ export class AttemptsService {
         });
       }
       this.logger.log(
-        `[startAttempt] Final items: ${attemptObj.items.length} (published: ${publishedIds.size})`,
+        `[startAttempt] Response items: ${attemptObj.items.length} (orderMap: ${orderMap.size})`,
       );
     }
 
