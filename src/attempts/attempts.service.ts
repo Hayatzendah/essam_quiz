@@ -2689,11 +2689,23 @@ export class AttemptsService {
         if (answer.questionId) {
           // البحث باستخدام questionId
           const foundIndex = attempt.items.findIndex(
-            (item: any) => item.questionId.toString() === answer.questionId,
+            (it: any) => it.questionId && it.questionId.toString() === answer.questionId,
           );
           if (foundIndex !== -1) {
             item = attempt.items[foundIndex];
             itemIndex = foundIndex;
+          }
+          // إن لم يُوجد في items (أسئلة أقسام مثل Hören Teil 2): إضافتها تلقائياً ثم حفظ الإجابة
+          if (!item) {
+            const resolved = await this.findAttemptItemByQuestionId(attempt, answer.questionId);
+            if (resolved) {
+              item = resolved.item;
+              itemIndex = resolved.itemIdx;
+            }
+          }
+          if (!item) {
+            item = await this.autoAddQuestionToAttempt(attempt, answer.questionId);
+            if (item) itemIndex = attempt.items.length - 1;
           }
         } else if (answer.itemIndex !== undefined) {
           // البحث باستخدام itemIndex (للتوافق مع الكود القديم)
